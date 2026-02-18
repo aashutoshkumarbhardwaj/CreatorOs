@@ -1,95 +1,317 @@
-🦋 Titli – The Elegant Link Shortener
-<p align="center"> <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=180&section=header&text=Titli🦋&fontSize=70&fontAlignY=35&desc=Shorten+Your+Links+Beautifully!&descAlignY=60&descAlign=50" alt="Titli Banner"/> </p>
+<div align="center">
 
-<p align="center"> <img src="https://readme-typing-svg.herokuapp.com?font=Pacifico&size=28&pause=1000&color=F7797D&center=true&vCenter=true&width=600&lines=🦋+Titli+-+Shorten+Links+Beautifully!;Made+with+Express,+Node,+and+Love;Fast+%7C+Simple+%7C+Reliable+%7C+Stylish" alt="Typing SVG" /> </p>
-✨ About Titli
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=CreaterOS&fontSize=72&fontColor=fff&animation=twinkling&fontAlignY=32&desc=The%20Operating%20System%20for%20Creators&descAlignY=56&descSize=20&descColor=ffffff" width="100%"/>
 
-Titli means Butterfly 🦋
-Just like a butterfly turns into something small and beautiful, Titli shortens your long messy links into something elegant & easy to share.
+<br/>
 
-Built with ❤️ using:
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-In%20Development-brightgreen?style=for-the-badge&logo=statuspage&logoColor=white" />
+  <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/PRs-Welcome-orange?style=for-the-badge&logo=github" />
+</p>
 
-⚡ Node.js + Express.js
+<br/>
 
-🎨 EJS for dynamic views
+> **Stop juggling 10 tools. Start owning your creator empire — from one dashboard.**
 
-🖌️ HTML5 + CSS3
+<br/>
 
-🔗 Link Management Made Simple
+```
+ ██████╗██████╗ ███████╗ █████╗ ████████╗███████╗██████╗  ██████╗ ███████╗
+██╔════╝██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝██╔══██╗██╔═══██╗██╔════╝
+██║     ██████╔╝█████╗  ███████║   ██║   █████╗  ██████╔╝██║   ██║███████╗
+██║     ██╔══██╗██╔══╝  ██╔══██║   ██║   ██╔══╝  ██╔══██╗██║   ██║╚════██║
+╚██████╗██║  ██║███████╗██║  ██║   ██║   ███████╗██║  ██║╚██████╔╝███████║
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+```
 
-🌟 Features
+**Shopify + Notion + Zapier — built for creators.**
 
-✅ Shorten long URLs into tiny, elegant ones
-✅ Easy-to-use web interface with EJS templates
-✅ Super-fast Express backend
-✅ Clean & minimal design
-✅ Copy links with one click
-✅ Future-ready 🚀
+<br/>
 
-🛠️ Tech Stack
+[🚀 Get Early Access](#) • [📖 Documentation](#) • [🐛 Report Bug](#) • [💡 Request Feature](#) • [💬 Join Discord](#)
 
-<p align="center"> <img src="https://skillicons.dev/icons?i=nodejs,express,html,css,js" /> </p>
+</div>
 
-🚀 Installation & Setup
+---
 
-Clone the repo:
+## 🔥 The Problem
 
-git clone https://github.com/your-username/titli.git
-cd titli
+Every creator knows this chaos:
 
+| Tool | What You Use It For |
+|------|---------------------|
+| Linktree / Beacons | Bio links |
+| ManyChat | DM automation |
+| Notion / Notes | Content ideas |
+| Sheets / Notion | Brand deal tracking |
+| Later / Buffer | Scheduling |
+| Native dashboards | Analytics |
 
-Install dependencies:
+**That's 6+ apps, 6+ subscriptions, 6+ logins — just to run your creator business.**
 
+CreaterOS ends this. One platform. Everything connected. Zero context-switching.
+
+---
+
+## ✨ What CreaterOS Does
+
+<table>
+<tr>
+<td width="50%">
+
+### 🔗 Smart Bio System
+Your link-in-bio, evolved.
+- Advanced, fully branded bio pages
+- Product showcase with buy buttons
+- Per-link redirect tracking
+- Custom domain support
+- Mobile-first, blazing fast
+
+</td>
+<td width="50%">
+
+### 🤖 DM Automation
+Turn every comment & DM into a conversion.
+- Keyword-triggered auto-replies
+- Instant free resource delivery
+- Funnel followers → products & newsletters
+- Instagram Graph API powered
+- No-code setup
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🤝 Creator CRM
+Your brand deals, professionally managed.
+- Full collaboration pipeline
+- Payment tracking & invoicing
+- Sponsor contact database
+- Campaign status board
+- Deliverable reminders
+
+</td>
+<td width="50%">
+
+### 📊 Analytics Dashboard
+Know exactly what's working.
+- Instagram engagement insights
+- Link click heatmaps
+- Follower growth curves
+- Conversion tracking
+- Cross-platform metrics (coming soon)
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+### 🧠 Content OS
+Never stare at a blank screen again.
+- Idea bank with tagging & search
+- Script & caption storage
+- Visual post scheduler
+- **AI content suggestions** powered by GPT-4
+- Batch-write & auto-schedule
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🛠️ Tech Stack
+
+<div align="center">
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | ![Next.js](https://img.shields.io/badge/Next.js-000?logo=nextdotjs&logoColor=white&style=flat-square) ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black&style=flat-square) ![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square) |
+| **Backend** | ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square) ![Express](https://img.shields.io/badge/Express-000?logo=express&logoColor=white&style=flat-square) |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white&style=flat-square) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat-square) |
+| **Auth** | ![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white&style=flat-square) ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black&style=flat-square) |
+| **Automation** | ![Instagram](https://img.shields.io/badge/Instagram%20Graph%20API-E4405F?logo=instagram&logoColor=white&style=flat-square) |
+| **AI** | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=flat-square) ![OpenRouter](https://img.shields.io/badge/OpenRouter-FF6B35?style=flat-square) |
+| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white&style=flat-square) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white&style=flat-square) ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white&style=flat-square) |
+
+</div>
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+```bash
+node >= 18.0.0
+npm >= 9.0.0
+```
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/crateros.git
+
+# Navigate into the project
+cd crateros
+
+# Install dependencies
 npm install
 
+# Copy environment variables
+cp .env.example .env.local
+```
 
-Run the server:
+### Environment Setup
 
-npm start
+```env
+# Auth
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
 
+# Database
+DATABASE_URL=
+MONGODB_URI=
 
-Open in browser:
+# Instagram Graph API
+INSTAGRAM_APP_ID=
+INSTAGRAM_APP_SECRET=
 
+# AI
+OPENAI_API_KEY=
+OPENROUTER_API_KEY=
 
-🎬 Preview
-<p align="center"> <img src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" width="600" /> <br/> <em>A sneak peek of Titli in action 🦋</em> </p>
-🌈 Gradient Badge Showcase
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
--
+### Run Locally
 
-<p align="center"> <img src="https://img.shields.io/badge/Made%20with-Express.js-ff7eb3?style=for-the-badge&logo=express&logoColor=white" /> <img src="https://img.shields.io/badge/Node.js-Love-ff65a3?style=for-the-badge&logo=node.js&logoColor=white" /> <img src="https://img.shields.io/badge/EJS-Templates-fc67fa?style=for-the-badge&logo=html5&logoColor=white" /> <img src="https://img.shields.io/badge/Open%20Source-🦋-43e97b?style=for-the-badge&logo=github&logoColor=white" /> </p>
+```bash
+# Start the development server
+npm run dev
 
-📂 Project Structure
+# Open in browser
+open http://localhost:3000
+```
 
-Titli/
-│── public/        # Static files (CSS, JS, assets)
-│── views/         # EJS templates
-│── routes/        # Express routes
-│── index.js       # Main server file
-│── package.json   # Dependencies & scripts
+---
 
-🌍 Deployment
+## 📁 Project Structure
 
-You can deploy Titli easily on:
+```
+crateros/
+├── 📂 app/                    # Next.js App Router
+│   ├── 📂 (auth)/             # Auth pages (login, signup)
+│   ├── 📂 (dashboard)/        # Main dashboard routes
+│   │   ├── 📂 bio/            # Smart Bio System
+│   │   ├── 📂 automation/     # DM Automation
+│   │   ├── 📂 crm/            # Creator CRM
+│   │   ├── 📂 analytics/      # Analytics Dashboard
+│   │   └── 📂 content/        # Content OS
+│   └── 📂 api/                # API Routes
+├── 📂 components/             # Reusable UI components
+├── 📂 lib/                    # Utility functions & configs
+├── 📂 hooks/                  # Custom React hooks
+├── 📂 prisma/                 # DB schema & migrations
+└── 📂 public/                 # Static assets
+```
 
-Heroku
+---
 
-Vercel
+## 🎯 Who Is This For?
 
-Render
+<div align="center">
 
-🤝 Contributing
+| 📸 Instagram Influencers | 🎬 YouTubers | 🎓 Coaches & Solopreneurs |
+|:---:|:---:|:---:|
+| 📦 Digital Product Sellers | ✍️ Indie Creators | 🏷️ Brand Deal Hunters |
 
-Pull requests are welcome 🦋.
-For major changes, please open an issue first to discuss.
+</div>
 
-📜 License
+If you're building an audience and monetizing your knowledge — CreaterOS is your control center.
 
-MIT License © 2025 
+---
 
-<p align="center"> <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=24&pause=1000&color=00c9ff&center=true&width=600&lines=Made+with+💖+by+Ashutosh+Kumar+Bhardwaj;Shorten+Links+Effortlessly+with+Titli!" /> </p>
+## 💰 Pricing Model
 
-✨🦋 Spread your wings with Titli – because even your links deserve to be beautiful!
+```
+┌─────────────────┬──────────────────┬─────────────────────┐
+│   FREE           │   PRO             │   SCALE              │
+│                  │                  │                      │
+│ ✓ Bio page       │ ✓ Everything Free │ ✓ Everything Pro     │
+│ ✓ Basic analytics│ ✓ DM Automation  │ ✓ Commission sales   │
+│ ✓ 1 CRM pipeline │ ✓ Full CRM       │ ✓ Priority AI        │
+│ ✓ Idea bank      │ ✓ AI suggestions │ ✓ White-label bio    │
+│                  │ ✓ Post scheduler │ ✓ Team seats         │
+│ $0/mo            │ $X/mo            │ $XX/mo               │
+└─────────────────┴──────────────────┴─────────────────────┘
+```
 
+---
 
-<p align="center"> <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=120&section=footer" /> <br/> <b>✨ Made with 💖 by Ashutosh Kumar Bhardwaj ✨</b> </p>
+## 🗺️ Roadmap
+
+- [x] Project architecture & planning
+- [ ] 🔗 Smart Bio System v1
+- [ ] 📊 Analytics Dashboard v1
+- [ ] 🤖 DM Automation (Instagram Graph API)
+- [ ] 🤝 Creator CRM v1
+- [ ] 🧠 Content OS + AI suggestions
+- [ ] 💳 Payments & subscriptions (Stripe)
+- [ ] 📱 Mobile app (React Native)
+- [ ] 🌐 Multi-platform support (YouTube, TikTok)
+- [ ] 🔌 Public API for integrations
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community amazing. Any contributions you make are **greatly appreciated**.
+
+```bash
+# 1. Fork the project
+# 2. Create your feature branch
+git checkout -b feature/AmazingFeature
+
+# 3. Commit your changes
+git commit -m 'feat: add AmazingFeature'
+
+# 4. Push to the branch
+git push origin feature/AmazingFeature
+
+# 5. Open a Pull Request
+```
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for our code of conduct and contribution guidelines.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
+
+---
+
+## 📬 Connect
+
+<div align="center">
+
+**Built with 🖤 for creators, by creators.**
+
+[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](#)
+[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](#)
+[![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](#)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](#)
+
+<br/>
+
+*If CreaterOS saves you time, give it a ⭐ — it means the world.*
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
+
+</div>
