@@ -3,7 +3,7 @@ const app = express();
 const path = require('path');
 const shortid = require('shortid');
 const services = require('./services.config');
-
+const bioLinkRoutes = require('./routes/bioLink'); 
 const port = 3000;
 const urlRoutes = require('./routes/url');
 
@@ -18,6 +18,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'view'));
 
 app.use('/url', urlRoutes);
+app.use('/', bioLinkRoutes); 
 
 function findServiceByKey(key) {
     return services.find((service) => service.key === key);

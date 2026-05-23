@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bio Page Editor — CreatorOs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #111118;
+      --surface2:  #1a1a24;
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+      --text:      #f0f0f5;
+      --muted:     #8888a0;
+      --accent:    <%= page && page.accentColor ? page.accentColor : '#7C5CFC' %>;
+      --radius:    12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top nav ────────────────── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: rgba(10,10,15,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-actions { display: flex; align-items: center; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border2); background: var(--surface2);
+      color: var(--text); text-decoration: none; transition: all 0.15s;
+    }
+    .btn:hover { background: var(--surface); border-color: rgba(255,255,255,0.22); }
+    .btn-primary {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost { background: transparent; border-color: transparent; }
+    .btn-ghost:hover { background: var(--surface2); }
+    .btn-danger { background: transparent; border-color: rgba(239,68,68,0.3); color: #f87171; }
+    .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+    /* ── Layout ─────────────────── */
+    .editor-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+    }
+    .editor-main { padding: 28px 32px; overflow-y: auto; }
+    .preview-panel {
+      position: sticky; top: 56px; height: calc(100vh - 56px);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      background: var(--surface);
+    }
+
+    /* ── Alerts ──────────────────── */
+    .alert {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; margin-bottom: 20px;
+    }
+    .alert-error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.2);  color: #f87171; }
+    .alert-success { background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.2);  color: #4ade80; }
+
+    /* ── Section cards ────────────── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    }
+    .section-title i { color: var(--accent); font-size: 16px; }
+
+    /* ── Form elements ─────────────── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+    input[type=text], input[type=url], textarea, select {
+      width: 100%; padding: 10px 12px;
+      background: var(--bg); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-family: inherit; font-size: 14px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,92,252,0.15);
+    }
+    textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+    select option { background: #1a1a24; }
+    .char-count { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+
+    /* ── Color accent picker ─────────── */
+    .color-picker-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .color-swatch {
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+      border: 3px solid transparent; transition: transform 0.1s, border-color 0.15s;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.active { border-color: white; }
+    input[type=color] {
+      width: 32px; height: 32px; border-radius: 50%; padding: 0; border: none;
+      cursor: pointer; background: none; overflow: hidden;
+    }
+
+    /* ── Theme cards ──────────────── */
+    .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .theme-card {
+      border-radius: var(--radius-sm); overflow: hidden;
+      border: 2px solid transparent; cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      aspect-ratio: 2/3; position: relative;
+    }
+    .theme-card:hover { transform: translateY(-2px); }
+    .theme-card.active { border-color: var(--accent); }
+    .theme-card input[type=radio] { display: none; }
+    .theme-preview {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; padding: 8px 6px; gap: 4px;
+    }
+    .theme-dot { width: 18px; height: 18px; border-radius: 50%; margin-bottom: 2px; }
+    .theme-bar { height: 4px; border-radius: 2px; width: 80%; }
+    .theme-bar.short { width: 55%; }
+    .theme-label {
+      position: absolute; bottom: 4px; left: 0; right: 0;
+      text-align: center; font-size: 9px; font-weight: 600; letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Midnight theme */
+    .tp-midnight { background: #0a0a0f; }
+    .tp-midnight .theme-dot { background: #7C5CFC; }
+    .tp-midnight .theme-bar { background: rgba(255,255,255,0.15); }
+    .tp-midnight .theme-label { color: rgba(255,255,255,0.5); }
+
+    /* Aurora theme */
+    .tp-aurora { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); }
+    .tp-aurora .theme-dot { background: #00f5a0; }
+    .tp-aurora .theme-bar { background: rgba(0,245,160,0.3); }
+    .tp-aurora .theme-label { color: rgba(255,255,255,0.5); }
+
+    /* Paper theme */
+    .tp-paper { background: #fafaf7; }
+    .tp-paper .theme-dot { background: #1a1a1a; }
+    .tp-paper .theme-bar { background: rgba(0,0,0,0.12); }
+    .tp-paper .theme-label { color: rgba(0,0,0,0.4); }
+
+    /* Forest theme */
+    .tp-forest { background: #0d1f17; }
+    .tp-forest .theme-dot { background: #4ade80; }
+    .tp-forest .theme-bar { background: rgba(74,222,128,0.2); }
+    .tp-forest .theme-label { color: rgba(255,255,255,0.4); }
+
+    /* Rose theme */
+    .tp-rose { background: #1f0d15; }
+    .tp-rose .theme-dot { background: #fb7185; }
+    .tp-rose .theme-bar { background: rgba(251,113,133,0.25); }
+    .tp-rose .theme-label { color: rgba(255,255,255,0.4); }
+
+    /* ── Links list ──────────────── */
+    #links-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .link-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      transition: border-color 0.15s;
+    }
+    .link-item:hover { border-color: var(--border2); }
+    .link-drag { color: var(--muted); cursor: grab; font-size: 16px; }
+    .link-icon-preview {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(124,92,252,0.12); color: var(--accent);
+      font-size: 16px; flex-shrink: 0;
+    }
+    .link-info { flex: 1; min-width: 0; }
+    .link-title { font-size: 13px; font-weight: 500; truncate: overflow; }
+    .link-url   { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .link-clicks { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .link-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    /* Toggle switch */
+    .toggle { position: relative; display: inline-flex; width: 36px; height: 20px; }
+    .toggle input { display: none; }
+    .toggle-slider {
+      position: absolute; inset: 0; border-radius: 10px;
+      background: var(--border2); cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::after {
+      content: ''; position: absolute;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: white; top: 3px; left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked ~ .toggle-slider { background: var(--accent); }
+    .toggle input:checked ~ .toggle-slider::after { transform: translateX(16px); }
+
+    /* ── Add link form inline ─────── */
+    .add-link-form {
+      display: grid; grid-template-columns: auto 1fr 2fr auto; gap: 8px;
+      align-items: center; margin-top: 4px;
+    }
+    .icon-select {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border2); background: var(--bg);
+      color: var(--muted); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover, .icon-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(124,92,252,0.08); }
+
+    /* ── Socials ─────────────────── */
+    .socials-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .social-input-wrap {
+      display: flex; align-items: center; gap: 0;
+      border: 1px solid var(--border2); border-radius: var(--radius-sm);
+      background: var(--bg); overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .social-input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,92,252,0.15);
+    }
+    .social-prefix {
+      padding: 10px 12px; background: var(--surface2);
+      border-right: 1px solid var(--border2);
+      color: var(--muted); font-size: 13px; white-space: nowrap;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .social-input-wrap input {
+      border: none; border-radius: 0; background: transparent;
+      box-shadow: none; padding: 10px 12px; flex: 1;
+    }
+    .social-input-wrap input:focus { box-shadow: none; }
+
+    /* ── Layout toggle ────────────── */
+    .layout-toggle { display: flex; gap: 8px; }
+    .layout-btn {
+      flex: 1; padding: 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border2); background: var(--bg);
+      color: var(--muted); cursor: pointer; text-align: center;
+      font-size: 13px; font-weight: 500; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .layout-btn.active, .layout-btn:has(input:checked) {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(124,92,252,0.08);
+    }
+    .layout-btn input { display: none; }
+
+    /* ── Preview panel ─────────────── */
+    .preview-topbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-topbar-title { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .preview-url {
+      font-size: 11px; color: var(--accent);
+      text-decoration: none; display: flex; align-items: center; gap: 4px;
+    }
+
+    .phone-frame-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 20px 24px;
+    }
+    .phone-frame {
+      width: 220px; height: 420px;
+      border: 2px solid var(--border2); border-radius: 32px;
+      overflow: hidden; position: relative; flex-shrink: 0;
+      background: #0a0a0f;
+      box-shadow: 0 0 0 8px var(--surface2), 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .phone-notch {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 18px; background: var(--surface2);
+      border-radius: 0 0 12px 12px; z-index: 10;
+    }
+    .phone-screen { width: 100%; height: 100%; overflow-y: auto; }
+    .phone-screen::-webkit-scrollbar { display: none; }
+
+    /* ── Responsive ──────────────── */
+    @media (max-width: 900px) {
+      .editor-layout { grid-template-columns: 1fr; }
+      .preview-panel { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .theme-grid { grid-template-columns: repeat(3, 1fr); }
+      .socials-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<nav class="topbar">
+  <div class="topbar-brand">
+    <i class="ti ti-circles-relation"></i>
+    Creator<span>Os</span>
+  </div>
+  <div class="topbar-actions">
+    <% if (page && page.username) { %>
+      <a href="/u/<%= page.username %>" target="_blank" class="btn btn-ghost">
+        <i class="ti ti-external-link"></i> Preview
+      </a>
+    <% } %>
+    <a href="/dashboard" class="btn btn-ghost"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+  </div>
+</nav>
+
+<!-- ── Main layout ── -->
+<div class="editor-layout">
+
+  <!-- ════ LEFT: Editor ════ -->
+  <main class="editor-main">
+
+    <% if (error) { %>
+      <div class="alert alert-error"><i class="ti ti-alert-circle"></i> <%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="alert alert-success"><i class="ti ti-circle-check"></i> <%= success %></div>
+    <% } %>
+
+    <!-- ── Profile section ── -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><i class="ti ti-user-circle"></i> Profile</div>
+      </div>
+
+      <form action="/dashboard/bio/save" method="POST" id="profile-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="your-handle"
+              value="<%= page ? page.username : '' %>"
+              pattern="[a-z0-9_\-]+" title="Lowercase letters, numbers, _ and - only"
+              id="username-input" />
+          </div>
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" name="displayName" placeholder="Your Name"
+              value="<%= page ? page.displayName : '' %>" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Bio <span class="char-count" id="bio-count">0 / 160</span></label>
+          <textarea name="bio" placeholder="Tell your audience who you are..." maxlength="160"
+            id="bio-input"><%= page ? page.bio : '' %></textarea>
+        </div>
+
+        <!-- Theme picker -->
+        <div class="form-group">
+          <label>Theme</label>
+          <div class="theme-grid">
+            <% const themes = ['midnight','aurora','paper','forest','rose'];
+               themes.forEach(t => { %>
+              <label class="theme-card <%= (page && page.theme === t) ? 'active' : '' %>" data-theme="<%= t %>">
+                <input type="radio" name="theme" value="<%= t %>"
+                  <%= (page && page.theme === t) ? 'checked' : '' %> />
+                <div class="theme-preview tp-<%= t %>">
+                  <div class="theme-dot"></div>
+                  <div class="theme-bar"></div>
+                  <div class="theme-bar short"></div>
+                  <div class="theme-bar"></div>
+                  <div class="theme-label"><%= t %></div>
+                </div>
+              </label>
+            <% }); %>
+          </div>
+        </div>
+
+        <!-- Accent color -->
+        <div class="form-group">
+          <label>Accent Color</label>
+          <div class="color-picker-row">
+            <% ['#7C5CFC','#00f5a0','#fb7185','#38bdf8','#f59e0b','#4ade80'].forEach(c => { %>
+              <div class="color-swatch <%= (page && page.accentColor === c) ? 'active' : '' %>"
+                style="background:<%= c %>;" data-color="<%= c %>"></div>
+            <% }) %>
+            <input type="color" name="accentColor" id="accent-input"
+              value="<%= page ? page.accentColor : '#7C5CFC' %>" title="Custom color" />
+          </div>
+        </div>
+
+        <!-- Layout toggle -->
+        <div class="form-group">
+          <label>Link Layout</label>
+          <div class="layout-toggle">
+            <label class="layout-btn <%= (!page || page.layout === 'stack') ? 'active' : '' %>">
+              <input type="radio" name="layout" value="stack"
+                <%= (!page || page.layout === 'stack') ? 'checked' : '' %> />
+              <i class="ti ti-layout-list"></i> Stack
+            </label>
+            <label class="layout-btn <%= (page && page.layout === 'grid') ? 'active' : '' %>">
+              <input type="radio" name="layout" value="grid"
+                <%= (page && page.layout === 'grid') ? 'checked' : '' %> />
+              <i class="ti ti-layout-grid"></i> Grid
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+          <i class="ti ti-device-floppy"></i> Save Profile
+        </button>
+      </form>
+    </div>
+
+    <!-- ── Links section ── -->
+    <div class="section" id="links">
+      <div class="section-header">
+        <div class="section-title"><i class="ti ti-link"></i> Links</div>
+        <span style="font-size:12px;color:var(--muted);"><%= page ? page.links.length : 0 %> links</span>
+      </div>
+
+      <!-- Existing links -->
+      <div id="links-list">
+        <% if (page && page.links.length > 0) {
+          page.links.forEach(link => { %>
+          <div class="link-item" id="link-<%= link._id %>">
+            <i class="ti ti-grip-vertical link-drag"></i>
+            <div class="link-icon-preview">
+              <i class="ti <%= link.icon %>"></i>
+            </div>
+            <div class="link-info">
+              <div class="link-title"><%= link.title %></div>
+              <div class="link-url"><%= link.url %></div>
+            </div>
+            <div class="link-clicks"><i class="ti ti-mouse-2"></i> <%= link.clicks %></div>
+            <div class="link-actions">
+              <label class="toggle">
+                <input type="checkbox" <%= link.active ? 'checked' : '' %>
+                  onchange="toggleLink('<%= link._id %>', this)" />
+                <span class="toggle-slider"></span>
+              </label>
+              <button class="btn btn-danger" style="padding:6px 8px;" onclick="deleteLink('<%= link._id %>')">
+                <i class="ti ti-trash" style="font-size:14px;"></i>
+              </button>
+            </div>
+          </div>
+        <% }); } else { %>
+          <div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
+            <i class="ti ti-link-off" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+            No links yet. Add your first one below.
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Add link form -->
+      <details style="margin-top:4px;">
+        <summary style="list-style:none;cursor:pointer;">
+          <div class="btn" style="width:100%;justify-content:center;">
+            <i class="ti ti-plus"></i> Add Link
+          </div>
+        </summary>
+        <div style="margin-top:12px;padding:16px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <form action="/dashboard/bio/link/add" method="POST">
+            <div class="form-group">
+              <label>Choose Icon</label>
+              <div class="icon-select" id="icon-select">
+                <% [
+                  ['ti-brand-twitter','Twitter'],['ti-brand-instagram','Instagram'],
+                  ['ti-brand-youtube','YouTube'],['ti-brand-github','GitHub'],
+                  ['ti-brand-tiktok','TikTok'],['ti-brand-linkedin','LinkedIn'],
+                  ['ti-globe','Website'],['ti-mail','Email'],
+                  ['ti-shopping-bag','Shop'],['ti-file-text','Blog'],
+                  ['ti-video','Video'],['ti-link','Link']
+                ].forEach(([ic, label]) => { %>
+                  <button type="button" class="icon-btn" data-icon="<%= ic %>" title="<%= label %>">
+                    <i class="ti <%= ic %>"></i>
+                  </button>
+                <% }); %>
+              </div>
+              <input type="hidden" name="icon" id="icon-val" value="ti-link" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Link Title</label>
+                <input type="text" name="title" placeholder="e.g. My Website" required />
+              </div>
+              <div class="form-group">
+                <label>URL</label>
+                <input type="text" name="url" placeholder="https://..." required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+              <i class="ti ti-plus"></i> Add Link
+            </button>
+          </form>
+        </div>
+      </details>
+    </div>
+
+    <!-- ── Socials section ── -->
+    <div class="section" id="socials">
+      <div class="section-header">
+        <div class="section-title"><i class="ti ti-social"></i> Social Profiles</div>
+      </div>
+      <form action="/dashboard/bio/socials" method="POST">
+        <div class="socials-grid">
+          <% const socials = page ? page.socials : [];
+             const getSocial = (p) => socials.find(s => s.platform === p);
+             [
+               ['twitter','ti-brand-twitter','twitter.com/'],
+               ['instagram','ti-brand-instagram','instagram.com/'],
+               ['youtube','ti-brand-youtube','youtube.com/@'],
+               ['github','ti-brand-github','github.com/'],
+               ['tiktok','ti-brand-tiktok','tiktok.com/@'],
+               ['linkedin','ti-brand-linkedin','linkedin.com/in/']
+             ].forEach(([platform, icon, prefix]) => { %>
+            <div class="form-group">
+              <label><i class="ti <%= icon %>" style="vertical-align:-2px;margin-right:4px;"></i> <%= platform %></label>
+              <div class="social-input-wrap">
+                <span class="social-prefix"><i class="ti <%= icon %>"></i></span>
+                <input type="text" name="<%= platform %>" placeholder="username"
+                  value="<%= getSocial(platform) ? getSocial(platform).url : '' %>" />
+              </div>
+            </div>
+          <% }); %>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px;">
+          <i class="ti ti-device-floppy"></i> Save Socials
+        </button>
+      </form>
+    </div>
+
+  </main>
+
+  <!-- ════ RIGHT: Preview ════ -->
+  <aside class="preview-panel">
+    <div class="preview-topbar">
+      <span class="preview-topbar-title"><i class="ti ti-eye" style="vertical-align:-2px;margin-right:6px;"></i>Live Preview</span>
+      <% if (page && page.username) { %>
+        <a href="/u/<%= page.username %>" target="_blank" class="preview-url">
+          creatoros.app/u/<%= page.username %> <i class="ti ti-external-link"></i>
+        </a>
+      <% } %>
+    </div>
+    <div class="phone-frame-wrap">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <iframe src="<%= page && page.username ? '/u/' + page.username : 'about:blank' %>"
+            style="width:100%;height:100%;border:none;" id="preview-iframe"></iframe>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  // Bio char count
+  const bioInput = document.getElementById('bio-input');
+  const bioCount = document.getElementById('bio-count');
+  const updateCount = () => { bioCount.textContent = `${bioInput.value.length} / 160`; };
+  bioInput.addEventListener('input', updateCount);
+  updateCount();
+
+  // Theme card selection
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      refreshPreview();
+    });
+  });
+
+  // Layout button selection
+  document.querySelectorAll('.layout-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Color swatches
+  const accentInput = document.getElementById('accent-input');
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      accentInput.value = sw.dataset.color;
+      document.documentElement.style.setProperty('--accent', sw.dataset.color);
+    });
+  });
+  accentInput.addEventListener('input', () => {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    document.documentElement.style.setProperty('--accent', accentInput.value);
+  });
+
+  // Icon select
+  document.querySelectorAll('.icon-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('icon-val').value = btn.dataset.icon;
+    });
+  });
+  // Default select first icon
+  document.querySelector('.icon-btn')?.classList.add('selected');
+
+  // Delete link
+  async function deleteLink(id) {
+    if (!confirm('Remove this link?')) return;
+    const res = await fetch(`/dashboard/bio/link/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      document.getElementById(`link-${id}`)?.remove();
+      refreshPreview();
+    }
+  }
+
+  // Toggle link
+  async function toggleLink(id, checkbox) {
+    await fetch(`/dashboard/bio/link/${id}/toggle`, { method: 'PATCH' });
+    refreshPreview();
+  }
+
+  // Live preview refresh
+  function refreshPreview() {
+    const iframe = document.getElementById('preview-iframe');
+    if (iframe && iframe.src !== 'about:blank') {
+      iframe.contentWindow?.location.reload();
+    }
+  }
+
+  // Auto-refresh preview after form save (if page has username)
+  document.getElementById('profile-form')?.addEventListener('submit', () => {
+    setTimeout(refreshPreview, 800);
+  });
+</script>
+</body>
+</html>

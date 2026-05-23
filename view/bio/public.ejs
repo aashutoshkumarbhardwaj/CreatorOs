@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= page.displayName || page.username %> — CreatorOs</title>
+  <meta name="description" content="<%= page.bio %>" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="<%= page.displayName || page.username %>" />
+  <meta property="og:description" content="<%= page.bio %>" />
+  <meta property="og:type" content="profile" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── THEME DEFINITIONS ────────────────────────────────────── */
+
+    /* midnight */
+    [data-theme="midnight"] {
+      --bg-from:    #0a0a0f;
+      --bg-to:      #0a0a0f;
+      --card-bg:    rgba(255,255,255,0.05);
+      --card-hover: rgba(255,255,255,0.09);
+      --card-border:rgba(255,255,255,0.10);
+      --text:       #f0f0f5;
+      --muted:      #8888a0;
+      --shadow:     rgba(0,0,0,0.5);
+      --fab-bg:     rgba(20,20,30,0.9);
+    }
+
+    /* aurora */
+    [data-theme="aurora"] {
+      --bg-from:    #0f0c29;
+      --bg-to:      #1a0e3f;
+      --card-bg:    rgba(255,255,255,0.06);
+      --card-hover: rgba(255,255,255,0.11);
+      --card-border:rgba(255,255,255,0.12);
+      --text:       #eee8ff;
+      --muted:      #9988bb;
+      --shadow:     rgba(0,0,0,0.6);
+      --fab-bg:     rgba(15,12,41,0.9);
+    }
+
+    /* paper */
+    [data-theme="paper"] {
+      --bg-from:    #fafaf7;
+      --bg-to:      #f2f2ec;
+      --card-bg:    rgba(0,0,0,0.04);
+      --card-hover: rgba(0,0,0,0.08);
+      --card-border:rgba(0,0,0,0.10);
+      --text:       #1a1a1a;
+      --muted:      #888880;
+      --shadow:     rgba(0,0,0,0.08);
+      --fab-bg:     rgba(250,250,247,0.9);
+    }
+
+    /* forest */
+    [data-theme="forest"] {
+      --bg-from:    #0a1a0f;
+      --bg-to:      #0d2218;
+      --card-bg:    rgba(74,222,128,0.06);
+      --card-hover: rgba(74,222,128,0.11);
+      --card-border:rgba(74,222,128,0.14);
+      --text:       #e0ffe8;
+      --muted:      #5a9970;
+      --shadow:     rgba(0,0,0,0.5);
+      --fab-bg:     rgba(10,26,15,0.9);
+    }
+
+    /* rose */
+    [data-theme="rose"] {
+      --bg-from:    #1a0810;
+      --bg-to:      #240d18;
+      --card-bg:    rgba(251,113,133,0.07);
+      --card-hover: rgba(251,113,133,0.13);
+      --card-border:rgba(251,113,133,0.15);
+      --text:       #ffe8ec;
+      --muted:      #a06070;
+      --shadow:     rgba(0,0,0,0.5);
+      --fab-bg:     rgba(26,8,16,0.9);
+    }
+
+    /* ─── BASE STYLES ──────────────────────────────────────────── */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(160deg, var(--bg-from) 0%, var(--bg-to) 100%);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+               env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
+
+    .page {
+      width: 100%; max-width: 520px;
+      padding: 48px 20px 100px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* ─── AVATAR ──────────────────────────────────────────────── */
+    .avatar-wrap {
+      position: relative; margin-bottom: 16px;
+    }
+    .avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent);
+      display: block;
+    }
+    .avatar-initials {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--card-bg);
+      border: 3px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 600; color: var(--accent);
+    }
+    .verified-badge {
+      position: absolute; bottom: 2px; right: 2px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg-from);
+    }
+    .verified-badge i { font-size: 11px; color: white; }
+
+    /* ─── NAME & BIO ──────────────────────────────────────────── */
+    .name {
+      font-size: 22px; font-weight: 600;
+      text-align: center; margin-bottom: 6px;
+    }
+    .handle {
+      font-size: 13px; color: var(--muted); margin-bottom: 10px;
+    }
+    .bio {
+      font-size: 14px; color: var(--muted);
+      text-align: center; line-height: 1.65;
+      max-width: 340px; margin-bottom: 24px;
+    }
+
+    /* ─── SOCIAL ICONS ────────────────────────────────────────── */
+    .socials {
+      display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap;
+      justify-content: center;
+    }
+    .social-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      color: var(--muted); text-decoration: none; font-size: 16px;
+      transition: all 0.2s;
+    }
+    .social-icon:hover {
+      background: var(--card-hover);
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* ─── LINKS ───────────────────────────────────────────────── */
+    .links-stack {
+      width: 100%; display: flex; flex-direction: column; gap: 10px;
+    }
+    .links-grid {
+      width: 100%; display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .link-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      text-decoration: none; color: var(--text);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative; overflow: hidden;
+    }
+    .link-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 0%, var(--card-hover) 100%);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .link-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 8px 32px var(--shadow);
+    }
+    .link-card:hover::before { opacity: 1; }
+    .link-card:active { transform: scale(0.98); }
+
+    /* Grid variant (compact) */
+    .links-grid .link-card {
+      flex-direction: column; padding: 18px 12px;
+      text-align: center; justify-content: center;
+    }
+    .links-grid .link-icon {
+      width: 40px; height: 40px; font-size: 20px;
+    }
+    .links-grid .link-arrow { display: none; }
+
+    .link-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: var(--accent); opacity: 0.12;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; position: relative; z-index: 1;
+    }
+    .link-icon i { position: absolute; color: var(--accent); opacity: 1; }
+    .link-icon-wrap { position: relative; }
+
+    .link-text { flex: 1; position: relative; z-index: 1; }
+    .link-title { font-size: 14px; font-weight: 500; }
+    .link-subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    .link-arrow {
+      color: var(--muted); font-size: 14px;
+      position: relative; z-index: 1;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .link-card:hover .link-arrow {
+      transform: translateX(3px);
+      color: var(--accent);
+    }
+
+    /* ─── BRANDED FOOTER ──────────────────────────────────────── */
+    .fab-footer {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--fab-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px; padding: 8px 16px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--muted);
+      text-decoration: none;
+      backdrop-filter: blur(16px);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .fab-footer:hover { color: var(--accent); border-color: var(--accent); }
+    .fab-footer i { font-size: 14px; }
+
+    /* ─── ACCENT VARIABLE ─────────────────────────────────────── */
+    :root { --accent: <%= page.accentColor %>; }
+
+    /* ─── ANIMATE IN ──────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate { animation: fadeUp 0.4s ease forwards; opacity: 0; }
+  </style>
+</head>
+<body data-theme="<%= page.theme %>">
+
+<div class="page">
+
+  <!-- Avatar -->
+  <div class="avatar-wrap animate" style="animation-delay:0.05s">
+    <% if (page.avatar) { %>
+      <img class="avatar" src="<%= page.avatar %>" alt="<%= page.displayName %>" />
+    <% } else { %>
+      <div class="avatar-initials">
+        <%= (page.displayName || page.username).charAt(0).toUpperCase() %>
+      </div>
+    <% } %>
+    <div class="verified-badge"><i class="ti ti-check"></i></div>
+  </div>
+
+  <!-- Name -->
+  <h1 class="name animate" style="animation-delay:0.1s">
+    <%= page.displayName || page.username %>
+  </h1>
+  <p class="handle animate" style="animation-delay:0.12s">@<%= page.username %></p>
+
+  <!-- Bio -->
+  <% if (page.bio) { %>
+    <p class="bio animate" style="animation-delay:0.15s"><%= page.bio %></p>
+  <% } %>
+
+  <!-- Socials -->
+  <% if (page.socials && page.socials.length > 0) { %>
+    <div class="socials animate" style="animation-delay:0.18s">
+      <% const socialIcons = {
+        twitter: 'ti-brand-twitter', instagram: 'ti-brand-instagram',
+        youtube: 'ti-brand-youtube', github: 'ti-brand-github',
+        tiktok: 'ti-brand-tiktok', linkedin: 'ti-brand-linkedin'
+      };
+      page.socials.forEach(s => { %>
+        <a href="<%= s.url.startsWith('http') ? s.url : 'https://' + s.url %>"
+          target="_blank" rel="noopener" class="social-icon"
+          title="<%= s.platform %>">
+          <i class="ti <%= socialIcons[s.platform] || 'ti-world' %>"></i>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <!-- Links -->
+  <div class="<%= page.layout === 'grid' ? 'links-grid' : 'links-stack' %>">
+    <% const activeLinks = page.links.filter(l => l.active);
+       activeLinks.forEach((link, i) => { %>
+      <a href="/u/<%= page.username %>/go/<%= link._id %>"
+        class="link-card animate"
+        style="animation-delay:<%= 0.2 + i * 0.06 %>s"
+        target="_blank" rel="noopener">
+
+        <div class="link-icon-wrap">
+          <div class="link-icon"></div>
+          <i class="ti <%= link.icon %>" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--accent);font-size:18px;"></i>
+        </div>
+
+        <% if (page.layout !== 'grid') { %>
+          <div class="link-text">
+            <div class="link-title"><%= link.title %></div>
+          </div>
+          <i class="ti ti-arrow-right link-arrow"></i>
+        <% } else { %>
+          <div class="link-title" style="font-size:12px;margin-top:6px;"><%= link.title %></div>
+        <% } %>
+      </a>
+    <% }); %>
+  </div>
+
+</div>
+
+<!-- Powered by footer -->
+<a href="/" class="fab-footer">
+  <i class="ti ti-circles-relation"></i>
+  CreatorOs
+</a>
+
+</body>
+</html>
