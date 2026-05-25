@@ -1,40 +1,34 @@
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose'); // 1. Mongoose import kiya
+const connectDB = require('./connect');
+console.log("DEBUG: Using MongoDB URI:", process.env.MONGODB_URI);
 const app = express();
 const path = require('path');
 const shortid = require('shortid');
 const services = require('./services.config');
 const bioLinkRoutes = require('./routes/bioLink'); 
-const port = 3000;
 const urlRoutes = require('./routes/url');
 
-// In-memory "database" for URL Shortener (Temporary)
-const urlDatabase = new Map();
+const port = 3000;
 
-// 2. MongoDB Connection Setup
-// Example: Replace <password> with your actual password
-const mongoURI = 'mongodb+srv://tanishkameena897_db_user:5Jd33COtEyILkBKm@cluster0.xxxxx.mongodb.net/creatoros?retryWrites=true&w=majority';
-
-mongoose.connect(mongoURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('✅ Connected to MongoDB Atlas'))
-.catch(err => console.error('❌ MongoDB Connection Error:', err));
-
+// MongoDB Connection Setup
+connectDB();
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'view'));
 
-// 3. Routes Order Matters!
-// Bio Links handle /u/:username and /dashboard/bio
-app.use(bioLinkRoutes); 
+// In-memory "database" for URL Shortener
+const urlDatabase = new Map();
 
-// URL Shortener specific routes
+// Routes
+app.use(bioLinkRoutes); 
 app.use('/url', urlRoutes);
 
+// Helper Functions
 function findServiceByKey(key) {
     return services.find((service) => service.key === key);
 }
@@ -42,12 +36,12 @@ function findServiceByKey(key) {
 function buildShortenerViewModel(req, shortId = null, error = null) {
     return {
         service: findServiceByKey('url-shortener'),
-        shortUrl: shortId ? `${req.protocol}://${req.get('host')}/s/${shortId}` : null, // Changed /u/ to /s/ to avoid clash
+        shortUrl: shortId ? `${req.protocol}://${req.get('host')}/s/${shortId}` : null,
         error,
     };
 }
 
-// Service hub landing page
+// Landing Page
 app.get('/', (req, res) => {
     res.render('services-hub', { services });
 });
@@ -98,7 +92,7 @@ app.post('/services/url-shortener/shorten', async (req, res) => {
     }
 });
 
-// ⚠️ IMPORTANT: Changed /u/:shortId to /s/:shortId to avoid clash with Bio Links (/u/:username)
+// URL Redirection
 app.get('/s/:shortId', async (req, res) => {
     const shortId = req.params.shortId;
     const entry = urlDatabase.get(shortId);
