@@ -91,7 +91,12 @@ const uploadDir = "/tmp";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) { cb(null, "/tmp"); },
-    filename: function (req, file, cb) { cb(null, Date.now() + '-' + file.originalname); }
+    filename: function (req, file, cb) { 
+        // 100% foolproof sanitization to prevent any path traversal cross-platform
+        let sanitizedFilename = path.basename(file.originalname);
+        sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
+        cb(null, Date.now() + '-' + sanitizedFilename); 
+    }
 });
 const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
