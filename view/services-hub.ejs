@@ -54,6 +54,8 @@ body::before {
   transform: translate(-50%,-50%);
   transition: width 0.2s, height 0.2s, background 0.2s;
   mix-blend-mode: normal;
+  opacity: 0;
+
 }
 #cursor-ring {
   position: fixed; width: 36px; height: 36px;
@@ -62,7 +64,9 @@ body::before {
   transform: translate(-50%,-50%);
   transition: width 0.4s cubic-bezier(0.23,1,0.32,1),
               height 0.4s cubic-bezier(0.23,1,0.32,1),
-              border-color 0.3s, top 0.08s, left 0.08s;
+              border-color 0.3s;
+  will-change: left, top;
+   opacity: 0;
 }
 body:hover #cursor { opacity: 1; }
 
@@ -185,7 +189,10 @@ nav.scrolled {
   background: #ffb84d;
   box-shadow: 4px 4px 0 #000;
 }
-
+.btn-primary:active { transform: translateY(1px); box-shadow: 2px 2px 0 #000; }
+.btn-ghost:active   { transform: translateY(1px); box-shadow: 2px 2px 0 #000; }
+.launch-btn:active  { transform: translateY(1px); box-shadow: 2px 2px 0 #000; }
+.nav-cta:active     { transform: translateY(1px); box-shadow: 2px 2px 0 #000; }
 /* ══════════════════════════════════
    HERO
 ══════════════════════════════════ */
@@ -444,7 +451,9 @@ h1 em {
   color: #ffd24a; font-size: 0.5rem;
 }
 @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
+.marquee-strip:hover .marquee-inner {
+  animation-play-state: paused;
+}
 /* ══════════════════════════════════
    SERVICES — ALTERNATING TIMELINE
 ══════════════════════════════════ */
@@ -767,6 +776,10 @@ footer span { color: var(--cyan); }
   .nav-links { display: none; }
   .service-item { transform: translateY(30px) !important; }
   .service-item.visible { transform: translateY(0) !important; }
+}
+@media (hover: none) {
+  #cursor, #cursor-ring { display: none; }
+  body { cursor: auto; }
 }
 </style>
 </head>
@@ -1232,9 +1245,19 @@ let mx=0,my=0,rx=0,ry=0;
 document.addEventListener('mousemove', e => {
   mx=e.clientX; my=e.clientY;
   cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  cursor.style.opacity='1';
+  ring.style.opacity='1';
+});
+document.addEventListener('mouseleave', () => {
+  cursor.style.opacity='0';
+  ring.style.opacity='0';
+});
+document.addEventListener('mouseenter', () => {
+  cursor.style.opacity='1';
+  ring.style.opacity='1';
 });
 function animateRing(){
-  rx+=(mx-rx)*0.1; ry+=(my-ry)*0.1;
+  rx+=(mx-rx)*0.18; ry+=(my-ry)*0.18;
   ring.style.left=rx+'px'; ring.style.top=ry+'px';
   requestAnimationFrame(animateRing);
 }
@@ -1362,6 +1385,20 @@ const statObserver = new IntersectionObserver(entries=>{
   });
 },{threshold:0.5});
 statNums.forEach(el=>statObserver.observe(el));
+
+const navLinks = document.querySelectorAll('.nav-links a');
+const sections = document.querySelectorAll('section[id]');
+const linkObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      navLinks.forEach(a => a.style.color = '');
+      const active = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+      if(active) active.style.color = '#2f7fe0';
+    }
+  });
+}, { threshold: 0.4 });
+sections.forEach(s => linkObserver.observe(s));
+
 </script>
 <!-- site-wide 3D background script -->
 <script src="/js/site-3d.js" defer></script>

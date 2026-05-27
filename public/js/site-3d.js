@@ -100,7 +100,7 @@
     let last = performance.now();
     function tick(now){
       const dt = Math.min(0.06, (now-last)/1000); last = now;
-      tx += (mx - tx) * 0.06; ty += (my - ty) * 0.06;
+      tx += (mx - tx) * 0.45; ty += (my - ty) * 0.45;
       camera.position.x = tx * 18; camera.position.y = ty * -10;
       camera.lookAt(0,0,0);
 
