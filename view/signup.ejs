@@ -4,1088 +4,214 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signup | CreatorOS</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --cream: #f0ebe0;
-            --cream-dark: #e5dece;
-            --black: #0e0e0e;
-            --teal: #00c9a7;
-            --yellow: #f5c842;
-            --blue: #4da6ff;
-            --red: #ff4c4c;
-            --border: 2.5px solid #0e0e0e;
-            --shadow: 5px 5px 0px #0e0e0e;
-            --shadow-lg: 8px 8px 0px #0e0e0e;
-            --shadow-xl: 12px 12px 0px #0e0e0e;
-            --radius: 16px;
+            --bg: #06101f;
+            --bg-2: #0b1730;
+            --panel: rgba(13, 24, 49, 0.72);
+            --border: rgba(148, 163, 184, 0.18);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --accent: #22d3ee;
+            --accent-2: #38bdf8;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: 'Syne', sans-serif;
-            background-color: var(--cream);
+            margin: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
+                radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
+                linear-gradient(180deg, var(--bg-2), var(--bg));
             overflow-x: hidden;
+        }
+
+        .auth-shell {
             position: relative;
-            padding: 40px 16px;
-            perspective: 1200px;
+            isolation: isolate;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 2rem 1rem;
         }
 
-        /* ── Grid background ── */
-        body::before {
+        .auth-shell::before,
+        .auth-shell::after {
             content: '';
             position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(14,14,14,0.06) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(14,14,14,0.06) 1px, transparent 1px);
-            background-size: 44px 44px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* ── Floating 3D Shapes ── */
-        .shape {
-            position: fixed;
-            pointer-events: none;
-            z-index: 1;
-            transform-style: preserve-3d;
-        }
-
-        .shape-cube {
-            width: 80px; height: 80px;
-            top: 10%; right: 8%;
-            animation: floatCube 7s ease-in-out infinite;
-        }
-        .shape-cube .face {
-            position: absolute;
-            width: 80px; height: 80px;
-            border: var(--border);
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Space Mono', monospace;
-            font-size: 10px; font-weight: 700;
-            color: var(--black);
-        }
-        .face-front  { background: var(--teal);   transform: translateZ(40px); }
-        .face-back   { background: var(--yellow);  transform: rotateY(180deg) translateZ(40px); }
-        .face-left   { background: var(--cream);   transform: rotateY(-90deg) translateZ(40px); }
-        .face-right  { background: var(--blue);    transform: rotateY(90deg) translateZ(40px); }
-        .face-top    { background: var(--cream-dark); transform: rotateX(90deg) translateZ(40px); }
-        .face-bottom { background: var(--cream-dark); transform: rotateX(-90deg) translateZ(40px); }
-
-        @keyframes floatCube {
-            0%,100% { transform: translateY(0) rotateX(20deg) rotateY(0deg) rotateZ(5deg); }
-            33%     { transform: translateY(-20px) rotateX(35deg) rotateY(120deg) rotateZ(10deg); }
-            66%     { transform: translateY(-8px) rotateX(15deg) rotateY(240deg) rotateZ(0deg); }
-        }
-
-        .shape-ring {
-            width: 120px; height: 120px;
-            bottom: 15%; left: 5%;
-            border: 8px solid var(--black);
-            border-radius: 50%;
-            background: transparent;
-            animation: floatRing 9s ease-in-out infinite;
-        }
-        .shape-ring::after {
-            content: '';
-            position: absolute;
-            inset: 10px;
-            border: 4px solid var(--teal);
-            border-radius: 50%;
-        }
-        @keyframes floatRing {
-            0%,100% { transform: translateY(0) rotateX(60deg) rotateZ(0deg); }
-            50%     { transform: translateY(-30px) rotateX(70deg) rotateZ(180deg); }
-        }
-
-        .shape-pill {
-            top: 70%; right: 5%;
-            width: 60px; height: 140px;
-            background: var(--yellow);
-            border: var(--border);
             border-radius: 999px;
-            box-shadow: var(--shadow);
-            animation: floatPill 6s ease-in-out infinite;
-        }
-        @keyframes floatPill {
-            0%,100% { transform: translateY(0) rotateZ(-10deg) rotateX(20deg); }
-            50%     { transform: translateY(-25px) rotateZ(10deg) rotateX(30deg); }
-        }
-
-        .shape-star {
-            top: 5%; left: 6%;
-            width: 70px; height: 70px;
-            animation: floatStar 8s ease-in-out infinite;
-        }
-        .shape-star svg { width: 100%; height: 100%; }
-        @keyframes floatStar {
-            0%,100% { transform: translateY(0) rotate(0deg); }
-            50%     { transform: translateY(-18px) rotate(180deg); }
-        }
-
-        .shape-blob {
-            bottom: 5%; right: 15%;
-            width: 90px; height: 90px;
-            background: var(--blue);
-            border: var(--border);
-            border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%;
-            box-shadow: var(--shadow);
-            animation: floatBlob 10s ease-in-out infinite;
-        }
-        @keyframes floatBlob {
-            0%,100% { transform: translateY(0) rotate(0deg) scale(1); border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%; }
-            33%     { transform: translateY(-15px) rotate(60deg) scale(1.1); border-radius: 40% 60% 30% 70% / 60% 40% 60% 40%; }
-            66%     { transform: translateY(-25px) rotate(120deg) scale(0.95); border-radius: 70% 30% 60% 40% / 40% 70% 30% 60%; }
-        }
-
-        /* ── NAVBAR ── */
-        .navbar {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            background: var(--cream);
-            border: var(--border);
-            border-radius: 999px;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: var(--shadow);
-            animation: navDrop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
-            white-space: nowrap;
-        }
-        @keyframes navDrop {
-            from { transform: translateX(-50%) translateY(-60px); opacity: 0; }
-            to   { transform: translateX(-50%) translateY(0); opacity: 1; }
-        }
-        .nav-brand {
-            display: flex; align-items: center; gap: 8px;
-            font-family: 'Syne', sans-serif;
-            font-weight: 800; font-size: 15px;
-            color: var(--black); text-decoration: none;
-        }
-        .nav-icon {
-            width: 28px; height: 28px;
-            background: var(--teal);
-            border: 2px solid var(--black);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 14px;
-        }
-        .nav-dot { font-family: 'Space Mono', monospace; font-size: 11px; color: #888; }
-
-        /* ── MAIN CARD ── */
-        .scene {
-            position: relative; z-index: 10;
-            perspective: 1000px;
-            margin-top: 60px;
-        }
-
-        .card-3d-wrapper {
-            transform-style: preserve-3d;
-            animation: cardEntrance 1s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
-            transition: transform 0.15s ease;
-        }
-        @keyframes cardEntrance {
-            from {
-                transform: translateY(80px) rotateX(25deg) rotateY(-8deg) scale(0.85);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
-                opacity: 1;
-            }
-        }
-
-        .card {
-            width: min(480px, 100%);
-            background: var(--cream);
-            border: var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-xl);
-            position: relative;
-            overflow: visible;
-        }
-
-        /* Card corner accents */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: -10px; right: -10px;
-            width: 100%; height: 100%;
-            background: var(--black);
-            border-radius: var(--radius);
+            filter: blur(22px);
+            opacity: 0.18;
+            pointer-events: none;
             z-index: -1;
-            transition: transform 0.3s ease;
-        }
-        .card:hover::before {
-            transform: translate(4px, 4px);
         }
 
-        /* Floating badge */
-        .badge {
-            position: absolute;
-            top: -18px; right: 24px;
-            background: var(--yellow);
-            border: var(--border);
-            border-radius: 999px;
-            padding: 5px 14px;
-            font-family: 'Space Mono', monospace;
-            font-size: 11px; font-weight: 700;
-            letter-spacing: 0.5px;
-            box-shadow: 3px 3px 0 var(--black);
-            animation: badgeBounce 2s ease-in-out 1.2s infinite;
-            z-index: 20;
-        }
-        @keyframes badgeBounce {
-            0%,100% { transform: translateY(0) rotate(-2deg); }
-            50%     { transform: translateY(-5px) rotate(2deg); }
+        .auth-shell::before {
+            top: 7rem;
+            left: -4rem;
+            width: 16rem;
+            height: 16rem;
+            background: #0ea5e9;
         }
 
-        .card-header {
-            padding: 36px 40px 28px;
-            border-bottom: var(--border);
-            background: var(--black);
-            border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
-            position: relative;
-            overflow: hidden;
-        }
-        .card-header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 8px,
-                rgba(255,255,255,0.03) 8px,
-                rgba(255,255,255,0.03) 16px
-            );
+        .auth-shell::after {
+            right: -5rem;
+            bottom: 7rem;
+            width: 18rem;
+            height: 18rem;
+            background: #22d3ee;
         }
 
-        .logo-row {
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 18px;
-            position: relative; z-index: 1;
-        }
-        .logo-icon {
-            width: 44px; height: 44px;
-            background: var(--teal);
-            border: 2.5px solid rgba(255,255,255,0.2);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px;
-            animation: iconSpin 6s ease-in-out infinite;
-            box-shadow: 0 0 20px rgba(0,201,167,0.4);
-        }
-        @keyframes iconSpin {
-            0%,100% { transform: rotateY(0deg); }
-            50%     { transform: rotateY(360deg); }
-        }
-        .logo-text {
-            font-family: 'DM Serif Display', serif;
-            font-size: 22px; color: #fff;
-            line-height: 1;
-        }
-        .logo-sub {
-            font-family: 'Space Mono', monospace;
-            font-size: 9px; color: rgba(255,255,255,0.4);
-            letter-spacing: 2px; text-transform: uppercase;
-            margin-top: 3px;
+        .auth-card {
+            width: min(460px, 100%);
+            padding: 2rem;
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            background: var(--panel);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
         }
 
-        .header-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 32px; color: #fff; line-height: 1.1;
-            position: relative; z-index: 1;
-        }
-        .header-title em { font-style: italic; color: var(--teal); }
-        .header-sub {
-            font-family: 'Space Mono', monospace;
-            font-size: 11px; color: rgba(255,255,255,0.45);
-            margin-top: 8px; line-height: 1.6;
-            position: relative; z-index: 1;
-        }
-
-        /* Animated underline bar */
-        .header-bar {
-            height: 3px;
-            background: linear-gradient(90deg, var(--teal), var(--yellow), var(--blue), var(--teal));
-            background-size: 200% 100%;
-            animation: barSlide 2s linear infinite;
-            border-radius: 999px;
-            margin-top: 18px;
-            position: relative; z-index: 1;
-        }
-        @keyframes barSlide {
-            0%   { background-position: 0% 0%; }
-            100% { background-position: 200% 0%; }
-        }
-
-        .card-body {
-            padding: 32px 40px 36px;
-        }
-
-        /* ── Error banner ── */
-        .error-banner {
-            background: #fff0f0;
-            border: 2px solid var(--red);
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-family: 'Space Mono', monospace;
-            font-size: 12px;
-            color: var(--red);
-            margin-bottom: 20px;
-            display: flex; align-items: center; gap: 8px;
-            box-shadow: 3px 3px 0 var(--red);
-        }
-        .error-banner::before { content: '✕'; font-weight: 700; }
-
-        /* ── Fields ── */
-        .fields { display: flex; flex-direction: column; gap: 16px; }
-
-        .field-group { display: flex; flex-direction: column; gap: 6px; }
-
-        .field-label {
-            font-family: 'Space Mono', monospace;
-            font-size: 11px; font-weight: 700;
-            letter-spacing: 1px; text-transform: uppercase;
-            color: var(--black);
-        }
-
-        .field-wrap {
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.2s ease;
-        }
-        .field-wrap:focus-within {
-            transform: translateY(-3px) rotateX(2deg);
-        }
-
-        .field-shadow {
-            position: absolute;
-            inset: 0;
-            background: var(--black);
-            border-radius: 10px;
-            transform: translate(4px, 4px);
-            transition: transform 0.2s ease;
-            z-index: 0;
-        }
-        .field-wrap:focus-within .field-shadow {
-            transform: translate(6px, 6px);
-        }
-
-        .field-icon {
-            position: absolute;
-            left: 14px; top: 50%;
-            transform: translateY(-50%);
-            font-size: 16px;
-            z-index: 2; pointer-events: none;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 13px 16px 13px 42px;
-            border: var(--border);
-            border-radius: 10px;
-            background: #fff;
-            color: var(--black);
-            font-family: 'Syne', sans-serif;
-            font-size: 14px; font-weight: 600;
-            outline: none;
-            position: relative; z-index: 1;
-            transition: box-shadow 0.2s, background 0.2s;
-        }
-        input::placeholder { color: #aaa; font-weight: 400; }
-        input:focus {
-            background: #fffdf5;
-            box-shadow: 0 0 0 3px rgba(0,201,167,0.2);
-        }
-
-        /* Password toggle */
-        .pw-toggle {
-            position: absolute; right: 14px; top: 50%;
-            transform: translateY(-50%);
-            z-index: 2; cursor: pointer;
-            font-size: 16px; color: #888;
-            background: none; border: none;
-            transition: color 0.2s;
-        }
-        .pw-toggle:hover { color: var(--black); }
-
-        /* Strength bar */
-        .strength-row {
-            display: flex; gap: 4px; margin-top: 6px;
-        }
-        .strength-seg {
-            flex: 1; height: 3px;
-            background: #ddd;
-            border-radius: 999px;
-            transition: background 0.4s ease;
-        }
-        .strength-label {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px; color: #888;
-            margin-top: 4px;
-        }
-
-        /* ── Submit button ── */
-        .btn-wrap {
-            position: relative;
-            transform-style: preserve-3d;
-            margin-top: 8px;
-        }
-        .btn-shadow {
-            position: absolute;
-            inset: 0;
-            background: var(--black);
-            border-radius: 12px;
-            transform: translate(5px, 5px);
-            transition: transform 0.15s ease;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: var(--border);
-            border-radius: 12px;
-            background: var(--teal);
-            color: var(--black);
-            font-family: 'Syne', sans-serif;
-            font-size: 16px; font-weight: 800;
-            letter-spacing: 0.3px;
-            cursor: pointer;
-            position: relative; z-index: 1;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: transform 0.15s ease, filter 0.15s;
-            overflow: hidden;
-        }
-        .btn::before {
-            content: '';
-            position: absolute; top: 0; left: -100%;
-            width: 60%; height: 100%;
-            background: rgba(255,255,255,0.2);
-            transform: skewX(-20deg);
-            transition: left 0.4s ease;
-        }
-        .btn:hover::before { left: 140%; }
-        .btn:hover { filter: brightness(1.05); }
-        .btn:hover ~ .btn-shadow { transform: translate(7px, 7px); }
-        .btn:active { transform: translate(3px, 3px) !important; }
-        .btn:active ~ .btn-shadow { transform: translate(2px, 2px); }
-
-        .btn-arrow {
-            display: inline-block;
-            transition: transform 0.3s ease;
-        }
-        .btn:hover .btn-arrow { transform: translateX(5px); }
-
-        .btn.loading {
-            background: var(--cream-dark);
-            cursor: wait;
-        }
-        .spinner {
-            width: 18px; height: 18px;
-            border: 3px solid rgba(0,0,0,0.15);
-            border-top-color: var(--black);
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            display: none;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Divider ── */
-        .divider {
-            display: flex; align-items: center; gap: 12px;
-            margin: 20px 0;
-        }
-        .divider::before, .divider::after {
-            content: ''; flex: 1;
-            height: 1.5px; background: var(--black); opacity: 0.15;
-        }
-        .divider span {
-            font-family: 'Space Mono', monospace;
-            font-size: 11px; color: #999;
-        }
-
-        /* ── Benefit chips ── */
-        .chips {
-            display: flex; flex-wrap: wrap; gap: 8px;
-            margin-bottom: 20px;
-        }
-        .chip {
-            display: flex; align-items: center; gap: 6px;
-            padding: 6px 12px;
-            border: 1.5px solid var(--black);
-            border-radius: 999px;
-            font-family: 'Space Mono', monospace;
-            font-size: 11px; font-weight: 700;
-            background: var(--cream);
-            box-shadow: 2px 2px 0 var(--black);
-            animation: chipPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-        }
-        .chip:nth-child(1) { animation-delay: 0.7s; background: #e8fff9; }
-        .chip:nth-child(2) { animation-delay: 0.85s; background: #fffde8; }
-        .chip:nth-child(3) { animation-delay: 1s; background: #e8f4ff; }
-        @keyframes chipPop {
-            from { transform: scale(0) rotate(-5deg); opacity: 0; }
-            to   { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        /* ── Footer link ── */
-        .switch-link {
-            text-align: center;
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1.5px dashed rgba(14,14,14,0.15);
-            font-size: 13px; color: #666;
-        }
-        .switch-link a {
-            color: var(--black);
-            font-weight: 800;
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            color: var(--text);
             text-decoration: none;
-            border-bottom: 2px solid var(--teal);
-            padding-bottom: 1px;
-            transition: background 0.2s;
-        }
-        .switch-link a:hover { background: rgba(0,201,167,0.12); }
-
-        /* ── Counter ticker (decorative) ── */
-        .ticker {
-            position: absolute;
-            bottom: -18px; left: 24px;
-            background: var(--black);
-            color: #fff;
-            border: var(--border);
-            border-color: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 8px 14px;
-            display: flex; align-items: center; gap: 10px;
-            font-family: 'Space Mono', monospace;
-            font-size: 11px;
-            box-shadow: 3px 3px 0 var(--teal);
-            animation: tickerSlide 0.6s cubic-bezier(0.34,1.56,0.64,1) 1.4s both;
-            z-index: 20;
-        }
-        @keyframes tickerSlide {
-            from { transform: translateY(20px); opacity: 0; }
-            to   { transform: translateY(0); opacity: 1; }
-        }
-        .ticker-dot {
-            width: 8px; height: 8px;
-            background: var(--teal);
-            border-radius: 50%;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%,100% { transform: scale(1); opacity: 1; }
-            50%     { transform: scale(1.4); opacity: 0.6; }
-        }
-        .ticker-count { color: var(--teal); font-weight: 700; }
-
-        /* ── Shake ── */
-        @keyframes shake {
-            0%,100% { transform: translateX(0); }
-            20%     { transform: translateX(-6px); }
-            40%     { transform: translateX(6px); }
-            60%     { transform: translateX(-4px); }
-            80%     { transform: translateX(4px); }
+            font-weight: 800;
+            letter-spacing: 0;
         }
 
-        /* ── Custom Cursor ── */
-        * { cursor: none !important; }
+        .brand-mark {
+            width: 2.4rem;
+            height: 2.4rem;
+            border-radius: 0.9rem;
+            display: grid;
+            place-items: center;
+            color: #082f49;
+            background: linear-gradient(135deg, #67e8f9, var(--accent-2));
+            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.28);
+        }
 
-        #cursor-outer {
-            position: fixed;
-            width: 36px; height: 36px;
-            border: 2.5px solid var(--black);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: width 0.25s ease, height 0.25s ease,
-                        border-color 0.25s ease, background 0.25s ease,
-                        border-radius 0.25s ease;
-            mix-blend-mode: multiply;
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 2.6rem);
+            line-height: 1.1;
+            letter-spacing: 0;
         }
-        #cursor-dot {
-            position: fixed;
-            width: 8px; height: 8px;
-            background: var(--teal);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10000;
-            transform: translate(-50%, -50%);
-            transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+
+        .subtitle {
+            margin: 0.8rem 0 1.8rem;
+            color: var(--muted);
+            line-height: 1.7;
         }
-        body.cursor-link #cursor-outer {
-            width: 56px; height: 56px;
-            background: rgba(0,201,167,0.12);
-            border-color: var(--teal);
-            border-radius: 12px;
+
+        form {
+            display: grid;
+            gap: 1rem;
         }
-        body.cursor-link #cursor-dot { width: 4px; height: 4px; background: var(--teal); }
-        body.cursor-input #cursor-outer {
-            width: 4px; height: 28px;
-            border-radius: 2px;
-            border-color: var(--teal);
-            background: var(--teal);
-        }
-        body.cursor-input #cursor-dot { opacity: 0; }
-        body.cursor-btn #cursor-outer {
-            width: 70px; height: 70px;
-            background: rgba(245,200,66,0.15);
-            border-color: var(--yellow);
+
+        input {
+            width: 100%;
+            border: 1px solid rgba(148, 163, 184, 0.18);
             border-radius: 999px;
-        }
-        body.cursor-btn #cursor-dot { background: var(--yellow); width: 6px; height: 6px; }
-
-        /* ── Cursor trail ── */
-        .trail-dot {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9998;
-            transform: translate(-50%, -50%);
-            animation: trailFade 0.55s ease forwards;
-        }
-        @keyframes trailFade {
-            0%   { opacity: 0.65; transform: translate(-50%,-50%) scale(1); }
-            100% { opacity: 0;    transform: translate(-50%,-50%) scale(0.1); }
+            padding: 0.95rem 1.1rem;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.06);
+            font: inherit;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
 
-        /* ── Spotlight ── */
-        #spotlight {
-            position: fixed;
-            width: 420px; height: 420px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,201,167,0.07) 0%, transparent 68%);
-            pointer-events: none;
-            z-index: 2;
-            transform: translate(-50%, -50%);
+        input::placeholder {
+            color: rgba(203, 213, 225, 0.74);
         }
 
-        /* ── Click ripple ── */
-        .click-ripple {
-            position: fixed;
-            width: 0; height: 0;
-            border-radius: 50%;
-            border: 2px solid var(--teal);
-            pointer-events: none;
-            z-index: 9997;
-            transform: translate(-50%, -50%);
-            animation: clickRipple 0.55s ease-out forwards;
-        }
-        @keyframes clickRipple {
-            0%   { width: 0; height: 0; opacity: 1; }
-            100% { width: 90px; height: 90px; opacity: 0; }
+        input:focus {
+            border-color: rgba(34, 211, 238, 0.8);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        /* ── Cursor label ── */
-        #cursor-label {
-            position: fixed;
-            pointer-events: none;
-            z-index: 10001;
-            font-family: 'Space Mono', monospace;
-            font-size: 10px; font-weight: 700;
-            color: var(--black);
-            background: var(--yellow);
-            border: 1.5px solid var(--black);
+        button {
+            border: 0;
             border-radius: 999px;
-            padding: 3px 8px;
-            white-space: nowrap;
-            opacity: 0;
-            transform: translate(18px, -28px);
-            transition: opacity 0.2s;
+            padding: 0.95rem 1.2rem;
+            color: #042f3e;
+            background: linear-gradient(135deg, #67e8f9, var(--accent-2));
+            box-shadow: 0 16px 32px rgba(34, 211, 238, 0.22);
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
         }
 
-        /* ── Scroll-safe on small screens ── */
-        @media (max-width: 520px) {
-            .card-header { padding: 28px 24px 22px; }
-            .card-body   { padding: 24px 24px 28px; }
-            .header-title { font-size: 26px; }
-            .shape-pill, .shape-blob { display: none; }
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.03);
+        }
+
+        .switch-link {
+            margin: 1.4rem 0 0;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .switch-link a {
+            color: #67e8f9;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .error-banner {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            text-align: center;
         }
     </style>
 </head>
 <body>
+    <main class="auth-shell">
+        <section class="auth-card">
+            <a class="brand" href="/">
+                <span class="brand-mark">C</span>
+                <span>CreatorOS</span>
+            </a>
 
-    <!-- Custom cursor elements -->
-    <div id="cursor-outer"></div>
-    <div id="cursor-dot"></div>
-    <div id="cursor-label"></div>
-    <div id="spotlight"></div>
+            <h1>Create account</h1>
+            <p class="subtitle">Join CreatorOS and start using the creator tools built for fast, clean workflows.</p>
 
-    <!-- Floating 3D shapes -->
-    <div class="shape shape-cube">
-        <div class="face face-front">T</div>
-        <div class="face face-back">OS</div>
-        <div class="face face-left"></div>
-        <div class="face face-right"></div>
-        <div class="face face-top"></div>
-        <div class="face face-bottom"></div>
-    </div>
-    <div class="shape shape-ring"></div>
-    <div class="shape shape-pill"></div>
-    <div class="shape shape-star">
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 5 L61 35 L95 35 L68 57 L79 91 L50 70 L21 91 L32 57 L5 35 L39 35 Z" fill="#f5c842" stroke="#0e0e0e" stroke-width="4"/>
-        </svg>
-    </div>
-    <div class="shape shape-blob"></div>
-
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="/" class="nav-brand">
-            <div class="nav-icon" style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;">C</div>
-            <div>
-                <div>CreatorOS</div>
-                <div class="nav-dot">UNIFIED DASHBOARD</div>
-            </div>
-        </a>
-        <span class="nav-dot">—</span>
-        <span style="font-family:'Space Mono',monospace;font-size:11px;color:#888;">Already a member?</span>
-        <a href="/login" style="background:var(--teal);border:2px solid var(--black);border-radius:999px;padding:6px 16px;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--black);text-decoration:none;box-shadow:2px 2px 0 var(--black);transition:transform 0.15s;" onmouseover="this.style.transform='translate(-1px,-1px)'" onmouseout="this.style.transform=''">Login →</a>
-    </nav>
-
-    <!-- Main card -->
-    <div class="scene">
-        <div class="card-3d-wrapper" id="cardWrapper">
-            <div class="card" id="card">
-                <div class="badge">✦ FREE FOREVER</div>
-
-                <div class="card-header">
-                    <div class="logo-row">
-                        <div class="logo-icon">C</div>
-                        <div>
-                            <div class="logo-text">CreatorOS</div>
-                            <div class="logo-sub">Unified Dashboard</div>
-                        </div>
-                    </div>
-                    <div class="header-title">Create your<br><em>account.</em></div>
-                    <div class="header-sub">Deploy ultra-fast short links. Join 12,000+ creators.</div>
-                    <div class="header-bar"></div>
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="error-banner">
+                    <%= error %>
                 </div>
+            <% } %>
 
-                <div class="card-body">
+            <form action="/signup" method="POST">
+                <input type="text" name="name" placeholder="Name" required>
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Signup</button>
+            </form>
 
-                    <!-- Benefit chips -->
-                    <div class="chips">
-                        <div class="chip">✦ Deep Linking</div>
-                        <div class="chip">⚡ Analytics</div>
-                        <div class="chip">🔒 Secure</div>
-                    </div>
-
-                    <!-- Error banner (EJS template syntax preserved) -->
-                    <!-- <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="error-banner"><%= error %></div>
-                    <% } %> -->
-
-                    <form action="/signup" method="POST" id="signup-form">
-                        <div class="fields">
-
-                            <div class="field-group">
-                                <label class="field-label" for="f1">Full Name</label>
-                                <div class="field-wrap">
-                                    <span class="field-icon">👤</span>
-                                    <input type="text" name="name" id="f1" placeholder="e.g. Rahul Sharma" required autocomplete="name" />
-                                    <div class="field-shadow"></div>
-                                </div>
-                            </div>
-
-                            <div class="field-group">
-                                <label class="field-label" for="f2">Email Address</label>
-                                <div class="field-wrap">
-                                    <span class="field-icon">✉️</span>
-                                    <input type="email" name="email" id="f2" placeholder="you@example.com" required autocomplete="email" />
-                                    <div class="field-shadow"></div>
-                                </div>
-                            </div>
-
-                            <div class="field-group">
-                                <label class="field-label" for="f3">Password</label>
-                                <div class="field-wrap">
-                                    <span class="field-icon">🔑</span>
-                                    <input type="password" name="password" id="f3" placeholder="Min. 8 characters" required autocomplete="new-password" />
-                                    <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password">👁</button>
-                                    <div class="field-shadow"></div>
-                                </div>
-                                <div class="strength-row" id="strengthRow">
-                                    <div class="strength-seg" id="s1"></div>
-                                    <div class="strength-seg" id="s2"></div>
-                                    <div class="strength-seg" id="s3"></div>
-                                    <div class="strength-seg" id="s4"></div>
-                                </div>
-                                <div class="strength-label" id="strengthLabel"></div>
-                            </div>
-
-                            <div class="btn-wrap">
-                                <button type="submit" class="btn" id="sbtn">
-                                    <span class="spinner" id="spinner"></span>
-                                    <span id="btnText">Get Started Free</span>
-                                    <span class="btn-arrow" id="btnArrow">→</span>
-                                </button>
-                                <div class="btn-shadow"></div>
-                            </div>
-
-                        </div>
-                    </form>
-
-                    <p class="switch-link">Already have an account? <a href="/login">Sign in here</a></p>
-                </div>
-
-                <!-- Live users ticker -->
-                <div class="ticker">
-                    <div class="ticker-dot"></div>
-                    <span><span class="ticker-count" id="liveCount">847</span> creators online</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    (function () {
-
-        // ═══════════════════════════════════════════════════
-        // 1. CUSTOM CURSOR SYSTEM
-        // ═══════════════════════════════════════════════════
-        const cursorOuter = document.getElementById('cursor-outer');
-        const cursorDot   = document.getElementById('cursor-dot');
-        const cursorLabel = document.getElementById('cursor-label');
-        const spotlight   = document.getElementById('spotlight');
-
-        let mouseX = -200, mouseY = -200;
-        let outerX = -200, outerY = -200;
-
-        // Dot follows cursor instantly
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            cursorDot.style.left = mouseX + 'px';
-            cursorDot.style.top  = mouseY + 'px';
-            cursorLabel.style.left = mouseX + 'px';
-            cursorLabel.style.top  = mouseY + 'px';
-            spotlight.style.left = mouseX + 'px';
-            spotlight.style.top  = mouseY + 'px';
-            spawnTrail(mouseX, mouseY);
-        });
-
-        // Outer ring follows with lag (lerp)
-        (function lerpCursor() {
-            outerX += (mouseX - outerX) * 0.12;
-            outerY += (mouseY - outerY) * 0.12;
-            cursorOuter.style.left = outerX + 'px';
-            cursorOuter.style.top  = outerY + 'px';
-            requestAnimationFrame(lerpCursor);
-        })();
-
-        // ── Cursor state: links / buttons ──────────────────
-        document.querySelectorAll('a, .chip, .badge, .nav-brand').forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                document.body.classList.add('cursor-link');
-                cursorLabel.textContent = el.dataset.cursor || 'CLICK';
-                cursorLabel.style.opacity = '1';
-            });
-            el.addEventListener('mouseleave', () => {
-                document.body.classList.remove('cursor-link');
-                cursorLabel.style.opacity = '0';
-            });
-        });
-
-        document.querySelectorAll('input').forEach(el => {
-            el.addEventListener('mouseenter', () => document.body.classList.add('cursor-input'));
-            el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-input'));
-        });
-
-        const submitBtn = document.getElementById('sbtn');
-        submitBtn.addEventListener('mouseenter', () => {
-            document.body.classList.add('cursor-btn');
-            cursorLabel.textContent = 'LET\'S GO →';
-            cursorLabel.style.opacity = '1';
-        });
-        submitBtn.addEventListener('mouseleave', () => {
-            document.body.classList.remove('cursor-btn');
-            cursorLabel.style.opacity = '0';
-        });
-
-        // ── Click ripple ────────────────────────────────────
-        document.addEventListener('click', (e) => {
-            const ripple = document.createElement('div');
-            ripple.className = 'click-ripple';
-            ripple.style.left = e.clientX + 'px';
-            ripple.style.top  = e.clientY + 'px';
-            document.body.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
-
-            // Cursor dot burst
-            cursorDot.style.transform = 'translate(-50%,-50%) scale(2.5)';
-            cursorDot.style.opacity = '0.4';
-            setTimeout(() => {
-                cursorDot.style.transform = 'translate(-50%,-50%) scale(1)';
-                cursorDot.style.opacity = '1';
-            }, 200);
-        });
-
-        // ── Trail particles ─────────────────────────────────
-        const trailColors = ['#00c9a7', '#f5c842', '#4da6ff', '#ff4c4c'];
-        let trailCount = 0;
-        function spawnTrail(x, y) {
-            if (trailCount % 3 !== 0) { trailCount++; return; } // every 3rd move
-            trailCount++;
-            const dot = document.createElement('div');
-            dot.className = 'trail-dot';
-            const size = Math.random() * 5 + 3;
-            dot.style.cssText = `
-                left:${x}px; top:${y}px;
-                width:${size}px; height:${size}px;
-                background:${trailColors[Math.floor(Math.random()*trailColors.length)]};
-            `;
-            document.body.appendChild(dot);
-            setTimeout(() => dot.remove(), 600);
-        }
-
-        // ═══════════════════════════════════════════════════
-        // 2. MAGNETIC BUTTON EFFECT
-        // ═══════════════════════════════════════════════════
-        submitBtn.addEventListener('mousemove', function(e) {
-            const r = this.getBoundingClientRect();
-            const dx = e.clientX - (r.left + r.width / 2);
-            const dy = e.clientY - (r.top + r.height / 2);
-            this.style.transform = `translate(${dx * 0.3}px, ${dy * 0.3}px)`;
-        });
-        submitBtn.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-        });
-
-        // ── Magnetic labels ──────────────────────────────────
-        document.querySelectorAll('.field-label').forEach(label => {
-            const wrap = label.closest('.field-group');
-            wrap.addEventListener('mouseenter', () => {
-                label.style.transform = 'translateX(4px)';
-                label.style.color = 'var(--teal)';
-            });
-            wrap.addEventListener('mouseleave', () => {
-                label.style.transform = '';
-                label.style.color = '';
-            });
-        });
-
-        // ── Chip hover tilt ──────────────────────────────────
-        document.querySelectorAll('.chip').forEach(chip => {
-            chip.addEventListener('mousemove', (e) => {
-                const r = chip.getBoundingClientRect();
-                const dx = (e.clientX - r.left - r.width/2) / (r.width/2);
-                const dy = (e.clientY - r.top - r.height/2) / (r.height/2);
-                chip.style.transform = `rotateX(${-dy*12}deg) rotateY(${dx*12}deg) scale(1.08) translateY(-3px)`;
-                chip.style.boxShadow = `${-dx*5+2}px ${-dy*5+2}px 0 var(--black)`;
-            });
-            chip.addEventListener('mouseleave', () => {
-                chip.style.transform = '';
-                chip.style.boxShadow = '';
-            });
-        });
-
-        // ═══════════════════════════════════════════════════
-        // 3. 3D CARD TILT
-        // ═══════════════════════════════════════════════════
-        const wrapper = document.getElementById('cardWrapper');
-        document.addEventListener('mousemove', (e) => {
-            const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 2;
-            const rx = ((e.clientY - cy) / cy) * -6;
-            const ry = ((e.clientX - cx) / cx) * 6;
-            wrapper.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-        });
-        document.addEventListener('mouseleave', () => {
-            wrapper.style.transform = '';
-        });
-
-        // ═══════════════════════════════════════════════════
-        // 4. PASSWORD TOGGLE + STRENGTH
-        // ═══════════════════════════════════════════════════
-        const pwInput = document.getElementById('f3');
-        document.getElementById('pwToggle').addEventListener('click', function () {
-            const isText = pwInput.type === 'text';
-            pwInput.type = isText ? 'password' : 'text';
-            this.textContent = isText ? '👁' : '🙈';
-        });
-
-        const segs   = ['s1','s2','s3','s4'].map(id => document.getElementById(id));
-        const strLbl = document.getElementById('strengthLabel');
-        const colors = ['#ff4c4c', '#f5c842', '#4da6ff', '#00c9a7'];
-        const labels = ['Weak', 'Fair', 'Good', 'Strong 💪'];
-
-        pwInput.addEventListener('input', function () {
-            const v = this.value;
-            let score = 0;
-            if (v.length >= 8)       score++;
-            if (/[A-Z]/.test(v))     score++;
-            if (/[0-9]/.test(v))     score++;
-            if (/[^A-Za-z0-9]/.test(v)) score++;
-            segs.forEach((s, i) => { s.style.background = i < score ? colors[score-1] : '#ddd'; });
-            strLbl.textContent = v.length ? (labels[score-1] || '') : '';
-            strLbl.style.color = v.length ? colors[score-1] : '#888';
-        });
-
-        // ═══════════════════════════════════════════════════
-        // 5. FORM SUBMIT
-        // ═══════════════════════════════════════════════════
-        const form    = document.getElementById('signup-form');
-        const btn     = document.getElementById('sbtn');
-        const spinner = document.getElementById('spinner');
-        const btnText = document.getElementById('btnText');
-        const btnArrow= document.getElementById('btnArrow');
-
-        form.addEventListener('submit', function () {
-            if (btn.classList.contains('loading')) return;
-            btn.classList.add('loading');
-            spinner.style.display = 'block';
-            btnText.textContent = 'Creating Account...';
-            btnArrow.style.display = 'none';
-        });
-
-        // ── Shake on invalid ────────────────────────────────
-        document.querySelectorAll('input').forEach(inp => {
-            inp.addEventListener('invalid', e => {
-                e.preventDefault();
-                const wrap = inp.closest('.field-wrap');
-                wrap.style.animation = 'none';
-                void wrap.offsetWidth;
-                wrap.style.animation = 'shake 0.4s ease';
-                inp.style.borderColor = '#ff4c4c';
-                inp.style.boxShadow = '0 0 0 3px rgba(255,76,76,0.15)';
-                setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 1200);
-            });
-        });
-
-        // ═══════════════════════════════════════════════════
-        // 6. LIVE TICKER + ENTRANCE
-        // ═══════════════════════════════════════════════════
-        const countEl = document.getElementById('liveCount');
-        let base = 847;
-        setInterval(() => {
-            base += Math.floor(Math.random() * 3) - 1;
-            countEl.textContent = base;
-        }, 2800);
-
-        document.querySelectorAll('.field-group, .chips, .btn-wrap').forEach((el, i) => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(16px)';
-            el.style.transition = `opacity 0.5s ${0.6 + i*0.1}s, transform 0.5s ${0.6 + i*0.1}s`;
-            setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 50);
-        });
-
-    })();
-    </script>
+            <p class="switch-link">
+                Already have an account?
+                <a href="/login">Login</a>
+            </p>
+        </section>
+    </main>
 </body>
 </html>
