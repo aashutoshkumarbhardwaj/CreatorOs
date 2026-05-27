@@ -1,6 +1,6 @@
-# CreatorOS Design System (AI Agent & Contributor Guide)
+# CreatorOS Design System
 
-> **CRITICAL INSTRUCTION FOR AI AGENTS & DEVELOPERS:**
+> **CRITICAL INSTRUCTION**
 > When asked to "design", "build", or "redesign" ANY page or component for CreatorOS, you **MUST** strictly adhere to the rules, variables, and structural paradigms in this document. Do not use generic Tailwind components, default Bootstrap, or standard modern web styling (like soft blurred shadows). 
 > **You are building a highly tactile, bold, high-contrast, physical-feeling interface.**
 
