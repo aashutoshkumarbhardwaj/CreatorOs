@@ -299,8 +299,10 @@
             <div class="divider">or</div>
 
             <form action="/login" method="POST" id="email-login-form">
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Password" required>
+                <label for="login-email" class="sr-only">Email</label>
+                <input id="login-email" type="email" name="email" placeholder="Email" required>
+                <label for="login-password" class="sr-only">Password</label>
+                <input id="login-password" type="password" name="password" placeholder="Password" required>
                 <button type="submit" data-loading-text="Logging in...">Login</button>
             </form>
 

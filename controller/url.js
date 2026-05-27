@@ -1,9 +1,11 @@
 const shortid = require('shortid');
 const Url = require('../model/url');
+const { isValidUrl } = require('../utils/validators');
+
 async function handleGenerateShortUrl(req, res) {
     const body= req.body;
-    if(!body.redirectUrl){
-        return res.status(400).json({error: "redirectUrl is required"});
+    if(!body.redirectUrl || !isValidUrl(body.redirectUrl)){
+        return res.status(400).json({error: "A valid HTTP or HTTPS redirectUrl is required"});
     }
     const ShortId= shortid();
     
