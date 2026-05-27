@@ -32,7 +32,7 @@ module.exports = [
         name: '🤖 DM Automation',
         description: 'Automate replies and deliver lead magnets via keyword triggers.',
         route: '/services/dm-automation',
-        status: 'coming_soon',
+        status: 'available',
     },
     {
         key: 'creator-crm',

@@ -180,40 +180,54 @@ app.get('/services', (req, res) => {
 });
 
 // Protected service pages
-app.get('/services/:serviceKey', protect, (req, res) => {
-    const service = findServiceByKey(req.params.serviceKey);
+app.get('/services/:serviceKey', protect, async (req, res, next) => {
+    try {
+        const service = findServiceByKey(req.params.serviceKey);
 
-    if (!service) {
-        return res.status(404).render('coming-soon', {
-            service: {
-                name: 'Unknown service',
-                description: 'This service does not exist in the current module registry.',
-                status: 'coming_soon',
-            },
-        });
-    }
+        if (!service) {
+            return res.status(404).render('coming-soon', {
+                service: {
+                    name: 'Unknown service',
+                    description: 'This service does not exist in the current module registry.',
+                    status: 'coming_soon',
+                },
+            });
+        }
 
-    if (service.status !== 'available') {
+        if (service.status !== 'available') {
+            return res.render('coming-soon', { service });
+        }
+
+        if (service.key === 'url-shortener') {
+            return res.render('home', buildShortenerViewModel(req));
+        }
+
+        if (service.key === 'suggestion-tool') {
+            return res.redirect('/suggestions');
+        }
+
+        if (service.key === 'creator-crm') {
+            return res.redirect('/services/creator-crm');
+        }
+
+        if (service.key === 'file-upload') {
+            return res.render('file-upload');
+        }
+
+        if (service.key === 'dm-automation') {
+            const userDoc = isGuestContributor(req.user)
+                ? null
+                : await User.findById(req.user.id).select('name email').lean();
+            return res.render('dm-automation', {
+                user: buildAccountViewModel(userDoc, req.user),
+                services
+            });
+        }
+
         return res.render('coming-soon', { service });
+    } catch (err) {
+        next(err);
     }
-
-    if (service.key === 'url-shortener') {
-        return res.render('home', buildShortenerViewModel(req));
-    }
-
-    if (service.key === 'suggestion-tool') {
-        return res.redirect('/suggestions');
-    }
-
-    if (service.key === 'creator-crm') {
-        return res.redirect('/services/creator-crm');
-    }
-
-    if (service.key === 'file-upload') {
-        return res.render('file-upload');
-    }
-
-    return res.render('coming-soon', { service });
 });
 
 const { isValidUrl } = require('./utils/validators');

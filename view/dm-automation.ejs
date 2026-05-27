@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DM Automation | CreatorOS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06101f;
+      --bg-2: #0b1730;
+      --surface: rgba(13, 24, 49, 0.72);
+      --surface-strong: rgba(8, 19, 39, 0.92);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --muted-2: #94a3b8;
+      --accent: #22d3ee;
+      --accent-2: #38bdf8;
+      --purple: #22d3ee;
+      --purple-2: #38bdf8;
+      --purple-3: #67e8f9;
+      --green: #22c55e;
+      --danger: #f87171;
+      --shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
+        radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
+        linear-gradient(180deg, var(--bg-2), var(--bg));
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ── */
+    .dashboard-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      transition: grid-template-columns 0.28s ease;
+    }
+
+    .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+      padding: 1.65rem 0.9rem;
+      border-right: 1px solid var(--border);
+      background: rgba(6, 16, 31, 0.82);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+      transition: max-height 0.28s ease, padding 0.28s ease;
+      animation: slideIn 0.65s ease both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 0.55rem 1.2rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      display: grid;
+      place-items: center;
+      border-radius: 0.8rem;
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--purple-2), var(--purple));
+      box-shadow: 0 12px 30px rgba(34, 211, 238, 0.24);
+      flex: 0 0 auto;
+    }
+
+    .sidebar-section { display: grid; gap: 0.45rem; }
+
+    .sidebar-label {
+      margin: 0 0.55rem 0.25rem;
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-link, .service-link {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-height: 3.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 0.65rem;
+      color: var(--muted);
+      font-weight: 600;
+      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .nav-link:hover, .service-link:hover {
+      transform: translateX(4px);
+      color: #67e8f9;
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .nav-link.active {
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--purple-2), var(--purple));
+      box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+    }
+
+    .service-link.available { color: #67e8f9; }
+    .service-link.active {
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--purple-2), var(--purple));
+      box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+    }
+
+    .nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+    .service-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .sidebar-footer { margin-top: auto; display: grid; gap: 0.65rem; }
+
+    .dashboard-layout.sidebar-collapsed .brand { justify-content: center; padding-inline: 0; }
+    .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark),
+    .dashboard-layout.sidebar-collapsed .sidebar-label,
+    .dashboard-layout.sidebar-collapsed .service-name { display: none; }
+    .dashboard-layout.sidebar-collapsed .nav-link,
+    .dashboard-layout.sidebar-collapsed .service-link {
+      justify-content: center; gap: 0; padding-inline: 0.8rem; font-size: 0;
+    }
+
+    /* ── Main ── */
+    .main { min-width: 0; animation: fadeIn 0.65s ease 0.1s both; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 82px;
+      padding: 1rem 2.4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 16, 31, 0.76);
+      backdrop-filter: blur(18px);
+    }
+
+    .menu-btn, .icon-btn {
+      width: 2.55rem;
+      height: 2.55rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .menu-btn:hover, .icon-btn:hover {
+      transform: translateY(-2px);
+      color: #67e8f9;
+      border-color: rgba(103, 232, 249, 0.34);
+      background: rgba(34, 211, 238, 0.1);
+    }
+
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .profile-chip:hover { transform: translateY(-2px); background: rgba(34, 211, 238, 0.1); }
+
+    .avatar {
+      width: 2.4rem;
+      height: 2.4rem;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #042f3e;
+      background: linear-gradient(135deg, #67e8f9, var(--accent-2));
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .profile-name { font-weight: 700; }
+
+    /* ── Content ── */
+    .content { padding: 2.2rem 2.4rem 2.8rem; }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.9rem;
+    }
+
+    .page-head h1 {
+      margin: 0 0 0.25rem;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      line-height: 1.08;
+    }
+
+    .page-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      border: 1px solid var(--border);
+      border-radius: 0.9rem;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(34, 211, 238, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .stat-card .label {
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--purple-3);
+      line-height: 1.1;
+    }
+
+    .stat-card .desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Grid layout */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 0.9rem;
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      padding: 1.75rem;
+      animation: enterUp 0.55s ease both;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding-bottom: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--purple-3);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Forms */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .input-field, .textarea-field {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 0.65rem;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      padding: 0.85rem 1.1rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .input-field option {
+      background-color: var(--bg-2);
+      color: var(--text);
+    }
+
+    .input-field:focus, .textarea-field:focus {
+      outline: none;
+      border-color: rgba(34, 211, 238, 0.5);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .textarea-field {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      padding: 0.9rem 1.8rem;
+      border: none;
+      border-radius: 0.65rem;
+      color: #042f3e;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(34, 211, 238, 0.28);
+      filter: brightness(1.05);
+    }
+
+    /* Triggers Table */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+    }
+
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .custom-table th, .custom-table td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .custom-table th {
+      color: var(--muted-2);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .keyword-badge {
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      color: var(--purple-3);
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.4rem;
+      font-weight: 700;
+      font-family: monospace;
+      letter-spacing: 0.02em;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--muted);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: rgba(34, 211, 238, 0.2);
+      border-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: var(--accent);
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      padding: 0.35rem;
+      border-radius: 0.4rem;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-delete:hover {
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    /* Chat Simulator (Right Panel) */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: rgba(4, 9, 20, 0.6);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 0.9rem 1.2rem;
+      background: rgba(13, 24, 49, 0.9);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .chat-avatar {
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #042f3e;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+
+    .chat-user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-username {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .chat-status {
+      font-size: 0.72rem;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .chat-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.9rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      position: relative;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-top-left-radius: 0.25rem;
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #042f3e;
+      font-weight: 500;
+      border-top-right-radius: 0.25rem;
+    }
+
+    /* Typing indicator styling */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0.8rem 1.1rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-radius: 0.9rem;
+      border-top-left-radius: 0.25rem;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+
+    .chat-footer {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+      background: rgba(13, 24, 49, 0.4);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .chat-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      padding: 0.65rem 1.1rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .chat-input:focus {
+      border-color: rgba(34, 211, 238, 0.4);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .chat-send-btn {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #042f3e;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: transform 0.18s;
+    }
+
+    .chat-send-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Helper/Info boxes */
+    .info-panel {
+      border: 1px solid rgba(34, 211, 238, 0.2);
+      border-radius: 0.65rem;
+      background: rgba(34, 211, 238, 0.05);
+      padding: 0.9rem 1.1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .info-panel svg {
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    /* Helper styles */
+    .hidden { display: none !important; }
+
+    /* SVG Sizing */
+    svg { width: 1.25rem; height: 1.25rem; stroke-width: 2.2; fill: none; stroke: currentColor; }
+
+    /* Animations */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-18px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes enterUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 860px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      .content { padding: 1.4rem 1rem 2rem; }
+      .topbar { padding: 1rem; }
+    }
+
+    @media (max-width: 560px) {
+      .profile-name { display: none; }
+    }
+
+    /* simulator tabs */
+    .simulator-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .sim-tab-btn {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      background: transparent;
+      color: var(--muted-2);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sim-tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .sim-tab-btn.active {
+      background: rgba(34, 211, 238, 0.12);
+      color: var(--accent);
+      border-color: rgba(34, 211, 238, 0.3);
+    }
+    
+    /* edit button and action layout */
+    .btn-edit {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0.35rem;
+      border-radius: 0.4rem;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-edit:hover {
+      background: rgba(34, 211, 238, 0.12);
+    }
+    
+    .cancel-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 0.65rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.04);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cancel-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .comment-item {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+    .comment-reply {
+      display: flex;
+      gap: 0.75rem;
+      margin-left: 2rem;
+      margin-top: 0.5rem;
+      border-left: 2px solid var(--accent);
+      padding-left: 0.75rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+    
+    .action-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .badge-dm {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+    .badge-comment {
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .badge-both {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout" id="dashboardLayout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Dashboard navigation">
+      <a class="brand" href="/dashboard">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.2 4.73"></path>
+            <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.63-1.63"></path>
+          </svg>
+        </span>
+        <span>CREATOROS</span>
+      </a>
+
+      <nav class="sidebar-section">
+        <p class="sidebar-label">Workspace</p>
+        <a class="nav-link" href="/dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Dashboard
+        </a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>My Links</a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>Analytics</a>
+        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>Settings</a>
+      </nav>
+
+      <nav class="sidebar-section" aria-label="Services">
+        <p class="sidebar-label">Services</p>
+        <% services.forEach(function(service) { %>
+          <a class="service-link <%= service.status %> <%= service.key === 'dm-automation' ? 'active' : '' %>"
+             href="<%= service.route %>" title="<%= service.name %>">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 3v18"></path><path d="M3 12h18"></path>
+            </svg>
+            <span class="service-name"><%= service.name %></span>
+          </a>
+        <% }) %>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="nav-link" href="/logout">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>
+          </svg>
+          Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" type="button" id="sidebarToggle" aria-label="Toggle sidebar" aria-expanded="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>
+          </svg>
+        </button>
+        <div class="topbar-actions">
+          <a class="profile-chip" href="/profile">
+            <span class="avatar"><%= user.initials %></span>
+            <span class="profile-name"><%= user.name %></span>
+          </a>
+          <a class="icon-btn" href="/logout" aria-label="Logout">
+            <svg viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path>
+            </svg>
+          </a>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="page-head">
+          <div>
+            <h1>🤖 DM Automation</h1>
+            <p>Automate lead magnets, redirects, and campaign replies via keyword triggers.</p>
+          </div>
+        </div>
+
+        <!-- Stats Overview Row -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="label">Active Triggers</span>
+            <span class="value" id="stat-active-triggers">0</span>
+            <span class="desc">Keyword patterns configured</span>
+          </div>
+          <div class="stat-card">
+            <span class="label">Total Auto-Replies</span>
+            <span class="value" id="stat-total-replies">0</span>
+            <span class="desc">Delivered to prospects</span>
+          </div>
+          <div class="stat-card">
+            <span class="label">Avg. Conversion</span>
+            <span class="value">34.8%</span>
+            <span class="desc">Link click rate from replies</span>
+          </div>
+        </div>
+
+        <div class="grid-container">
+
+          <!-- Left Column: Trigger Manager -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Create/Edit Trigger Form -->
+            <div class="panel">
+              <div class="panel-head">
+                <h2 id="form-title">
+                  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+                  Create Keyword Trigger
+                </h2>
+              </div>
+
+              <form id="trigger-form">
+                <div style="display: flex; flex-direction: column; gap: 1.1rem;">
+                  <div class="form-group">
+                    <label for="keyword-input">Trigger Keyword(s)</label>
+                    <input type="text" id="keyword-input" class="input-field" placeholder="e.g. GUIDE, CRM, INFO (comma separated)" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="reply-type-input">Reply Action Type</label>
+                    <select id="reply-type-input" class="input-field" required>
+                      <option value="dm">Direct Message (DM) Only</option>
+                      <option value="comment">Comment Reply Only</option>
+                      <option value="both">Both (DM & Comment Reply)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="response-input">Auto-Response Message</label>
+                    <textarea id="response-input" class="textarea-field" placeholder="Type the automated response message here..." required></textarea>
+                  </div>
+
+                  <div class="info-panel">
+                    <svg viewBox="0 0 24 24" style="width: 1.4rem; height: 1.4rem;"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+                    <span>Keywords are case-insensitive. You can input multiple keywords separated by commas (e.g. "PDF, SEND").</span>
+                  </div>
+
+                  <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button class="primary-btn" type="submit" id="submit-btn" style="flex: 1;">
+                      <span id="submit-btn-text">Save Trigger</span>
+                    </button>
+                    <button type="button" id="cancel-edit-btn" class="cancel-btn hidden" onclick="cancelEdit()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- List of Triggers -->
+            <div class="panel">
+              <div class="panel-head">
+                <h2>
+                  <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                  Manage Triggers
+                </h2>
+              </div>
+
+              <div class="table-container">
+                <table class="custom-table" id="triggers-table">
+                  <thead>
+                    <tr>
+                      <th>Keyword</th>
+                      <th>Action</th>
+                      <th>Response Message</th>
+                      <th>Replies</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="triggers-tbody">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Interactive Simulator -->
+          <div class="panel">
+            <div class="panel-head">
+              <h2>
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                Live Simulator
+              </h2>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="simulator-tabs">
+              <button type="button" class="sim-tab-btn active" id="tab-btn-dm">DMs (Chat)</button>
+              <button type="button" class="sim-tab-btn" id="tab-btn-comments">Post Comments</button>
+            </div>
+
+            <!-- DM Simulator Panel -->
+            <div id="dm-sim-panel">
+              <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem;">Type one of your active keywords into the mock DM interface below to test your auto-responses.</p>
+
+              <div class="chat-container">
+                <div class="chat-header">
+                  <div class="chat-avatar">AI</div>
+                  <div class="chat-user-info">
+                    <span class="chat-username">Mock Instagram Bot</span>
+                    <span class="chat-status">Active</span>
+                  </div>
+                </div>
+
+                <div class="chat-messages" id="chat-messages-container">
+                  <div class="message received">
+                    Hey there! 👋 I am your automated assistant. Type one of your keywords (like <strong>GUIDE</strong> or <strong>CRM</strong>) to see me respond!
+                  </div>
+                </div>
+
+                <!-- Typing indicator (hidden by default) -->
+                <div class="typing-indicator hidden" id="chat-typing-indicator">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+
+                <div class="chat-footer">
+                  <label for="simulator-chat-input" class="sr-only">Send message to simulator</label>
+                  <input type="text" id="simulator-chat-input" class="chat-input" placeholder="Type a message..." />
+                  <button class="chat-send-btn" id="simulator-send-btn" aria-label="Send message">
+                    <svg viewBox="0 0 24 24" style="width: 1.1rem; height: 1.1rem;"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comments Simulator Panel (Hidden by default) -->
+            <div id="comments-sim-panel" class="hidden">
+              <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem;">Simulate comment automation. Post a comment on the mock post below to trigger actions.</p>
+
+              <div class="chat-container">
+                <div class="chat-header">
+                  <div class="chat-avatar" style="background: linear-gradient(135deg, #f58529 0%, #dd2a7b 50%, #8134af 100%); color: #fff;">📸</div>
+                  <div class="chat-user-info">
+                    <span class="chat-username">Mock Instagram Post</span>
+                    <span class="chat-status" style="color: var(--muted-2);">@creator_account</span>
+                  </div>
+                </div>
+
+                <div class="chat-messages" id="comment-messages-container">
+                  <div style="padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: 0.5rem; border: 1px solid var(--border); display: flex; gap: 0.65rem;">
+                    <span style="font-size: 1.5rem;">📱</span>
+                    <div>
+                      <strong style="font-size: 0.85rem; color: var(--purple-3);">@creator_account</strong>
+                      <p style="font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem;">Comment "GUIDE" below to get the download link sent to your DMs automatically! 👇</p>
+                    </div>
+                  </div>
+
+                  <div id="comments-thread-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                    <!-- Comment replies will be added here -->
+                  </div>
+                </div>
+
+                <!-- Typing indicator (hidden by default) -->
+                <div class="typing-indicator hidden" id="comment-typing-indicator" style="margin-left: 1.25rem;">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+
+                <div class="chat-footer">
+                  <label for="simulator-comment-input" class="sr-only">Post a comment</label>
+                  <input type="text" id="simulator-comment-input" class="chat-input" placeholder="Write a comment..." />
+                  <button class="chat-send-btn" id="simulator-comment-send-btn" aria-label="Post comment">
+                    <svg viewBox="0 0 24 24" style="width: 1.1rem; height: 1.1rem;"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Sidebar toggle logic
+    var layout = document.getElementById('dashboardLayout');
+    var toggle = document.getElementById('sidebarToggle');
+    if (localStorage.getItem('creatorosSidebarCollapsed') === 'true') {
+      layout.classList.add('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function() {
+      var collapsed = layout.classList.toggle('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      localStorage.setItem('creatorosSidebarCollapsed', String(collapsed));
+    });
+
+    // Default seed triggers
+    const defaultTriggers = [
+      { id: '1', keyword: 'GUIDE', response: 'Thanks for reaching out! Here is the Creator Playbook guide: https://creatoros.com/guide.pdf 🚀', replyType: 'both', count: 42, active: true },
+      { id: '2', keyword: 'CRM', response: 'Hey! You can invite collaborators and track invitations using the Creator CRM tool here: /services/creator-crm 🤝', replyType: 'dm', count: 18, active: true },
+      { id: '3', keyword: 'HELP', response: 'Active keywords available: [GUIDE], [CRM], [HELP]. Type any of them to trigger an automated flow.', replyType: 'comment', count: 5, active: true }
+    ];
+
+    let editingTriggerId = null;
+
+    // Load triggers from localStorage or seed them
+    function getTriggers() {
+      const stored = localStorage.getItem('creatoros_dm_triggers');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      localStorage.setItem('creatoros_dm_triggers', JSON.stringify(defaultTriggers));
+      return defaultTriggers;
+    }
+
+    function saveTriggers(triggers) {
+      localStorage.setItem('creatoros_dm_triggers', JSON.stringify(triggers));
+    }
+
+    // Render stats and table
+    function updateUI() {
+      const triggers = getTriggers();
+      
+      // Update statistics
+      const activeCount = triggers.filter(t => t.active).length;
+      const totalReplies = triggers.reduce((sum, t) => sum + t.count, 0);
+
+      document.getElementById('stat-active-triggers').textContent = activeCount;
+      document.getElementById('stat-total-replies').textContent = totalReplies;
+
+      // Render table rows
+      const tbody = document.getElementById('triggers-tbody');
+      tbody.innerHTML = '';
+
+      if (triggers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--muted-2);">No triggers created yet. Use the form above to add one!</td></tr>`;
+        return;
+      }
+
+      triggers.forEach(trigger => {
+        const tr = document.createElement('tr');
+        
+        let typeBadge = '';
+        const rType = trigger.replyType || 'dm';
+        if (rType === 'comment') {
+          typeBadge = '<span class="action-badge badge-comment">Comment</span>';
+        } else if (rType === 'both') {
+          typeBadge = '<span class="action-badge badge-both">DM & Comment</span>';
+        } else {
+          typeBadge = '<span class="action-badge badge-dm">DM Only</span>';
+        }
+
+        tr.innerHTML = `
+          <td><span class="keyword-badge">${escapeHTML(trigger.keyword)}</span></td>
+          <td>${typeBadge}</td>
+          <td style="color: var(--muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHTML(trigger.response)}</td>
+          <td style="font-weight: 600; color: var(--purple-3);">${trigger.count}</td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" ${trigger.active ? 'checked' : ''} onchange="toggleTriggerStatus('${trigger.id}')">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.25rem;">
+              <button class="btn-edit" onclick="editTrigger('${trigger.id}')" title="Edit Trigger">
+                <svg viewBox="0 0 24 24" style="width: 1.1rem; height: 1.1rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="btn-delete" onclick="deleteTrigger('${trigger.id}')" title="Delete Trigger">
+                <svg viewBox="0 0 24 24" style="width: 1.1rem; height: 1.1rem;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    // Toggle trigger active status
+    window.toggleTriggerStatus = function(id) {
+      let triggers = getTriggers();
+      triggers = triggers.map(t => {
+        if (t.id === id) {
+          t.active = !t.active;
+        }
+        return t;
+      });
+      saveTriggers(triggers);
+      updateUI();
+    };
+
+    // Delete trigger
+    window.deleteTrigger = function(id) {
+      if (editingTriggerId === id) {
+        cancelEdit();
+      }
+      let triggers = getTriggers();
+      triggers = triggers.filter(t => t.id !== id);
+      saveTriggers(triggers);
+      updateUI();
+    };
+
+    // Edit trigger config
+    window.editTrigger = function(id) {
+      const triggers = getTriggers();
+      const trigger = triggers.find(t => t.id === id);
+      if (!trigger) return;
+
+      editingTriggerId = id;
+      document.getElementById('keyword-input').value = trigger.keyword;
+      document.getElementById('response-input').value = trigger.response;
+      document.getElementById('reply-type-input').value = trigger.replyType || 'dm';
+
+      document.getElementById('form-title').innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Edit Keyword Trigger
+      `;
+      document.getElementById('submit-btn-text').textContent = 'Update Trigger';
+      document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+      // Scroll form panel into view
+      document.getElementById('trigger-form').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Cancel edit state
+    window.cancelEdit = function() {
+      editingTriggerId = null;
+      document.getElementById('trigger-form').reset();
+      document.getElementById('form-title').innerHTML = `
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+        Create Keyword Trigger
+      `;
+      document.getElementById('submit-btn-text').textContent = 'Save Trigger';
+      document.getElementById('cancel-edit-btn').classList.add('hidden');
+    };
+
+    // Form submit handler
+    const form = document.getElementById('trigger-form');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const keywordInput = document.getElementById('keyword-input');
+      const responseInput = document.getElementById('response-input');
+      const replyTypeInput = document.getElementById('reply-type-input');
+
+      const keyword = keywordInput.value.trim().toUpperCase();
+      const response = responseInput.value.trim();
+      const replyType = replyTypeInput.value;
+
+      if (!keyword || !response) return;
+
+      const triggers = getTriggers();
+
+      if (editingTriggerId) {
+        // Edit mode
+        const existingIdx = triggers.findIndex(t => t.id === editingTriggerId);
+        if (existingIdx !== -1) {
+          triggers[existingIdx].keyword = keyword;
+          triggers[existingIdx].response = response;
+          triggers[existingIdx].replyType = replyType;
+        }
+        cancelEdit();
+      } else {
+        // Create mode - check for duplicate keyword
+        const existingIdx = triggers.findIndex(t => t.keyword === keyword);
+        if (existingIdx !== -1) {
+          triggers[existingIdx].response = response;
+          triggers[existingIdx].replyType = replyType;
+        } else {
+          triggers.push({
+            id: Date.now().toString(),
+            keyword: keyword,
+            response: response,
+            replyType: replyType,
+            count: 0,
+            active: true
+          });
+        }
+        form.reset();
+      }
+
+      saveTriggers(triggers);
+      updateUI();
+    });
+
+    // Chat Tabs Switching Logic
+    const tabBtnDm = document.getElementById('tab-btn-dm');
+    const tabBtnComments = document.getElementById('tab-btn-comments');
+    const dmSimPanel = document.getElementById('dm-sim-panel');
+    const commentsSimPanel = document.getElementById('comments-sim-panel');
+
+    tabBtnDm.addEventListener('click', function() {
+      tabBtnDm.classList.add('active');
+      tabBtnComments.classList.remove('active');
+      dmSimPanel.classList.remove('hidden');
+      commentsSimPanel.classList.add('hidden');
+    });
+
+    tabBtnComments.addEventListener('click', function() {
+      tabBtnComments.classList.add('active');
+      tabBtnDm.classList.remove('active');
+      commentsSimPanel.classList.remove('hidden');
+      dmSimPanel.classList.add('hidden');
+    });
+
+    // DM Chat Simulator Logic
+    const chatContainer = document.getElementById('chat-messages-container');
+    const chatInput = document.getElementById('simulator-chat-input');
+    const sendBtn = document.getElementById('simulator-send-btn');
+    const typingIndicator = document.getElementById('chat-typing-indicator');
+
+    function appendMessage(text, isSent) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+      msgDiv.innerHTML = text;
+      chatContainer.appendChild(msgDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function handleChatSend() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      appendMessage(escapeHTML(text), true);
+      chatInput.value = '';
+
+      // Check for keyword trigger match - reverse array search to get latest created/edited trigger first
+      const triggers = getTriggers();
+      const matchedTrigger = [...triggers].reverse().find(t => {
+        if (!t.active) return false;
+        
+        // DM simulator only matches DM or BOTH types
+        if (t.replyType === 'comment') return false;
+
+        const kwList = t.keyword.split(',').map(k => k.trim().toUpperCase()).filter(Boolean);
+        const msg = text.trim().toUpperCase();
+        return kwList.some(kw => msg === kw || msg.includes(kw));
+      });
+
+      // Show typing indicator
+      typingIndicator.classList.remove('hidden');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      setTimeout(() => {
+        typingIndicator.classList.add('hidden');
+
+        if (matchedTrigger) {
+          // Increment match count
+          matchedTrigger.count++;
+          saveTriggers(triggers);
+          updateUI();
+
+          appendMessage(matchedTrigger.response, false);
+        } else {
+          // Fallback reply
+          appendMessage(`Hey! I didn't quite catch that. Try typing one of your configured DM triggers, like <strong>GUIDE</strong> or <strong>CRM</strong>.`, false);
+        }
+      }, 1000);
+    }
+
+    sendBtn.addEventListener('click', handleChatSend);
+    chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        handleChatSend();
+      }
+    });
+
+    // Comments Simulator Logic
+    const commentsContainer = document.getElementById('comments-thread-container');
+    const commentInput = document.getElementById('simulator-comment-input');
+    const commentSendBtn = document.getElementById('simulator-comment-send-btn');
+    const commentTypingIndicator = document.getElementById('comment-typing-indicator');
+
+    function appendComment(username, text, isCreator = false, isReply = false) {
+      const container = document.createElement('div');
+      
+      if (isReply) {
+        container.className = 'comment-reply';
+        container.innerHTML = `
+          <div class="chat-avatar" style="width: 1.6rem; height: 1.6rem; font-size: 0.65rem; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #042f3e; border: 1.5px solid #000;">AI</div>
+          <div>
+            <strong style="font-size: 0.8rem; color: var(--accent);">${username}</strong>
+            <span style="font-size: 0.8rem; margin-left: 0.25rem; color: var(--muted);">${text}</span>
+          </div>
+        `;
+      } else {
+        container.className = 'comment-item';
+        container.innerHTML = `
+          <div class="avatar" style="width: 1.8rem; height: 1.8rem; font-size: 0.75rem; background: rgba(255,255,255,0.06); color: var(--muted); border: 1.5px solid var(--border);">U</div>
+          <div>
+            <strong style="font-size: 0.85rem; color: var(--purple-3);">${username}</strong>
+            <span style="font-size: 0.85rem; margin-left: 0.25rem; color: var(--text);">${text}</span>
+          </div>
+        `;
+      }
+      
+      commentsContainer.appendChild(container);
+      document.getElementById('comment-messages-container').scrollTop = document.getElementById('comment-messages-container').scrollHeight;
+    }
+
+    function handleCommentSend() {
+      const text = commentInput.value.trim();
+      if (!text) return;
+
+      appendComment('@mock_user', escapeHTML(text), false, false);
+      commentInput.value = '';
+
+      // Match trigger keyword - reverse search to get the latest configured trigger first
+      const triggers = getTriggers();
+      const matchedTrigger = [...triggers].reverse().find(t => {
+        if (!t.active) return false;
+        
+        const kwList = t.keyword.split(',').map(k => k.trim().toUpperCase()).filter(Boolean);
+        const msg = text.trim().toUpperCase();
+        return kwList.some(kw => msg === kw || msg.includes(kw));
+      });
+
+      // Show typing indicator in comments
+      commentTypingIndicator.classList.remove('hidden');
+      document.getElementById('comment-messages-container').scrollTop = document.getElementById('comment-messages-container').scrollHeight;
+
+      setTimeout(() => {
+        commentTypingIndicator.classList.add('hidden');
+
+        if (matchedTrigger) {
+          // Increment replies count
+          matchedTrigger.count++;
+          saveTriggers(triggers);
+          updateUI();
+
+          const rType = matchedTrigger.replyType || 'dm';
+
+          if (rType === 'comment') {
+            // Reply directly in comments
+            appendComment('@creator_account', matchedTrigger.response, true, true);
+          } else if (rType === 'dm') {
+            // Send DM & reply in comments that DM was sent
+            appendComment('@creator_account', `@mock_user Check your inbox! I've sent you a DM. 📩`, true, true);
+            appendMessage(`[Auto-Reply from comment thread] ${matchedTrigger.response}`, false);
+          } else if (rType === 'both') {
+            // Reply in comments AND send DM
+            appendComment('@creator_account', matchedTrigger.response, true, true);
+            appendMessage(`[Auto-Reply from comment thread] ${matchedTrigger.response}`, false);
+          }
+        } else {
+          // Fallback reply
+          appendComment('@creator_account', `@mock_user Thanks for commenting! Try a keyword like <strong>GUIDE</strong> or <strong>CRM</strong> to trigger automations.`, true, true);
+        }
+      }, 1200);
+    }
+
+    commentSendBtn.addEventListener('click', handleCommentSend);
+    commentInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        handleCommentSend();
+      }
+    });
+
+    // Initial setup
+    updateUI();
+  </script>
+</body>
+</html>
