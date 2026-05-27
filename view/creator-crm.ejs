@@ -124,8 +124,10 @@
           </div>
           <form action="/services/creator-crm/invite" method="POST">
             <div class="form-row">
-              <input class="input" type="email" name="email" placeholder="Collaborator email" required />
-              <input class="input" type="text" name="projectName" placeholder="Project or workspace name (optional)" />
+              <label for="crm-email" class="sr-only">Collaborator Email</label>
+              <input id="crm-email" class="input" type="email" name="email" placeholder="Collaborator email" required />
+              <label for="crm-project" class="sr-only">Project Name</label>
+              <input id="crm-project" class="input" type="text" name="projectName" placeholder="Project or workspace name (optional)" />
             </div>
             <div class="form-row">
               <textarea class="textarea" name="message" placeholder="Personal message (optional)"></textarea>

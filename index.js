@@ -216,11 +216,13 @@ app.get('/services/:serviceKey', protect, (req, res) => {
     return res.render('coming-soon', { service });
 });
 
+const { isValidUrl } = require('./utils/validators');
+
 // URL shortener submit flow (dedicated service route)
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
     const { redirectUrl } = req.body;
-    if (!redirectUrl) {
-        return res.render('home', buildShortenerViewModel(req, null, 'Please enter a URL.'));
+    if (!redirectUrl || !isValidUrl(redirectUrl)) {
+        return res.render('home', buildShortenerViewModel(req, null, 'Please enter a valid HTTP or HTTPS URL.'));
     }
 
     try {

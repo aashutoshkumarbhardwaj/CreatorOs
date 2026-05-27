@@ -74,7 +74,9 @@
                 </p>
 
                 <form action="/services/url-shortener/shorten" method="POST" class="max-w-2xl mx-auto glass-card rounded-full p-2 flex items-center shadow-lg hero-form">
+                    <label for="url-shortener-input" class="sr-only">URL to Shorten</label>
                     <input 
+                        id="url-shortener-input"
                         type="url" 
                         name="redirectUrl"
                         placeholder="https://your-super-long-link.com/to-shorten" 

@@ -36,7 +36,6 @@
             perspective: 1200px;
         }
 
-        /* ── Grid background ── */
         body::before {
             content: '';
             position: fixed;
@@ -49,7 +48,6 @@
             z-index: 0;
         }
 
-        /* ── Floating 3D Shapes ── */
         .shape {
             position: fixed;
             pointer-events: none;
@@ -144,7 +142,6 @@
             66%     { transform: translateY(-25px) rotate(120deg) scale(0.95); border-radius: 70% 30% 60% 40% / 40% 70% 30% 60%; }
         }
 
-        /* ── NAVBAR ── */
         .navbar {
             position: fixed;
             top: 20px;
@@ -182,7 +179,6 @@
         }
         .nav-dot { font-family: 'Space Mono', monospace; font-size: 11px; color: #888; }
 
-        /* ── MAIN CARD ── */
         .scene {
             position: relative; z-index: 10;
             perspective: 1000px;
@@ -215,7 +211,6 @@
             overflow: visible;
         }
 
-        /* Card corner accents */
         .card::before {
             content: '';
             position: absolute;
@@ -230,7 +225,6 @@
             transform: translate(4px, 4px);
         }
 
-        /* Floating badge */
         .badge {
             position: absolute;
             top: -18px; right: 24px;
@@ -315,7 +309,6 @@
             position: relative; z-index: 1;
         }
 
-        /* Animated underline bar */
         .header-bar {
             height: 3px;
             background: linear-gradient(90deg, var(--teal), var(--yellow), var(--blue), var(--teal));
@@ -334,7 +327,6 @@
             padding: 32px 40px 36px;
         }
 
-        /* ── Error banner ── */
         .error-banner {
             background: #fff0f0;
             border: 2px solid var(--red);
@@ -349,7 +341,6 @@
         }
         .error-banner::before { content: '✕'; font-weight: 700; }
 
-        /* ── Fields ── */
         .fields { display: flex; flex-direction: column; gap: 16px; }
 
         .field-group { display: flex; flex-direction: column; gap: 6px; }
@@ -412,7 +403,6 @@
             box-shadow: 0 0 0 3px rgba(0,201,167,0.2);
         }
 
-        /* Password toggle */
         .pw-toggle {
             position: absolute; right: 14px; top: 50%;
             transform: translateY(-50%);
@@ -423,7 +413,6 @@
         }
         .pw-toggle:hover { color: var(--black); }
 
-        /* Strength bar */
         .strength-row {
             display: flex; gap: 4px; margin-top: 6px;
         }
@@ -439,7 +428,6 @@
             margin-top: 4px;
         }
 
-        /* ── Submit button ── */
         .btn-wrap {
             position: relative;
             transform-style: preserve-3d;
@@ -504,7 +492,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Divider ── */
         .divider {
             display: flex; align-items: center; gap: 12px;
             margin: 20px 0;
@@ -518,7 +505,6 @@
             font-size: 11px; color: #999;
         }
 
-        /* ── Benefit chips ── */
         .chips {
             display: flex; flex-wrap: wrap; gap: 8px;
             margin-bottom: 20px;
@@ -542,7 +528,6 @@
             to   { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
-        /* ── Footer link ── */
         .switch-link {
             text-align: center;
             margin-top: 24px;
@@ -560,7 +545,6 @@
         }
         .switch-link a:hover { background: rgba(0,201,167,0.12); }
 
-        /* ── Counter ticker (decorative) ── */
         .ticker {
             position: absolute;
             bottom: -18px; left: 24px;
@@ -593,7 +577,6 @@
         }
         .ticker-count { color: var(--teal); font-weight: 700; }
 
-        /* ── Shake ── */
         @keyframes shake {
             0%,100% { transform: translateX(0); }
             20%     { transform: translateX(-6px); }
@@ -602,7 +585,6 @@
             80%     { transform: translateX(4px); }
         }
 
-        /* ── Custom Cursor ── */
         * { cursor: none !important; }
 
         #cursor-outer {
@@ -650,7 +632,6 @@
         }
         body.cursor-btn #cursor-dot { background: var(--yellow); width: 6px; height: 6px; }
 
-        /* ── Cursor trail ── */
         .trail-dot {
             position: fixed;
             border-radius: 50%;
@@ -664,7 +645,6 @@
             100% { opacity: 0;    transform: translate(-50%,-50%) scale(0.1); }
         }
 
-        /* ── Spotlight ── */
         #spotlight {
             position: fixed;
             width: 420px; height: 420px;
@@ -675,7 +655,6 @@
             transform: translate(-50%, -50%);
         }
 
-        /* ── Click ripple ── */
         .click-ripple {
             position: fixed;
             width: 0; height: 0;
@@ -691,7 +670,6 @@
             100% { width: 90px; height: 90px; opacity: 0; }
         }
 
-        /* ── Cursor label ── */
         #cursor-label {
             position: fixed;
             pointer-events: none;
@@ -709,7 +687,6 @@
             transition: opacity 0.2s;
         }
 
-        /* ── Scroll-safe on small screens ── */
         @media (max-width: 520px) {
             .card-header { padding: 28px 24px 22px; }
             .card-body   { padding: 24px 24px 28px; }
@@ -720,13 +697,11 @@
 </head>
 <body>
 
-    <!-- Custom cursor elements -->
     <div id="cursor-outer"></div>
     <div id="cursor-dot"></div>
     <div id="cursor-label"></div>
     <div id="spotlight"></div>
 
-    <!-- Floating 3D shapes -->
     <div class="shape shape-cube">
         <div class="face face-front">T</div>
         <div class="face face-back">OS</div>
@@ -744,7 +719,6 @@
     </div>
     <div class="shape shape-blob"></div>
 
-    <!-- Navbar -->
     <nav class="navbar">
         <a href="/" class="nav-brand">
             <div class="nav-icon" style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;">C</div>
@@ -758,7 +732,6 @@
         <a href="/login" style="background:var(--teal);border:2px solid var(--black);border-radius:999px;padding:6px 16px;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--black);text-decoration:none;box-shadow:2px 2px 0 var(--black);transition:transform 0.15s;" onmouseover="this.style.transform='translate(-1px,-1px)'" onmouseout="this.style.transform=''">Login →</a>
     </nav>
 
-    <!-- Main card -->
     <div class="scene">
         <div class="card-3d-wrapper" id="cardWrapper">
             <div class="card" id="card">
@@ -779,14 +752,12 @@
 
                 <div class="card-body">
 
-                    <!-- Benefit chips -->
                     <div class="chips">
                         <div class="chip">✦ Deep Linking</div>
                         <div class="chip">⚡ Analytics</div>
                         <div class="chip">🔒 Secure</div>
                     </div>
 
-                    <!-- Error banner (EJS template syntax preserved) -->
                     <!-- <% if (typeof error !== 'undefined' && error) { %>
                     <div class="error-banner"><%= error %></div>
                     <% } %> -->
@@ -844,7 +815,6 @@
                     <p class="switch-link">Already have an account? <a href="/login">Sign in here</a></p>
                 </div>
 
-                <!-- Live users ticker -->
                 <div class="ticker">
                     <div class="ticker-dot"></div>
                     <span><span class="ticker-count" id="liveCount">847</span> creators online</span>
@@ -856,9 +826,6 @@
     <script>
     (function () {
 
-        // ═══════════════════════════════════════════════════
-        // 1. CUSTOM CURSOR SYSTEM
-        // ═══════════════════════════════════════════════════
         const cursorOuter = document.getElementById('cursor-outer');
         const cursorDot   = document.getElementById('cursor-dot');
         const cursorLabel = document.getElementById('cursor-label');
@@ -867,7 +834,6 @@
         let mouseX = -200, mouseY = -200;
         let outerX = -200, outerY = -200;
 
-        // Dot follows cursor instantly
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
@@ -880,7 +846,6 @@
             spawnTrail(mouseX, mouseY);
         });
 
-        // Outer ring follows with lag (lerp)
         (function lerpCursor() {
             outerX += (mouseX - outerX) * 0.12;
             outerY += (mouseY - outerY) * 0.12;
@@ -889,7 +854,6 @@
             requestAnimationFrame(lerpCursor);
         })();
 
-        // ── Cursor state: links / buttons ──────────────────
         document.querySelectorAll('a, .chip, .badge, .nav-brand').forEach(el => {
             el.addEventListener('mouseenter', () => {
                 document.body.classList.add('cursor-link');
@@ -918,7 +882,6 @@
             cursorLabel.style.opacity = '0';
         });
 
-        // ── Click ripple ────────────────────────────────────
         document.addEventListener('click', (e) => {
             const ripple = document.createElement('div');
             ripple.className = 'click-ripple';
@@ -927,7 +890,6 @@
             document.body.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
 
-            // Cursor dot burst
             cursorDot.style.transform = 'translate(-50%,-50%) scale(2.5)';
             cursorDot.style.opacity = '0.4';
             setTimeout(() => {
@@ -936,11 +898,10 @@
             }, 200);
         });
 
-        // ── Trail particles ─────────────────────────────────
         const trailColors = ['#00c9a7', '#f5c842', '#4da6ff', '#ff4c4c'];
         let trailCount = 0;
         function spawnTrail(x, y) {
-            if (trailCount % 3 !== 0) { trailCount++; return; } // every 3rd move
+            if (trailCount % 3 !== 0) { trailCount++; return; }
             trailCount++;
             const dot = document.createElement('div');
             dot.className = 'trail-dot';
@@ -954,9 +915,6 @@
             setTimeout(() => dot.remove(), 600);
         }
 
-        // ═══════════════════════════════════════════════════
-        // 2. MAGNETIC BUTTON EFFECT
-        // ═══════════════════════════════════════════════════
         submitBtn.addEventListener('mousemove', function(e) {
             const r = this.getBoundingClientRect();
             const dx = e.clientX - (r.left + r.width / 2);
@@ -967,7 +925,6 @@
             this.style.transform = '';
         });
 
-        // ── Magnetic labels ──────────────────────────────────
         document.querySelectorAll('.field-label').forEach(label => {
             const wrap = label.closest('.field-group');
             wrap.addEventListener('mouseenter', () => {
@@ -980,7 +937,6 @@
             });
         });
 
-        // ── Chip hover tilt ──────────────────────────────────
         document.querySelectorAll('.chip').forEach(chip => {
             chip.addEventListener('mousemove', (e) => {
                 const r = chip.getBoundingClientRect();
@@ -995,9 +951,6 @@
             });
         });
 
-        // ═══════════════════════════════════════════════════
-        // 3. 3D CARD TILT
-        // ═══════════════════════════════════════════════════
         const wrapper = document.getElementById('cardWrapper');
         document.addEventListener('mousemove', (e) => {
             const cx = window.innerWidth / 2;
@@ -1010,9 +963,6 @@
             wrapper.style.transform = '';
         });
 
-        // ═══════════════════════════════════════════════════
-        // 4. PASSWORD TOGGLE + STRENGTH
-        // ═══════════════════════════════════════════════════
         const pwInput = document.getElementById('f3');
         document.getElementById('pwToggle').addEventListener('click', function () {
             const isText = pwInput.type === 'text';
@@ -1037,9 +987,6 @@
             strLbl.style.color = v.length ? colors[score-1] : '#888';
         });
 
-        // ═══════════════════════════════════════════════════
-        // 5. FORM SUBMIT
-        // ═══════════════════════════════════════════════════
         const form    = document.getElementById('signup-form');
         const btn     = document.getElementById('sbtn');
         const spinner = document.getElementById('spinner');
@@ -1054,7 +1001,6 @@
             btnArrow.style.display = 'none';
         });
 
-        // ── Shake on invalid ────────────────────────────────
         document.querySelectorAll('input').forEach(inp => {
             inp.addEventListener('invalid', e => {
                 e.preventDefault();
@@ -1068,9 +1014,6 @@
             });
         });
 
-        // ═══════════════════════════════════════════════════
-        // 6. LIVE TICKER + ENTRANCE
-        // ═══════════════════════════════════════════════════
         const countEl = document.getElementById('liveCount');
         let base = 847;
         setInterval(() => {

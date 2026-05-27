@@ -1294,7 +1294,8 @@ body.light-mode #recent-links tbody tr {
                                     </div>
                                     <% } %>
                                         <form class="invite-form" action="/dashboard/accept-invite" method="POST">
-                                            <input type="text" name="inviteToken" placeholder="Invite token" required
+                                            <label for="invite-token" class="sr-only">Invite Token</label>
+                                            <input id="invite-token" type="text" name="inviteToken" placeholder="Invite token" required
                                                 autocomplete="off" />
                                             <button type="submit">Accept invite</button>
                                         </form>
