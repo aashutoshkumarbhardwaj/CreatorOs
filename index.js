@@ -44,7 +44,7 @@ const loginLimiter = rateLimit({
     max: 15,
     message: 'Too many login attempts, please try again later.'
 });
-app.use('/login', loginLimiter);
+app.post('/login', loginLimiter);
 
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
