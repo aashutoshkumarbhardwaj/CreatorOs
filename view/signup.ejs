@@ -201,9 +201,12 @@
             <% } %>
 
             <form action="/signup" method="POST">
-                <input type="text" name="name" placeholder="Name" required>
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Password" required>
+                <label for="signup-name" class="sr-only">Name</label>
+                <input id="signup-name" type="text" name="name" placeholder="Name" required>
+                <label for="signup-email" class="sr-only">Email</label>
+                <input id="signup-email" type="email" name="email" placeholder="Email" required>
+                <label for="signup-password" class="sr-only">Password</label>
+                <input id="signup-password" type="password" name="password" placeholder="Password" required>
                 <button type="submit">Signup</button>
             </form>
 
