@@ -75,16 +75,18 @@ const Invite = require('./model/invite');
 
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
-
 const suggestionRoutes = require('./routes/suggestionRoutes');
-// ... after your other app.use() lines:
+
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
+
 const Url = require('./model/url');
 
-app.use('/url', urlRoutes);
+// ── CHANGE 1: /url → /api/urls (QR routes bhi yahan se serve honge) ──────────
+app.use('/api/urls', urlRoutes);
+
 app.use("/api/analytics", protect, analyticsRoutes);
 
 const uploadDir = "/tmp";
@@ -141,7 +143,7 @@ app.get("/dashboard", protect, async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id).select('name email').lean();
-    
+
     const inviteSummary = isGuestContributor(req.user)
         ? buildEmptyInviteSummary()
         : await Promise.all([
@@ -154,7 +156,7 @@ app.get("/dashboard", protect, async (req, res) => {
             accepted,
             expired,
         }));
-    
+
     res.render("dashboard", {
         user: buildAccountViewModel(userDoc, req.user),
         services,
@@ -172,17 +174,14 @@ app.get("/profile", protect, async (req, res) => {
     res.render("profile", { user: buildAccountViewModel(userDoc, req.user) });
 });
 
-// Service hub landing page
 app.get('/', (req, res) => {
     res.render('services-hub', { services });
 });
 
-// Optional convenience route
 app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
-// Protected service pages
 app.get('/services/:serviceKey', protect, (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
@@ -221,7 +220,6 @@ app.get('/services/:serviceKey', protect, (req, res) => {
 
 const { isValidUrl } = require('./utils/validators');
 
-// URL shortener submit flow (dedicated service route)
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
     const { redirectUrl } = req.body;
     if (!redirectUrl || !isValidUrl(redirectUrl)) {
@@ -238,13 +236,11 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
         return res.render('home', buildShortenerViewModel(req, shortId));
     } catch (err) {
-        // Log the actual error to the server console for debugging
         console.error('Error creating short URL:', err);
         return res.render('home', buildShortenerViewModel(req, null, 'An unexpected error occurred.'));
     }
 });
 
-// File upload endpoint
 app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
@@ -257,24 +253,29 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
     });
 });
 
-// Redirect for generated short URLs
+// ── CHANGE 2: Redirect — findOneAndUpdate se atomic click tracking ────────────
 app.get('/u/:shortId', async (req, res) => {
-    const shortId = req.params.shortId;
+    const { shortId } = req.params;
 
-    const entry = await Url.findOne({ shortId });
+    try {
+        const entry = await Url.findOneAndUpdate(
+            { shortId },
+            {
+                $inc:  { totalClicks: 1 },
+                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+            },
+            { new: true }
+        );
 
-    if (entry) {
-        // Update analytics
-        entry.totalClicks++;
-        entry.createdAt.push({ timeStamp: new Date() });
-        await entry.save();
+        if (!entry) return res.status(404).send('URL not found');
+
         return res.redirect(entry.redirectUrl);
-    } else {
-        return res.status(404).send('URL not found');
+    } catch (err) {
+        console.error('[redirect]', err);
+        return res.status(500).send('Server error');
     }
 });
 
-// Centralized error handler
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 

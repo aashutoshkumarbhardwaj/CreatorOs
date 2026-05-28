@@ -17,23 +17,41 @@ const urlSchema = new mongoose.Schema({
         default: 0,
     },
 
-    createdAt: [
+    // QR customization fields
+    qrFgColor: {
+        type: String,
+        default: "#000000",
+    },
+
+    qrBgColor: {
+        type: String,
+        default: "#ffffff",
+    },
+
+    qrGenerated: {
+        type: Boolean,
+        default: false,
+    },
+
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+
+    visitHistory: [
         {
-            timeStamp: {
+            timestamp: {
                 type: Date,
                 default: Date.now,
             },
+            // optional: track where the visit came from
+            source: {
+                type: String,
+                enum: ["qr", "direct", "unknown"],
+                default: "unknown",
+            },
         },
     ],
-    visitHistory: [
-  {
-    timestamp: {
-      type: Date,
-      default: Date.now
-    }
-  }
-]
-
 });
 
 // FIX FOR VERCEL / HOT RELOAD
@@ -45,10 +63,14 @@ const mockUrls = [];
 
 class MockUrlModel {
     constructor(data) {
-        this.shortId = data.shortId;
-        this.redirectUrl = data.redirectUrl;
-        this.totalClicks = data.totalClicks || 0;
-        this.createdAt = data.createdAt || [];
+        this.shortId      = data.shortId;
+        this.redirectUrl  = data.redirectUrl;
+        this.totalClicks  = data.totalClicks  || 0;
+        this.qrFgColor    = data.qrFgColor    || "#000000";
+        this.qrBgColor    = data.qrBgColor    || "#ffffff";
+        this.qrGenerated  = data.qrGenerated  || false;
+        this.createdAt    = data.createdAt    || new Date();
+        this.visitHistory = data.visitHistory || [];
     }
 
     async save() {
@@ -76,10 +98,43 @@ class MockUrlModel {
             (u) => u.shortId === query.shortId
         );
 
-        return found
-            ? new MockUrlModel(found)
-            : null;
+        return found ? new MockUrlModel(found) : null;
     }
+
+    static async findOneAndUpdate(query, update, opts = {}) {
+        const found = mockUrls.find(
+            (u) => u.shortId === query.shortId
+        );
+
+        if (!found) return opts.upsert ? MockUrlModel.create({ ...query, ...update.$set }) : null;
+
+        if (update.$set)  Object.assign(found, update.$set);
+        if (update.$push) {
+            const [key, val] = Object.entries(update.$push)[0];
+            if (!found[key]) found[key] = [];
+            found[key].push(val);
+        }
+        if (update.$inc) {
+            const [key, val] = Object.entries(update.$inc)[0];
+            found[key] = (found[key] || 0) + val;
+        }
+
+        return new MockUrlModel(found);
+    }
+
+    static async find(query = {}) {
+        return mockUrls
+            .filter((u) =>
+                Object.entries(query).every(([k, v]) => u[k] === v)
+            )
+            .map((u) => new MockUrlModel(u));
+    }
+
+    static async findByIdAndDelete(id) {
+    const idx = mockUrls.findIndex((u) => u._id === id || u.shortId === id);
+    if (idx === -1) return null;
+    return mockUrls.splice(idx, 1)[0];
+}
 }
 
 module.exports =
