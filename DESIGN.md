@@ -97,16 +97,22 @@ Import these exact Google Fonts:
 The interaction model is highly specific. When hovering, elements don't just change color; they move on the X/Y axes and their solid shadows expand. 
 
 ### Standard Hover Sequence
+
 1. **Default State:** Element has `shadow-[4px_4px_0_var(--shadow-ink)]` and is static (or has a slight rotation like `rotate-[-1deg]`).
+   
    <img src="./assets/Default_State.png" alt="Default State" width="400" />
+
 2. **Hover State (`:hover`):** 
    * Move the element UP and LEFT: `translate-x-[-2px] translate-y-[-2px]` (sometimes up to `-3px`).
    * Expand the shadow: `shadow-[6px_6px_0_var(--shadow-ink)]` or `shadow-[8px_8px_0_var(--shadow-ink)]`.
    * Snap rotation to `0deg` (e.g., `hover:rotate-0`).
+   
    <img src="./assets/Hover_State.png" alt="Hover State" width="400" />
+
 3. **Active/Click State (`:active`):** 
    * Move the element DOWN and RIGHT past its origin: `translate-x-[2px] translate-y-[2px]`.
    * Remove or shrink the shadow entirely: `shadow-none`.
+   
    <img src="./assets/Pressed_State.png" alt="Pressed State" width="400" />
 
 *Transition Timing:* `transition-all duration-150` or `duration-200`. No slow fades.
@@ -116,7 +122,9 @@ The interaction model is highly specific. When hovering, elements don't just cha
 ## 5. Component Level Specifications
 
 ### 5.1 Primary Buttons (The "Action" Button)
+
 <img src="./assets/Primary_Button.png" alt="Primary Button" width="400" />
+
 * **Structure:** Thick rectangle (`h-13`, `px-6`, `py-3`).
 * **Border:** `1px` or `2px` solid black.
 * **Background:** `var(--accent-500)`.
@@ -125,20 +133,26 @@ The interaction model is highly specific. When hovering, elements don't just cha
 * **Hover:** Snaps to `rotate-0`, moves `-1px` or `-2px`, shadow grows from `6px` to `8px`. Background shifts to `var(--accent-600)`.
 
 ### 5.2 Secondary/Ghost Buttons
+
 <img src="./assets/Secondary_Button.png" alt="Secondary Button" width="400" />
+
 * **Background:** `transparent` or `var(--white)`.
 * **Text:** `var(--black)`.
 * **Hover:** Background changes to `var(--black)` and text to `var(--white)`, or background changes to `var(--warning-500)` with black text.
 
 ### 5.3 Highlight Spans (In-text Badges)
+
 <img src="./assets/Highlight_Spans.png" alt="Highlight Spans" width="400" />
+
 Used inside `h1` or `h2` elements to draw extreme attention.
 * **Style 1 (Standard):** `bg-accent-500 text-white px-2 inline-block rotate-1 shadow-[4px_4px_0_var(--shadow-ink)]`.
 * **Style 2 (Dark):** `bg-black text-white px-2 inline-block -rotate-1`.
 * **Style 3 (Warning):** `bg-warning-500 text-black px-3 inline-block rotate-[2deg] shadow-[4px_4px_0_var(--shadow-ink)]`.
 
 ### 5.4 Feature Cards & Sponsor Blocks
+
 <img src="./assets/Feature_Cards.png" alt="Feature Cards" width="600" />
+
 * **Border:** `2px border-black`.
 * **Padding:** `p-6 md:p-8` or `p-8 sm:p-10`.
 * **Shadow:** `shadow-[6px_6px_0px_0px_var(--shadow-ink)]`.
@@ -146,20 +160,26 @@ Used inside `h1` or `h2` elements to draw extreme attention.
 * **Colors:** Cycle backgrounds between `accent-500`, `warning-500`, `success-500`, and `base-900`. Note that inside `base-900` or `accent-500` cards, text MUST be `text-base-100` (white) for contrast.
 
 ### 5.5 Step Number Badges (e.g., 01, 02)
+
 <img src="./assets/Step_Number_Badge.png" alt="Step Number Badge" width="200" />
+
 * **Structure:** Perfect square (`w-12 h-12`).
 * **Style:** `border-2 border-black bg-warning-500 flex items-center justify-center shadow-[3px_3px_0px_0px_var(--shadow-ink)]`.
 * **Text:** `.font-label text-base text-white font-bold`.
 
 ### 5.6 Navbar (Top Fixed)
+
 <img src="./assets/Navbar.png" alt="Navbar" width="600" />
+
 * **Wrapper:** `fixed top-0 left-0 right-0 z-30 py-4 px-3 md:px-6 transition-transform duration-300`. (Hides on scroll down, shows on scroll up using translateY).
 * **Inner Box:** `max-w-screen-xl mx-auto bg-base-100 border-2 border-black shadow-[6px_6px_0px_0px_var(--shadow-ink)] px-5 py-3 md:px-8 md:py-4`.
 * **Nav Links:** `.font-sans text-base font-medium text-black px-3 py-2 border-2 border-transparent hover:border-black hover:text-accent-500 hover:bg-accent-500/10 transition-all`.
 * **Logo Hover Interaction:** `group-hover:rotate-[-2deg] group-hover:shadow-[4px_4px_0_var(--shadow-ink)]`.
 
 ### 5.7 Form Inputs
+
 <img src="./assets/Text_Input.png" alt="Text Input" width="400" />
+
 * **Inputs:** `border: var(--border-base); background: var(--white); padding: 1rem; font-family: 'Source Sans 3', sans-serif; border-radius: 0;`
 * **Focus State:** `box-shadow: var(--shadow-sm); outline: 2px solid var(--accent-500); outline-offset: 2px; transform: translate(-1px, -1px);`
 
