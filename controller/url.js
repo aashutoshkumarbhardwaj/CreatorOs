@@ -1,8 +1,9 @@
 const shortid = require('shortid');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
+const asyncHandler = require('../utils/asyncHandler');
 
-async function handleGenerateShortUrl(req, res) {
+const handleGenerateShortUrl = asyncHandler(async (req, res) => {
     const body= req.body;
     if(!body.redirectUrl || !isValidUrl(body.redirectUrl)){
         return res.status(400).json({error: "A valid HTTP or HTTPS redirectUrl is required"});
@@ -15,9 +16,9 @@ async function handleGenerateShortUrl(req, res) {
     });
 
     return res.json({id: ShortId});
-}
+});
 
-async function handleGetAnalytics(req, res) {
+const handleGetAnalytics = asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
     const entry = await Url.findOne({ shortId: shortId });
     if (!entry) {
@@ -27,8 +28,7 @@ async function handleGetAnalytics(req, res) {
         totalClicks: entry.totalClicks,
         analytics: entry.createdAt
     });
-}
-
+});
 
 module.exports = { handleGenerateShortUrl ,
     handleGetAnalytics
