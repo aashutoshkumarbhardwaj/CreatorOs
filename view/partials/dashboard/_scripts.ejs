@@ -1,0 +1,36 @@
+<%# Partial: dashboard/_scripts.ejs — client-side behaviour, no logic changes %>
+<script>
+  /* ── Sidebar collapse ── */
+  const dashboardLayout = document.getElementById('dashboardLayout');
+  const sidebarToggle   = document.getElementById('sidebarToggle');
+
+  if (localStorage.getItem('creatorosSidebarCollapsed') === 'true') {
+    dashboardLayout.classList.add('sidebar-collapsed');
+    sidebarToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  sidebarToggle.addEventListener('click', () => {
+    const isCollapsed = dashboardLayout.classList.toggle('sidebar-collapsed');
+    sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
+    localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
+  });
+
+  /* ── Light / dark theme ── */
+  const toggleBtn = document.getElementById('theme-toggle');
+
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    toggleBtn.innerText = isLight ? '🌙' : '☀️';
+  });
+
+  window.addEventListener('load', () => {
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-mode');
+      toggleBtn.innerText = '🌙';
+    } else {
+      toggleBtn.innerText = '☀️';
+    }
+  });
+</script>

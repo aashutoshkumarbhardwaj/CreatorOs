@@ -1,0 +1,36 @@
+<%#
+  Partial: dashboard/_topbar.ejs
+  Props (passed via locals):
+    - user  { name, initials }
+%>
+<header class="topbar">
+
+  <button
+    class="menu-btn"
+    type="button"
+    aria-label="Toggle sidebar"
+    aria-expanded="true"
+    id="sidebarToggle"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+      <path d="M4 6h16"></path>
+      <path d="M4 12h16"></path>
+      <path d="M4 18h16"></path>
+    </svg>
+  </button>
+
+  <div class="topbar-actions">
+    <a class="profile-chip" href="/profile" aria-label="Open profile">
+      <span class="avatar"><%= user.initials %></span>
+      <span class="profile-name"><%= user.name %></span>
+    </a>
+    <a class="icon-btn" href="/logout" aria-label="Logout" title="Logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <path d="m16 17 5-5-5-5"></path>
+        <path d="M21 12H9"></path>
+      </svg>
+    </a>
+  </div>
+
+</header>

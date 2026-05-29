@@ -72,9 +72,10 @@ const multer = require('multer');
 const services = require('./services.config');
 const User = require('./model/user');
 const Invite = require('./model/invite');
-
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
+const asyncHandler = require('./utils/asyncHandler');
+
 const suggestionRoutes = require('./routes/suggestionRoutes');
 
 app.use('/suggestions', protect, suggestionRoutes);
@@ -93,7 +94,12 @@ const uploadDir = "/tmp";
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) { cb(null, "/tmp"); },
-    filename: function (req, file, cb) { cb(null, Date.now() + '-' + file.originalname); }
+    filename: function (req, file, cb) { 
+        // 100% foolproof sanitization to prevent any path traversal cross-platform
+        let sanitizedFilename = path.basename(file.originalname);
+        sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
+        cb(null, Date.now() + '-' + sanitizedFilename); 
+    }
 });
 const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
@@ -139,7 +145,7 @@ function buildEmptyInviteSummary() {
     };
 }
 
-app.get("/dashboard", protect, async (req, res) => {
+app.get("/dashboard", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id).select('name email').lean();
@@ -164,15 +170,15 @@ app.get("/dashboard", protect, async (req, res) => {
         inviteAcceptMessage: null,
         inviteAcceptError: null,
     });
-});
+}));
 
-app.get("/profile", protect, async (req, res) => {
+app.get("/profile", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id).select('name email').lean();
 
     res.render("profile", { user: buildAccountViewModel(userDoc, req.user) });
-});
+}));
 
 app.get('/', (req, res) => {
     res.render('services-hub', { services });
@@ -253,9 +259,9 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
     });
 });
 
-// ── CHANGE 2: Redirect — findOneAndUpdate se atomic click tracking ────────────
-app.get('/u/:shortId', async (req, res) => {
-    const { shortId } = req.params;
+// Redirect for generated short URLs
+app.get('/u/:shortId', asyncHandler(async (req, res) => {
+    const shortId = req.params.shortId;
 
     try {
         const entry = await Url.findOneAndUpdate(
@@ -274,7 +280,7 @@ app.get('/u/:shortId', async (req, res) => {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
     }
-});
+}));
 
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);

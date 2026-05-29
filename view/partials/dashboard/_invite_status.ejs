@@ -1,0 +1,25 @@
+<%#
+  Partial: dashboard/_invite_status.ejs
+  Props (passed via locals):
+    - inviteSummary  { pending, accepted, expired } | null
+%>
+<section class="panel">
+  <div class="panel-head">
+    <h2>Invite Status</h2>
+    <span class="badge">Team invites</span>
+  </div>
+  <div class="status-grid">
+    <div class="status-card pending">
+      <h3>Pending</h3>
+      <p><%= inviteSummary ? inviteSummary.pending : 0 %></p>
+    </div>
+    <div class="status-card accepted">
+      <h3>Accepted</h3>
+      <p><%= inviteSummary ? inviteSummary.accepted : 0 %></p>
+    </div>
+    <div class="status-card expired">
+      <h3>Expired</h3>
+      <p><%= inviteSummary ? inviteSummary.expired : 0 %></p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,96 @@
+<%#
+  Partial: dashboard/_analytics.ejs
+  Props (passed via locals):
+    - inviteAcceptMessage  string | null
+    - inviteAcceptError    string | null
+%>
+<div class="analytics-grid">
+
+  <!-- Clicks Overview line chart -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Clicks Overview</h2>
+      <select class="select-pill" aria-label="Analytics range">
+        <option>Last 7 Days</option>
+        <option>Last 30 Days</option>
+      </select>
+    </div>
+    <div class="chart-wrap">
+      <svg class="line-chart" viewBox="0 0 720 280" role="img" aria-label="Clicks overview chart">
+        <defs>
+          <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%"   stop-color="#22d3ee" stop-opacity="0.22"></stop>
+            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.02"></stop>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <path class="chart-grid" d="M70 28H700M70 88H700M70 148H700M70 208H700"></path>
+        <!-- Y-axis labels -->
+        <text class="chart-y" x="24" y="32">400</text>
+        <text class="chart-y" x="24" y="92">300</text>
+        <text class="chart-y" x="24" y="152">200</text>
+        <text class="chart-y" x="24" y="212">100</text>
+        <text class="chart-y" x="36" y="262">0</text>
+        <!-- Area fill -->
+        <path class="chart-area" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92 L690 250 L90 250 Z"></path>
+        <!-- Line -->
+        <path class="chart-line" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92"></path>
+        <!-- Data points -->
+        <circle class="chart-dot" cx="90"  cy="208" r="6"></circle>
+        <circle class="chart-dot" cx="190" cy="182" r="6"></circle>
+        <circle class="chart-dot" cx="290" cy="122" r="6"></circle>
+        <circle class="chart-dot" cx="390" cy="164" r="6"></circle>
+        <circle class="chart-dot" cx="490" cy="62"  r="6"></circle>
+        <circle class="chart-dot" cx="590" cy="142" r="6"></circle>
+        <circle class="chart-dot" cx="690" cy="92"  r="6"></circle>
+        <!-- X-axis labels -->
+        <text class="chart-label" x="72"  y="270">18 May</text>
+        <text class="chart-label" x="172" y="270">19 May</text>
+        <text class="chart-label" x="272" y="270">20 May</text>
+        <text class="chart-label" x="372" y="270">21 May</text>
+        <text class="chart-label" x="472" y="270">22 May</text>
+        <text class="chart-label" x="572" y="270">23 May</text>
+        <text class="chart-label" x="672" y="270">24 May</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Accept Invitation -->
+  <section class="panel invite-panel">
+    <div class="panel-head">
+      <h2>Accept an invitation</h2>
+      <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.55rem 0.85rem;border-radius:999px;background:rgba(34,211,238,0.12);color:#67e8f9;font-weight:700;font-size:0.85rem;">Team</span>
+    </div>
+    <p>Have an invite token? Paste it below to accept your collaboration invite into CreatorOS.</p>
+
+    <% if (inviteAcceptMessage) { %>
+      <div class="message-box message-success"><%= inviteAcceptMessage %></div>
+    <% } %>
+    <% if (inviteAcceptError) { %>
+      <div class="message-box message-error"><%= inviteAcceptError %></div>
+    <% } %>
+
+    <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+      <input type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
+      <button type="submit">Accept invite</button>
+    </form>
+  </section>
+
+  <!-- Top Referrers donut chart -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Top Referrers</h2>
+    </div>
+    <div class="donut-layout">
+      <div class="donut" aria-label="Top referrers chart"></div>
+      <div class="legend">
+        <div class="legend-row"><span class="legend-dot" style="background:#22d3ee"></span><span>Direct</span><strong>65%</strong></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#38bdf8"></span><span>Google</span><strong>20%</strong></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#22c55e"></span><span>Twitter</span><strong>7%</strong></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#f59e0b"></span><span>Instagram</span><strong>5%</strong></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#64748b"></span><span>Others</span><strong>3%</strong></div>
+      </div>
+    </div>
+  </section>
+
+</div>

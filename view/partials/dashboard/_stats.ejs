@@ -1,0 +1,68 @@
+<%#
+  Partial: dashboard/_stats.ejs
+  Props (passed via locals):
+    - user  { name }
+  Stats are currently static demo values. Replace with real data once
+  the analytics controller exposes them via locals.
+%>
+<div class="stats-grid" id="analytics">
+
+  <article class="stat-card">
+    <div class="stat-icon purple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path>
+        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <h3>Total Links</h3>
+      <p class="stat-value">32</p>
+    </div>
+    <p class="stat-note"><span class="trend">+12%</span> from last month</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <h3>Total Clicks</h3>
+      <p class="stat-value">1,256</p>
+    </div>
+    <p class="stat-note"><span class="trend">+18%</span> from last month</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="m3 17 6-6 4 4 8-8"></path>
+        <path d="M14 7h7v7"></path>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <h3>Top Performing Link</h3>
+      <p class="stat-value">423</p>
+    </div>
+    <p class="stat-note">Clicks</p>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-icon orange">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+        <path d="M16 2v4"></path>
+        <path d="M8 2v4"></path>
+        <path d="M3 10h18"></path>
+      </svg>
+    </div>
+    <div class="stat-content">
+      <h3>Joined On</h3>
+      <p class="stat-value">24 May 2025</p>
+    </div>
+    <p class="stat-note">2 weeks ago</p>
+  </article>
+
+</div>

@@ -4,24 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Login | CreatorOS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --cream: #F4EAD5;
+            /* Basic vars based on screenshot and DESIGN.md */
+            --blue-bg: #7baaf7; 
+            --cream: #fdf4e3; 
             --white: #FFFFFF;
-            --black: #0F172A;
-            --teal: #2DD4BF;
-            --yellow: #FBBF24;
-            --gray: #64748B;
+            --black: #000000;
+            --teal: #34D399; 
+            --teal-hover: #10B981;
             
             --border-width: 3px;
-            --shadow-solid: 4px 4px 0px 0px var(--black);
-            --shadow-hover: 6px 6px 0px 0px var(--black);
-            --shadow-active: 2px 2px 0px 0px var(--black);
+            --shadow-ink: var(--black);
+            --shadow-sm: 3px 3px 0px 0px var(--shadow-ink);
+            --shadow-md: 4px 4px 0px 0px var(--shadow-ink);
+            --shadow-lg: 6px 6px 0px 0px var(--shadow-ink);
+            --shadow-xl: 8px 8px 0px 0px var(--shadow-ink);
+            
+            --border-base: 2px solid var(--black);
+            --border-thick: 4px solid var(--black);
         }
 
         * {
@@ -31,370 +37,389 @@
         }
 
         body {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Source Sans 3', sans-serif;
             color: var(--black);
-            background-color: var(--cream);
+            background-color: var(--white); 
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
         }
 
-        /* Container */
-        .split-layout {
+        .window-frame {
             display: flex;
             flex-direction: column;
-            flex: 1;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--cream);
+            overflow: auto;
+            position: relative;
         }
 
         @media (min-width: 1024px) {
-            .split-layout {
+            .window-frame {
                 flex-direction: row;
             }
         }
 
-        /* Left Side */
+        /* Typography */
+        .font-display { font-family: 'Petrona', serif; }
+        .font-sans { font-family: 'Source Sans 3', sans-serif; }
+        .font-label { font-family: 'Azeret Mono', monospace; }
+
+        /* Left Panel */
         .left-panel {
             flex: 1;
+            background-color: var(--blue-bg);
             padding: 3rem 2rem;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            border-bottom: var(--border-width) solid var(--black);
-            background-image: radial-gradient(#d1c7b5 1px, transparent 1px);
-            background-size: 24px 24px;
-            background-color: var(--cream);
-            background-position: 0 0;
+            position: relative;
+            border-bottom: var(--border-base);
         }
         
         @media (min-width: 1024px) {
             .left-panel {
-                padding: 5rem 4rem;
+                padding: 4rem;
                 border-bottom: none;
-                border-right: var(--border-width) solid var(--black);
+                border-right: var(--border-base);
             }
         }
 
         .brand-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             text-decoration: none;
             color: var(--black);
-            margin-bottom: 4rem;
+            margin-bottom: 3rem;
+            font-family: 'Petrona', serif;
+            letter-spacing: -0.5px;
         }
 
-        .lightning-icon {
-            background-color: var(--black);
-            color: var(--teal);
+        .cmd-icon {
             width: 2.25rem;
             height: 2.25rem;
+            background: var(--teal);
+            border: 2px solid var(--black);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            box-shadow: 2px 2px 0px 0px var(--teal);
-        }
-        
-        .lightning-icon svg {
-            width: 16px;
-            height: 16px;
+            box-shadow: 3px 3px 0px var(--black);
         }
 
         .left-panel h1 {
-            font-family: 'Fraunces', serif;
-            font-size: clamp(3rem, 6vw, 4.5rem);
-            line-height: 1.1;
-            font-weight: 900;
+            font-size: clamp(3rem, 5vw, 4.5rem);
+            line-height: 1.05;
+            font-weight: 700;
             margin-bottom: 1.5rem;
-            letter-spacing: -1px;
+            color: var(--black);
+            position: relative;
+            z-index: 10;
         }
 
-        .highlight-text {
-            color: var(--teal);
-            text-shadow: 2px 2px 0px var(--black);
-            -webkit-text-stroke: 1px var(--black);
+        .highlight-box {
+            display: inline-block;
+            background-color: var(--teal);
+            padding: 0 0.5rem;
+            border: 2px solid var(--black);
+            box-shadow: var(--shadow-md);
         }
 
         .left-panel .description {
             font-size: 1.125rem;
             line-height: 1.6;
-            color: #334155;
+            color: rgba(0,0,0,0.85);
             max-width: 85%;
-            margin-bottom: 3rem;
             font-weight: 500;
-        }
-
-        .feature-card {
-            background: var(--white);
-            border: var(--border-width) solid var(--black);
-            padding: 2rem;
-            box-shadow: var(--shadow-solid);
             position: relative;
-            transform: rotate(-1.5deg);
-            max-width: 400px;
-            margin-bottom: 3rem;
-            transition: transform 0.2s;
-        }
-        
-        .feature-card:hover {
-            transform: rotate(0deg) translate(-2px, -2px);
+            z-index: 10;
         }
 
-        .pro-badge {
+        /* Decorative Shapes */
+        .shape-1 {
             position: absolute;
-            top: -15px;
-            right: 20px;
-            background: var(--yellow);
+            bottom: 25%;
+            right: 15%;
+            width: 80px;
+            height: 80px;
+            background-color: #854d0e; 
             border: 2px solid var(--black);
-            padding: 0.25rem 0.75rem;
-            font-weight: 700;
-            font-size: 0.875rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            box-shadow: 2px 2px 0px 0px var(--black);
+            transform: rotate(-10deg);
+            z-index: 1;
         }
 
-        .feature-card h3 {
-            font-family: 'Fraunces', serif;
-            font-size: 1.75rem;
-            margin-bottom: 1.25rem;
+        .shape-2 {
+            position: absolute;
+            bottom: 15%;
+            left: 5%;
+            width: 60px;
+            height: 60px;
+            background-color: #047857; 
+            border: 2px solid var(--black);
+            transform: rotate(15deg);
+            z-index: 1;
         }
 
-        .feature-list {
-            list-style: none;
-        }
-
-        .feature-list li {
+        .stats-badge {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--white);
+            border: 2px solid var(--black);
+            padding: 0.75rem 1rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            font-weight: 500;
+            gap: 1rem;
+            box-shadow: var(--shadow-md);
+            transform: rotate(-2deg);
+            z-index: 10;
         }
 
-        .feature-list svg {
-            width: 20px;
-            height: 20px;
-            color: var(--teal);
-            flex-shrink: 0;
+        .stats-badge img {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--black);
+            border-radius: 0;
+            background: #ccc;
+            object-fit: cover;
         }
 
-        .trusted-banner {
-            border: var(--border-width) solid var(--black);
-            padding: 0.75rem 1rem;
-            display: inline-block;
-            font-weight: 700;
-            font-size: 0.875rem;
-            letter-spacing: 1px;
+        .stats-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stats-text .top {
+            font-family: 'Azeret Mono', monospace;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            background: var(--white);
-            box-shadow: 2px 2px 0px 0px var(--black);
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 2px;
         }
 
-        /* Right Side */
+        .stats-text .bottom {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        /* Right Panel */
         .right-panel {
-            flex: 1.2;
-            background-color: var(--white);
+            flex: 1;
+            background-color: var(--cream);
             padding: 3rem 2rem;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-        }
-
-        @media (min-width: 1024px) {
-            .right-panel {
-                padding: 4rem;
-            }
+            align-items: center;
+            overflow-y: auto;
         }
 
         .form-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 400px;
         }
 
-        .step-indicator {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 3rem;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 10px;
-            border: 2px solid var(--black);
-            background: #e2e8f0;
-            position: relative;
-        }
-
-        .progress-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            width: 33%;
-            background: var(--teal);
-            border-right: 2px solid var(--black);
-        }
-
-        .step-text {
-            font-family: 'Space Grotesk', monospace;
-            font-weight: 700;
-            font-size: 0.875rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .form-container h2 {
-            font-family: 'Fraunces', serif;
-            font-size: 3.5rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: -1px;
-        }
-
-        .form-container p {
-            color: var(--gray);
-            font-size: 1.125rem;
-            margin-bottom: 2.5rem;
-            font-weight: 500;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            font-weight: 700;
-            font-size: 0.875rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 0.75rem;
-            color: var(--black);
-        }
-
-        input {
-            width: 100%;
-            border: var(--border-width) solid var(--black);
-            padding: 1.25rem;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1rem;
-            font-weight: 500;
-            outline: none;
-            transition: all 0.2s;
-            box-shadow: 2px 2px 0px 0px transparent;
-            background: var(--white);
-        }
-
-        input:focus {
-            box-shadow: var(--shadow-solid);
-            transform: translate(-2px, -2px);
-        }
-        
-        input::placeholder {
-            color: #94a3b8;
-        }
-
-        button {
-            width: 100%;
-            border: var(--border-width) solid var(--black);
-            padding: 1.25rem;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.125rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            box-shadow: var(--shadow-solid);
-            transition: all 0.15s ease;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        button.primary {
-            background-color: var(--teal);
-            color: var(--black);
-            margin-top: 1rem;
-        }
-
-        button.secondary {
+        .social-btn {
             background-color: var(--white);
-            color: var(--black);
-        }
-
-        button:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        button:active {
-            transform: translate(2px, 2px);
-            box-shadow: var(--shadow-active);
-        }
-
-        .google-btn {
-            background-color: var(--white);
-            border: var(--border-width) solid var(--black);
+            border: var(--border-base);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            padding: 1.25rem;
-            font-family: 'Space Grotesk', sans-serif;
+            padding: 1rem;
+            font-family: 'Source Sans 3', sans-serif;
             font-weight: 700;
-            font-size: 1.125rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            text-decoration: none;
+            font-size: 0.95rem;
             color: var(--black);
-            box-shadow: var(--shadow-solid);
+            box-shadow: var(--shadow-sm);
             transition: all 0.15s ease;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             width: 100%;
+            text-decoration: none;
+            cursor: pointer;
         }
 
-        .google-btn:hover {
+        .social-btn:hover {
             transform: translate(-2px, -2px);
-            box-shadow: var(--shadow-hover);
+            box-shadow: var(--shadow-lg);
         }
         
-        .google-btn:active {
+        .social-btn:active {
             transform: translate(2px, 2px);
-            box-shadow: var(--shadow-active);
+            box-shadow: none;
         }
 
-        .google-icon {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
+        .social-icon { width: 18px; height: 18px; }
 
         .divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 1.5rem 0;
-            font-weight: 700;
-            color: var(--gray);
+            margin: 2rem 0;
+            font-family: 'Azeret Mono', monospace;
+            font-weight: 600;
+            color: var(--black);
             text-transform: uppercase;
             letter-spacing: 2px;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
         }
 
         .divider::before,
         .divider::after {
             content: '';
             flex: 1;
-            border-bottom: 2px solid var(--black);
+            border-bottom: 1px solid var(--black);
         }
 
         .divider:not(:empty)::before { margin-right: 1rem; }
         .divider:not(:empty)::after { margin-left: 1rem; }
 
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        label {
+            font-family: 'Azeret Mono', monospace;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--black);
+        }
+
+        .forgot-link {
+            font-family: 'Azeret Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--teal-hover);
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            border: 1px solid var(--black);
+            padding: 1rem;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--white);
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            box-shadow: var(--shadow-sm);
+            outline: 2px solid var(--teal);
+            outline-offset: 1px;
+            transform: translate(-1px, -1px);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        input[type="checkbox"] {
+            width: 1.15rem;
+            height: 1.15rem;
+            border: 2px solid var(--black);
+            border-radius: 0;
+            appearance: none;
+            background: var(--white);
+            cursor: pointer;
+            position: relative;
+        }
+        
+        input[type="checkbox"]:checked {
+            background: var(--teal);
+        }
+        
+        input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: var(--black);
+            font-weight: bold;
+            font-size: 0.8rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .checkbox-label {
+            font-family: 'Source Sans 3', sans-serif;
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-transform: none;
+            letter-spacing: normal;
+            margin-bottom: 0;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background-color: var(--teal);
+            border: 2px solid var(--black);
+            padding: 1.25rem;
+            font-family: 'Azeret Mono', monospace;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--black);
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.15s ease;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .primary-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 10px 10px 0px 0px var(--black);
+            background-color: var(--teal-hover);
+        }
+
+        .primary-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        .switch-link {
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .switch-link a {
+            color: var(--teal-hover);
+            font-weight: 700;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+            margin-left: 0.25rem;
+        }
+        
         .auth-error {
             background-color: #fef2f2;
             border: 2px solid #ef4444;
@@ -402,136 +427,109 @@
             margin-bottom: 1.5rem;
             color: #b91c1c;
             font-weight: 600;
-            box-shadow: 4px 4px 0px 0px #ef4444;
-        }
-
-        .switch-link {
-            text-align: center;
-            margin-top: 2rem;
-            font-weight: 500;
-        }
-
-        .switch-link a {
-            color: var(--black);
-            font-weight: 700;
-            text-decoration: underline;
-            text-decoration-thickness: 2px;
-            text-underline-offset: 4px;
-        }
-
-        .switch-link a:hover {
-            color: var(--teal);
+            box-shadow: var(--shadow-sm);
         }
     </style>
 </head>
 <body>
-    <main class="split-layout">
+    <div class="window-frame">
         <!-- Left Panel -->
         <section class="left-panel">
             <a href="/" class="brand-badge">
-                <div class="lightning-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                <div class="cmd-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
                     </svg>
                 </div>
                 CreatorOS
             </a>
 
-            <h1>Welcome <br><span class="highlight-text">back.</span></h1>
+            <h1 class="font-display">Welcome back,<br><span class="highlight-box">Creator.</span></h1>
             
             <p class="description">
-                The all-in-one workspace built for modern creators. Scale your audience, manage links, and track growth with tactile precision.
+                Access your workspace, manage your links, and scale your creative empire from a single interface.
             </p>
 
-            <div class="feature-card">
-                <div class="pro-badge">Pro Benefit</div>
-                <h3>Why go Pro?</h3>
-                <ul class="feature-list">
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        Unlimited Smart Links
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        Advanced CRM & Leads
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        Custom .creator Domains
-                    </li>
-                </ul>
-            </div>
+            <div class="shape-1"></div>
+            <div class="shape-2"></div>
 
-            <div class="trusted-banner">
-                Trusted by 10,000+ Creators Worldwide
+            <div class="stats-badge">
+                <img src="/images/avatar-placeholder.jpg" alt="User Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23ccc\'/></svg>'">
+                <div class="stats-text">
+                    <span class="top">Joined 2,401 creators today</span>
+                    <span class="bottom">Upgrade your workflow now.</span>
+                </div>
             </div>
         </section>
 
         <!-- Right Panel -->
         <section class="right-panel">
             <div class="form-container">
-                <div class="step-indicator">
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <span class="step-text">Step 01/03</span>
-                </div>
-
-                <h2>Identity</h2>
-                <p>Log in to access your creator dashboard.</p>
-
                 <% if (typeof error !== 'undefined' && error) { %>
                     <div class="auth-error" role="alert">
                         <%= error %>
                     </div>
                 <% } %>
 
-                <form action="/login" method="POST" id="email-login-form">
-                    <div class="form-group">
-                        <label for="login-email">Email Address</label>
-                        <input id="login-email" type="email" name="email" placeholder="e.g. alex@creator.os" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input id="login-password" type="password" name="password" placeholder="••••••••" required>
-                    </div>
-
-                    <button type="submit" class="primary" data-loading-text="Logging in...">
-                        Continue to Dashboard &rarr;
-                    </button>
-                </form>
-
-                <div class="divider">or</div>
-
-                <a class="google-btn" href="/auth/google" data-loading-text="Connecting...">
-                    <svg class="google-icon" viewBox="0 0 48 48">
+                <a class="social-btn" href="/auth/google">
+                    <svg class="social-icon" viewBox="0 0 48 48">
                         <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
                         <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
                         <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
                         <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
                     </svg>
-                    Continue with Google
+                    Sign in with Google
                 </a>
 
-                <form action="/login/contributor" method="POST" id="contributor-login-form">
-                    <button type="submit" class="secondary" data-loading-text="Continuing...">
+                <button class="social-btn" type="button" onclick="alert('Instagram login coming soon!')">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    Sign in with Instagram
+                </button>
+
+                <div class="divider">OR EMAIL</div>
+
+                <form action="/login" method="POST" id="email-login-form">
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="login-email">Email Address</label>
+                        </div>
+                        <input id="login-email" type="email" name="email" placeholder="creator@studio.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-row">
+                            <label for="login-password">Password</label>
+                            <a href="#" class="forgot-link">FORGOT?</a>
+                        </div>
+                        <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                    </div>
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="remember-me" name="remember">
+                        <label for="remember-me" class="checkbox-label">Remember this device</label>
+                    </div>
+
+                    <button type="submit" class="primary-btn" data-loading-text="Logging in...">
+                        SIGN IN &rarr;
+                    </button>
+                </form>
+
+                <form action="/login/contributor" method="POST" id="contributor-login-form" style="margin-bottom: 2.5rem;">
+                    <button type="submit" class="social-btn" style="box-shadow: var(--shadow-sm); justify-content: center;" data-loading-text="Continuing...">
                         Continue as Contributor
                     </button>
                 </form>
 
                 <p class="switch-link">
-                    Don't have an account? <a href="/signup">Signup</a>
+                    Don't have an account? <a href="/signup">Create your OS account</a>
                 </p>
             </div>
         </section>
-    </main>
+    </div>
     <script src="/js/pages/login.js"></script>
 </body>
 </html>
