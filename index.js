@@ -235,6 +235,8 @@ app.get("/dashboard", protect, async (req, res) => {
         pending: invites.filter((invite) => invite.status === 'pending').length,
         accepted: invites.filter((invite) => invite.status === 'accepted').length,
         expired: invites.filter((invite) => invite.status === 'expired').length,
+
+    };
 function isGuestContributor(user) {
     return user?.role === 'guest_contributor';
 }
