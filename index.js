@@ -26,9 +26,11 @@ const app = express();
 const connectDB = require("./connect");
 const authRoutes = require("./routes/auth");
 const collaborationRoutes = require('./routes/collaboration');
+const analyticsRoutes = require("./routes/analytics");
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
 
 connectDB();
+require("./workers/analyticsRefreshWorker");
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -44,7 +46,7 @@ const loginLimiter = rateLimit({
     max: 15,
     message: 'Too many login attempts, please try again later.'
 });
-app.use('/login', loginLimiter);
+app.post('/login', loginLimiter);
 
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
@@ -83,6 +85,7 @@ app.get('/invites/accept/:token', acceptInvite);
 const Url = require('./model/url');
 
 app.use('/url', urlRoutes);
+app.use("/api/analytics", protect, analyticsRoutes);
 
 const uploadDir = "/tmp";
 

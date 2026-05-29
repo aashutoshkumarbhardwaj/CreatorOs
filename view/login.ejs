@@ -3,373 +3,535 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Login | CreatorOS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #06101f;
-            --bg-2: #0b1730;
-            --panel: rgba(13, 24, 49, 0.72);
-            --border: rgba(148, 163, 184, 0.18);
-            --text: #f8fafc;
-            --muted: #cbd5e1;
-            --accent: #22d3ee;
-            --accent-2: #38bdf8;
+            --cream: #F4EAD5;
+            --white: #FFFFFF;
+            --black: #0F172A;
+            --teal: #2DD4BF;
+            --yellow: #FBBF24;
+            --gray: #64748B;
+            
+            --border-width: 3px;
+            --shadow-solid: 4px 4px 0px 0px var(--black);
+            --shadow-hover: 6px 6px 0px 0px var(--black);
+            --shadow-active: 2px 2px 0px 0px var(--black);
         }
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            margin: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--black);
+            background-color: var(--cream);
             min-height: 100vh;
-            font-family: 'Poppins', sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
-                radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
-                linear-gradient(180deg, var(--bg-2), var(--bg));
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .auth-shell {
-            position: relative;
-            isolation: isolate;
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 2rem 1rem;
+        /* Container */
+        .split-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
-        .auth-shell::before,
-        .auth-shell::after {
-            content: '';
-            position: fixed;
-            border-radius: 999px;
-            filter: blur(22px);
-            opacity: 0.18;
-            pointer-events: none;
-            z-index: -1;
+        @media (min-width: 1024px) {
+            .split-layout {
+                flex-direction: row;
+            }
         }
 
-        .auth-shell::before {
-            top: 7rem;
-            left: -4rem;
-            width: 16rem;
-            height: 16rem;
-            background: #0ea5e9;
+        /* Left Side */
+        .left-panel {
+            flex: 1;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: var(--border-width) solid var(--black);
+            background-image: radial-gradient(#d1c7b5 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-color: var(--cream);
+            background-position: 0 0;
+        }
+        
+        @media (min-width: 1024px) {
+            .left-panel {
+                padding: 5rem 4rem;
+                border-bottom: none;
+                border-right: var(--border-width) solid var(--black);
+            }
         }
 
-        .auth-shell::after {
-            right: -5rem;
-            bottom: 7rem;
-            width: 18rem;
-            height: 18rem;
-            background: #22d3ee;
-        }
-
-        .auth-card {
-            width: min(440px, 100%);
-            padding: 2rem;
-            border: 1px solid var(--border);
-            border-radius: 1.5rem;
-            background: var(--panel);
-            backdrop-filter: blur(18px);
-            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
-        }
-
-        .brand {
+        .brand-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.75rem;
-            margin-bottom: 2rem;
-            color: var(--text);
+            font-weight: 700;
+            font-size: 1.25rem;
             text-decoration: none;
-            font-weight: 800;
-            letter-spacing: 0;
+            color: var(--black);
+            margin-bottom: 4rem;
         }
 
-        .brand-mark {
-            width: 2.4rem;
-            height: 2.4rem;
-            border-radius: 0.9rem;
-            display: grid;
-            place-items: center;
-            color: #082f49;
-            background: linear-gradient(135deg, #67e8f9, var(--accent-2));
-            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.28);
+        .lightning-icon {
+            background-color: var(--black);
+            color: var(--teal);
+            width: 2.25rem;
+            height: 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px 0px var(--teal);
+        }
+        
+        .lightning-icon svg {
+            width: 16px;
+            height: 16px;
         }
 
-        h1 {
-            margin: 0;
-            font-size: clamp(2rem, 5vw, 2.6rem);
+        .left-panel h1 {
+            font-family: 'Fraunces', serif;
+            font-size: clamp(3rem, 6vw, 4.5rem);
             line-height: 1.1;
-            letter-spacing: 0;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
         }
 
-        .subtitle {
-            margin: 0.8rem 0 1.8rem;
-            color: var(--muted);
-            line-height: 1.7;
+        .highlight-text {
+            color: var(--teal);
+            text-shadow: 2px 2px 0px var(--black);
+            -webkit-text-stroke: 1px var(--black);
         }
 
-        form {
-            display: grid;
+        .left-panel .description {
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: #334155;
+            max-width: 85%;
+            margin-bottom: 3rem;
+            font-weight: 500;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--black);
+            padding: 2rem;
+            box-shadow: var(--shadow-solid);
+            position: relative;
+            transform: rotate(-1.5deg);
+            max-width: 400px;
+            margin-bottom: 3rem;
+            transition: transform 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: rotate(0deg) translate(-2px, -2px);
+        }
+
+        .pro-badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--yellow);
+            border: 2px solid var(--black);
+            padding: 0.25rem 0.75rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 2px 2px 0px 0px var(--black);
+        }
+
+        .feature-card h3 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+
+        .feature-list svg {
+            width: 20px;
+            height: 20px;
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+
+        .trusted-banner {
+            border: var(--border-width) solid var(--black);
+            padding: 0.75rem 1rem;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 0.875rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--white);
+            box-shadow: 2px 2px 0px 0px var(--black);
+        }
+
+        /* Right Side */
+        .right-panel {
+            flex: 1.2;
+            background-color: var(--white);
+            padding: 3rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (min-width: 1024px) {
+            .right-panel {
+                padding: 4rem;
+            }
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
             gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 10px;
+            border: 2px solid var(--black);
+            background: #e2e8f0;
+            position: relative;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 33%;
+            background: var(--teal);
+            border-right: 2px solid var(--black);
+        }
+
+        .step-text {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 700;
+            font-size: 0.875rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .form-container h2 {
+            font-family: 'Fraunces', serif;
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .form-container p {
+            color: var(--gray);
+            font-size: 1.125rem;
+            margin-bottom: 2.5rem;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.875rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            color: var(--black);
         }
 
         input {
             width: 100%;
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 999px;
-            padding: 0.95rem 1.1rem;
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.06);
-            font: inherit;
+            border: var(--border-width) solid var(--black);
+            padding: 1.25rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
             outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        input::placeholder {
-            color: rgba(203, 213, 225, 0.74);
+            transition: all 0.2s;
+            box-shadow: 2px 2px 0px 0px transparent;
+            background: var(--white);
         }
 
         input:focus {
-            border-color: rgba(34, 211, 238, 0.8);
-            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
-            background: rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-solid);
+            transform: translate(-2px, -2px);
+        }
+        
+        input::placeholder {
+            color: #94a3b8;
         }
 
         button {
-            border: 0;
-            border-radius: 999px;
-            padding: 0.95rem 1.2rem;
-            color: #042f3e;
-            background: linear-gradient(135deg, #67e8f9, var(--accent-2));
-            box-shadow: 0 16px 32px rgba(34, 211, 238, 0.22);
-            font: inherit;
-            font-weight: 800;
+            width: 100%;
+            border: var(--border-width) solid var(--black);
+            padding: 1.25rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.125rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: transform 0.2s ease, filter 0.2s ease;
+            box-shadow: var(--shadow-solid);
+            transition: all 0.15s ease;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .google-login {
-            width: 100%;
-            min-height: 3.35rem;
-            display: inline-flex;
+        button.primary {
+            background-color: var(--teal);
+            color: var(--black);
+            margin-top: 1rem;
+        }
+
+        button.secondary {
+            background-color: var(--white);
+            color: var(--black);
+        }
+
+        button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: var(--shadow-active);
+        }
+
+        .google-btn {
+            background-color: var(--white);
+            border: var(--border-width) solid var(--black);
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(248, 250, 252, 0.22);
-            border-radius: 999px;
-            padding: 0.95rem 1.2rem;
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 14px 30px rgba(2, 6, 23, 0.18);
-            font: inherit;
-            font-weight: 800;
+            padding: 1.25rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.125rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             text-decoration: none;
-            cursor: pointer;
-            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+            color: var(--black);
+            box-shadow: var(--shadow-solid);
+            transition: all 0.15s ease;
+            margin-bottom: 1.5rem;
+            width: 100%;
         }
 
-        .google-login:hover {
-            transform: translateY(-2px);
-            border-color: rgba(248, 250, 252, 0.42);
-            background: rgba(255, 255, 255, 0.12);
+        .google-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .google-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: var(--shadow-active);
         }
 
         .google-icon {
-            flex: 0 0 auto;
-            width: 1.2rem;
-            height: 1.2rem;
-            border-radius: 50%;
-            background: #ffffff;
+            width: 1.5rem;
+            height: 1.5rem;
         }
 
         .divider {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin: 0 0 1rem;
-            color: rgba(203, 213, 225, 0.78);
-            font-size: 0.86rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.875rem;
         }
 
         .divider::before,
         .divider::after {
             content: '';
-            height: 1px;
-            background: rgba(148, 163, 184, 0.18);
+            flex: 1;
+            border-bottom: 2px solid var(--black);
         }
+
+        .divider:not(:empty)::before { margin-right: 1rem; }
+        .divider:not(:empty)::after { margin-left: 1rem; }
 
         .auth-error {
-            margin: 0 0 1rem;
-            border: 1px solid rgba(248, 113, 113, 0.38);
-            border-radius: 1rem;
-            padding: 0.85rem 1rem;
-            color: #fecaca;
-            background: rgba(127, 29, 29, 0.22);
-            line-height: 1.5;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.03);
-        }
-
-        button:disabled {
-            cursor: wait;
-            opacity: 0.75;
-            transform: none;
+            background-color: #fef2f2;
+            border: 2px solid #ef4444;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: #b91c1c;
+            font-weight: 600;
+            box-shadow: 4px 4px 0px 0px #ef4444;
         }
 
         .switch-link {
-            margin: 1.4rem 0 0;
-            color: var(--muted);
             text-align: center;
+            margin-top: 2rem;
+            font-weight: 500;
         }
 
         .switch-link a {
-            color: #67e8f9;
+            color: var(--black);
             font-weight: 700;
-            text-decoration: none;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
         }
 
         .switch-link a:hover {
-            color: #a5f3fc;
-        }
-
-        .contributor-form {
-            margin-top: 1rem;
-        }
-
-        .contributor-btn {
-            width: 100%;
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            box-shadow: none;
-        }
-
-        .error-banner {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            text-align: center;
+            color: var(--teal);
         }
     </style>
 </head>
 <body>
-    <main class="auth-shell">
-        <section class="auth-card">
-            <a class="brand" href="/">
-                <span class="brand-mark">C</span>
-                <span>CreatorOS</span>
+    <main class="split-layout">
+        <!-- Left Panel -->
+        <section class="left-panel">
+            <a href="/" class="brand-badge">
+                <div class="lightning-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                CreatorOS
             </a>
 
-            <h1>Welcome back</h1>
-            <p class="subtitle">Log in to continue managing your creator tools and shortened links.</p>
-
-            <% if (typeof error !== 'undefined' && error) { %>
-                <p class="auth-error" role="alert"><%= error %></p>
-            <% } %>
-
-            <a
-                class="google-login"
-                href="/auth/google"
-                data-loading-text="Connecting..."
-            >
-                <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
-                    <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
-                    <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
-                    <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
-                </svg>
-                <span>Continue with Google</span>
-            </a>
-
-            <div class="divider">or</div>
-
-            <form action="/login" method="POST" id="email-login-form">
-                <label for="login-email" class="sr-only">Email</label>
-                <input id="login-email" type="email" name="email" placeholder="Email" required>
-                <label for="login-password" class="sr-only">Password</label>
-                <input id="login-password" type="password" name="password" placeholder="Password" required>
-                <button type="submit" data-loading-text="Logging in...">Login</button>
-            </form>
-
-            <form action="/login/contributor" method="POST" class="contributor-form" id="contributor-login-form">
-                <button type="submit" class="contributor-btn" data-loading-text="Continuing...">Continue as Contributor</button>
-            </form>
-
-            <p class="switch-link">
-                Don't have an account?
-                <a href="/signup">Signup</a>
+            <h1>Welcome <br><span class="highlight-text">back.</span></h1>
+            
+            <p class="description">
+                The all-in-one workspace built for modern creators. Scale your audience, manage links, and track growth with tactile precision.
             </p>
+
+            <div class="feature-card">
+                <div class="pro-badge">Pro Benefit</div>
+                <h3>Why go Pro?</h3>
+                <ul class="feature-list">
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        Unlimited Smart Links
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        Advanced CRM & Leads
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        Custom .creator Domains
+                    </li>
+                </ul>
+            </div>
+
+            <div class="trusted-banner">
+                Trusted by 10,000+ Creators Worldwide
+            </div>
+        </section>
+
+        <!-- Right Panel -->
+        <section class="right-panel">
+            <div class="form-container">
+                <div class="step-indicator">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <span class="step-text">Step 01/03</span>
+                </div>
+
+                <h2>Identity</h2>
+                <p>Log in to access your creator dashboard.</p>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="auth-error" role="alert">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <form action="/login" method="POST" id="email-login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input id="login-email" type="email" name="email" placeholder="e.g. alex@creator.os" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="primary" data-loading-text="Logging in...">
+                        Continue to Dashboard &rarr;
+                    </button>
+                </form>
+
+                <div class="divider">or</div>
+
+                <a class="google-btn" href="/auth/google" data-loading-text="Connecting...">
+                    <svg class="google-icon" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
+                        <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
+                        <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
+                    </svg>
+                    Continue with Google
+                </a>
+
+                <form action="/login/contributor" method="POST" id="contributor-login-form">
+                    <button type="submit" class="secondary" data-loading-text="Continuing...">
+                        Continue as Contributor
+                    </button>
+                </form>
+
+                <p class="switch-link">
+                    Don't have an account? <a href="/signup">Signup</a>
+                </p>
+            </div>
         </section>
     </main>
-    <script>
-        const googleLogin = document.querySelector('.google-login');
-        const emailForm = document.querySelector('#email-login-form');
-        const contributorForm = document.querySelector('#contributor-login-form');
-
-        googleLogin?.addEventListener('click', function () {
-            this.setAttribute('aria-busy', 'true');
-            this.querySelector('span').textContent = this.dataset.loadingText;
-        });
-
-        emailForm?.addEventListener('submit', function () {
-            const submitButton = this.querySelector('button[type="submit"]');
-
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = submitButton.dataset.loadingText;
-            }
-        });
-
-        contributorForm?.addEventListener('submit', async function (event) {
-            event.preventDefault();
-
-            const submitButton = this.querySelector('button[type="submit"]');
-
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = submitButton.dataset.loadingText;
-            }
-
-            try {
-                const response = await fetch('/api/auth/contributor-login', {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
-                const data = await response.json();
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Contributor login failed');
-                }
-
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = '/dashboard';
-            } catch (error) {
-                console.error(error);
-
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Continue as Contributor';
-                }
-            }
-        });
-    </script>
+    <script src="/js/pages/login.js"></script>
 </body>
 </html>
