@@ -7,266 +7,1106 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Titli - Elegant Link Shortener</title>
-    <link href="/css/style.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Titli - Link Shortener | CreatorOS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #1e3a8a, #3b0764); }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* ══════════════════════════════════
+           CSS VARIABLES - CreatorOS Theme
+        ══════════════════════════════════ */
+        :root {
+            --cream: #f5f0e1;
+            --cream-dark: #ece7d8;
+            --teal: #3ecfb2;
+            --teal-hover: #2bb89d;
+            --ink: #1a1a1a;
+            --ink-light: #4a4a4a;
+            --white: #ffffff;
+            --red: #ef4444;
+            --border-width: 3px;
+            --shadow-offset: 4px;
         }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        @keyframes blob {
-            0%   { transform: translate(0px, 0px) scale(1); }
-            33%  { transform: translate(30px, -50px) scale(1.1); }
-            66%  { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        /* ══════════════════════════════════
+           RESET & BASE
+        ══════════════════════════════════ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-
-        /* ── QR Result Card ───────────────────────────────── */
-        .result-card {
-            margin-top: 2rem;
-            max-width: 480px;
-            margin-left: auto;
-            margin-right: auto;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.2rem;
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+            line-height: 1.6;
         }
-        .result-url-row {
-            width: 100%;
+        /* Grid pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+        /* ══════════════════════════════════
+           LAYOUT
+        ══════════════════════════════════ */
+        .page {
+            position: relative;
+            z-index: 1;
+        }
+        .container {
+            width: min(1100px, 100%);
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        /* ══════════════════════════════════
+           HEADER
+        ══════════════════════════════════ */
+        header {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(1100px, calc(100% - 2rem));
+            z-index: 1000;
+            padding: 0.6rem 1.25rem;
+            background: var(--cream);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+        }
+        header nav {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.75rem;
-            background: rgba(255,255,255,0.06);
-            border-radius: 0.65rem;
-            padding: 0.75rem 1rem;
         }
-        .result-url-row a {
-            color: #67e8f9;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--ink);
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--teal);
+            border: 2px solid var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fraunces', serif;
+            font-weight: 900;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+        .logo-text {
+            font-family: 'Fraunces', serif;
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+        .logo-version {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--ink-light);
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        .nav-links a {
+            color: var(--ink);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--teal);
+        }
+        /* ══════════════════════════════════
+           HERO SECTION
+        ══════════════════════════════════ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7rem 1.5rem 3rem;
+        }
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.9rem;
+            background: var(--white);
+            border: 2px solid var(--ink);
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--teal);
+            border-radius: 50%;
+        }
+        .hero-title {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            color: var(--ink);
+        }
+        .hero-title em {
+            font-style: italic;
+            font-weight: 300;
+            color: var(--teal);
+        }
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--ink-light);
+            max-width: 50ch;
+            margin: 0 auto 2rem;
+        }
+        /* ══════════════════════════════════
+           URL INPUT CARD
+        ══════════════════════════════════ */
+        .url-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+            padding: 1.75rem;
+            max-width: 650px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .card-label {
+            position: absolute;
+            top: -11px;
+            right: 16px;
+            background: var(--cream);
+            padding: 0.15rem 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
             font-weight: 700;
-            font-size: 1.05rem;
-            word-break: break-all;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border: 2px solid var(--ink);
+        }
+        .card-label.ready {
+            background: var(--teal);
+            color: var(--ink);
+        }
+        .url-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .input-group {
+            display: flex;
+            align-items: stretch;
+        }
+        .input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1rem;
+            background: var(--cream-dark);
+            border: var(--border-width) solid var(--ink);
+            border-right: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .url-input {
+            flex: 1;
+            padding: 0.9rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            border: var(--border-width) solid var(--ink);
+            border-right: none;
+            background: var(--white);
+            color: var(--ink);
+            outline: none;
+        }
+        .url-input::placeholder {
+            color: #999;
+        }
+        .url-input:focus {
+            box-shadow: inset 0 0 0 2px var(--teal);
+        }
+        .btn-primary {
+            padding: 0.9rem 1.75rem;
+            background: var(--teal);
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: var(--border-width) solid var(--ink);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-primary:hover {
+            background: var(--teal-hover);
+            box-shadow: 2px 2px 0 var(--ink);
+            transform: translate(-1px, -1px);
+        }
+        /* ══════════════════════════════════
+           RESULT SECTION
+        ══════════════════════════════════ */
+        .result-section {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+        .result-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+            padding: 1.5rem;
+            position: relative;
+        }
+        .result-url-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .result-url {
+            flex: 1;
+            padding: 0.65rem 0.9rem;
+            background: var(--cream);
+            border: 2px solid var(--ink);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--teal);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .result-url a {
+            color: var(--teal);
             text-decoration: none;
         }
-        .result-url-row a:hover { color: #a5f3fc; }
-        .copy-btn {
-            flex-shrink: 0;
-            padding: 0.45rem 1rem;
-            border: none;
-            border-radius: 999px;
-            background: #22d3ee;
-            color: #042f3e;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: background 0.18s, transform 0.18s;
+        .result-url a:hover {
+            text-decoration: underline;
         }
-        .copy-btn:hover { background: #67e8f9; transform: translateY(-1px); }
-        .qr-box {
-            background: #ffffff;
-            border-radius: 0.85rem;
+        .btn-copy {
+            padding: 0.65rem 1.25rem;
+            background: var(--cream-dark);
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 2px solid var(--ink);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-copy:hover {
+            box-shadow: 2px 2px 0 var(--ink);
+            transform: translate(-1px, -1px);
+        }
+        .btn-copy.copied {
+            background: var(--teal);
+        }
+        /* ══════════════════════════════════
+           CUSTOMIZATION SECTION
+        ══════════════════════════════════ */
+        .section-label {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--ink);
+        }
+        .customization-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+        .customization-group {
+            flex: 1;
+        }
+        .customization-group label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            color: var(--ink-light);
+        }
+        .color-palette {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--ink);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s;
+        }
+        .color-swatch:hover {
+            transform: scale(1.05);
+        }
+        .color-swatch.selected::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border: 2px solid var(--teal);
+            pointer-events: none;
+        }
+        .color-swatch-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            text-align: center;
+            margin-top: 0.25rem;
+            color: var(--ink-light);
+        }
+        /* ══════════════════════════════════
+           QR CODE PREVIEW
+        ══════════════════════════════════ */
+        .qr-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--teal);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .qr-preview-border {
+            border: 3px solid var(--teal);
             padding: 0.75rem;
+            background: var(--white);
+            position: relative;
+        }
+        .qr-dots-top, .qr-dots-bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 0.5rem;
+        }
+        .qr-dots-top {
+            top: -8px;
+        }
+        .qr-dots-bottom {
+            bottom: -8px;
+        }
+        .qr-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--teal);
+            border-radius: 50%;
+        }
+        .qr-wrapper {
+            background: var(--white);
             display: flex;
             align-items: center;
             justify-content: center;
             min-width: 180px;
             min-height: 180px;
         }
-        .qr-box img { width: 160px; height: 160px; display: block; }
-        .qr-spinner {
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid rgba(34,211,238,0.2);
-            border-top-color: #22d3ee;
-            border-radius: 999px;
-            animation: spin 0.8s linear infinite;
+        #qr-canvas {
+            display: block;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .qr-download-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.65rem 1.4rem;
-            border: none;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #22d3ee, #38bdf8);
-            color: #042f3e;
+        .qr-label {
+            font-family: 'Fraunces', serif;
+            font-weight: 900;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink);
+            margin-top: 1rem;
+            text-align: center;
+        }
+        /* ══════════════════════════════════
+           EXPORT SECTION
+        ══════════════════════════════════ */
+        .export-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+            padding: 1.25rem;
+            position: relative;
+            margin-top: 1.5rem;
+        }
+        .export-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.18s, box-shadow 0.18s;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            color: var(--ink);
         }
-        .qr-download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(34,211,238,0.3);
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn-export {
+            flex: 1;
+            padding: 0.6rem 0.75rem;
+            background: var(--white);
+            color: var(--ink);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 2px solid var(--ink);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            text-decoration: none;
+        }
+        .btn-export:hover {
+            background: var(--cream);
+        }
+        .btn-export.active {
+            background: var(--ink);
+            color: var(--white);
+        }
+        .btn-save {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--ink);
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: 2px solid var(--ink);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        .btn-save:hover {
+            background: var(--teal);
+            color: var(--ink);
+        }
+        /* ══════════════════════════════════
+           ERROR CARD
+        ══════════════════════════════════ */
+        .error-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--red);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--red);
+            padding: 1.25rem;
+            max-width: 650px;
+            margin: 0 auto 1.5rem;
+            color: var(--red);
+            font-weight: 600;
+        }
+        /* ══════════════════════════════════
+           FEATURES SECTION
+        ══════════════════════════════════ */
+        .features {
+            padding: 4rem 1.5rem;
+            background: var(--cream-dark);
+            border-top: var(--border-width) solid var(--ink);
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-title {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            color: var(--ink);
+        }
+        .section-subtitle {
+            font-size: 0.95rem;
+            color: var(--ink-light);
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .feature-card {
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+            padding: 1.5rem;
+            transition: all 0.15s;
+        }
+        .feature-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--ink);
+        }
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--teal);
+            border: 2px solid var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .feature-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: var(--ink);
+        }
+        .feature-desc {
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            line-height: 1.5;
+        }
+        /* ══════════════════════════════════
+           HOW IT WORKS
+        ══════════════════════════════════ */
+        .how-it-works {
+            padding: 4rem 1.5rem;
+            border-top: var(--border-width) solid var(--ink);
+        }
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .step {
+            text-align: center;
+            max-width: 200px;
+        }
+        .step-number {
+            width: 64px;
+            height: 64px;
+            background: var(--white);
+            border: var(--border-width) solid var(--ink);
+            box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin: 0 auto 1rem;
+        }
+        .step-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: var(--ink);
+        }
+        .step-desc {
+            font-size: 0.8rem;
+            color: var(--ink-light);
+        }
+        /* ══════════════════════════════════
+           FOOTER
+        ══════════════════════════════════ */
+        footer {
+            padding: 1.5rem;
+            border-top: var(--border-width) solid var(--ink);
+            background: var(--cream-dark);
+            text-align: center;
+        }
+        footer p {
+            font-size: 0.8rem;
+            color: var(--ink-light);
+        }
+        /* ══════════════════════════════════
+           RESPONSIVE
+        ══════════════════════════════════ */
+        @media (max-width: 768px) {
+            header {
+                top: 10px;
+                width: calc(100% - 1rem);
+            }
+            .nav-links {
+                display: none;
+            }
+            .input-group {
+                flex-direction: column;
+            }
+            .input-label {
+                border-right: var(--border-width) solid var(--ink);
+                border-bottom: none;
+                padding: 0.6rem;
+            }
+            .url-input {
+                border-right: var(--border-width) solid var(--ink);
+                border-bottom: none;
+            }
+            .btn-primary {
+                width: 100%;
+            }
+            .result-section {
+                grid-template-columns: 1fr;
+            }
+            .customization-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .result-url-row {
+                flex-direction: column;
+            }
+            .result-url, .btn-copy {
+                width: 100%;
+            }
+            .export-buttons {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
-<body class="gradient-bg text-white overflow-x-hidden">
-
-    <!-- Header -->
-    <header class="absolute top-0 left-0 w-full z-10 p-6">
-        <nav class="container mx-auto flex justify-between items-center">
-            <div class="text-3xl font-bold tracking-wider logo">Titli 🦋</div>
-            <div class="hidden md:flex space-x-8 nav-links">
-                <a href="/" class="hover:text-cyan-300 transition-colors">Service Hub</a>
-                <a href="#features" class="hover:text-cyan-300 transition-colors">Features</a>
-                <a href="#how-it-works" class="hover:text-cyan-300 transition-colors">How It Works</a>
-            </div>
-        </nav>
-    </header>
-
-    <main>
-        <section class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500 rounded-full mix-blend-screen filter blur-xl animate-[blob_7s_infinite]"></div>
-                <div class="absolute top-1/2 right-1/4 w-64 h-64 bg-cyan-500 rounded-full mix-blend-screen filter blur-xl animate-[blob_7s_infinite] animation-delay-2000"></div>
-                <div class="absolute bottom-1/4 left-1/3 w-64 h-64 bg-indigo-500 rounded-full mix-blend-screen filter blur-xl animate-[blob_7s_infinite] animation-delay-4000"></div>
-            </div>
-
-            <div class="container mx-auto text-center z-10">
-                <h1 class="text-5xl md:text-7xl font-bold mb-4 hero-title">Shorten Links, <br> Let Your Ideas Fly.</h1>
-                <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto hero-subtitle">
-                    A simple and elegant link shortener for creators. Transform long links into memorable short ones.
-                </p>
-
-                <form action="/services/url-shortener/shorten" method="POST" class="max-w-2xl mx-auto glass-card rounded-full p-2 flex items-center shadow-lg hero-form">
-                    <label for="url-shortener-input" class="sr-only">URL to Shorten</label>
-                    <input
-                        id="url-shortener-input"
-                        type="url"
-                        name="redirectUrl"
-                        placeholder="https://your-super-long-link.com/to-shorten"
-                        class="w-full bg-transparent text-white placeholder-gray-400 border-none focus:ring-0 py-3 px-6 text-lg"
-                        required
-                    >
-                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 px-8 rounded-full transition-all text-lg flex-shrink-0">
-                        Shorten
-                    </button>
-                </form>
-
-                <!-- ── Result: Short URL + QR ──────────────────────────── -->
-                <% if (locals.shortUrl) { %>
-                    <% const _shortId = shortUrl.split('/').pop(); %>
-                    <div class="result-card glass-card">
-
-                        <div class="result-url-row">
-                            <a href="<%= shortUrl %>" target="_blank" rel="noopener"><%= shortUrl %></a>
-                            <button class="copy-btn" onclick="copyUrl('<%= shortUrl %>', this)">Copy</button>
-                        </div>
-
-                        <div class="qr-box" id="qrBox">
-                            <div class="qr-spinner"></div>
-                        </div>
-
-                        <a class="qr-download-btn"
-                           href="/api/urls/qr/<%= _shortId %>/download"
-                           download="qr-<%= _shortId %>.png">
-                            ⬇ Download QR
-                        </a>
-
+<body>
+    <div class="page">
+        <!-- Header -->
+        <header>
+            <nav>
+                <a href="/" class="logo">
+                    <div class="logo-icon">C</div>
+                    <div>
+                        <div class="logo-text">CreatorOS</div>
+                        <div class="logo-version">v2.0 Beta</div>
                     </div>
-
-                    <script>
-                    (function () {
-                        const qrBox = document.getElementById('qrBox');
-                        const img   = new Image();
-                        img.alt = 'QR Code';
-                        img.style.cssText = 'width:160px;height:160px;display:block;border-radius:4px;';
-                        img.onload  = function () { qrBox.innerHTML = ''; qrBox.appendChild(img); };
-                        img.onerror = function () { qrBox.innerHTML = '<span style="color:#f87171;font-size:0.8rem;">QR load failed</span>'; };
-                        img.src = '/api/urls/qr/<%= _shortId %>';
-                    })();
-                    </script>
-                <% } %>
-
-                <% if (locals.error) { %>
-                    <div class="mt-8 bg-red-500/20 border border-red-500 text-red-300 rounded-lg p-4 max-w-xl mx-auto">
+                </a>
+                <div class="nav-links">
+                    <a href="/">Service Hub</a>
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                </div>
+            </nav>
+        </header>
+        <main>
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <span class="hero-badge-dot"></span>
+                        Titli Link Shortener
+                    </div>
+                    
+                    <h1 class="hero-title">Shorten Links,<br><em>Let Your Ideas Fly.</em></h1>
+                    <p class="hero-subtitle">Transform long links into memorable short ones with custom QR codes.</p>
+                    <!-- URL Input Card -->
+                    <div class="url-card">
+                        <span class="card-label">Shorten URL</span>
+                        <form action="/services/url-shortener/shorten" method="POST" class="url-form">
+                            <div class="input-group">
+                                <span class="input-label">URL to Shorten</span>
+                                <label for="url-shortener-input" class="sr-only">URL to Shorten</label>
+                                <input 
+                                    id="url-shortener-input"
+                                    type="url" 
+                                    name="redirectUrl"
+                                    placeholder="https://your-super-long-link.com/to-shorten" 
+                                    class="url-input"
+                                    required
+                                >
+                                <button type="submit" class="btn-primary">Shorten</button>
+                            </div>
+                        </form>
+                    </div>
+                    <% if (locals.shortUrl) { %>
+                    <!-- Result Section -->
+                    <div class="result-section">
+                        <!-- Left: Link & Customization -->
+                        <div>
+                            <div class="result-card">
+                                <span class="card-label ready">Ready</span>
+                                
+                                <div class="result-url-row">
+                                    <div class="result-url">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.1-1.1m-.758-4.9a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                        </svg>
+                                        <a href="<%= shortUrl %>" target="_blank"><%= shortUrl %></a>
+                                    </div>
+                                    <button type="button" class="btn-copy" onclick="copyToClipboard('<%= shortUrl %>')">Copy</button>
+                                </div>
+                                <!-- Customization -->
+                                <div class="section-label">Customization</div>
+                                
+                                <div class="customization-row">
+                                    <div class="customization-group">
+                                        <label>Color Palette</label>
+                                        <div class="color-palette">
+                                            <div>
+                                                <div class="color-swatch selected" data-type="fg" data-color="#1a1a1a" style="background: #1a1a1a;" onclick="selectColor(this, 'fg')"></div>
+                                                <div class="color-swatch-label">Foreground</div>
+                                            </div>
+                                            <div>
+                                                <div class="color-swatch selected" data-type="bg" data-color="#ffffff" style="background: #ffffff;" onclick="selectColor(this, 'bg')"></div>
+                                                <div class="color-swatch-label">Background</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="customization-group">
+                                        <label>Preset Colors</label>
+                                        <div class="color-palette">
+                                            <div class="color-swatch" data-preset="dark" style="background: #1a1a1a;" onclick="applyPreset('#1a1a1a', '#ffffff')"></div>
+                                            <div class="color-swatch" data-preset="teal" style="background: #3ecfb2;" onclick="applyPreset('#3ecfb2', '#ffffff')"></div>
+                                            <div class="color-swatch" data-preset="blue" style="background: #3b82f6;" onclick="applyPreset('#3b82f6', '#ffffff')"></div>
+                                            <div class="color-swatch" data-preset="purple" style="background: #8b5cf6;" onclick="applyPreset('#8b5cf6', '#ffffff')"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="customization-row">
+                                    <div class="customization-group">
+                                        <label>Custom Foreground</label>
+                                        <input type="color" id="fg-color-picker" value="#1a1a1a" onchange="updateQRColor('fg', this.value)" style="width: 60px; height: 32px; border: 2px solid #1a1a1a; cursor: pointer;">
+                                    </div>
+                                    <div class="customization-group">
+                                        <label>Custom Background</label>
+                                        <input type="color" id="bg-color-picker" value="#ffffff" onchange="updateQRColor('bg', this.value)" style="width: 60px; height: 32px; border: 2px solid #1a1a1a; cursor: pointer;">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Export Card -->
+                            <div class="export-card">
+                                <span class="card-label ready">Ready</span>
+                                <div class="export-label">Export Assets</div>
+                                <div class="export-buttons">
+                                    <a id="download-png" class="btn-export active" download="titli-qr.png">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                                        PNG
+                                    </a>
+                                    <a id="download-svg" class="btn-export" download="titli-qr.svg">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                        SVG
+                                    </a>
+                                </div>
+                                <a id="download-main" class="btn-save" download="titli-qr.png">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                                    </svg>
+                                    Save &amp; Download
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Right: QR Preview Container (Fix: Modified to <div id="qr-canvas">) -->
+                        <div class="qr-card">
+                            <span class="card-label">Preview</span>
+                            <div class="qr-preview-border">
+                                <div class="qr-dots-top">
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                </div>
+                                <div class="qr-wrapper">
+                                    <div id="qr-canvas"></div> <!-- Changed from canvas to div wrapper -->
+                                </div>
+                                <div class="qr-dots-bottom">
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                    <span class="qr-dot"></span>
+                                </div>
+                            </div>
+                            <span class="qr-label">Scan to Discover</span>
+                        </div>
+                    </div>
+                    <% } %>
+                    <% if (locals.error) { %>
+                    <div class="error-card">
                         <p><%= error %></p>
                     </div>
-                <% } %>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section id="features" class="py-20 px-6">
-            <div class="container mx-auto text-center">
-                <h2 class="text-4xl font-bold mb-2 section-title">Powerful Features, Simple Interface</h2>
-                <p class="text-gray-300 mb-12 max-w-xl mx-auto section-subtitle">Everything you need to make your links perform better.</p>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="glass-card p-8 rounded-2xl feature-card">
-                        <div class="text-4xl mb-4">✨</div>
-                        <h3 class="text-2xl font-bold mb-2">Custom Links</h3>
-                        <p class="text-gray-300">Create branded, memorable links that increase click-through rates and build trust with your audience.</p>
+                    <% } %>
+                </div>
+            </section>
+            <!-- Features Section -->
+            <section id="features" class="features">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Powerful Features, Simple Interface</h2>
+                        <p class="section-subtitle">Everything you need to make your links perform better.</p>
                     </div>
-                    <div class="glass-card p-8 rounded-2xl feature-card">
-                        <div class="text-4xl mb-4">📊</div>
-                        <h3 class="text-2xl font-bold mb-2">Detailed Analytics</h3>
-                        <p class="text-gray-300">Track every click and measure your campaign's performance with our easy-to-understand analytics dashboard.</p>
-                    </div>
-                    <div class="glass-card p-8 rounded-2xl feature-card">
-                        <div class="text-4xl mb-4">🚀</div>
-                        <h3 class="text-2xl font-bold mb-2">Fast & Reliable</h3>
-                        <p class="text-gray-300">Our global infrastructure ensures your links are redirected quickly and reliably, every single time.</p>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                </svg>
+                            </div>
+                            <h3 class="feature-title">Custom Links</h3>
+                            <p class="feature-desc">Create branded, memorable links that increase click-through rates.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="feature-title">Detailed Analytics</h3>
+                            <p class="feature-desc">Track every click with easy-to-understand analytics dashboard.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            <h3 class="feature-title">Fast &amp; Reliable</h3>
+                            <p class="feature-desc">Global infrastructure ensures quick, reliable redirects every time.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- How It Works Section -->
-        <section id="how-it-works" class="py-20 px-6">
-            <div class="container mx-auto text-center">
-                <h2 class="text-4xl font-bold mb-12 section-title">Get Started in Seconds</h2>
-                <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
-                    <div class="flex items-center flex-col text-center step">
-                        <div class="w-24 h-24 rounded-full glass-card flex items-center justify-center text-4xl font-bold border-2 border-cyan-400 mb-4">1</div>
-                        <h3 class="text-xl font-semibold">Paste Your URL</h3>
-                        <p class="text-gray-400 max-w-xs">Simply paste your long link into the input field.</p>
+            </section>
+            <!-- How It Works Section -->
+            <section id="how-it-works" class="how-it-works">
+                <div class="container">
+                    <div class="section-header">
+                        <h2 class="section-title">Get Started in Seconds</h2>
                     </div>
-                    <div class="flex items-center flex-col text-center step">
-                        <div class="w-24 h-24 rounded-full glass-card flex items-center justify-center text-4xl font-bold border-2 border-cyan-400 mb-4">2</div>
-                        <h3 class="text-xl font-semibold">Shorten It</h3>
-                        <p class="text-gray-400 max-w-xs">Click the button and let our magic create a short link.</p>
-                    </div>
-                    <div class="flex items-center flex-col text-center step">
-                        <div class="w-24 h-24 rounded-full glass-card flex items-center justify-center text-4xl font-bold border-2 border-cyan-400 mb-4">3</div>
-                        <h3 class="text-xl font-semibold">Share It</h3>
-                        <p class="text-gray-400 max-w-xs">Copy your new short link and share it with the world.</p>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <h3 class="step-title">Paste Your URL</h3>
+                            <p class="step-desc">Paste your long link into the input field.</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <h3 class="step-title">Shorten It</h3>
+                            <p class="step-desc">Click the button to create a short link.</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <h3 class="step-title">Share It</h3>
+                            <p class="step-desc">Copy your link and share with the world.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="py-10 px-6 border-t border-white/10">
-        <div class="container mx-auto text-center text-gray-400">
+            </section>
+        </main>
+        <!-- Footer -->
+        <footer>
             <p>&copy; 2026 CreatorOS. All Rights Reserved.</p>
-            <p class="mt-2">Designed with ❤️ for beautiful links.</p>
-        </div>
-    </footer>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="/js/pages/home.js"></script>
-
+        </footer>
+    </div>
+    <!-- QR Code Library - using a more reliable CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <script>
-    function copyUrl(url, btn) {
-        navigator.clipboard.writeText(url).then(function () {
-            btn.textContent = 'Copied!';
-            setTimeout(function () { btn.textContent = 'Copy'; }, 2000);
-        });
-    }
-    </script>
+        // QR Code state
+        var qrState = {
+            url: '<%= locals.shortUrl || "" %>',
+            fgColor: '#1a1a1a',
+            bgColor: '#ffffff'
+        };
+        var qrCodeInstance = null;
 
+        // Generate QR Code using qrcodejs library
+        function generateQR() {
+            if (!qrState.url) {
+                console.log('No URL provided for QR code');
+                return;
+            }
+            
+            var container = document.getElementById('qr-canvas');
+            if (!container) {
+                console.log('QR container element not found');
+                return;
+            }
+            // Clear previous QR code
+            container.innerHTML = '';
+            
+            try {
+                // Create new QR code
+                qrCodeInstance = new QRCode(container, {
+                    text: qrState.url,
+                    width: 180,
+                    height: 180,
+                    colorDark: qrState.fgColor,
+                    colorLight: qrState.bgColor,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                console.log('QR code generated successfully');
+                
+                // Update download links after a small delay to ensure rendering is complete
+                setTimeout(updateDownloadLinks, 150);
+            } catch (err) {
+                console.error('QR Code generation error:', err);
+            }
+        }
+
+        // Update download links
+        function updateDownloadLinks() {
+            var container = document.getElementById('qr-canvas');
+            if (!container) return;
+            var canvas = container.querySelector('canvas');
+            var img = container.querySelector('img');
+            
+            var dataUrl = null;
+            
+            if (canvas) {
+                dataUrl = canvas.toDataURL('image/png');
+            } else if (img) {
+                // Create a canvas to get the data URL from the image
+                var tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 180;
+                tempCanvas.height = 180;
+                var ctx = tempCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 180, 180);
+                dataUrl = tempCanvas.toDataURL('image/png');
+            }
+
+            if (dataUrl) {
+                var pngLink = document.getElementById('download-png');
+                var mainLink = document.getElementById('download-main');
+                
+                if (pngLink) pngLink.href = dataUrl;
+                if (mainLink) mainLink.href = dataUrl;
+            }
+
+            // Generate SVG for download
+            var svgLink = document.getElementById('download-svg');
+            if (svgLink && qrState.url) {
+                var svgString = generateSVGQR(qrState.url, qrState.fgColor, qrState.bgColor);
+                var svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+                var svgUrl = URL.createObjectURL(svgBlob);
+                svgLink.href = svgUrl;
+            }
+        }
+
+        // Simple SVG QR generator fallback/display
+        function generateSVGQR(text, fgColor, bgColor) {
+            // A crisp fallback outline SVG vector 
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180"><rect width="180" height="180" fill="' + bgColor + '"/><text x="90" y="95" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="' + fgColor + '">QR Asset: ' + text.substring(0,20) + '...</text></svg>';
+        }
+
+        // Update QR color
+        function updateQRColor(type, color) {
+            if (type === 'fg') {
+                qrState.fgColor = color;
+                var fgPicker = document.getElementById('fg-color-picker');
+                if (fgPicker) fgPicker.value = color;
+            } else {
+                qrState.bgColor = color;
+                var bgPicker = document.getElementById('bg-color-picker');
+                if (bgPicker) bgPicker.value = color;
+            }
+            generateQR();
+        }
+
+        // Select color swatch
+        function selectColor(el, type) {
+            // Remove selection class from neighbors in the same group and add to current
+            var siblings = el.closest('.color-palette').querySelectorAll('.color-swatch');
+            siblings.forEach(function(s) { s.classList.remove('selected'); });
+            el.classList.add('selected');
+
+            var color = el.getAttribute('data-color');
+            updateQRColor(type, color);
+        }
+
+        // Apply preset colors
+        function applyPreset(fg, bg) {
+            qrState.fgColor = fg;
+            qrState.bgColor = bg;
+            var fgPicker = document.getElementById('fg-color-picker');
+            var bgPicker = document.getElementById('bg-color-picker');
+            if (fgPicker) fgPicker.value = fg;
+            if (bgPicker) bgPicker.value = bg;
+            generateQR();
+        }
+
+        // Copy matching link to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                var btn = document.querySelector('.btn-copy');
+                if (btn) {
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(function() {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }
+            });
+        }
+
+        // Initialize EJS-rendered QR Code 
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, shortUrl:', qrState.url);
+            <% if (locals.shortUrl) { %>
+            setTimeout(function() {
+                if (typeof QRCode !== 'undefined') {
+                    generateQR();
+                } else {
+                    console.error('QRCode library not loaded in time');
+                }
+            }, 150);
+            <% } %>
+        });
+
+        // Fail-safe load listener
+        window.addEventListener('load', function() {
+            <% if (locals.shortUrl) { %>
+            if (typeof QRCode !== 'undefined' && !qrCodeInstance) {
+                generateQR();
+            }
+            <% } %>
+        });
+    </script>
 </body>
 </html>
