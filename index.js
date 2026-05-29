@@ -286,7 +286,7 @@ app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
-app.get('/services/:serviceKey', protect, (req, res) => {
+app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
     if (!service) {
@@ -298,6 +298,10 @@ app.get('/services/:serviceKey', protect, (req, res) => {
             },
         });
     }
+
+    // rest of your code here
+
+}));
 
     if (service.status !== 'available') {
         return res.render('coming-soon', { service });
