@@ -227,16 +227,7 @@ function buildAnalyticsViewModel() {
     };
 }
 
-app.get("/dashboard", protect, async (req, res) => {
-    const userDoc = await User.findById(req.user.id).select('name email').lean();
-    const invites = await Invite.find({ inviter: req.user.id }).lean();
-    const inviteSummary = {
-        total: invites.length,
-        pending: invites.filter((invite) => invite.status === 'pending').length,
-        accepted: invites.filter((invite) => invite.status === 'accepted').length,
-        expired: invites.filter((invite) => invite.status === 'expired').length,
 
-    };
 function isGuestContributor(user) {
     return user?.role === 'guest_contributor';
 }
