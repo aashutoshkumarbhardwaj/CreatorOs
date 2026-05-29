@@ -299,9 +299,6 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         });
     }
 
-    // rest of your code here
-
-}));
 
     if (service.status !== 'available') {
         return res.render('coming-soon', { service });
@@ -335,7 +332,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     }
 
     return res.render('coming-soon', { service });
-});
+}));
 
 const { isValidUrl } = require('./utils/validators');
 
