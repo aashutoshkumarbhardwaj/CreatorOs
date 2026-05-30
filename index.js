@@ -368,6 +368,60 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
         path: req.file.filename,
     });
 });
+// ── Mock Instagram Graph API Endpoint ──────────────────────────────────────
+app.get('/api/instagram/profile', protect, preventContributorWrites, asyncHandler(async (req, res) => {
+    const { username } = req.query;
+    if (!username) {
+        return res.status(400).json({ success: false, error: { message: 'Username is required' } });
+    }
+
+    // Generate dynamic mock data based on the requested username
+    const followersBase = Math.floor(Math.random() * 500000) + 10000;
+    
+    // Generate 90 days of mock chart data to support the date range filter
+    const labels = [];
+    const followers = [];
+    const engagement = [];
+    
+    const now = new Date();
+    for (let i = 89; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        
+        // Simulating some realistic growth/fluctuations
+        const dayFollowers = followersBase - (i * (Math.random() * 500 + 100));
+        followers.push(Math.max(0, Math.floor(dayFollowers)));
+        
+        const dayEngagement = (Math.random() * 4 + 3).toFixed(2); // 3% to 7%
+        engagement.push(parseFloat(dayEngagement));
+    }
+
+    const posts = ['Reel: Morning Routine', 'Carousel: Setup Tour', 'Photo: NYC', 'Reel: Q&A', 'Photo: BTS'];
+    const postPerformance = posts.map(() => Math.floor(Math.random() * 20000) + 1000);
+
+    return res.json({
+        success: true,
+        data: {
+            username: username,
+            name: username.charAt(0).toUpperCase() + username.slice(1),
+            followers: followers[followers.length - 1],
+            following: Math.floor(Math.random() * 1000),
+            totalPosts: Math.floor(Math.random() * 1000),
+            category: 'Digital creator',
+            bio: `Official profile of ${username}. Creating awesome content daily!`,
+            fetchedAt: new Date().toISOString(),
+            profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&size=200&background=random`,
+            charts: {
+                labels,
+                followers,
+                engagement,
+                posts,
+                postPerformance
+            }
+        }
+    });
+}));
 
 // Redirect for generated short URLs
 app.get('/u/:shortId', asyncHandler(async (req, res) => {

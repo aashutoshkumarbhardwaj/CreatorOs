@@ -1195,6 +1195,7 @@
         </main>
     </div>
 
+    <script id="analytics-data" type="application/json"><%- JSON.stringify(analytics.charts) %></script>
     <script>
         const dashboardLayout = document.getElementById('dashboardLayout');
         const sidebarToggle = document.getElementById('sidebarToggle');
@@ -1297,10 +1298,16 @@
                 followersMetricValue.textContent = formattedFollowers;
             }
 
-            updateChart(followersChart, {
-                labels: ['Current'],
-                data: [Number(profile.followers || 0)],
-            });
+            if (profile.charts) {
+                currentAnalyticsData = profile.charts;
+                applyDateRangeFilter(); // This will update the charts
+            } else {
+                // Fallback if no charts returned
+                updateChart(followersChart, {
+                    labels: ['Current'],
+                    data: [Number(profile.followers || 0)],
+                });
+            }
 
             if (profile.profileImage) {
                 profileAvatar.classList.add('has-image');
@@ -1346,7 +1353,8 @@
             });
         }
 
-        const analyticsData = <%- JSON.stringify(analytics.charts) %>;
+        let currentAnalyticsData = JSON.parse(document.getElementById('analytics-data').textContent);
+        let currentRangeDays = 30; // default selected range
         const chartText = '#cbd5e1';
         const chartGrid = 'rgba(148, 163, 184, 0.16)';
 
@@ -1374,16 +1382,53 @@
             chart.update();
         }
 
+        function applyDateRangeFilter() {
+            if (!currentAnalyticsData || !followersChart || !engagementChart || !postPerformanceChart) return;
+            
+            const sliceCount = currentRangeDays;
+            
+            updateChart(followersChart, {
+                labels: currentAnalyticsData.labels.slice(-sliceCount),
+                data: currentAnalyticsData.followers.slice(-sliceCount)
+            });
+            
+            updateChart(engagementChart, {
+                labels: currentAnalyticsData.labels.slice(-sliceCount),
+                data: currentAnalyticsData.engagement.slice(-sliceCount)
+            });
+            
+            // For posts, we might just show recent posts
+            updateChart(postPerformanceChart, {
+                labels: currentAnalyticsData.posts,
+                data: currentAnalyticsData.postPerformance
+            });
+        }
+
+        const dateRangeSelect = document.querySelector('.select-pill');
+        if (dateRangeSelect) {
+            dateRangeSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'Last 7 days') {
+                    currentRangeDays = 7;
+                } else if (val === 'Last 30 days') {
+                    currentRangeDays = 30;
+                } else if (val === 'Last 90 days') {
+                    currentRangeDays = 90;
+                }
+                applyDateRangeFilter();
+            });
+        }
+
         if (followersCanvas && engagementCanvas && postCanvas) {
             const followersCtx = followersCanvas.getContext('2d');
 
             followersChart = new Chart(followersCtx, {
                 type: 'line',
                 data: {
-                    labels: analyticsData.labels,
+                    labels: currentAnalyticsData.labels.slice(-30),
                     datasets: [{
                         label: 'Followers',
-                        data: analyticsData.followers,
+                        data: currentAnalyticsData.followers.slice(-30),
                         fill: true,
                         tension: 0.42,
                         borderColor: '#22d3ee',
@@ -1408,10 +1453,10 @@
             engagementChart = new Chart(engagementCanvas, {
                 type: 'line',
                 data: {
-                    labels: analyticsData.labels,
+                    labels: currentAnalyticsData.labels.slice(-30),
                     datasets: [{
                         label: 'Engagement rate',
-                        data: analyticsData.engagement,
+                        data: currentAnalyticsData.engagement.slice(-30),
                         tension: 0.36,
                         borderColor: '#22c55e',
                         backgroundColor: 'rgba(34, 197, 94, 0.12)',
@@ -1433,10 +1478,10 @@
             postPerformanceChart = new Chart(postCanvas, {
                 type: 'bar',
                 data: {
-                    labels: analyticsData.posts,
+                    labels: currentAnalyticsData.posts,
                     datasets: [{
                         label: 'Likes',
-                        data: analyticsData.postPerformance,
+                        data: currentAnalyticsData.postPerformance,
                         borderRadius: 10,
                         backgroundColor: ['#22d3ee', '#38bdf8', '#22c55e', '#f59e0b', '#a78bfa'],
                     }],
