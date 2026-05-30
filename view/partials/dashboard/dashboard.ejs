@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | CreatorOS</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <%- include('./partials/dashboard/_styles') %>
+</head>
+
+<body>
+  <div class="dashboard-layout" id="dashboardLayout">
+
+    <%- include('./partials/dashboard/_sidebar', { services }) %>
+
+    <main class="main">
+
+      <%- include('./partials/dashboard/_topbar', { user }) %>
+
+      <section class="content">
+
+        <!-- Page heading + primary CTA -->
+        <div class="dashboard-head">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Welcome back, <%= user.name %>.</p>
+          </div>
+          <a class="primary-action" href="/services/url-shortener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+            Create New Link
+          </a>
+        </div>
+
+        <%- include('./partials/dashboard/_stats', { user }) %>
+
+        <%- include('./partials/dashboard/_invite_status', { inviteSummary }) %>
+
+        <%- include('./partials/dashboard/_analytics', { inviteAcceptMessage, inviteAcceptError }) %>
+
+        <%- include('./partials/dashboard/_recent_links') %>
+
+      </section>
+    </main>
+  </div>
+
+  <%- include('./partials/dashboard/_scripts') %>
+</body>
+</html>

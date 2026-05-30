@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Analytics | CreatorOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #06101f;
+            --bg-2: #0b1730;
+            --surface: rgba(13, 24, 49, 0.84);
+            --surface-strong: rgba(8, 19, 39, 0.94);
+            --surface-soft: rgba(255, 255, 255, 0.055);
+            --border: rgba(148, 163, 184, 0.16);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --muted-2: #94a3b8;
+            --accent: #22d3ee;
+            --accent-2: #38bdf8;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --pink: #f472b6;
+            --violet: #a78bfa;
+            --shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
+                radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
+                linear-gradient(180deg, var(--bg-2), var(--bg));
+            overflow-x: hidden;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .dashboard-layout {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+            transition: grid-template-columns 0.28s ease;
+        }
+
+        .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            padding: 1.65rem 0.9rem;
+            border-right: 1px solid var(--border);
+            background: rgba(6, 16, 31, 0.82);
+            backdrop-filter: blur(18px);
+            animation: slideIn 0.65s ease both;
+            overflow: hidden;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0 0.55rem 1.2rem;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .brand-mark {
+            width: 2.35rem;
+            height: 2.35rem;
+            display: grid;
+            place-items: center;
+            border-radius: 0.8rem;
+            color: #042f3e;
+            background: linear-gradient(135deg, var(--accent-2), var(--accent));
+            box-shadow: 0 12px 30px rgba(34, 211, 238, 0.24);
+            font-weight: 800;
+        }
+
+        .sidebar-section {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .sidebar-label {
+            margin: 0 0.55rem 0.25rem;
+            color: var(--muted-2);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .nav-link,
+        .service-link {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            min-height: 3.25rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.65rem;
+            color: var(--muted);
+            font-weight: 600;
+            transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .nav-link:hover,
+        .service-link:hover {
+            transform: translateX(4px);
+            color: #67e8f9;
+            background: rgba(34, 211, 238, 0.08);
+        }
+
+        .service-link.active {
+            color: #042f3e;
+            background: linear-gradient(135deg, var(--accent-2), var(--accent));
+            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+        }
+
+        .service-link.available:not(.active) {
+            color: #67e8f9;
+            background: rgba(34, 211, 238, 0.08);
+        }
+
+        .nav-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex: 0 0 auto;
+        }
+
+        .service-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .dashboard-layout.sidebar-collapsed .brand {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark),
+        .dashboard-layout.sidebar-collapsed .sidebar-label,
+        .dashboard-layout.sidebar-collapsed .service-name {
+            display: none;
+        }
+
+        .dashboard-layout.sidebar-collapsed .nav-link,
+        .dashboard-layout.sidebar-collapsed .service-link {
+            justify-content: center;
+            gap: 0;
+            padding-inline: 0.8rem;
+            font-size: 0;
+        }
+
+        .main {
+            min-width: 0;
+            animation: fadeIn 0.65s ease 0.1s both;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 82px;
+            padding: 1rem 2.4rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(6, 16, 31, 0.76);
+            backdrop-filter: blur(18px);
+        }
+
+        .menu-btn,
+        .icon-btn {
+            width: 2.55rem;
+            height: 2.55rem;
+            display: grid;
+            place-items: center;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .menu-btn:hover,
+        .icon-btn:hover {
+            transform: translateY(-2px);
+            color: #67e8f9;
+            border-color: rgba(103, 232, 249, 0.34);
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        .menu-btn svg,
+        .icon-btn svg,
+        .nav-icon {
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .profile-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 2.75rem;
+            padding: 0.35rem 0.9rem 0.35rem 0.35rem;
+            border-radius: 999px;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .avatar,
+        .profile-avatar {
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            color: #042f3e;
+            background: linear-gradient(135deg, #67e8f9, var(--accent));
+            font-weight: 800;
+        }
+
+        .avatar {
+            width: 2.1rem;
+            height: 2.1rem;
+            font-size: 0.82rem;
+        }
+
+        .content {
+            width: min(1400px, 100%);
+            margin: 0 auto;
+            padding: 2.2rem 2.4rem 3rem;
+        }
+
+        .dashboard-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 1rem;
+            align-items: end;
+            margin-bottom: 1.35rem;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 0.75rem;
+            color: #67e8f9;
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: '';
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: #67e8f9;
+            box-shadow: 0 0 0 6px rgba(103, 232, 249, 0.14);
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        .dashboard-head h1 {
+            margin-bottom: 0.45rem;
+            font-size: clamp(2.15rem, 4vw, 3.4rem);
+            line-height: 1;
+            letter-spacing: 0;
+        }
+
+        .dashboard-head p,
+        .panel-copy,
+        .muted {
+            color: var(--muted);
+            line-height: 1.65;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .input-pill,
+        .select-pill,
+        .primary-action {
+            min-height: 2.85rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            font: inherit;
+        }
+
+        .input-pill {
+            width: min(280px, 100%);
+            padding: 0 1.1rem;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.055);
+            outline: none;
+        }
+
+        .input-pill::placeholder { color: var(--muted-2); }
+
+        .select-pill {
+            padding: 0 1rem;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.055);
+        }
+
+        .primary-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            padding: 0 1.1rem;
+            color: #042f3e;
+            background: linear-gradient(135deg, #67e8f9, var(--accent));
+            font-weight: 800;
+            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+        }
+
+        .primary-action svg {
+            width: 1.05rem;
+            height: 1.05rem;
+        }
+
+        .panel,
+        .metric-card,
+        .post-card,
+        .empty-state {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .panel {
+            border-radius: 1.25rem;
+            padding: 1.35rem;
+            animation: enterUp 0.62s ease both;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.12fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .profile-overview {
+            display: grid;
+            gap: 1.2rem;
+        }
+
+        .profile-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .profile-avatar {
+            width: 4.5rem;
+            height: 4.5rem;
+            flex: 0 0 auto;
+            font-size: 1.2rem;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .profile-avatar.has-image span {
+            display: none;
+        }
+
+        .profile-overview h2,
+        .panel-head h2 {
+            margin-bottom: 0.25rem;
+            font-size: 1.2rem;
+        }
+
+        .handle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #67e8f9;
+            font-weight: 700;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .mini-stat {
+            padding: 0.85rem;
+            border-radius: 0.9rem;
+            background: rgba(255, 255, 255, 0.055);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .mini-stat span {
+            display: block;
+            color: var(--muted-2);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .mini-stat strong {
+            display: block;
+            margin-top: 0.35rem;
+            font-size: 1.2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            min-height: 150px;
+            display: grid;
+            align-content: space-between;
+            gap: 0.9rem;
+            border-radius: 1.1rem;
+            padding: 1.1rem;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(103, 232, 249, 0.32);
+            background: rgba(13, 24, 49, 0.96);
+        }
+
+        .metric-icon {
+            width: 2.55rem;
+            height: 2.55rem;
+            display: grid;
+            place-items: center;
+            border-radius: 0.85rem;
+            color: #06101f;
+            background: #67e8f9;
+        }
+
+        .metric-card.green .metric-icon { background: #86efac; }
+        .metric-card.blue .metric-icon { background: #7dd3fc; }
+        .metric-card.orange .metric-icon { background: #fbbf24; }
+        .metric-card.violet .metric-icon { background: #c4b5fd; }
+        .metric-card.pink .metric-icon { background: #f9a8d4; }
+
+        .metric-card h3 {
+            margin-bottom: 0.3rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .metric-value {
+            margin-bottom: 0;
+            font-size: clamp(1.7rem, 3vw, 2.1rem);
+            font-weight: 800;
+        }
+
+        .trend-pill,
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .trend-pill {
+            padding: 0.35rem 0.65rem;
+            color: #dcfce7;
+            background: rgba(34, 197, 94, 0.13);
+        }
+
+        .badge {
+            padding: 0.45rem 0.75rem;
+            color: #67e8f9;
+            background: rgba(34, 211, 238, 0.12);
+        }
+
+        .lookup-message {
+            display: none;
+            margin-bottom: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.045);
+            line-height: 1.55;
+        }
+
+        .lookup-message.show {
+            display: block;
+        }
+
+        .lookup-message.success {
+            color: #d1fae5;
+            border-color: rgba(34, 197, 94, 0.24);
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .lookup-message.error {
+            color: #fee2e2;
+            border-color: rgba(248, 113, 113, 0.24);
+            background: rgba(248, 113, 113, 0.12);
+        }
+
+        .primary-action.is-loading {
+            opacity: 0.72;
+            cursor: wait;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .chart-shell {
+            position: relative;
+            min-height: 310px;
+        }
+
+        .chart-shell.small {
+            min-height: 245px;
+        }
+
+        .stack {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .post-card {
+            display: grid;
+            gap: 0.85rem;
+            border-radius: 1rem;
+            padding: 1rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(103, 232, 249, 0.28);
+        }
+
+        .post-thumb {
+            aspect-ratio: 1.35;
+            display: grid;
+            place-items: center;
+            border-radius: 0.85rem;
+            color: #042f3e;
+            background:
+                linear-gradient(135deg, rgba(103, 232, 249, 0.94), rgba(34, 197, 94, 0.76)),
+                #22d3ee;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .post-card h3 {
+            min-height: 3.1rem;
+            margin-bottom: 0;
+            font-size: 0.98rem;
+            line-height: 1.45;
+        }
+
+        .post-meta,
+        .timeline-item {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .post-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.45rem;
+        }
+
+        .post-stats span {
+            display: grid;
+            gap: 0.15rem;
+            padding: 0.55rem;
+            border-radius: 0.7rem;
+            background: rgba(255, 255, 255, 0.045);
+            color: var(--muted-2);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .post-stats strong {
+            color: var(--text);
+            font-size: 0.9rem;
+            text-transform: none;
+        }
+
+        .timeline {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 0 0 0.95rem 1.45rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 0.25rem;
+            left: 0;
+            width: 0.65rem;
+            height: 0.65rem;
+            border-radius: 999px;
+            background: #67e8f9;
+            box-shadow: 0 0 0 6px rgba(103, 232, 249, 0.12);
+        }
+
+        .timeline-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--text);
+        }
+
+        .timeline-item small {
+            display: block;
+            margin-top: 0.35rem;
+            color: var(--muted-2);
+            font-weight: 700;
+        }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            gap: 1rem;
+            min-height: 430px;
+            border-radius: 1.25rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .empty-icon {
+            width: 4.4rem;
+            height: 4.4rem;
+            display: grid;
+            place-items: center;
+            border-radius: 1.1rem;
+            color: #042f3e;
+            background: linear-gradient(135deg, #67e8f9, var(--accent));
+            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+        }
+
+        .empty-state h2 {
+            margin-bottom: 0.35rem;
+            font-size: 1.7rem;
+        }
+
+        .inline-empty {
+            display: grid;
+            place-items: center;
+            min-height: 180px;
+            padding: 1rem;
+            border: 1px dashed rgba(148, 163, 184, 0.22);
+            border-radius: 1rem;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.035);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .loading-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .skeleton {
+            min-height: 150px;
+            border-radius: 1.1rem;
+            border: 1px solid var(--border);
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.1), rgba(255,255,255,0.04)),
+                rgba(13, 24, 49, 0.84);
+            background-size: 220% 100%;
+            animation: shimmer 1.4s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 120% 0; }
+            100% { background-position: -120% 0; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-18px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes enterUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1180px) {
+            .overview-grid,
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .posts-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 860px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                max-height: 1200px;
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .dashboard-layout.sidebar-collapsed .sidebar {
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                border-bottom-color: transparent;
+            }
+
+            .dashboard-layout.sidebar-collapsed .sidebar > * {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .dashboard-layout.sidebar-collapsed .nav-link,
+            .dashboard-layout.sidebar-collapsed .service-link {
+                font-size: inherit;
+            }
+
+            .sidebar-section {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+
+            .sidebar-label,
+            .brand {
+                grid-column: 1 / -1;
+            }
+
+            .topbar {
+                position: relative;
+                padding: 1rem;
+            }
+
+            .content {
+                width: 100%;
+                padding: 1.4rem 1rem 2rem;
+            }
+
+            .dashboard-head {
+                grid-template-columns: 1fr;
+                align-items: start;
+            }
+
+            .toolbar {
+                justify-content: flex-start;
+            }
+
+            .metrics-grid,
+            .loading-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 620px) {
+            .profile-name {
+                display: none;
+            }
+
+            .topbar {
+                min-height: 72px;
+            }
+
+            .toolbar,
+            .input-pill,
+            .select-pill,
+            .primary-action {
+                width: 100%;
+            }
+
+            .dashboard-head h1 {
+                font-size: 2.25rem;
+            }
+
+            .profile-top {
+                flex-direction: column;
+            }
+
+            .profile-stats,
+            .metrics-grid,
+            .posts-grid,
+            .loading-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel,
+            .metric-card,
+            .post-card {
+                border-radius: 1rem;
+            }
+
+            .chart-shell {
+                min-height: 260px;
+            }
+
+            .chart-shell.small {
+                min-height: 220px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .topbar {
+                gap: 0.75rem;
+            }
+
+            .topbar-actions {
+                gap: 0.5rem;
+            }
+
+            .content {
+                padding-inline: 0.85rem;
+            }
+
+            .dashboard-head h1 {
+                font-size: 1.95rem;
+            }
+
+            .panel,
+            .metric-card,
+            .post-card,
+            .empty-state {
+                padding: 1rem;
+            }
+
+            .profile-stats,
+            .post-stats {
+                gap: 0.55rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout" id="dashboardLayout">
+        <aside class="sidebar" aria-label="Analytics navigation">
+            <a class="brand" href="/dashboard">
+                <span class="brand-mark">CO</span>
+                <span>CREATOROS</span>
+            </a>
+
+            <nav class="sidebar-section">
+                <p class="sidebar-label">Workspace</p>
+                <a class="nav-link" href="/dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+                <a class="nav-link" href="/profile">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M20 21a8 8 0 0 0-16 0"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Profile
+                </a>
+            </nav>
+
+            <nav class="sidebar-section" aria-label="Services">
+                <p class="sidebar-label">Services</p>
+                <% services.forEach((item) => { %>
+                    <a class="service-link <%= item.status %> <%= item.key === service.key ? 'active' : '' %>" href="<%= item.route %>" title="<%= item.name %>">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <% if (item.key === 'analytics-dashboard') { %>
+                                <path d="M4 19V5"></path>
+                                <path d="M9 19v-6"></path>
+                                <path d="M14 19V9"></path>
+                                <path d="M19 19V3"></path>
+                            <% } else { %>
+                                <path d="M12 3v18"></path>
+                                <path d="M3 12h18"></path>
+                            <% } %>
+                        </svg>
+                        <span class="service-name"><%= item.name %></span>
+                    </a>
+                <% }) %>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a class="nav-link" href="/logout">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <path d="m16 17 5-5-5-5"></path>
+                        <path d="M21 12H9"></path>
+                    </svg>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <button class="menu-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" id="sidebarToggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M4 6h16"></path>
+                        <path d="M4 12h16"></path>
+                        <path d="M4 18h16"></path>
+                    </svg>
+                </button>
+
+                <div class="topbar-actions">
+                    <a class="profile-chip" href="/profile" aria-label="Open profile">
+                        <span class="avatar"><%= user.initials %></span>
+                        <span class="profile-name"><%= user.name %></span>
+                    </a>
+                    <a class="icon-btn" href="/logout" aria-label="Logout" title="Logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <path d="m16 17 5-5-5-5"></path>
+                            <path d="M21 12H9"></path>
+                        </svg>
+                    </a>
+                </div>
+            </header>
+
+            <section class="content">
+                <div class="dashboard-head">
+                    <div>
+                        <span class="eyebrow">Creator insights</span>
+                        <h1>Creator Analytics</h1>
+                        <p>Track Instagram growth, engagement, top content, and activity signals from one focused dashboard.</p>
+                    </div>
+                    <form class="toolbar" action="/services/analytics-dashboard" method="GET" id="instagramLookupForm">
+                        <input class="input-pill" type="text" name="username" value="" placeholder="Instagram username" aria-label="Instagram username" id="instagramUsernameInput" autocomplete="off">
+                        <select class="select-pill" name="range" aria-label="Analytics date range">
+                            <option selected><%= analytics.selectedRange %></option>
+                            <option>Last 7 days</option>
+                            <option>Last 90 days</option>
+                        </select>
+                        <button class="primary-action" type="submit" id="instagramLookupButton">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path d="M21 21l-4.3-4.3"></path>
+                                <circle cx="11" cy="11" r="8"></circle>
+                            </svg>
+                            <span id="instagramLookupButtonText">Analyze</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="lookup-message" id="instagramLookupMessage" role="status" aria-live="polite"></div>
+
+                <% if (analytics.isLoading) { %>
+                    <div class="loading-grid" aria-label="Loading analytics">
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                    </div>
+                <% } else if (analytics.isEmpty) { %>
+                    <section class="empty-state">
+                        <div class="empty-icon">
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path d="M4 19V5"></path>
+                                <path d="M9 19v-6"></path>
+                                <path d="M14 19V9"></path>
+                                <path d="M19 19V3"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2>No creator analytics yet</h2>
+                            <p class="muted">Enter an Instagram username to prepare the first public analytics snapshot.</p>
+                        </div>
+                        <a class="primary-action" href="/services/analytics-dashboard">Start analysis</a>
+                    </section>
+                <% } else { %>
+                    <div class="overview-grid">
+                        <section class="panel profile-overview">
+                            <div class="profile-top">
+                                <div class="profile-avatar" id="profileAvatar"><span id="profileAvatarInitials"><%= analytics.profile.avatarInitials %></span></div>
+                                <div>
+                                    <h2 id="profileName"><%= analytics.profile.name %></h2>
+                                    <p class="handle" id="profileHandle"><%= analytics.profile.handle %> / <%= analytics.profile.category %></p>
+                                    <p class="panel-copy" id="profileBio"><%= analytics.profile.bio %></p>
+                                </div>
+                            </div>
+                            <div class="profile-stats">
+                                <div class="mini-stat">
+                                    <span>Followers</span>
+                                    <strong id="profileFollowers"><%= analytics.profile.followers %></strong>
+                                </div>
+                                <div class="mini-stat">
+                                    <span>Following</span>
+                                    <strong id="profileFollowing"><%= analytics.profile.following %></strong>
+                                </div>
+                                <div class="mini-stat">
+                                    <span>Posts</span>
+                                    <strong id="profilePosts"><%= analytics.profile.totalPosts %></strong>
+                                </div>
+                            </div>
+                            <p class="muted" id="profileRefreshed">No Instagram profile has been fetched yet. Configure official Instagram Graph API credentials, then enter a username to load public profile details.</p>
+                        </section>
+
+                        <div class="metrics-grid">
+                            <% analytics.metrics.forEach((metric) => { %>
+                                <article class="metric-card <%= metric.tone %>">
+                                    <div class="metric-icon">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                            <path d="m3 17 6-6 4 4 8-8"></path>
+                                            <path d="M14 7h7v7"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3><%= metric.label %></h3>
+                                        <p class="metric-value" <%= metric.label === 'Followers' ? 'id="followersMetricValue"' : '' %>><%= metric.value %></p>
+                                    </div>
+                                    <span class="trend-pill"><%= metric.change %></span>
+                                </article>
+                            <% }) %>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <section class="panel">
+                            <div class="panel-head">
+                                <div>
+                                    <h2>Follower Growth</h2>
+                                    <p class="muted">Public profile growth trend across the selected range.</p>
+                                </div>
+                                <span class="badge"><%= analytics.profile.growthLabel %></span>
+                            </div>
+                            <div class="chart-shell">
+                                <canvas id="followersChart" aria-label="Follower growth chart"></canvas>
+                            </div>
+                        </section>
+
+                        <div class="stack">
+                            <section class="panel">
+                                <div class="panel-head">
+                                    <div>
+                                        <h2>Engagement Trend</h2>
+                                        <p class="muted">Average engagement rate over time.</p>
+                                    </div>
+                                </div>
+                                <div class="chart-shell small">
+                                    <canvas id="engagementChart" aria-label="Engagement trend chart"></canvas>
+                                </div>
+                            </section>
+
+                            <section class="panel">
+                                <div class="panel-head">
+                                    <div>
+                                        <h2>Activity Timeline</h2>
+                                        <p class="muted">Recent analytics events and insights.</p>
+                                    </div>
+                                </div>
+                                <div class="timeline">
+                                    <% if (analytics.timeline.length === 0) { %>
+                                        <div class="inline-empty" id="timelineEmpty">No activity yet. Events will appear here after profile snapshots and analytics processing are connected.</div>
+                                    <% } else { %>
+                                        <% analytics.timeline.forEach((event) => { %>
+                                            <article class="timeline-item">
+                                                <strong><%= event.title %></strong>
+                                                <span><%= event.detail %></span>
+                                                <small><%= event.time %></small>
+                                            </article>
+                                        <% }) %>
+                                    <% } %>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <section class="panel" style="margin-top: 1rem;">
+                        <div class="panel-head">
+                            <div>
+                                <h2>Post Performance</h2>
+                                <p class="muted">Top content ranked by visible engagement signals.</p>
+                            </div>
+                            <span class="badge">Top posts</span>
+                        </div>
+                        <div class="chart-shell small">
+                            <canvas id="postPerformanceChart" aria-label="Post performance chart"></canvas>
+                        </div>
+                    </section>
+
+                    <section class="posts-grid" aria-label="Top posts">
+                        <% if (analytics.topPosts.length === 0) { %>
+                            <div class="inline-empty" style="grid-column: 1 / -1;" id="topPostsEmpty">No top posts yet. Post rankings will appear after post analytics data is available.</div>
+                        <% } else { %>
+                            <% analytics.topPosts.forEach((post) => { %>
+                                <article class="post-card">
+                                    <div class="post-thumb"><%= post.type %></div>
+                                    <div>
+                                        <p class="post-meta"><%= post.date %></p>
+                                        <h3><%= post.title %></h3>
+                                    </div>
+                                    <div class="post-stats">
+                                        <span>Likes<strong><%= post.likes %></strong></span>
+                                        <span>Comments<strong><%= post.comments %></strong></span>
+                                        <span>Rate<strong><%= post.engagement %></strong></span>
+                                    </div>
+                                </article>
+                            <% }) %>
+                        <% } %>
+                    </section>
+                <% } %>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const dashboardLayout = document.getElementById('dashboardLayout');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarState = localStorage.getItem('creatorosSidebarCollapsed');
+
+        if (sidebarState === 'true') {
+            dashboardLayout.classList.add('sidebar-collapsed');
+            sidebarToggle.setAttribute('aria-expanded', 'false');
+        }
+
+        sidebarToggle.addEventListener('click', () => {
+            const isCollapsed = dashboardLayout.classList.toggle('sidebar-collapsed');
+            sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
+            localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
+        });
+
+        const instagramLookupForm = document.getElementById('instagramLookupForm');
+        const instagramUsernameInput = document.getElementById('instagramUsernameInput');
+        const instagramLookupButton = document.getElementById('instagramLookupButton');
+        const instagramLookupButtonText = document.getElementById('instagramLookupButtonText');
+        const instagramLookupMessage = document.getElementById('instagramLookupMessage');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+        const profileName = document.getElementById('profileName');
+        const profileHandle = document.getElementById('profileHandle');
+        const profileBio = document.getElementById('profileBio');
+        const profileFollowers = document.getElementById('profileFollowers');
+        const profileFollowing = document.getElementById('profileFollowing');
+        const profilePosts = document.getElementById('profilePosts');
+        const profileRefreshed = document.getElementById('profileRefreshed');
+        const followersMetricValue = document.getElementById('followersMetricValue');
+        let followersChart;
+        let engagementChart;
+        let postPerformanceChart;
+
+        function formatCompactNumber(value) {
+            return new Intl.NumberFormat('en', {
+                notation: 'compact',
+                maximumFractionDigits: 1,
+            }).format(Number(value || 0));
+        }
+
+        function getInitials(name, username) {
+            const source = String(name || username || 'Creator').trim();
+            return source
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0].toUpperCase())
+                .join('') || 'CR';
+        }
+
+        function setLookupMessage(type, message) {
+            if (!instagramLookupMessage) {
+                return;
+            }
+
+            instagramLookupMessage.className = `lookup-message show ${type}`;
+            instagramLookupMessage.textContent = message;
+        }
+
+        function clearLookupMessage() {
+            if (!instagramLookupMessage) {
+                return;
+            }
+
+            instagramLookupMessage.className = 'lookup-message';
+            instagramLookupMessage.textContent = '';
+        }
+
+        function setLookupLoading(isLoading) {
+            if (!instagramLookupButton || !instagramLookupButtonText) {
+                return;
+            }
+
+            instagramLookupButton.disabled = isLoading;
+            instagramLookupButton.classList.toggle('is-loading', isLoading);
+            instagramLookupButtonText.textContent = isLoading ? 'Fetching...' : 'Analyze';
+        }
+
+        function updateProfileOverview(profile) {
+            if (!profileName || !profileHandle || !profileBio || !profileFollowers || !profileFollowing || !profilePosts || !profileRefreshed || !profileAvatar || !profileAvatarInitials) {
+                return;
+            }
+
+            const displayName = profile.name || profile.username;
+            const formattedFollowers = formatCompactNumber(profile.followers);
+            const formattedFollowing = formatCompactNumber(profile.following);
+            const formattedPosts = formatCompactNumber(profile.totalPosts);
+
+            profileName.textContent = displayName;
+            profileHandle.textContent = `@${profile.username} / ${profile.category || 'Public creator profile'}`;
+            profileBio.textContent = profile.bio || 'No public bio available for this profile.';
+            profileFollowers.textContent = formattedFollowers;
+            profileFollowing.textContent = formattedFollowing;
+            profilePosts.textContent = formattedPosts;
+            profileRefreshed.textContent = `Last refreshed ${new Date(profile.fetchedAt).toLocaleString()}. Profile data is fetched from Instagram Graph API. Mock analytics are still used for charts until the analytics engine is connected.`;
+
+            if (followersMetricValue) {
+                followersMetricValue.textContent = formattedFollowers;
+            }
+
+            updateChart(followersChart, {
+                labels: ['Current'],
+                data: [Number(profile.followers || 0)],
+            });
+
+            if (profile.profileImage) {
+                profileAvatar.classList.add('has-image');
+                profileAvatar.style.backgroundImage = `url("${profile.profileImage}")`;
+            } else {
+                profileAvatar.classList.remove('has-image');
+                profileAvatar.style.backgroundImage = '';
+            }
+
+            profileAvatarInitials.textContent = getInitials(displayName, profile.username);
+        }
+
+        if (instagramLookupForm) {
+            instagramLookupForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                clearLookupMessage();
+
+                const username = instagramUsernameInput.value.trim().replace(/^@/, '');
+
+                if (!username) {
+                    setLookupMessage('error', 'Enter an Instagram username to fetch profile data.');
+                    return;
+                }
+
+                try {
+                    setLookupLoading(true);
+
+                    const response = await fetch(`/api/instagram/profile?username=${encodeURIComponent(username)}`);
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.error?.message || 'Unable to fetch this Instagram profile.');
+                    }
+
+                    updateProfileOverview(payload.data);
+                    instagramUsernameInput.value = payload.data.username;
+                    setLookupMessage('success', `Fetched @${payload.data.username}. Profile overview is now using live Instagram data.`);
+                } catch (error) {
+                    setLookupMessage('error', error.message);
+                } finally {
+                    setLookupLoading(false);
+                }
+            });
+        }
+
+        const analyticsData = <%- JSON.stringify(analytics.charts) %>;
+        const chartText = '#cbd5e1';
+        const chartGrid = 'rgba(148, 163, 184, 0.16)';
+
+        Chart.defaults.color = chartText;
+        Chart.defaults.font.family = 'Poppins, sans-serif';
+
+        function createGradient(ctx, color) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, 280);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'rgba(34, 211, 238, 0.02)');
+            return gradient;
+        }
+
+        const followersCanvas = document.getElementById('followersChart');
+        const engagementCanvas = document.getElementById('engagementChart');
+        const postCanvas = document.getElementById('postPerformanceChart');
+
+        function updateChart(chart, nextData) {
+            if (!chart || !nextData) {
+                return;
+            }
+
+            chart.data.labels = nextData.labels;
+            chart.data.datasets[0].data = nextData.data;
+            chart.update();
+        }
+
+        if (followersCanvas && engagementCanvas && postCanvas) {
+            const followersCtx = followersCanvas.getContext('2d');
+
+            followersChart = new Chart(followersCtx, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.labels,
+                    datasets: [{
+                        label: 'Followers',
+                        data: analyticsData.followers,
+                        fill: true,
+                        tension: 0.42,
+                        borderColor: '#22d3ee',
+                        backgroundColor: createGradient(followersCtx, 'rgba(34, 211, 238, 0.24)'),
+                        pointBackgroundColor: '#67e8f9',
+                        pointBorderColor: '#06101f',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: chartGrid } },
+                        y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
+                    },
+                },
+            });
+
+            engagementChart = new Chart(engagementCanvas, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.labels,
+                    datasets: [{
+                        label: 'Engagement rate',
+                        data: analyticsData.engagement,
+                        tension: 0.36,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                        pointBackgroundColor: '#86efac',
+                        pointRadius: 4,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, suggestedMax: 10, grid: { color: chartGrid }, ticks: { callback: (value) => `${value}%` } },
+                    },
+                },
+            });
+
+            postPerformanceChart = new Chart(postCanvas, {
+                type: 'bar',
+                data: {
+                    labels: analyticsData.posts,
+                    datasets: [{
+                        label: 'Likes',
+                        data: analyticsData.postPerformance,
+                        borderRadius: 10,
+                        backgroundColor: ['#22d3ee', '#38bdf8', '#22c55e', '#f59e0b', '#a78bfa'],
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { callback: (value) => `${Math.round(value / 1000)}K` } },
+                    },
+                },
+            });
+        }
+    </script>
+</body>
+</html>

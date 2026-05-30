@@ -1,0 +1,83 @@
+<%#
+  Partial: dashboard/_sidebar.ejs
+  Props (passed via locals):
+    - services  {Array<{name, status, route}>}
+%>
+<aside class="sidebar" aria-label="Dashboard navigation">
+
+  <!-- Brand / Logo -->
+  <a class="brand" href="/dashboard">
+    <span class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.2 4.73"></path>
+        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.63-1.63"></path>
+      </svg>
+    </span>
+    <span>CREATOROS</span>
+    <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">🌙</button>
+  </a>
+
+  <!-- Primary navigation -->
+  <nav class="sidebar-section" aria-label="Workspace">
+    <p class="sidebar-label">Workspace</p>
+    <a class="nav-link active" href="/dashboard">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      Dashboard
+    </a>
+    <a class="nav-link" href="#recent-links">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path>
+        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path>
+      </svg>
+      My Links
+    </a>
+    <a class="nav-link" href="#analytics">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M4 19V5"></path>
+        <path d="M9 19V9"></path>
+        <path d="M14 19V3"></path>
+        <path d="M19 19v-7"></path>
+      </svg>
+      Analytics
+    </a>
+    <a class="nav-link" href="#settings">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1.82V22a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.82-.33H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9c.14-.66-.07-1.35-.6-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.66-.14 1.35.07 1.82.6V5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6c.66.14 1.35-.07 1.82-.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.66.07 1.35-.6 1.82H20a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path>
+      </svg>
+      Settings
+    </a>
+  </nav>
+
+  <!-- Dynamic services list -->
+  <nav class="sidebar-section" aria-label="Services">
+    <p class="sidebar-label">Services</p>
+    <% services.forEach((service) => { %>
+      <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M12 3v18"></path>
+          <path d="M3 12h18"></path>
+        </svg>
+        <span class="service-name"><%= service.name %></span>
+      </a>
+    <% }) %>
+  </nav>
+
+  <!-- Footer: logout -->
+  <div class="sidebar-footer">
+    <a class="nav-link" href="/logout">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <path d="m16 17 5-5-5-5"></path>
+        <path d="M21 12H9"></path>
+      </svg>
+      Logout
+    </a>
+  </div>
+
+</aside>

@@ -1,0 +1,54 @@
+<%#
+  Partial: dashboard/_recent_links.ejs
+  Props (passed via locals):
+    - recentLinks  Array<{ originalUrl, shortUrl, clicks, createdAt }> (currently static demo rows)
+  Replace the static <tr> rows below with a forEach loop once the
+  controller passes real link data.
+%>
+<section class="panel table-panel" id="recent-links">
+
+  <div class="table-head">
+    <h2>Recent Links</h2>
+    <a href="/services/url-shortener">View all links</a>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Original URL</th>
+          <th>Short URL</th>
+          <th>Clicks</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%# TODO: replace with: recentLinks.forEach(link => { %>
+        <tr>
+          <td>https://example.com/awesome-video</td>
+          <td class="short-url">creatoros.link/abc123</td>
+          <td>342</td>
+          <td>24 May 2025</td>
+          <td><%- include('./_link_actions') %></td>
+        </tr>
+        <tr>
+          <td>https://blog.example.com/seo-tips</td>
+          <td class="short-url">creatoros.link/def456</td>
+          <td>178</td>
+          <td>23 May 2025</td>
+          <td><%- include('./_link_actions') %></td>
+        </tr>
+        <tr>
+          <td>https://youtu.be/dQw4w9WgXcQ</td>
+          <td class="short-url">creatoros.link/ghi789</td>
+          <td>98</td>
+          <td>22 May 2025</td>
+          <td><%- include('./_link_actions') %></td>
+        </tr>
+        <%# TODO: }) %>
+      </tbody>
+    </table>
+  </div>
+
+</section>

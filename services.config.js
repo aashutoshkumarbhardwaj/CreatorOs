@@ -25,7 +25,7 @@ module.exports = [
         name: '📊 Analytics Dashboard',
         description: 'Track performance and engagement across your creator services.',
         route: '/services/analytics-dashboard',
-        status: 'coming_soon',
+        status: 'available',
     },
     {
         key: 'dm-automation',

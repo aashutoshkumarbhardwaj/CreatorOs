@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Dashboard | CreatorOS</title>
     
     <!-- Import Google Fonts: Space Grotesk and Inter -->
@@ -11,6 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
@@ -57,6 +62,7 @@
             margin: 0;
             padding: 0;
         }
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -70,6 +76,7 @@
             color: inherit;
             text-decoration: none;
         }
+        a { color: inherit; }
 
         /* Headings & Typography */
         h1, h2, h3, h4, .brand-text, .title-font {
@@ -89,6 +96,7 @@
         .dashboard-layout.sidebar-collapsed {
             --sidebar-width: 80px;
         }
+        .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
 
         /* ── Sidebar Redesign ── */
         .sidebar {
@@ -167,6 +175,7 @@
             gap: 0.4rem;
             margin-bottom: 2rem;
         }
+        .sidebar-section { display: grid; gap: 0.45rem; }
 
         .sidebar-label {
             padding-left: 0.5rem;
@@ -178,8 +187,7 @@
             text-transform: uppercase;
         }
 
-        .nav-link,
-        .service-link {
+        .nav-link, .service-link {
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -214,6 +222,10 @@
             flex-shrink: 0;
             stroke: currentColor;
             fill: none;
+        .nav-link:hover, .service-link:hover {
+            transform: translateX(4px);
+            color: #67e8f9;
+            background: rgba(34, 211, 238, 0.08);
         }
 
         .sidebar-footer {
@@ -280,6 +292,16 @@
         .dashboard-layout.sidebar-collapsed #theme-toggle {
             display: none;
         }
+        .nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
+        .service-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .sidebar-footer { margin-top: auto; display: grid; gap: 0.65rem; }
+
+        .dashboard-layout.sidebar-collapsed .brand { justify-content: center; padding-inline: 0; }
+
+        .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark),
+        .dashboard-layout.sidebar-collapsed .sidebar-label,
+        .dashboard-layout.sidebar-collapsed .service-name { display: none; }
 
         .dashboard-layout.sidebar-collapsed .nav-link,
         .dashboard-layout.sidebar-collapsed .service-link {
@@ -294,6 +316,7 @@
             display: flex;
             flex-direction: column;
         }
+        .main { min-width: 0; animation: fadeIn 0.65s ease 0.1s both; }
 
         /* Shared Top Navigation */
         .topbar {
@@ -312,6 +335,9 @@
         .menu-btn {
             width: 2.2rem;
             height: 2.2rem;
+        .menu-btn, .icon-btn {
+            width: 2.55rem;
+            height: 2.55rem;
             display: grid;
             place-items: center;
             border: var(--border-thick);
@@ -380,6 +406,14 @@
             border-color: var(--border);
             background-color: rgba(0,0,0,0.03);
         }
+        .menu-btn:hover, .icon-btn:hover {
+            transform: translateY(-2px);
+            color: #67e8f9;
+            border-color: rgba(103, 232, 249, 0.34);
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
 
         .profile-chip {
             display: inline-flex;
@@ -396,6 +430,8 @@
             transform: translate(-1px, -1px);
             box-shadow: 3px 3px 0px var(--border);
         }
+
+        .profile-chip:hover { transform: translateY(-2px); background: rgba(34, 211, 238, 0.1); }
 
         .avatar {
             width: 1.6rem;
@@ -445,6 +481,9 @@
             flex-direction: column;
             gap: 2rem;
         }
+        .profile-name { font-weight: 700; }
+
+        .content { padding: 2.2rem 2.4rem 2.8rem; }
 
         .dashboard-head {
             display: flex;
@@ -468,6 +507,24 @@
             font-size: 0.95rem;
             color: var(--muted-2);
         }
+        .dashboard-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+
+        .primary-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            border-radius: 0.55rem;
+            padding: 0.95rem 1.35rem;
+            color: #042f3e;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+            text-decoration: none;
+            font-weight: 700;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .primary-action:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(34, 211, 238, 0.26); }
 
         /* ── Stats Grid ── */
         .stats-grid {
@@ -485,6 +542,12 @@
             flex-direction: column;
             position: relative;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .stat-card, .panel {
+            border: 1px solid var(--border);
+            border-radius: 0.9rem;
+            background: var(--surface);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
         }
 
         .stat-card-retro:hover {
@@ -529,6 +592,9 @@
             line-height: 1;
             margin-bottom: 0.25rem;
         }
+        .stat-card:nth-child(2) { animation-delay: 0.05s; }
+        .stat-card:nth-child(3) { animation-delay: 0.1s; }
+        .stat-card:nth-child(4) { animation-delay: 0.15s; }
 
         .stat-card-retro .subtext {
             font-size: 0.78rem;
@@ -608,6 +674,15 @@
             font-weight: 700;
             color: #111111;
         }
+        .stat-icon.purple  { color: #67e8f9; background: rgba(34, 211, 238, 0.12); }
+        .stat-icon.blue    { color: #38bdf8; background: rgba(56, 189, 248, 0.12); }
+        .stat-icon.green   { color: #86efac; background: rgba(34, 197, 94, 0.12); }
+        .stat-icon.orange  { color: #fcd34d; background: rgba(245, 158, 11, 0.14); }
+
+        .stat-content h3   { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.95rem; font-weight: 600; }
+        .stat-value        { margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: 0; }
+        .stat-note         { grid-column: 1 / -1; margin: 0.1rem 0 0; color: var(--muted); font-size: 0.9rem; }
+        .trend             { color: var(--green); font-weight: 700; }
 
         .status-card-retro.pending {
             background-color: var(--accent-yellow);
@@ -616,6 +691,7 @@
         .status-card-retro.accepted {
             background-color: var(--success);
         }
+        .panel { padding: 1.35rem; animation: enterUp 0.62s ease 0.18s both; }
 
         .status-card-retro.expired {
             background-color: var(--accent-red);
@@ -645,6 +721,9 @@
             color: var(--muted);
             line-height: 1.5;
         }
+        .panel h2 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
+
+        .invite-panel p { margin: 0; color: var(--muted); line-height: 1.7; }
 
         .invite-form {
             display: flex;
@@ -699,6 +778,12 @@
             background-color: var(--accent-red);
             color: var(--white);
         }
+
+        .invite-form button:hover { transform: translateY(-1px); }
+
+        .message-box { padding: 1rem 1.15rem; border-radius: 0.95rem; margin-top: 1rem; font-size: 0.95rem; }
+        .message-success { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.18); color: #d1fae5; }
+        .message-error   { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.22); color: #fee2e2; }
 
         /* Donut Layout */
         .donut-layout {
@@ -756,6 +841,11 @@
             align-items: center;
             gap: 0.5rem;
         }
+        .status-card h3 { margin: 0 0 0.45rem; font-size: 0.96rem; color: var(--muted); }
+        .status-card p  { margin: 0; font-size: 1.66rem; font-weight: 800; letter-spacing: -0.02em; }
+        .status-card.pending  { color: #facc15; }
+        .status-card.accepted { color: #22c55e; }
+        .status-card.expired  { color: #f87171; }
 
         .legend-dot {
             width: 8px;
@@ -789,7 +879,11 @@
         .chart-area {
             fill: rgba(55, 214, 200, 0.08);
         }
+        .chart-wrap { min-height: 280px; overflow: hidden; }
 
+        .line-chart { width: 100%; height: 280px; }
+        .chart-grid { stroke: rgba(148, 163, 184, 0.18); stroke-width: 1; }
+        .chart-area { fill: url(#chartFill); }
         .chart-line {
             fill: none;
             stroke: var(--text);
@@ -830,6 +924,46 @@
             padding: 0;
             overflow: hidden;
         }
+        .chart-dot   { fill: var(--purple-2); stroke: #06101f; stroke-width: 3; }
+        .chart-label, .chart-y { fill: var(--muted-2); font-size: 13px; font-family: 'Poppins', sans-serif; }
+
+        .donut-layout {
+            display: grid;
+            grid-template-columns: 190px minmax(0, 1fr);
+            gap: 1.4rem;
+            align-items: center;
+            min-height: 260px;
+        }
+
+        .donut {
+            width: 180px;
+            aspect-ratio: 1;
+            border-radius: 999px;
+            background: conic-gradient(var(--accent) 0 65%, #38bdf8 65% 85%, #22c55e 85% 92%, #f59e0b 92% 97%, #64748b 97% 100%);
+            position: relative;
+        }
+
+        .donut::after {
+            content: '';
+            position: absolute;
+            inset: 29%;
+            border-radius: inherit;
+            background: var(--surface-strong);
+        }
+
+        .legend { display: grid; gap: 1rem; }
+
+        .legend-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--muted);
+        }
+
+        .legend-dot { width: 0.7rem; height: 0.7rem; border-radius: 999px; }
+
+        .table-panel { padding: 0; overflow: hidden; animation-delay: 0.28s; }
 
         .table-head-retro {
             display: flex;
@@ -900,9 +1034,95 @@
         .short-url {
             color: var(--accent-teal);
             font-weight: 700;
+        .table-head h2 { margin: 0; font-size: 1.25rem; }
+        .table-head a  { color: var(--purple); text-decoration: none; font-weight: 700; }
+
+        .table-scroll { overflow-x: auto; }
+
+        table { width: 100%; min-width: 900px; border-collapse: collapse; }
+
+        th, td {
+            padding: 1.1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+            font-size: 0.92rem;
         }
 
-        .row-actions {
+        th { color: var(--text); background: rgba(255, 255, 255, 0.04); font-weight: 700; }
+        td { color: var(--muted); }
+
+        tbody tr { transition: background 0.18s ease; }
+        tbody tr:hover { background: rgba(34, 211, 238, 0.06); }
+
+        .short-url { color: var(--purple); font-weight: 700; }
+
+        .row-actions { display: flex; align-items: center; gap: 0.7rem; }
+
+        .row-action {
+            width: 2rem;
+            height: 2rem;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            color: var(--muted);
+            text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.18s ease, background 0.18s ease;
+        }
+
+        .row-action:hover { color: var(--purple); background: rgba(34, 211, 238, 0.1); }
+
+        svg { width: 1.2rem; height: 1.2rem; stroke-width: 2.2; }
+
+        /* ── QR Badge in table ───────────────────────── */
+        .qr-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.22rem 0.6rem;
+            border-radius: 999px;
+            background: rgba(34, 211, 238, 0.12);
+            color: #67e8f9;
+            border: 1px solid rgba(34, 211, 238, 0.22);
+        }
+
+        /* ── QR Modal ────────────────────────────────── */
+        .qr-modal-wrap {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-modal-wrap.open { display: flex; }
+
+        .qr-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(6px);
+        }
+
+        .qr-modal {
+            position: relative;
+            z-index: 1;
+            width: min(420px, 94vw);
+            padding: 2rem;
+            border-radius: 1.2rem;
+            border: 1px solid var(--border);
+            background: rgba(8, 19, 39, 0.96);
+            backdrop-filter: blur(24px);
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+            animation: enterUp 0.28s ease both;
+        }
+
+        .qr-modal-head {
             display: flex;
             align-items: center;
             gap: 0.45rem;
@@ -953,8 +1173,236 @@
             .status-grid-retro {
                 grid-template-columns: 1fr;
             }
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.4rem;
+        }
+
+        .qr-modal-head h3 { margin: 0; font-size: 1.15rem; }
+
+        .qr-modal-head p {
+            margin: 0.3rem 0 0;
+            font-size: 0.82rem;
+            color: var(--muted-2);
+            word-break: break-all;
+        }
+
+        .qr-close {
+            width: 2rem;
+            height: 2rem;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: none;
+            color: var(--muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: color 0.18s, background 0.18s;
+        }
+
+        .qr-close:hover { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+        .qr-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+            border-radius: 0.85rem;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 1.4rem;
+            overflow: hidden;
+        }
+
+        .qr-preview img {
+            width: 200px;
+            height: 200px;
+            display: block;
+        }
+
+        .qr-preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.65rem;
+            color: var(--muted-2);
+            font-size: 0.88rem;
+        }
+
+        .qr-spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(34, 211, 238, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 999px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* QR Color Pickers */
+        .qr-colors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.85rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .qr-color-field label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--muted-2);
+            margin-bottom: 0.4rem;
+        }
+
+        .qr-color-row {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            border: 1px solid var(--border);
+            border-radius: 0.55rem;
+            padding: 0.4rem 0.75rem;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .qr-color-row input[type="color"] {
+            width: 1.5rem;
+            height: 1.5rem;
+            border: none;
+            border-radius: 4px;
+            background: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .qr-color-row input[type="text"] {
+            flex: 1;
+            border: none;
+            background: none;
+            color: var(--text);
+            font: inherit;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        /* QR Actions */
+        .qr-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .qr-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.65rem;
+            font: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s;
+            text-decoration: none;
+            border: none;
+        }
+
+        .qr-btn svg { width: 1rem; height: 1rem; stroke-width: 2.2; }
+
+        .qr-btn-primary {
+            color: #042f3e;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 12px 28px rgba(34, 211, 238, 0.2);
+        }
+
+        .qr-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(34, 211, 238, 0.28); }
+
+        .qr-btn-secondary {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+        }
+
+        .qr-btn-secondary:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+
+        .qr-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Light mode ─────────────────────────────── */
+        body.light-mode { background: #f4f7fb; color: #111827; }
+        body.light-mode .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
+        body.light-mode .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+        body.light-mode .stat-card, body.light-mode .panel {
+            background: #ffffff;
+            color: #06101f;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        body.light-mode .nav-link { color: #111827; }
+        body.light-mode .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
+        body.light-mode .sidebar-label { color: #6b7280; }
+        body.light-mode h1, body.light-mode h2, body.light-mode h3,
+        body.light-mode h4, body.light-mode p, body.light-mode span { color: #111827; }
+        body.light-mode select { background: white; color: black; border: 1px solid #d1d5db; }
+        body.light-mode #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
+        body.light-mode #recent-links th { color:#374151; font-weight:600; }
+        body.light-mode #recent-links td { color:#111827; }
+        body.light-mode #recent-links .short-url { color:#06b6d4; }
+        body.light-mode #recent-links .table-head a { color:#06b6d4; }
+        body.light-mode #recent-links .row-action { color:#4b5563; }
+        body.light-mode #recent-links tbody tr:hover { background:#f9fafb; }
+        body.light-mode #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
+        body.light-mode .qr-modal { background: #ffffff; border-color: #e5e7eb; }
+        body.light-mode .qr-modal-head p { color: #6b7280; }
+        body.light-mode .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
+        body.light-mode .qr-color-row input[type="text"] { color: #111827; }
+        body.light-mode .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
+
+        .theme-btn {
+            width: 42px; height: 42px;
+            border-radius: 50%; border: none; cursor: pointer; font-size: 18px;
+            background: #ffffff20; backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .theme-btn:hover { transform: scale(1.08); }
+
+        /* ── Responsive ─────────────────────────────── */
+        @keyframes slideIn  { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+        @keyframes enterUp  { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        @media (max-width: 1120px) {
+            .stats-grid    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .analytics-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 860px) {
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .sidebar { position:relative; height:auto; max-height:1200px; border-right:0; border-bottom:1px solid var(--border); }
+            .dashboard-layout.sidebar-collapsed .sidebar { max-height:0; padding-top:0; padding-bottom:0; border-bottom-color:transparent; }
+            .dashboard-layout.sidebar-collapsed .sidebar > * { opacity:0; pointer-events:none; }
+            .dashboard-layout.sidebar-collapsed .nav-link,
+            .dashboard-layout.sidebar-collapsed .service-link { font-size:inherit; }
+            .sidebar-section { grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); }
+            .sidebar-label, .brand { grid-column: 1 / -1; }
+            .topbar { position:relative; padding:1rem; }
+            .content { padding:1.4rem 1rem 2rem; }
+            .dashboard-head { flex-direction:column; }
+        }
+
+        @media (max-width: 620px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .donut-layout { grid-template-columns:1fr; justify-items:center; }
+            .legend { width:100%; }
+            .profile-name { display:none; }
+            .qr-actions { grid-template-columns: 1fr; }
         }
     </style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -989,6 +1437,12 @@
                 <a class="nav-link" href="#settings">
                     <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
                     <span class="nav-text">Settings</span>
+                <a class="nav-link" href="/settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1.82V22a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.82-.33H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9c.14-.66-.07-1.35-.6-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.66-.14 1.35.07 1.82.6V5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6c.66.14 1.35-.07 1.82-.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.66.07 1.35-.6 1.82H20a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path>
+                    </svg>
+                    Settings
                 </a>
             </nav>
 
@@ -998,6 +1452,12 @@
                 <% services.forEach((service)=> { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
                         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>
+                <% services.forEach((service) => { %>
+                    <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                            <path d="M12 3v18"></path>
+                            <path d="M3 12h18"></path>
+                        </svg>
                         <span class="service-name"><%= service.name %></span>
                     </a>
                 <% }) %>
@@ -1031,6 +1491,13 @@
                     <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." aria-label="Search shortened links..." />
                 </div>
 
+                <button class="menu-btn" type="button" aria-label="Toggle sidebar" id="sidebarToggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M4 6h16"></path>
+                        <path d="M4 12h16"></path>
+                        <path d="M4 18h16"></path>
+                    </svg>
+                </button>
                 <div class="topbar-actions">
                     <div class="nav-actions-icons">
                         <button class="action-icon-btn" aria-label="Notifications" type="button">
@@ -1057,6 +1524,7 @@
             <section class="content">
                 
                 <!-- Dashboard Head -->
+            <section class="content" id="dashboard-view">
                 <div class="dashboard-head">
                     <div>
                         <h1>Dashboard</h1>
@@ -1065,6 +1533,7 @@
                 </div>
 
                 <!-- Section 1: Statistics Cards Row (Analytics Page subset) -->
+                <!-- Stats -->
                 <div class="stats-grid" id="analytics">
                     <article class="stat-card-retro">
                         <span class="card-id">STAT_01</span>
@@ -1098,6 +1567,52 @@
                 <!-- Invite Status Panel Section -->
                 <section class="panel-retro">
                     <div class="panel-retro-title-row">
+                    <article class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Total Clicks</h3>
+                            <p class="stat-value">1,256</p>
+                        </div>
+                        <p class="stat-note"><span class="trend">+18%</span> from last month</p>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path d="m3 17 6-6 4 4 8-8"></path>
+                                <path d="M14 7h7v7"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Top Performing</h3>
+                            <p class="stat-value">423</p>
+                        </div>
+                        <p class="stat-note">Clicks</p>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                                <path d="M16 2v4"></path>
+                                <path d="M8 2v4"></path>
+                                <path d="M3 10h18"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Joined On</h3>
+                            <p class="stat-value">24 May 2025</p>
+                        </div>
+                        <p class="stat-note">2 weeks ago</p>
+                    </article>
+                </div>
+
+                <!-- Invite Status -->
+                <section class="panel" style="margin-bottom:1.5rem;">
+                    <div class="panel-head">
                         <h2>Invite Status</h2>
                         <span class="badge-retro">Team invites</span>
                     </div>
@@ -1118,6 +1633,7 @@
                 </section>
 
                 <!-- Core Analytics Workspace (SVG Chart and Referrers/Invites) -->
+                <!-- Analytics + Invite -->
                 <div class="analytics-grid">
                     
                     <!-- Left: SVG Line Chart -->
@@ -1132,25 +1648,28 @@
                         
                         <div class="chart-wrap">
                             <svg class="line-chart" viewBox="0 0 720 280" role="img" aria-label="Clicks overview chart">
+                                <defs>
+                                    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+                                        <stop offset="0%"   stop-color="#22d3ee" stop-opacity="0.22"></stop>
+                                        <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.02"></stop>
+                                    </linearGradient>
+                                </defs>
                                 <path class="chart-grid" d="M70 28H700M70 88H700M70 148H700M70 208H700"></path>
                                 <text class="chart-y" x="24" y="32">400</text>
                                 <text class="chart-y" x="24" y="92">300</text>
                                 <text class="chart-y" x="24" y="152">200</text>
                                 <text class="chart-y" x="24" y="212">100</text>
                                 <text class="chart-y" x="36" y="262">0</text>
-                                <path class="chart-area"
-                                    d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92 L690 250 L90 250 Z">
-                                </path>
-                                <path class="chart-line"
-                                    d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92"></path>
-                                <circle class="chart-dot" cx="90" cy="208" r="6"></circle>
+                                <path class="chart-area" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92 L690 250 L90 250 Z"></path>
+                                <path class="chart-line" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92"></path>
+                                <circle class="chart-dot" cx="90"  cy="208" r="6"></circle>
                                 <circle class="chart-dot" cx="190" cy="182" r="6"></circle>
                                 <circle class="chart-dot" cx="290" cy="122" r="6"></circle>
                                 <circle class="chart-dot" cx="390" cy="164" r="6"></circle>
-                                <circle class="chart-dot" cx="490" cy="62" r="6"></circle>
+                                <circle class="chart-dot" cx="490" cy="62"  r="6"></circle>
                                 <circle class="chart-dot" cx="590" cy="142" r="6"></circle>
-                                <circle class="chart-dot" cx="690" cy="92" r="6"></circle>
-                                <text class="chart-label" x="72" y="270">18 May</text>
+                                <circle class="chart-dot" cx="690" cy="92"  r="6"></circle>
+                                <text class="chart-label" x="72"  y="270">18 May</text>
                                 <text class="chart-label" x="172" y="270">19 May</text>
                                 <text class="chart-label" x="272" y="270">20 May</text>
                                 <text class="chart-label" x="372" y="270">21 May</text>
@@ -1232,6 +1751,37 @@
                                         <strong>3%</strong>
                                     </div>
                                 </div>
+                    <section class="panel invite-panel">
+                        <div class="panel-head">
+                            <h2>Accept an invitation</h2>
+                            <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.55rem 0.85rem;border-radius:999px;background:rgba(34,211,238,0.12);color:#67e8f9;font-weight:700;font-size:0.85rem;">Team</span>
+                        </div>
+                        <p>Have an invite token? Paste it below to accept your collaboration invite into CreatorOS.</p>
+                        <% if (inviteAcceptMessage) { %>
+                            <div class="message-box message-success"><%= inviteAcceptMessage %></div>
+                        <% } %>
+                        <% if (inviteAcceptError) { %>
+                            <div class="message-box message-error"><%= inviteAcceptError %></div>
+                        <% } %>
+                        <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+                            <label for="invite-token" class="sr-only">Invite Token</label>
+                            <input id="invite-token" type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
+                            <button type="submit">Accept invite</button>
+                        </form>
+                    </section>
+
+                    <section class="panel">
+                        <div class="panel-head">
+                            <h2>Top Referrers</h2>
+                        </div>
+                        <div class="donut-layout">
+                            <div class="donut" aria-label="Top referrers chart"></div>
+                            <div class="legend">
+                                <div class="legend-row"><span class="legend-dot" style="background:#22d3ee"></span><span>Direct</span><strong>65%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#38bdf8"></span><span>Google</span><strong>20%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#22c55e"></span><span>Twitter</span><strong>7%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#f59e0b"></span><span>Instagram</span><strong>5%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#64748b"></span><span>Others</span><strong>3%</strong></div>
                             </div>
                         </section>
                         
@@ -1242,6 +1792,9 @@
                 <!-- Recent Links Section (My Links Page subset) -->
                 <section class="panel-retro table-panel-retro" id="recent-links">
                     <div class="table-head-retro">
+                <!-- Recent Links Table -->
+                <section class="panel table-panel" id="recent-links">
+                    <div class="table-head">
                         <h2>Recent Links</h2>
                         <a href="/services/url-shortener">View all links</a>
                     </div>
@@ -1252,6 +1805,7 @@
                                     <th>Original URL</th>
                                     <th>Short URL</th>
                                     <th>Clicks</th>
+                                    <th>QR</th>
                                     <th>Created At</th>
                                     <th>Actions</th>
                                 </tr>
@@ -1269,6 +1823,44 @@
                                             </a>
                                             <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
                                                 <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>342</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>24 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <!-- QR button — data-shortid & data-shorturl drive the modal -->
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="abc123"
+                                                data-shorturl="https://creatoros.link/abc123">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
                                             </a>
                                         </div>
                                     </td>
@@ -1285,6 +1877,43 @@
                                             </a>
                                             <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
                                                 <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>178</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>23 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="def456"
+                                                data-shorturl="https://creatoros.link/def456">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
                                             </a>
                                         </div>
                                     </td>
@@ -1301,6 +1930,43 @@
                                             </a>
                                             <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
                                                 <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>98</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>22 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="ghi789"
+                                                data-shorturl="https://creatoros.link/ghi789">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
                                             </a>
                                         </div>
                                     </td>
@@ -1311,24 +1977,232 @@
                 </section>
                 
             </section>
+        
         </main>
     </div>
 
     <script>
         // Collapsible sidebar behavior
         const dashboardLayout = document.getElementById('dashboardLayout');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarState = localStorage.getItem('creatorosSidebarCollapsed');
+    <!-- ── QR Modal ──────────────────────────────────────────────────────────── -->
+    <div class="qr-modal-wrap" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+        <div class="qr-backdrop" id="qrBackdrop"></div>
+        <div class="qr-modal">
+            <div class="qr-modal-head">
+                <div>
+                    <h3 id="qrModalTitle">QR Code</h3>
+                    <p id="qrModalUrl"></p>
+                </div>
+                <button class="qr-close" id="qrClose" aria-label="Close QR modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
 
-        if (sidebarState === 'true') {
-            dashboardLayout.classList.add('sidebar-collapsed');
-            sidebarToggle.setAttribute('aria-expanded', 'false');
+            <!-- QR preview -->
+            <div class="qr-preview" id="qrPreview">
+                <div class="qr-preview-placeholder" id="qrPlaceholder">
+                    <div class="qr-spinner"></div>
+                    <span>Generating QR…</span>
+                </div>
+                <!-- SVG from server is injected here as <img> -->
+            </div>
+
+            <!-- Color pickers -->
+            <div class="qr-colors">
+                <div class="qr-color-field">
+                    <label for="qrFg">Foreground</label>
+                    <div class="qr-color-row">
+                        <input type="color" id="qrFgPicker" value="#000000" title="Foreground color">
+                        <input type="text"  id="qrFg" value="#000000" maxlength="7" placeholder="#000000">
+                    </div>
+                </div>
+                <div class="qr-color-field">
+                    <label for="qrBg">Background</label>
+                    <div class="qr-color-row">
+                        <input type="color" id="qrBgPicker" value="#ffffff" title="Background color">
+                        <input type="text"  id="qrBg" value="#ffffff" maxlength="7" placeholder="#ffffff">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="qr-actions">
+                <a class="qr-btn qr-btn-primary" id="qrDownload" href="#" download>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download PNG
+                </a>
+                <button class="qr-btn qr-btn-secondary" id="qrApplyColors">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                    </svg>
+                    Apply Colors
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/pages/dashboard.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Sidebar toggle ──────────────────────────────────────────────────
+        const layout        = document.getElementById('dashboardLayout');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                layout.classList.toggle('sidebar-collapsed');
+            });
         }
 
-        sidebarToggle.addEventListener('click', () => {
-            const isCollapsed = dashboardLayout.classList.toggle('sidebar-collapsed');
-            sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
-            localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
+        // ── Theme toggle ────────────────────────────────────────────────────
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') { document.body.classList.add('light-mode'); themeBtn.textContent = '☀️'; }
+            themeBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                themeBtn.textContent = isLight ? '☀️' : '🌙';
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            });
+        }
+
+        // ── QR Modal state ──────────────────────────────────────────────────
+        const modal       = document.getElementById('qrModal');
+        const backdrop    = document.getElementById('qrBackdrop');
+        const closeBtn    = document.getElementById('qrClose');
+        const preview     = document.getElementById('qrPreview');
+        const placeholder = document.getElementById('qrPlaceholder');
+        const modalUrl    = document.getElementById('qrModalUrl');
+        const downloadBtn = document.getElementById('qrDownload');
+        const applyBtn    = document.getElementById('qrApplyColors');
+        const fgPicker    = document.getElementById('qrFgPicker');
+        const fgText      = document.getElementById('qrFg');
+        const bgPicker    = document.getElementById('qrBgPicker');
+        const bgText      = document.getElementById('qrBg');
+
+        let activeShortId  = '';
+        let activeShortUrl = '';
+
+        // ── Open modal ──────────────────────────────────────────────────────
+        function openModal(shortId, shortUrl) {
+            activeShortId  = shortId;
+            activeShortUrl = shortUrl;
+
+            modalUrl.textContent = shortUrl;
+            fgPicker.value = '#000000';
+            fgText.value   = '#000000';
+            bgPicker.value = '#ffffff';
+            bgText.value   = '#ffffff';
+
+            // reset preview
+            const old = preview.querySelector('img');
+            if (old) old.remove();
+            placeholder.style.display = 'flex';
+
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            closeBtn.focus();
+
+            loadQR(shortId, '#000000', '#ffffff');
+        }
+
+        // ── Close modal ─────────────────────────────────────────────────────
+        function closeModal() {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+            activeShortId = '';
+            activeShortUrl = '';
+        }
+
+        // ── Load QR from server (/api/urls/qr/:shortId) ─────────────────────
+        // The server returns an SVG string — we load it via <img src="…">
+        // so there is zero CORS issue and no canvas work on the client.
+        function loadQR(shortId, fg, bg) {
+            placeholder.style.display = 'flex';
+            const old = preview.querySelector('img');
+            if (old) old.remove();
+
+            const params = new URLSearchParams({ fg, bg });
+            const src    = `/api/urls/qr/${shortId}?${params}`;
+
+            const img = new Image();
+            img.alt   = `QR code for ${activeShortUrl}`;
+            img.style.cssText = 'width:200px;height:200px;display:block;border-radius:4px;';
+
+            img.onload = () => {
+                placeholder.style.display = 'none';
+                preview.appendChild(img);
+                // wire download link to PNG endpoint
+                downloadBtn.href     = `/api/urls/qr/${shortId}/download`;
+                downloadBtn.download = `qr-${shortId}.png`;
+            };
+
+            img.onerror = () => {
+                placeholder.innerHTML = '<span style="color:#f87171;font-size:0.88rem;">Failed to load QR. Try again.</span>';
+            };
+
+            img.src = src;
+        }
+
+        // ── Color picker sync ───────────────────────────────────────────────
+        fgPicker.addEventListener('input', () => { fgText.value = fgPicker.value; });
+        bgPicker.addEventListener('input', () => { bgText.value = bgPicker.value; });
+
+        fgText.addEventListener('input', () => {
+            if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(fgText.value)) {
+                fgPicker.value = fgText.value;
+            }
+        });
+
+        bgText.addEventListener('input', () => {
+            if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(bgText.value)) {
+                bgPicker.value = bgText.value;
+            }
+        });
+
+        // ── Apply colors → re-fetch QR + save to DB ─────────────────────────
+        applyBtn.addEventListener('click', async () => {
+            if (!activeShortId) return;
+            const fg = fgText.value.trim();
+            const bg = bgText.value.trim();
+            const hex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+            if (!hex.test(fg) || !hex.test(bg)) {
+                alert('Please enter valid hex colors (e.g. #ff0000)');
+                return;
+            }
+
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Saving…';
+
+            try {
+                // save colors to DB
+                await fetch(`/api/urls/qr/${activeShortId}/colors`, {
+                    method:  'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ qrFgColor: fg, qrBgColor: bg }),
+                });
+            } catch (_) {
+                // non-fatal — still re-render preview
+            }
+
+            loadQR(activeShortId, fg, bg);
+            applyBtn.disabled = false;
+            applyBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:1rem;height:1rem;stroke-width:2.2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                </svg>
+                Apply Colors`;
         });
         
         // Theme toggle mechanism
@@ -1374,7 +2248,36 @@
                 });
             });
         }
+
+        // ── Trigger buttons in table ────────────────────────────────────────
+        document.querySelectorAll('.qr-trigger').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const shortId  = btn.dataset.shortid;
+                const shortUrl = btn.dataset.shorturl;
+                if (shortId && shortUrl) openModal(shortId, shortUrl);
+            });
+        });
+
+        // ── Close on backdrop / Escape ──────────────────────────────────────
+        backdrop.addEventListener('click', closeModal);
+        closeBtn.addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+        });
+
+        // ── Focus trap inside modal ─────────────────────────────────────────
+        modal.addEventListener('keydown', (e) => {
+            if (e.key !== 'Tab') return;
+            const focusable = modal.querySelectorAll('button, a, input');
+            const first = focusable[0];
+            const last  = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault(); last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault(); first.focus();
+            }
+        });
+    })();
     </script>
 </body>
-
 </html>

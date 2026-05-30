@@ -44,6 +44,39 @@ const userSchema = new mongoose.Schema(
         avatar: {
             type: String,
         },
+        
+        alias: {
+            type: String,
+        },
+        
+        bio: {
+            type: String,
+        },
+        
+        twoFactorEnabled: {
+            type: Boolean,
+            default: false,
+        },
+        
+        preferences: {
+            appearanceMode: { type: String, enum: ['light', 'dark', 'system'], default: 'light' },
+            interfaceDensity: { type: String, enum: ['compact', 'tactile'], default: 'tactile' },
+            motionEffects: { type: Boolean, default: true },
+            soundCues: { type: Boolean, default: false },
+            autoSaveLinks: { type: Boolean, default: true },
+        },
+
+        passwordChangedAt: {
+            type: Date,
+        },
+
+        subscription: {
+            planName: { type: String, default: 'Pro Individual' },
+            priceMonthly: { type: Number, default: 29 },
+            nextInvoiceDate: { type: Date },
+            cardBrand: { type: String, default: 'VISA' },
+            cardLast4: { type: String, default: '4242' },
+        },
 
         lastLoginAt: {
             type: Date,
@@ -73,6 +106,26 @@ class MockUserModel {
         this.role = data.role || "creator";
         this.authProvider = data.authProvider || "local";
         this.collaborators = data.collaborators || [];
+        
+        this.alias = data.alias || "";
+        this.bio = data.bio || "";
+        this.twoFactorEnabled = data.twoFactorEnabled || false;
+        this.preferences = data.preferences || {
+            appearanceMode: 'light',
+            interfaceDensity: 'tactile',
+            motionEffects: true,
+            soundCues: false,
+            autoSaveLinks: true
+        };
+
+        this.passwordChangedAt = data.passwordChangedAt || null;
+        this.subscription = data.subscription || {
+            planName: 'Pro Individual',
+            priceMonthly: 29,
+            cardBrand: 'VISA',
+            cardLast4: '4242',
+        };
+        
         this.createdAt = new Date();
         this.updatedAt = new Date();
         this.lastLoginAt = data.lastLoginAt;
@@ -84,6 +137,14 @@ class MockUserModel {
             Object.assign(existing, this);
         } else {
             mockUsers.push(this);
+        }
+        return this;
+    }
+
+    async deleteOne() {
+        const idx = mockUsers.findIndex((u) => u._id === this._id || u.id === this._id);
+        if (idx !== -1) {
+            mockUsers.splice(idx, 1);
         }
         return this;
     }
@@ -137,6 +198,16 @@ class MockUserModel {
         password: hashed,
         role: "creator",
         authProvider: "local",
+        alias: "@test_creator",
+        bio: "Test user bio goes here.",
+        twoFactorEnabled: false,
+        preferences: {
+            appearanceMode: 'light',
+            interfaceDensity: 'tactile',
+            motionEffects: true,
+            soundCues: false,
+            autoSaveLinks: true
+        },
         createdAt: new Date(),
         updatedAt: new Date()
     });
