@@ -4,6 +4,7 @@ const User = require('../model/user');
 const services = require('../services.config');
 const { sendInvitationEmail } = require('../utils/email');
 const asyncHandler = require('../utils/asyncHandler');
+const { getDashboardData } = require('../utils/dashboardHelper');
 
 function buildAccountViewModel(userDoc, fallbackUser) {
   const name = userDoc?.name || 'Creator';
@@ -113,10 +114,13 @@ const renderDashboard = async (req, res, options = {}) => {
     expired,
   };
 
+  const dashboardData = await getDashboardData(userDoc);
+
   return res.render('dashboard', {
     user: buildAccountViewModel(userDoc, req.user),
     services,
     inviteSummary,
+    dashboardData,
     inviteAcceptMessage: options.inviteAcceptMessage || null,
     inviteAcceptError: options.inviteAcceptError || null,
   });

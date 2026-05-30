@@ -77,6 +77,7 @@ const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
 
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
@@ -261,10 +262,13 @@ app.get("/dashboard", protect, asyncHandler(async (req, res) => {
             expired,
         }));
 
+    const dashboardData = await getDashboardData(userDoc);
+
     res.render("dashboard", {
         user: buildAccountViewModel(userDoc, req.user),
         services,
         inviteSummary,
+        dashboardData,
         inviteAcceptMessage: null,
         inviteAcceptError: null,
     });
