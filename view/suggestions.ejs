@@ -486,9 +486,9 @@
           </svg>
           Dashboard
         </a>
-        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>My Links</a>
-        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>Analytics</a>
-        <a class="nav-link" href="#"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>Settings</a>
+        <a class="nav-link" href="/dashboard"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>My Links</a>
+        <a class="nav-link" href="/services/analytics-dashboard"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>Analytics</a>
+        <a class="nav-link" href="/settings"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>Settings</a>
       </nav>
 
       <nav class="sidebar-section" aria-label="Services">
@@ -541,21 +541,14 @@
         <div class="page-head">
           <div>
             <h1>🎨 Caption & Hashtag Tool</h1>
-            <p>Select your content type to get captions, hashtags & song ideas instantly.</p>
+            <p>Describe your post to get AI-generated captions, hashtags & song ideas instantly.</p>
           </div>
         </div>
 
         <!-- Form -->
         <form method="POST" action="/suggestions">
           <div class="form-row">
-            <select class="styled-select" name="category" required>
-              <option value="" disabled <%= !selected ? 'selected' : '' %>>-- Choose a content category --</option>
-              <% categories.forEach(function(cat) { %>
-                <option value="<%= cat %>" <%= selected === cat ? 'selected' : '' %>>
-                  <%= cat.charAt(0).toUpperCase() + cat.slice(1) %>
-                </option>
-              <% }) %>
-            </select>
+            <input class="styled-select" style="cursor: text;" type="text" name="topic" placeholder="e.g. Exploring the mountains with my dog..." value="<%= selected || '' %>" required autocomplete="off" />
             <button class="primary-btn" type="submit">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
