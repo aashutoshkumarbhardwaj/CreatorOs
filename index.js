@@ -290,6 +290,8 @@ app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
+// Protected service pages
+
 app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
@@ -304,38 +306,41 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     }
 
 
-    if (service.status !== 'available') {
-        return res.render('coming-soon', { service });
-    }
-
-    if (service.key === 'url-shortener') {
-        return res.render('home', buildShortenerViewModel(req));
-    }
-
-    if (service.key === 'suggestion-tool') {
-        return res.redirect('/suggestions');
-    }
-
-    if (service.key === 'creator-crm') {
-        return res.redirect('/services/creator-crm');
-    }
-
-    if (service.key === 'analytics-dashboard') {
-        const userDoc = await User.findById(req.user.id).select('name email').lean();
-
-        return res.render('analytics-dashboard', {
-            service,
-            services,
-            user: buildAccountViewModel(userDoc, req.user),
-            analytics: buildAnalyticsViewModel(),
-        });
-    }
-
-    if (service.key === 'file-upload') {
-        return res.render('file-upload');
-    }
-
+if (service.status !== 'available') {
     return res.render('coming-soon', { service });
+}
+
+if (service.key === 'url-shortener') {
+    return res.render('home', buildShortenerViewModel(req));
+}
+
+if (service.key === 'suggestion-tool') {
+    return res.redirect('/suggestions');
+}
+
+if (service.key === 'creator-crm') {
+    return res.redirect('/services/creator-crm');
+}
+
+if (service.key === 'analytics-dashboard') {
+    const userDoc = await User.findById(req.user.id)
+        .select('name email')
+        .lean();
+
+    return res.render('analytics-dashboard', {
+        service,
+        services,
+        user: buildAccountViewModel(userDoc, req.user),
+        analytics: buildAnalyticsViewModel(),
+    });
+}
+
+if (service.key === 'file-upload') {
+    return res.render('file-upload');
+}
+
+return res.render('coming-soon', { service });
+
 }));
 
 const { isValidUrl } = require('./utils/validators');

@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DM Automation | CreatorOS</title>
+  
+  <!-- Import Clash Display/Space Grotesk & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ── Retro SaaS Neo-Brutalist Color Palette ── */
+    :root {
+      /* Default Theme: Light Cream Retro */
+      --bg: #F5F1EA;
+      --bg-secondary: #EFE8DC;
+      --card-bg: #FFFFFF;
+      --text: #111111;
+      --border: #111111;
+      --accent-teal: #37D6C8;
+      --accent-blue: #76A9FA;
+      --accent-yellow: #E4C13B;
+      --accent-red: #E13B3B;
+      --success: #2BB673;
+      --white: #FFFFFF;
+      --gray-muted: #555555;
+      
+      --sidebar-width: 260px;
+      --border-thick: 2px solid var(--border);
+      --shadow-retro: 3px 3px 0px var(--border);
+      --shadow-retro-hover: 5px 5px 0px var(--border);
+      --shadow-retro-btn: 2px 2px 0px var(--border);
+    }
+
+    /* Toggled Theme: Dark Charcoal Retro */
+    body.dark-mode {
+      --bg: #1A1A18;
+      --bg-secondary: #252522;
+      --card-bg: #2C2C28;
+      --text: #F5F1EA;
+      --border: #F5F1EA;
+      --gray-muted: #9CA3AF;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background-color: var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { 
+      color: inherit; 
+      text-decoration: none; 
+    }
+
+    /* Headings & Typography */
+    h1, h2, h3, h4, .brand-text, .title-font {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ── Layout ── */
+    .dashboard-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      transition: grid-template-columns 0.2s ease;
+    }
+
+    .dashboard-layout.sidebar-collapsed { 
+      --sidebar-width: 80px; 
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-secondary);
+      border-right: var(--border-thick);
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding-bottom: 2.2rem;
+      border-bottom: var(--border-thick);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .brand-mark {
+      width: 2.2rem;
+      height: 2.2rem;
+      background-color: var(--accent-teal);
+      border: var(--border-thick);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 2px 2px 0px var(--border);
+      flex-shrink: 0;
+      color: #111111;
+    }
+
+    .brand-text {
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-version {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: var(--gray-muted);
+      margin-top: -2px;
+      display: block;
+    }
+
+    .theme-btn {
+      position: absolute;
+      right: 0.25rem;
+      top: 0.25rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 1px 1px 0px var(--border);
+      transition: transform 0.15s ease;
+    }
+    .theme-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .sidebar-section { 
+      display: flex; 
+      flex-direction: column;
+      gap: 0.4rem; 
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-label {
+      padding-left: 0.5rem;
+      margin-bottom: 0.35rem;
+      color: var(--gray-muted);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-link, .service-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.85rem;
+      border: 2px solid transparent;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .nav-link:hover, .service-link:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .nav-link.active, .service-link.active {
+      color: #111111;
+      background-color: var(--accent-teal);
+      border: var(--border-thick);
+      box-shadow: var(--shadow-retro-btn);
+      font-weight: 700;
+    }
+
+    .nav-icon { 
+      width: 1.2rem; 
+      height: 1.2rem; 
+      flex-shrink: 0; 
+      stroke: currentColor;
+    }
+
+    .sidebar-footer { 
+      margin-top: auto; 
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem; 
+    }
+
+    .upgrade-box {
+      background-color: var(--accent-yellow);
+      border: var(--border-thick);
+      padding: 1rem 0.85rem;
+      box-shadow: var(--shadow-retro-btn);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      color: #111111;
+    }
+
+    .upgrade-box h4 {
+      font-size: 0.95rem;
+      line-height: 1.1;
+      color: #111111;
+    }
+
+    .upgrade-box p {
+      font-size: 0.75rem;
+      color: #222222;
+      line-height: 1.3;
+    }
+
+    .upgrade-btn {
+      width: 100%;
+      background-color: var(--accent-blue);
+      border: var(--border-thick);
+      color: #111111;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.4rem;
+      text-align: center;
+      box-shadow: 2px 2px 0px var(--border);
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .upgrade-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--border);
+    }
+
+    /* Collapsed Sidebar overrides */
+    .dashboard-layout.sidebar-collapsed .brand { 
+      justify-content: center; 
+      padding-inline: 0; 
+    }
+    .dashboard-layout.sidebar-collapsed .brand-text,
+    .dashboard-layout.sidebar-collapsed .brand-version,
+    .dashboard-layout.sidebar-collapsed .sidebar-label,
+    .dashboard-layout.sidebar-collapsed .service-name,
+    .dashboard-layout.sidebar-collapsed .upgrade-box,
+    .dashboard-layout.sidebar-collapsed .nav-text,
+    .dashboard-layout.sidebar-collapsed #theme-toggle { 
+      display: none; 
+    }
+    .dashboard-layout.sidebar-collapsed .nav-link,
+    .dashboard-layout.sidebar-collapsed .service-link {
+      justify-content: center; 
+      padding: 0.75rem;
+      font-size: 0;
+    }
+
+    /* ── Main Panel ── */
+    .main { 
+      min-width: 0; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      background-color: var(--bg);
+      border-bottom: var(--border-thick);
+      padding: 1rem 2rem;
+    }
+
+    .menu-btn {
+      width: 2.2rem;
+      height: 2.2rem;
+      display: grid;
+      place-items: center;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      cursor: pointer;
+      box-shadow: var(--shadow-retro-btn);
+    }
+    .menu-btn:hover {
+      background-color: var(--bg-secondary);
+    }
+
+    .search-container {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      color: var(--text);
+      padding: 0.55rem 1rem 0.55rem 2.5rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .search-input:focus {
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.1rem;
+      height: 1.1rem;
+      pointer-events: none;
+      stroke: var(--gray-muted);
+    }
+
+    .topbar-actions { 
+      display: flex; 
+      align-items: center; 
+      gap: 1rem; 
+    }
+
+    .nav-actions-icons {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .action-icon-btn {
+      width: 2rem;
+      height: 2rem;
+      display: grid;
+      place-items: center;
+      border: 2px solid transparent;
+      cursor: pointer;
+      color: var(--text);
+      background: transparent;
+    }
+    .action-icon-btn:hover {
+      border-color: var(--border);
+      background-color: rgba(0,0,0,0.03);
+    }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      color: var(--text);
+      padding: 0.35rem 0.75rem;
+      box-shadow: var(--shadow-retro-btn);
+      cursor: pointer;
+    }
+    .profile-chip:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--border);
+    }
+
+    .avatar {
+      width: 1.6rem;
+      height: 1.6rem;
+      display: grid;
+      place-items: center;
+      background-color: var(--accent-teal);
+      border: 1px solid var(--border);
+      color: #111111;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .profile-name { 
+      font-weight: 600; 
+      font-size: 0.85rem;
+    }
+
+    .btn-new-automation {
+      background-color: var(--accent-teal);
+      border: var(--border-thick);
+      color: #111111;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.55rem 1.1rem;
+      font-family: 'Space Grotesk', sans-serif;
+      box-shadow: var(--shadow-retro-btn);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-new-automation:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-retro-hover);
+    }
+    .btn-new-automation:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    /* ── Content Wrapper ── */
+    .content-scroll {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    /* ── View switcher visibility ── */
+    .view-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Header styling */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      border-bottom: var(--border-thick);
+      padding-bottom: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 2.2rem;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .dashboard-header p {
+      font-size: 0.95rem;
+      color: var(--gray-muted);
+    }
+
+    .header-tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag-retro {
+      border: var(--border-thick);
+      font-size: 0.72rem;
+      font-family: monospace;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      background-color: var(--card-bg);
+      color: var(--text);
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+
+    .tag-retro.accent-yellow {
+      background-color: var(--accent-yellow);
+      color: #111111;
+    }
+
+    /* ── Stats Cards Grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .stat-card-retro {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-retro);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .stat-card-retro.accent-blue {
+      background-color: var(--accent-blue);
+      color: #111111;
+    }
+    .stat-card-retro.accent-blue .label,
+    .stat-card-retro.accent-blue .subtext,
+    .stat-card-retro.accent-blue .card-id {
+      color: #333333;
+    }
+
+    .stat-card-retro .card-id {
+      position: absolute;
+      right: 1.25rem;
+      top: 1.25rem;
+      font-size: 0.7rem;
+      color: var(--gray-muted);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-card-retro .label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--gray-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card-retro .value {
+      font-size: 2.3rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-card-retro .subtext {
+      font-size: 0.78rem;
+      color: var(--gray-muted);
+      font-weight: 500;
+    }
+
+    /* ── Grid Container (Workspace Grid) ── */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards & Panels */
+    .panel-retro {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-retro);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .panel-retro-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--border-thick);
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .panel-retro-title-row h2 {
+      font-size: 1.25rem;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-action-link {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* ── Active Workflows Cards Grid ── */
+    .workflows-list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .workflow-card {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-retro);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .workflow-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-retro-hover);
+    }
+
+    .workflow-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.45rem;
+      border: 1.5px solid var(--border);
+      font-family: monospace;
+      color: #111111;
+    }
+
+    .status-badge.live {
+      background-color: var(--accent-teal);
+    }
+    .status-badge.paused {
+      background-color: var(--accent-yellow);
+    }
+    .status-badge.disabled {
+      background-color: #DDDDDD;
+      color: #666666;
+    }
+    .status-badge.error {
+      background-color: var(--accent-red);
+      color: var(--white);
+    }
+
+    .card-actions-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .card-action-icon {
+      width: 1.7rem;
+      height: 1.7rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .card-action-icon:hover {
+      border: 1.5px solid var(--border);
+      background-color: var(--bg-secondary);
+    }
+
+    .workflow-card h3 {
+      font-size: 1.15rem;
+      line-height: 1.2;
+    }
+
+    .workflow-card p.description {
+      font-size: 0.8rem;
+      color: var(--gray-muted);
+      line-height: 1.4;
+      min-height: 2.8rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .workflow-card-performance {
+      border-top: 1px dashed var(--border);
+      padding-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .perf-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+
+    .perf-label {
+      color: var(--gray-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    .perf-value {
+      font-weight: 700;
+    }
+
+    .bar-container {
+      width: 100%;
+      height: 6px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background-color: var(--accent-teal);
+    }
+
+    /* Dotted Create Workflow card */
+    .create-card-dotted {
+      border: 2px dashed var(--border);
+      background-color: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 2rem;
+      cursor: pointer;
+      min-height: 230px;
+      transition: all 0.15s ease;
+    }
+    .create-card-dotted:hover {
+      background-color: rgba(0,0,0,0.02);
+      border-style: solid;
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-retro);
+    }
+
+    .create-card-dotted .plus-circle {
+      width: 2.8rem;
+      height: 2.8rem;
+      border-radius: 50%;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      box-shadow: 2px 2px 0px var(--border);
+    }
+    .create-card-dotted:hover .plus-circle {
+      background-color: var(--accent-teal);
+      color: #111111;
+    }
+
+    .create-card-dotted span {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    /* ── Right Panel Widgets ── */
+    .right-sidebar-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .widget-lead-capture {
+      background-color: var(--bg-secondary);
+    }
+
+    .lead-metric-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    .lead-metric-box {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      padding: 0.75rem;
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    .lead-metric-box .box-label {
+      font-size: 0.65rem;
+      color: var(--gray-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .lead-metric-box .box-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* Chart Area */
+    .chart-container-retro {
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      height: 120px;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn-export-leads {
+      width: 100%;
+      background-color: var(--text);
+      color: var(--bg);
+      border: var(--border-thick);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      padding: 0.65rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: var(--shadow-retro-btn);
+    }
+    .btn-export-leads:hover {
+      opacity: 0.9;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--border);
+    }
+
+    .quick-stats-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .quick-stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px dashed rgba(0,0,0,0.1);
+    }
+    body:not(.light-mode) .quick-stat-item {
+      border-bottom-color: rgba(255,255,255,0.1);
+    }
+
+    .quick-stat-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .quick-stat-label {
+      font-size: 0.8rem;
+      color: var(--gray-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .quick-stat-label::before {
+      content: '●';
+      font-size: 0.6rem;
+      color: var(--accent-blue);
+    }
+
+    .quick-stat-label.top-trigger::before { color: var(--accent-teal); }
+    .quick-stat-label.health::before { color: var(--success); }
+
+    .quick-stat-val {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    /* ── Recent Interactions Table ── */
+    .table-card-retro {
+      margin-top: 0.5rem;
+    }
+
+    .interactions-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .interactions-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .interactions-table th {
+      background-color: var(--bg-secondary);
+      border-bottom: var(--border-thick);
+      padding: 0.75rem 1rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .interactions-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      vertical-align: middle;
+    }
+
+    .interactions-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .interactions-table tbody tr:hover {
+      background-color: rgba(0,0,0,0.02);
+    }
+
+    .table-user-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .table-avatar {
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background-color: var(--bg-secondary);
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .table-trigger-badge {
+      display: inline-block;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.78rem;
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      background-color: var(--card-bg);
+    }
+
+    .table-status-text {
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+    }
+    .table-status-text.success { color: var(--success); }
+    .table-status-text.pending { color: var(--accent-blue); }
+
+    .table-show-more {
+      text-align: center;
+      padding: 0.85rem;
+      border-top: var(--border-thick);
+      background-color: var(--bg-secondary);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .table-show-more:hover {
+      background-color: rgba(0,0,0,0.04);
+    }
+
+    /* ── CREATE AUTOMATION VIEW layout ── */
+    .create-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 2rem;
+      padding-bottom: 5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .create-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-section-card {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-retro);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-number {
+      font-family: monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gray-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .form-group-retro {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group-retro label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text);
+    }
+
+    .form-input-retro {
+      width: 100%;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .form-input-retro:focus {
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    /* Segmented Platform Toggle */
+    .segmented-control {
+      display: flex;
+      border: var(--border-thick);
+      background-color: var(--bg-secondary);
+      padding: 2px;
+    }
+
+    .segment-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      padding: 0.65rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.1s ease;
+    }
+
+    .segment-btn.active {
+      background-color: var(--accent-teal);
+      color: #111111;
+      border: var(--border-thick);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    /* Toggle Switch Retro */
+    .status-toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: var(--border-thick);
+      padding: 0.75rem 1rem;
+      background-color: var(--bg-secondary);
+    }
+
+    .status-toggle-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .switch-retro {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch-retro input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-retro {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      transition: .2s;
+    }
+
+    .slider-retro:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--border);
+      transition: .2s;
+    }
+
+    .switch-retro input:checked + .slider-retro {
+      background-color: var(--accent-teal);
+    }
+
+    .switch-retro input:checked + .slider-retro:before {
+      transform: translateX(24px);
+    }
+
+    /* Keywords Tag Container */
+    .keywords-tag-container {
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      padding: 0.5rem;
+      min-height: 52px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .keyword-tag-retro {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background-color: var(--accent-teal);
+      color: #111111;
+      border: 1.5px solid var(--border);
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: monospace;
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    .keyword-tag-retro button {
+      border: none;
+      background: transparent;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
+    .keyword-tag-retro button:hover {
+      color: var(--accent-red);
+    }
+
+    .keywords-hidden-input {
+      flex: 1;
+      min-width: 120px;
+      border: none;
+      outline: none;
+      padding: 0.35rem;
+      font-size: 0.85rem;
+      background: transparent;
+      color: var(--text);
+    }
+
+    /* Slider delay */
+    .delay-slider-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slider-val-label {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background-color: var(--card-bg);
+      border: 1.5px solid var(--border);
+      padding: 0.15rem 0.45rem;
+    }
+
+    .range-input-retro {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border: var(--border-thick);
+      background: var(--bg-secondary);
+      outline: none;
+    }
+
+    .range-input-retro::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: var(--border-thick);
+      background: var(--accent-teal);
+      cursor: pointer;
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    /* Checkbox list styling */
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .checkbox-item-retro {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .checkbox-item-retro input {
+      display: none;
+    }
+
+    .checkbox-box-retro {
+      width: 18px;
+      height: 18px;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .checkbox-item-retro input:checked + .checkbox-box-retro {
+      background-color: var(--accent-teal);
+    }
+
+    .checkbox-item-retro input:checked + .checkbox-box-retro::before {
+      content: '✓';
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #111111;
+    }
+
+    /* Textarea message */
+    .textarea-retro {
+      width: 100%;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      resize: vertical;
+      min-height: 90px;
+    }
+    .textarea-retro:focus {
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    /* Live Phone Preview */
+    .phone-preview-panel {
+      position: sticky;
+      top: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .phone-mockup-wrapper {
+      width: 290px;
+      height: 540px;
+      border: 6px solid var(--border);
+      border-radius: 28px;
+      background-color: var(--bg);
+      box-shadow: 6px 6px 0px var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .phone-notch {
+      width: 130px;
+      height: 18px;
+      background-color: var(--border);
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+    }
+
+    .phone-header {
+      padding: 1.5rem 1rem 0.5rem 1rem;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--bg-secondary);
+    }
+
+    .phone-header-avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background-color: var(--card-bg);
+      display: grid;
+      place-items: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .phone-header-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-header-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .phone-header-status {
+      font-size: 0.6rem;
+      color: var(--gray-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .phone-header-status::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: var(--success);
+    }
+
+    .phone-body {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background-color: var(--bg);
+    }
+
+    .phone-bubble {
+      max-width: 80%;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      border: 1.5px solid var(--border);
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+
+    .phone-bubble.received {
+      align-self: flex-start;
+      background-color: var(--card-bg);
+      border-top-left-radius: 0.25rem;
+    }
+
+    .phone-bubble.sent {
+      align-self: flex-end;
+      background-color: var(--accent-blue);
+      color: #111111;
+      border-top-right-radius: 0.25rem;
+    }
+
+    /* CTA Card in phone bubble */
+    .phone-cta-card {
+      align-self: flex-end;
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      box-shadow: 2px 2px 0px var(--border);
+      width: 80%;
+      padding: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .phone-cta-card-msg {
+      font-size: 0.75rem;
+      color: var(--text);
+    }
+
+    .phone-cta-btn {
+      width: 100%;
+      background-color: var(--accent-teal);
+      color: #111111;
+      border: 1.5px solid var(--border);
+      text-align: center;
+      padding: 0.35rem;
+      font-size: 0.7rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+
+    /* ── Simulator Panels ── */
+    .sim-tabs-row {
+      display: flex;
+      border: var(--border-thick);
+      background-color: var(--bg-secondary);
+      padding: 2px;
+      margin-bottom: 0.85rem;
+    }
+
+    .sim-tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      padding: 0.55rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .sim-tab-btn.active {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    .sim-chat-box {
+      border: var(--border-thick);
+      height: 380px;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--card-bg);
+    }
+
+    .sim-chat-header {
+      padding: 0.65rem 1rem;
+      border-bottom: var(--border-thick);
+      background-color: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sim-chat-avatar {
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background-color: var(--accent-teal);
+      color: #111111;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .sim-chat-username {
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .sim-chat-status {
+      font-size: 0.65rem;
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .sim-chat-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background-color: var(--bg);
+    }
+
+    .sim-msg {
+      max-width: 80%;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      border: 1.5px solid var(--border);
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+
+    .sim-msg.received {
+      align-self: flex-start;
+      background-color: var(--bg-secondary);
+      border-top-left-radius: 0.25rem;
+    }
+
+    .sim-msg.sent {
+      align-self: flex-end;
+      background-color: var(--accent-teal);
+      color: #111111;
+      border-top-right-radius: 0.25rem;
+    }
+
+    .sim-msg-cta-block {
+      align-self: flex-end;
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      box-shadow: 2px 2px 0px var(--border);
+      width: 80%;
+      padding: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sim-msg-cta-btn {
+      display: block;
+      background-color: var(--accent-teal);
+      color: #111111;
+      border: 1.5px solid var(--border);
+      text-align: center;
+      padding: 0.4rem;
+      font-size: 0.75rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+
+    .sim-chat-footer {
+      border-top: var(--border-thick);
+      padding: 0.5rem;
+      background-color: var(--bg-secondary);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .sim-chat-input {
+      flex: 1;
+      border: var(--border-thick);
+      background-color: var(--card-bg);
+      color: var(--text);
+      padding: 0.45rem 0.85rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .sim-chat-send {
+      width: 2.2rem;
+      height: 2.2rem;
+      border: var(--border-thick);
+      background-color: var(--accent-teal);
+      color: #111111;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 1.5px 1.5px 0px var(--border);
+    }
+    .sim-chat-send:active {
+      transform: translate(1px, 1px);
+      box-shadow: 0.5px 0.5px 0px var(--border);
+    }
+
+    /* Mock Post Comment styling */
+    .post-card-sim {
+      border: 1.5px solid var(--border);
+      background-color: var(--card-bg);
+      padding: 0.75rem;
+      display: flex;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .post-comment-item {
+      border: 1.5px solid var(--border);
+      background-color: var(--bg-secondary);
+      padding: 0.65rem;
+      display: flex;
+      gap: 0.65rem;
+      align-self: flex-start;
+      width: 100%;
+    }
+
+    .post-comment-reply {
+      border: 1.5px solid var(--border);
+      background-color: var(--card-bg);
+      padding: 0.65rem;
+      display: flex;
+      gap: 0.65rem;
+      align-self: flex-start;
+      margin-left: 2rem;
+      width: calc(100% - 2rem);
+      border-left: 4px solid var(--accent-teal);
+    }
+
+    /* ── Fixed Footer Action Bar ── */
+    .fixed-footer-bar {
+      position: fixed;
+      bottom: 0;
+      left: var(--sidebar-width);
+      right: 0;
+      background-color: var(--card-bg);
+      border-top: var(--border-thick);
+      padding: 0.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      transition: left 0.2s ease;
+    }
+
+    .dashboard-layout.sidebar-collapsed .fixed-footer-bar {
+      left: 80px;
+    }
+
+    .footer-left-info {
+      font-size: 0.78rem;
+      color: var(--gray-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-retro-secondary {
+      background-color: var(--card-bg);
+      border: var(--border-thick);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      font-family: 'Space Grotesk', sans-serif;
+      box-shadow: var(--shadow-retro-btn);
+      cursor: pointer;
+    }
+    .btn-retro-secondary:hover {
+      background-color: var(--bg-secondary);
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--border);
+    }
+    .btn-retro-secondary:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    .btn-retro-primary {
+      background-color: var(--accent-teal);
+      border: var(--border-thick);
+      color: #111111;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.5rem 1.25rem;
+      font-family: 'Space Grotesk', sans-serif;
+      box-shadow: var(--shadow-retro-btn);
+      cursor: pointer;
+    }
+    .btn-retro-primary:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow-retro-hover);
+    }
+    .btn-retro-primary:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    /* SVGs and Icons styling */
+    svg { 
+      width: 1.2rem; 
+      height: 1.2rem; 
+      stroke-width: 2; 
+      fill: none; 
+      stroke: currentColor; 
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* Typing indicator styling */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 0.55rem 0.75rem;
+      background-color: var(--bg-secondary);
+      border: 1.5px solid var(--border);
+      align-self: flex-start;
+    }
+
+    .typing-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--text);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1.0); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+      .topbar {
+        padding: 1rem;
+      }
+      .content-scroll {
+        padding: 1rem;
+      }
+      .fixed-footer-bar {
+        left: 0 !important;
+        padding: 0.75rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-layout" id="dashboardLayout">
+
+    <!-- Left Sidebar Redesign -->
+    <aside class="sidebar" aria-label="Dashboard navigation">
+      <a class="brand" href="/dashboard">
+        <span class="brand-mark">CO</span>
+        <div>
+          <span class="brand-text">CreatorOS</span>
+          <span class="brand-version">v2.0 Beta</span>
+        </div>
+        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">☀️</button>
+      </a>
+
+      <!-- Workspace section -->
+      <nav class="sidebar-section">
+        <p class="sidebar-label">Workspace</p>
+        <a class="nav-link" href="/dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a class="nav-link" href="/dashboard#recent-links">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
+          <span class="nav-text">My Links</span>
+        </a>
+        <a class="nav-link" href="/dashboard#analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
+          <span class="nav-text">Analytics</span>
+        </a>
+        <a class="nav-link" href="/dashboard#settings">
+          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Services section -->
+      <nav class="sidebar-section" aria-label="Services">
+        <p class="sidebar-label">Services</p>
+        <% services.forEach(function(service) { %>
+          <a class="service-link <%= service.status %> <%= service.key === 'dm-automation' ? 'active' : '' %>"
+             href="<%= service.route %>" title="<%= service.name %>">
+            <svg class="nav-icon" viewBox="0 0 24 24">
+              <path d="M12 3v18M3 12h18"></path>
+            </svg>
+            <span class="service-name"><%= service.name %></span>
+          </a>
+        <% }) %>
+      </nav>
+
+      <!-- Sidebar bottom footer -->
+      <div class="sidebar-footer">
+        <div class="upgrade-box">
+          <h4>Upgrade Plan</h4>
+          <p>Get access to advanced webhooks & Unlimited Auto-Replies.</p>
+          <button class="upgrade-btn" type="button">Upgrade Plan</button>
+        </div>
+        <a class="nav-link" href="#" style="margin-top:0.25rem;">
+          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
+          <span class="nav-text">Support</span>
+        </a>
+        <a class="nav-link" href="/logout">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+          <span class="nav-text">Log Out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="main">
+      
+      <!-- Top Navigation -->
+      <header class="topbar">
+        <button class="menu-btn" type="button" id="sidebarToggle" aria-label="Toggle sidebar" aria-expanded="true">
+          <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+        </button>
+        
+        <div class="search-container">
+          <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          <input type="text" id="search-automations-input" class="search-input" placeholder="Search automations..." aria-label="Search automations..." />
+        </div>
+
+        <div class="topbar-actions">
+          <div class="nav-actions-icons">
+            <button class="action-icon-btn" aria-label="Notifications" type="button">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </button>
+            <button class="action-icon-btn" aria-label="Help" type="button">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
+            </button>
+          </div>
+          
+          <a class="profile-chip" href="/profile">
+            <span class="avatar"><%= user.initials %></span>
+            <span class="profile-name"><%= user.name %></span>
+          </a>
+
+          <button class="btn-new-automation" type="button" onclick="openCreateView()">
+            <svg viewBox="0 0 24 24" style="width:1.1rem; height:1.1rem;"><path d="M12 5v14M5 12h14"></path></svg>
+            New Automation
+          </button>
+        </div>
+      </header>
+
+      <!-- Content wrapper scroll area -->
+      <div class="content-scroll">
+        
+        <!-- ── VIEW 1: DM DASHBOARD VIEW ── -->
+        <div id="view-dashboard" class="view-container">
+          
+          <!-- Title Section -->
+          <div class="dashboard-header">
+            <div>
+              <h1>DM Dashboard</h1>
+              <p>Manage your Instagram and Twitter automation workflows.</p>
+            </div>
+            <div class="header-tags">
+              <span class="tag-retro">DASHBOARD_V2</span>
+              <span class="tag-retro accent-yellow">LIVE_SYNC</span>
+            </div>
+          </div>
+
+          <!-- Section 1: Statistics Cards -->
+          <section class="stats-grid" aria-label="Quick metrics">
+            <div class="stat-card-retro">
+              <span class="card-id">STAT_01</span>
+              <span class="label">Active Workflows</span>
+              <span class="value" id="stat-active-workflows">0</span>
+              <span class="subtext" style="color:var(--success)">+2 this week</span>
+            </div>
+            <div class="stat-card-retro">
+              <span class="card-id">STAT_02</span>
+              <span class="label">Total Replies</span>
+              <span class="value" id="stat-total-replies">0</span>
+              <span class="subtext">Last 30d</span>
+            </div>
+            <div class="stat-card-retro">
+              <span class="card-id">STAT_03</span>
+              <span class="label">Leads Captured</span>
+              <span class="value" id="stat-leads-captured">0</span>
+              <span class="subtext" style="color:var(--success)">18% conv.</span>
+            </div>
+            <div class="stat-card-retro accent-blue">
+              <span class="card-id">STAT_04</span>
+              <span class="label">Conversion Rate</span>
+              <span class="value">24.5%</span>
+              <span class="subtext">High Performance</span>
+            </div>
+          </section>
+
+          <!-- Core Grid: Workflows List (Left) + Analytics panel (Right) -->
+          <div class="workspace-grid">
+            
+            <!-- Left Side Workspace -->
+            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+              
+              <!-- Workflows Header -->
+              <div class="panel-retro" style="gap:1rem;">
+                <div class="panel-retro-title-row">
+                  <h2>Active Workflows</h2>
+                  <span class="panel-action-link" onclick="openCreateView()">+ Add New</span>
+                </div>
+
+                <!-- Workflow Cards List -->
+                <div class="workflows-list-grid" id="workflows-grid-container">
+                  <!-- Dynamic workflow cards rendered via script -->
+                </div>
+              </div>
+
+              <!-- Recent Interactions Table -->
+              <div class="panel-retro table-card-retro" style="padding:0; gap:0; overflow:hidden;">
+                <div class="panel-retro-title-row" style="padding:1.25rem; margin-bottom:0; border-bottom:var(--border-thick);">
+                  <h2>Recent Interactions</h2>
+                  <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-retro-secondary" style="font-size:0.72rem; padding:0.3rem 0.6rem; box-shadow:1.5px 1.5px 0px var(--border);" type="button">
+                      <svg viewBox="0 0 24 24" style="width:0.8rem; height:0.8rem;"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path></svg>
+                      Filter
+                    </button>
+                    <button class="btn-retro-secondary" style="font-size:0.72rem; padding:0.3rem 0.6rem; box-shadow:1.5px 1.5px 0px var(--border);" type="button" onclick="clearLogs()">
+                      <svg viewBox="0 0 24 24" style="width:0.8rem; height:0.8rem;"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      Clear Logs
+                    </button>
+                  </div>
+                </div>
+
+                <div class="interactions-table-wrapper">
+                  <table class="interactions-table" id="logs-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Trigger</th>
+                        <th>Action</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                      <!-- Dynamic Log Entries -->
+                    </tbody>
+                  </table>
+                </div>
+                <div class="table-show-more" onclick="seedLogs(true)">Show older interactions</div>
+              </div>
+
+            </div>
+
+            <!-- Right Side Workspace: Analytics Panels & Simulator -->
+            <div class="right-sidebar-stack">
+              
+              <!-- Lead Capture Widget -->
+              <div class="panel-retro widget-lead-capture">
+                <div class="panel-retro-title-row">
+                  <h2>✉ Lead Capture</h2>
+                  <span class="tag-retro accent-yellow" style="box-shadow:none;">NEW THIS WEEK +124</span>
+                </div>
+
+                <div class="lead-metric-row">
+                  <div class="lead-metric-box">
+                    <span class="box-label">Emails</span>
+                    <span class="box-val" id="lead-metric-emails">312</span>
+                  </div>
+                  <div class="lead-metric-box">
+                    <span class="box-label">Phone</span>
+                    <span class="box-val" id="lead-metric-phones">180</span>
+                  </div>
+                </div>
+
+                <!-- Custom Retro Chart SVG -->
+                <div class="chart-container-retro">
+                  <span style="font-size:0.65rem; font-weight:700; color:var(--gray-muted); margin-bottom:2px;">CONVERSION TREND</span>
+                  <svg class="chart-svg" viewBox="0 0 100 40">
+                    <!-- Grid Lines -->
+                    <line x1="0" y1="10" x2="100" y2="10" stroke="var(--bg-secondary)" stroke-width="0.5" />
+                    <line x1="0" y1="20" x2="100" y2="20" stroke="var(--bg-secondary)" stroke-width="0.5" />
+                    <line x1="0" y1="30" x2="100" y2="30" stroke="var(--bg-secondary)" stroke-width="0.5" />
+                    <!-- Retro graph line -->
+                    <path d="M 0,38 L 15,32 L 30,34 L 45,22 L 60,25 L 75,12 L 90,8 L 100,5" fill="none" stroke="var(--success)" stroke-width="2.5" />
+                    <!-- Points -->
+                    <circle cx="15" cy="32" r="2.5" fill="var(--success)" stroke="var(--border)" stroke-width="1" />
+                    <circle cx="45" cy="22" r="2.5" fill="var(--success)" stroke="var(--border)" stroke-width="1" />
+                    <circle cx="75" cy="12" r="2.5" fill="var(--success)" stroke="var(--border)" stroke-width="1" />
+                    <circle cx="90" cy="8" r="2.5" fill="var(--success)" stroke="var(--border)" stroke-width="1" />
+                  </svg>
+                </div>
+
+                <button class="btn-export-leads" type="button" onclick="exportLeadsCSV()">Export leads (CSV)</button>
+              </div>
+
+              <!-- Quick Stats Widget -->
+              <div class="panel-retro">
+                <div class="panel-retro-title-row">
+                  <h2>Quick Stats</h2>
+                </div>
+                <div class="quick-stats-list">
+                  <div class="quick-stat-item">
+                    <span class="quick-stat-label top-trigger">Top Trigger</span>
+                    <span class="quick-stat-val" id="quick-stat-top-trigger">"GUIDE"</span>
+                  </div>
+                  <div class="quick-stat-item">
+                    <span class="quick-stat-label">Avg Response</span>
+                    <span class="quick-stat-val" id="quick-stat-avg-delay">1.5s</span>
+                  </div>
+                  <div class="quick-stat-item">
+                    <span class="quick-stat-label health">Bot Health</span>
+                    <span class="quick-stat-val" style="color:var(--success)">OPTIMAL</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Simulator Redesign inside Dashboard view -->
+              <div class="panel-retro">
+                <div class="panel-retro-title-row">
+                  <h2>Live Simulator</h2>
+                </div>
+                
+                <div class="sim-tabs-row">
+                  <button type="button" class="sim-tab-btn active" id="sim-tab-dm" onclick="switchSimTab('dm')">DMs (Chat)</button>
+                  <button type="button" class="sim-tab-btn" id="sim-tab-comments" onclick="switchSimTab('comments')">Post Comments</button>
+                </div>
+
+                <!-- DM chat simulator panel -->
+                <div id="sim-panel-dm">
+                  <div class="sim-chat-box">
+                    <div class="sim-chat-header">
+                      <div class="sim-chat-avatar" id="sim-bot-avatar-char">IG</div>
+                      <div class="phone-header-info">
+                        <span class="sim-chat-username" id="sim-bot-name">Mock Instagram Bot</span>
+                        <span class="sim-chat-status">Active</span>
+                      </div>
+                    </div>
+                    
+                    <div class="sim-chat-messages" id="sim-chat-messages-container">
+                      <div class="sim-msg received">
+                        Hey there! 👋 I am your automated assistant. Type one of your keywords (like <strong>GUIDE</strong> or <strong>CRM</strong>) to see me respond!
+                      </div>
+                    </div>
+
+                    <!-- Typing indicator -->
+                    <div class="typing-indicator hidden" id="sim-chat-typing-indicator" style="margin: 0.5rem 1rem;">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                    </div>
+
+                    <div class="sim-chat-footer">
+                      <label for="sim-chat-input-field" class="sr-only">Type message...</label>
+                      <input type="text" id="sim-chat-input-field" class="sim-chat-input" placeholder="Type a keyword..." onkeydown="if(event.key==='Enter') sendSimMessage()" />
+                      <button class="sim-chat-send" type="button" onclick="sendSimMessage()" aria-label="Send Message">
+                        <svg viewBox="0 0 24 24" style="width:1rem; height:1rem;"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Post Comment simulator panel -->
+                <div id="sim-panel-comments" class="hidden">
+                  <div class="sim-chat-box" style="height:410px;">
+                    <div class="sim-chat-header">
+                      <div class="sim-chat-avatar" style="background-color: var(--accent-yellow)">📸</div>
+                      <div class="phone-header-info">
+                        <span class="sim-chat-username">Mock Instagram Post</span>
+                        <span class="phone-header-status" style="color:var(--gray-muted)">@creator_account</span>
+                      </div>
+                    </div>
+                    
+                    <div class="sim-chat-messages" id="sim-comment-messages-container">
+                      <div class="post-card-sim">
+                        <span style="font-size: 1.25rem;">📱</span>
+                        <div>
+                          <strong style="font-size: 0.8rem;">@creator_account</strong>
+                          <p style="font-size: 0.75rem; color: var(--gray-muted); margin-top: 2px;">Comment "GUIDE" below to get the download link sent to your DMs automatically! 👇</p>
+                        </div>
+                      </div>
+                      <div id="sim-comments-thread-container" style="display:flex; flex-direction:column; gap:0.5rem; width:100%;">
+                        <!-- Simulated comment threads will be generated here -->
+                      </div>
+                    </div>
+
+                    <!-- Typing indicator for comments -->
+                    <div class="typing-indicator hidden" id="sim-comment-typing-indicator" style="margin: 0.5rem 1rem;">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                    </div>
+
+                    <div class="sim-chat-footer">
+                      <label for="sim-comment-input-field" class="sr-only">Write a comment...</label>
+                      <input type="text" id="sim-comment-input-field" class="sim-chat-input" placeholder="Write a comment..." onkeydown="if(event.key==='Enter') sendSimComment()" />
+                      <button class="sim-chat-send" type="button" onclick="sendSimComment()" aria-label="Post Comment">
+                        <svg viewBox="0 0 24 24" style="width:1rem; height:1rem;"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ── VIEW 2: CREATE / EDIT AUTOMATION VIEW ── -->
+        <div id="view-create-edit" class="view-container hidden">
+          
+          <!-- Header -->
+          <div class="dashboard-header">
+            <div>
+              <h1 id="create-view-title">Create DM Automation</h1>
+              <p>Configure trigger keyword, platform rules, and reply contents.</p>
+            </div>
+            <div class="header-tags">
+              <span class="tag-retro" id="create-view-tag-id">NEW_WORKFLOW_V4</span>
+              <span class="tag-retro accent-yellow">LIVE_SYNC ENABLED</span>
+            </div>
+          </div>
+
+          <!-- Create View Grid: Inputs (Left) & Phone Preview (Right) -->
+          <div class="create-grid">
+            
+            <!-- Left Column: Inputs Form -->
+            <div style="display:flex; flex-direction:column;">
+              <form id="automation-form" onsubmit="event.preventDefault();">
+                <input type="hidden" id="automation-id" />
+                
+                <!-- 01. WORKFLOW DETAILS -->
+                <div class="form-section-card">
+                  <div>
+                    <span class="section-number">01.</span>
+                    <h2>Workflow Details</h2>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="workflow-name-input">Automation Name</label>
+                    <input type="text" id="workflow-name-input" class="form-input-retro" placeholder="e.g. Summer Promo Wave" required />
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label>Platform</label>
+                    <div class="segmented-control">
+                      <button type="button" class="segment-btn active" id="platform-btn-instagram" onclick="selectPlatform('instagram')">
+                        <span>📸</span> Instagram
+                      </button>
+                      <button type="button" class="segment-btn" id="platform-btn-twitter" onclick="selectPlatform('twitter')">
+                        <span>🐦</span> Twitter/X
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="trigger-type-select">Trigger Type</label>
+                    <select id="trigger-type-select" class="form-input-retro" style="cursor:pointer;" required>
+                      <option value="keyword">Keyword Mention</option>
+                      <option value="story">Story Reply / Mention</option>
+                      <option value="welcome">First-time Welcome Message</option>
+                    </select>
+                  </div>
+
+                  <div class="status-toggle-row">
+                    <span class="status-toggle-label">Automation Status</span>
+                    <label class="switch-retro" for="automation-status-toggle">
+                      <input type="checkbox" id="automation-status-toggle" checked />
+                      <span class="slider-retro"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 02. TRIGGER CONFIGURATION -->
+                <div class="form-section-card">
+                  <div>
+                    <span class="section-number">02.</span>
+                    <h2>Trigger Configuration</h2>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="raw-keywords-input">Target Keywords (Press Enter or comma-separate)</label>
+                    <div class="keywords-tag-container" id="keywords-tag-box" onclick="focusKeywordsInput()">
+                      <!-- Tags rendered here -->
+                      <input type="text" id="raw-keywords-input" class="keywords-hidden-input" placeholder="e.g. GUIDE, CRM" onkeydown="handleKeywordsKeydown(event)" onblur="addKeywordFromInput()" />
+                    </div>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label>Match Type</label>
+                    <div class="segmented-control">
+                      <button type="button" class="segment-btn active" id="match-btn-exact" onclick="selectMatchType('exact')">Exact Match</button>
+                      <button type="button" class="segment-btn" id="match-btn-contains" onclick="selectMatchType('contains')">Contains Keyword</button>
+                      <button type="button" class="segment-btn" id="match-btn-ai" onclick="selectMatchType('ai')">AI Intent (Beta)</button>
+                    </div>
+                  </div>
+
+                  <div class="delay-slider-container">
+                    <div class="slider-header">
+                      <label for="delay-slider">Delay Response</label>
+                      <span class="slider-val-label" id="delay-slider-label">1.5 SECONDS</span>
+                    </div>
+                    <input type="range" id="delay-slider" class="range-input-retro" min="0" max="10" step="0.5" value="1.5" oninput="updateDelayLabel(this.value)" />
+                  </div>
+
+                  <div class="checkbox-list">
+                    <label class="checkbox-item-retro" for="chk-followers">
+                      <input type="checkbox" id="chk-followers" />
+                      <span class="checkbox-box-retro"></span>
+                      Followers Only
+                    </label>
+                    <label class="checkbox-item-retro" for="chk-verified">
+                      <input type="checkbox" id="chk-verified" />
+                      <span class="checkbox-box-retro"></span>
+                      Verified Accounts Only
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 03. MESSAGE / REPLY CONFIGURATION -->
+                <div class="form-section-card">
+                  <div>
+                    <span class="section-number">03.</span>
+                    <h2>Message Configuration</h2>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="reply-message-textarea">Reply Message</label>
+                    <textarea id="reply-message-textarea" class="textarea-retro" placeholder="Type the auto-response message here..." required oninput="syncPhonePreview()"></textarea>
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="cta-text-input">CTA Button Text (Optional)</label>
+                    <input type="text" id="cta-text-input" class="form-input-retro" placeholder="e.g. Download Playbook" oninput="syncPhonePreview()" />
+                  </div>
+
+                  <div class="form-group-retro">
+                    <label for="cta-url-input">CTA Link URL (Optional)</label>
+                    <input type="url" id="cta-url-input" class="form-input-retro" placeholder="https://..." oninput="syncPhonePreview()" />
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <!-- Right Column: Live Phone Preview Redesign -->
+            <div class="phone-preview-panel">
+              <span style="font-family:'Space Grotesk', sans-serif; font-size:0.8rem; font-weight:700; color:var(--gray-muted); margin-bottom:0.75rem; letter-spacing:0.05em;">LIVE PREVIEW</span>
+              
+              <div class="phone-mockup-wrapper">
+                <div class="phone-notch"></div>
+                
+                <div class="phone-header">
+                  <div class="phone-header-avatar" id="phone-avatar-char">IG</div>
+                  <div class="phone-header-info">
+                    <span class="phone-header-name" id="phone-title-username">creator_account</span>
+                    <span class="phone-header-status">Active now</span>
+                  </div>
+                </div>
+
+                <div class="phone-body" id="phone-messages-list">
+                  <!-- Simulated message flow updating dynamically -->
+                  <div class="phone-bubble received" id="phone-bubble-keyword">
+                    SUMMER
+                  </div>
+                  <div class="phone-bubble sent" id="phone-bubble-response">
+                    Hey Jordan! Thanks for reaching out. Here is the special link.
+                  </div>
+                  <div class="phone-cta-card" id="phone-bubble-cta">
+                    <span class="phone-cta-card-msg" id="phone-cta-card-msg-text">Get instant access</span>
+                    <a href="#" class="phone-cta-btn" onclick="event.preventDefault();" id="phone-cta-btn-text">Download Now</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- FIXED FOOTER ACTIONS (Visible only in Create/Edit View) -->
+  <div class="fixed-footer-bar hidden" id="edit-footer-bar">
+    <div class="footer-left-info">
+      <span>Draft:</span>
+      <strong id="footer-draft-label" style="text-decoration: underline;">Summer Drop v2</strong>
+    </div>
+    <div class="footer-actions">
+      <button class="btn-retro-secondary" type="button" onclick="closeCreateView()">Discard Draft</button>
+      <button class="btn-retro-secondary" type="button" onclick="triggerPhonePreviewPulse()">Preview Flow</button>
+      <button class="btn-retro-primary" type="button" onclick="saveAutomationFromForm()">Launch Automation</button>
+    </div>
+  </div>
+
+  <!-- Client-Side Automation Logic -->
+  <script>
+    // Global layout & sidebar toggles
+    var layout = document.getElementById('dashboardLayout');
+    var toggle = document.getElementById('sidebarToggle');
+    if (localStorage.getItem('creatorosSidebarCollapsed') === 'true') {
+      layout.classList.add('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function() {
+      var collapsed = layout.classList.toggle('sidebar-collapsed');
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      localStorage.setItem('creatorosSidebarCollapsed', String(collapsed));
+    });
+
+    // Default Seed Data
+    const defaultTriggers = [
+      { 
+        id: '1', 
+        name: 'Guide Delivery Bot',
+        platform: 'instagram',
+        triggerType: 'keyword',
+        keyword: 'GUIDE', 
+        matchType: 'exact',
+        delay: 1.5,
+        followerOnly: true,
+        verifiedOnly: false,
+        response: 'Thanks for reaching out! Here is the Creator Playbook guide: https://creatoros.com/guide.pdf 🚀', 
+        ctaText: 'Download PDF',
+        ctaUrl: 'https://creatoros.com/guide.pdf',
+        count: 42, 
+        active: true 
+      },
+      { 
+        id: '2', 
+        name: 'Creator CRM Lead Magnet',
+        platform: 'instagram',
+        triggerType: 'keyword',
+        keyword: 'CRM', 
+        matchType: 'contains',
+        delay: 2.0,
+        followerOnly: false,
+        verifiedOnly: false,
+        response: 'Hey! You can invite collaborators and track invitations using the Creator CRM tool here: /services/creator-crm 🤝', 
+        ctaText: 'Access CRM Now',
+        ctaUrl: '/services/creator-crm',
+        count: 18, 
+        active: true 
+      },
+      { 
+        id: '3', 
+        name: 'Support FAQ Bot',
+        platform: 'twitter',
+        triggerType: 'keyword',
+        keyword: 'HELP', 
+        matchType: 'exact',
+        delay: 0.5,
+        followerOnly: false,
+        verifiedOnly: false,
+        response: 'Active keywords available: [GUIDE], [CRM], [HELP]. Type any of them to trigger an automated flow.', 
+        ctaText: 'Contact Support',
+        ctaUrl: 'https://creatoros.com/support',
+        count: 5, 
+        active: true 
+      }
+    ];
+
+    const defaultLogs = [
+      { user: '@alex_creator', initials: 'AC', trigger: 'GUIDE', action: 'Sent PDF Link', time: '2 mins ago', status: 'success' },
+      { user: '@sarah_mktg', initials: 'SM', trigger: 'Story Reply', action: 'Sent Welcome Emoji', time: '15 mins ago', status: 'success' },
+      { user: '@jordan.builds', initials: 'JB', trigger: 'GUIDE', action: 'Capture Email Flow', time: '1 hr ago', status: 'pending' }
+    ];
+
+    // LocalStorage Operations
+    function getTriggers() {
+      const stored = localStorage.getItem('creatoros_dm_triggers');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+      localStorage.setItem('creatoros_dm_triggers', JSON.stringify(defaultTriggers));
+      return defaultTriggers;
+    }
+
+    function saveTriggers(triggers) {
+      localStorage.setItem('creatoros_dm_triggers', JSON.stringify(triggers));
+    }
+
+    function getLogs() {
+      const stored = localStorage.getItem('creatoros_dm_logs');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch(e) {}
+      }
+      localStorage.setItem('creatoros_dm_logs', JSON.stringify(defaultLogs));
+      return defaultLogs;
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem('creatoros_dm_logs', JSON.stringify(logs));
+    }
+
+    // Current State
+    let activeKeywords = [];
+    let selectedPlatform = 'instagram';
+    let selectedMatchType = 'exact';
+    let currentSimTab = 'dm';
+
+    // Search Filtering
+    const searchInput = document.getElementById('search-automations-input');
+    searchInput.addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.workflow-card');
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    });
+
+    // View Switching
+    function openCreateView(id = null) {
+      // Toggle views
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-create-edit').classList.remove('hidden');
+      document.getElementById('edit-footer-bar').classList.remove('hidden');
+      
+      // Reset form
+      document.getElementById('automation-form').reset();
+      activeKeywords = [];
+      renderKeywordTags();
+      
+      if (id) {
+        // Load details for Edit Mode
+        const triggers = getTriggers();
+        const trigger = triggers.find(t => t.id === String(id));
+        if (trigger) {
+          document.getElementById('create-view-title').textContent = 'Edit DM Automation';
+          document.getElementById('create-view-tag-id').textContent = 'EDIT_WORKFLOW_ID_' + trigger.id;
+          document.getElementById('footer-draft-label').textContent = 'Draft: ' + (trigger.name || 'Automation #' + trigger.id);
+          
+          document.getElementById('automation-id').value = trigger.id;
+          document.getElementById('workflow-name-input').value = trigger.name || '';
+          selectPlatform(trigger.platform || 'instagram');
+          document.getElementById('trigger-type-select').value = trigger.triggerType || 'keyword';
+          document.getElementById('automation-status-toggle').checked = trigger.active !== false;
+          
+          if (trigger.keyword) {
+            activeKeywords = trigger.keyword.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+          }
+          renderKeywordTags();
+          selectMatchType(trigger.matchType || 'exact');
+          document.getElementById('delay-slider').value = trigger.delay !== undefined ? trigger.delay : 1.5;
+          updateDelayLabel(document.getElementById('delay-slider').value);
+          document.getElementById('chk-followers').checked = !!trigger.followerOnly;
+          document.getElementById('chk-verified').checked = !!trigger.verifiedOnly;
+          
+          document.getElementById('reply-message-textarea').value = trigger.response || '';
+          document.getElementById('cta-text-input').value = trigger.ctaText || '';
+          document.getElementById('cta-url-input').value = trigger.ctaUrl || '';
+        }
+      } else {
+        // Create Mode
+        document.getElementById('create-view-title').textContent = 'Create DM Automation';
+        document.getElementById('create-view-tag-id').textContent = 'NEW_WORKFLOW_V4';
+        document.getElementById('footer-draft-label').textContent = 'Draft: New Automation';
+        document.getElementById('automation-id').value = '';
+        selectPlatform('instagram');
+        selectMatchType('exact');
+        updateDelayLabel(1.5);
+        document.getElementById('delay-slider').value = 1.5;
+      }
+      
+      syncPhonePreview();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function closeCreateView() {
+      document.getElementById('view-create-edit').classList.add('hidden');
+      document.getElementById('edit-footer-bar').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.remove('hidden');
+      updateDashboardUI();
+    }
+
+    // Segment selectors
+    function selectPlatform(p) {
+      selectedPlatform = p;
+      if (p === 'instagram') {
+        document.getElementById('platform-btn-instagram').classList.add('active');
+        document.getElementById('platform-btn-twitter').classList.remove('active');
+        // Preview sync
+        document.getElementById('phone-avatar-char').textContent = 'IG';
+        document.getElementById('phone-avatar-char').style.background = 'linear-gradient(135deg, #FFDD55, #E1306C)';
+        document.getElementById('phone-avatar-char').style.color = '#FFFFFF';
+        document.getElementById('phone-title-username').textContent = 'creator_account';
+      } else {
+        document.getElementById('platform-btn-instagram').classList.remove('active');
+        document.getElementById('platform-btn-twitter').classList.add('active');
+        // Preview sync
+        document.getElementById('phone-avatar-char').textContent = '𝕏';
+        document.getElementById('phone-avatar-char').style.backgroundColor = '#111111';
+        document.getElementById('phone-avatar-char').style.backgroundImage = 'none';
+        document.getElementById('phone-avatar-char').style.color = '#FFFFFF';
+        document.getElementById('phone-title-username').textContent = 'creator_x';
+      }
+    }
+
+    function selectMatchType(m) {
+      selectedMatchType = m;
+      const matchBtns = ['exact', 'contains', 'ai'];
+      matchBtns.forEach(btn => {
+        const el = document.getElementById('match-btn-' + btn);
+        if (btn === m) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    }
+
+    function updateDelayLabel(v) {
+      document.getElementById('delay-slider-label').textContent = v + ' SECONDS';
+    }
+
+    // Keywords Tags Builder
+    function focusKeywordsInput() {
+      document.getElementById('raw-keywords-input').focus();
+    }
+
+    function handleKeywordsKeydown(e) {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addKeywordFromInput();
+      }
+    }
+
+    function addKeywordFromInput() {
+      const input = document.getElementById('raw-keywords-input');
+      const val = input.value.trim().toUpperCase();
+      if (val) {
+        const items = val.split(',').map(s => s.trim()).filter(Boolean);
+        items.forEach(item => {
+          if (!activeKeywords.includes(item)) {
+            activeKeywords.push(item);
+          }
+        });
+        input.value = '';
+        renderKeywordTags();
+        syncPhonePreview();
+      }
+    }
+
+    function removeKeywordTag(kw) {
+      activeKeywords = activeKeywords.filter(k => k !== kw);
+      renderKeywordTags();
+      syncPhonePreview();
+    }
+
+    function renderKeywordTags() {
+      const box = document.getElementById('keywords-tag-box');
+      const input = document.getElementById('raw-keywords-input');
+      
+      const oldTags = box.querySelectorAll('.keyword-tag-retro');
+      oldTags.forEach(t => t.remove());
+      
+      activeKeywords.forEach(kw => {
+        const tag = document.createElement('span');
+        tag.className = 'keyword-tag-retro';
+        tag.innerHTML = `${escapeHTML(kw)} <button type="button" onclick="event.stopPropagation(); removeKeywordTag('${kw}')">×</button>`;
+        box.insertBefore(tag, input);
+      });
+    }
+
+    // Phone Live Preview Sync
+    function syncPhonePreview() {
+      const keywordBubble = document.getElementById('phone-bubble-keyword');
+      const responseBubble = document.getElementById('phone-bubble-response');
+      const ctaCard = document.getElementById('phone-bubble-cta');
+      const ctaCardMsg = document.getElementById('phone-cta-card-msg-text');
+      const ctaBtnText = document.getElementById('phone-cta-btn-text');
+      
+      if (activeKeywords.length > 0) {
+        keywordBubble.innerHTML = escapeHTML(activeKeywords[0]);
+        keywordBubble.classList.remove('hidden');
+      } else {
+        keywordBubble.textContent = 'KEYWORD';
+      }
+      
+      const responseText = document.getElementById('reply-message-textarea').value.trim();
+      if (responseText) {
+        responseBubble.innerHTML = escapeHTML(responseText).replace(/\n/g, '<br/>');
+        responseBubble.classList.remove('hidden');
+      } else {
+        responseBubble.textContent = 'Reply message content will display here dynamically.';
+      }
+      
+      const ctaText = document.getElementById('cta-text-input').value.trim();
+      const ctaUrl = document.getElementById('cta-url-input').value.trim();
+      if (ctaText || ctaUrl) {
+        ctaCard.classList.remove('hidden');
+        ctaCardMsg.textContent = ctaText ? 'Click to visit link' : 'Open Link';
+        ctaBtnText.textContent = ctaText ? ctaText : 'Visit URL';
+      } else {
+        ctaCard.classList.add('hidden');
+      }
+    }
+
+    function triggerPhonePreviewPulse() {
+      const mockup = document.querySelector('.phone-mockup-wrapper');
+      mockup.style.transition = 'transform 0.15s ease';
+      mockup.style.transform = 'scale(1.03)';
+      setTimeout(() => {
+        mockup.style.transform = 'scale(1)';
+      }, 150);
+    }
+
+    // Save Automation
+    function saveAutomationFromForm() {
+      const name = document.getElementById('workflow-name-input').value.trim();
+      const reply = document.getElementById('reply-message-textarea').value.trim();
+      
+      if (!name) {
+        alert('Please fill in the Automation Name.');
+        document.getElementById('workflow-name-input').focus();
+        return;
+      }
+      if (activeKeywords.length === 0) {
+        alert('Please type at least one keyword and press Enter.');
+        document.getElementById('raw-keywords-input').focus();
+        return;
+      }
+      if (!reply) {
+        alert('Please fill in the Reply Message.');
+        document.getElementById('reply-message-textarea').focus();
+        return;
+      }
+
+      const id = document.getElementById('automation-id').value;
+      const triggers = getTriggers();
+      
+      const newTrigger = {
+        id: id ? id : Date.now().toString(),
+        name: name,
+        platform: selectedPlatform,
+        triggerType: document.getElementById('trigger-type-select').value,
+        keyword: activeKeywords.join(','),
+        matchType: selectedMatchType,
+        delay: parseFloat(document.getElementById('delay-slider').value),
+        followerOnly: document.getElementById('chk-followers').checked,
+        verifiedOnly: document.getElementById('chk-verified').checked,
+        response: reply,
+        ctaText: document.getElementById('cta-text-input').value.trim(),
+        ctaUrl: document.getElementById('cta-url-input').value.trim(),
+        active: document.getElementById('automation-status-toggle').checked
+      };
+
+      if (id) {
+        const idx = triggers.findIndex(t => t.id === id);
+        if (idx !== -1) {
+          newTrigger.count = triggers[idx].count || 0;
+          triggers[idx] = newTrigger;
+        }
+      } else {
+        newTrigger.count = 0;
+        triggers.push(newTrigger);
+      }
+
+      saveTriggers(triggers);
+      closeCreateView();
+    }
+
+    // Dashboard UI Render
+    function updateDashboardUI() {
+      const triggers = getTriggers();
+      
+      const activeCount = triggers.filter(t => t.active).length;
+      const totalReplies = triggers.reduce((sum, t) => sum + (t.count || 0), 0);
+      const leadsCount = Math.round(totalReplies * 0.45);
+
+      document.getElementById('stat-active-workflows').textContent = activeCount;
+      document.getElementById('stat-total-replies').textContent = formatMetricNumber(totalReplies);
+      document.getElementById('stat-leads-captured').textContent = leadsCount;
+      document.getElementById('lead-metric-emails').textContent = Math.round(leadsCount * 0.63);
+      document.getElementById('lead-metric-phones').textContent = Math.round(leadsCount * 0.37);
+
+      let topTriggerStr = '"GUIDE"';
+      let maxCount = -1;
+      let avgDelaySum = 0;
+      
+      triggers.forEach(t => {
+        if ((t.count || 0) > maxCount) {
+          maxCount = t.count || 0;
+          topTriggerStr = `"${t.keyword.split(',')[0].trim().toUpperCase()}"`;
+        }
+        avgDelaySum += t.delay !== undefined ? t.delay : 1.5;
+      });
+      document.getElementById('quick-stat-top-trigger').textContent = topTriggerStr;
+      
+      if (triggers.length > 0) {
+        const avgDelay = (avgDelaySum / triggers.length).toFixed(1) + 's';
+        document.getElementById('quick-stat-avg-delay').textContent = avgDelay;
+      }
+
+      const container = document.getElementById('workflows-grid-container');
+      container.innerHTML = '';
+
+      triggers.forEach(trigger => {
+        const card = document.createElement('div');
+        card.className = 'workflow-card';
+        
+        let statusBadgeClass = 'disabled';
+        let statusText = 'DISABLED';
+        if (trigger.active) {
+          statusBadgeClass = 'live';
+          statusText = 'LIVE';
+        } else {
+          statusBadgeClass = 'paused';
+          statusText = 'PAUSED';
+        }
+
+        const randSeed = parseInt(trigger.id) || 1;
+        const clickRateVal = trigger.count > 0 
+          ? (Math.min(Math.round(((randSeed * 17.3) % 40) + 20), 100) + '%') 
+          : '0.0%';
+
+        const firstKeyword = trigger.keyword.split(',')[0].trim().toUpperCase();
+        
+        card.innerHTML = `
+          <div class="workflow-card-top">
+            <span class="status-badge ${statusBadgeClass}">${statusText}</span>
+            <div class="card-actions-wrapper">
+              <button class="card-action-icon" onclick="openCreateView('${trigger.id}')" title="Edit automation" aria-label="Edit">
+                <svg viewBox="0 0 24 24" style="width:0.95rem; height:0.95rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button class="card-action-icon" onclick="deleteTrigger('${trigger.id}')" title="Delete automation" aria-label="Delete">
+                <svg viewBox="0 0 24 24" style="width:0.95rem; height:0.95rem;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </div>
+          <h3>${escapeHTML(trigger.name || 'Keyword: ' + firstKeyword)}</h3>
+          <p class="description">${escapeHTML(trigger.response)}</p>
+          <div class="workflow-card-performance">
+            <div class="perf-metric">
+              <span class="perf-label">SENT</span>
+              <span class="perf-value">${trigger.count || 0}</span>
+            </div>
+            <div class="bar-container">
+              <div class="bar-fill" style="width: ${Math.min((trigger.count / 100) * 100, 100)}%;"></div>
+            </div>
+            <div class="perf-metric" style="margin-top:2px;">
+              <span class="perf-label">CLICK RATE</span>
+              <span class="perf-value" style="color:var(--accent-blue)">${clickRateVal}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      const dottedCard = document.createElement('div');
+      dottedCard.className = 'create-card-dotted';
+      dottedCard.onclick = () => openCreateView();
+      dottedCard.innerHTML = `
+        <div class="plus-circle">+</div>
+        <span>Create New Workflow</span>
+      `;
+      container.appendChild(dottedCard);
+
+      renderLogsTable();
+      updateSimulatorDetails();
+    }
+
+    function deleteTrigger(id) {
+      if (confirm('Are you sure you want to delete this automation?')) {
+        let triggers = getTriggers();
+        triggers = triggers.filter(t => t.id !== String(id));
+        saveTriggers(triggers);
+        updateDashboardUI();
+      }
+    }
+
+    function formatMetricNumber(num) {
+      if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+      }
+      return num;
+    }
+
+    // Seed/Logs Management
+    function seedLogs(append = false) {
+      const logs = getLogs();
+      const mockUsers = [
+        { user: '@jessica_design', initials: 'JD', action: 'Sent Portfolio Link' },
+        { user: '@sam.dev', initials: 'SD', action: 'Delivered CRM Link' },
+        { user: '@nicole_os', initials: 'NO', action: 'Sent PDF Link' },
+        { user: '@robert_cap', initials: 'RC', action: 'Sent Welcome Emoji' }
+      ];
+      
+      const newItems = [];
+      const triggers = getTriggers();
+      
+      for (let i = 0; i < 3; i++) {
+        const u = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+        const t = triggers.length > 0 ? triggers[Math.floor(Math.random() * triggers.length)] : { keyword: 'GUIDE' };
+        const keyword = t.keyword.split(',')[0].trim().toUpperCase();
+        newItems.push({
+          user: u.user,
+          initials: u.initials,
+          trigger: keyword,
+          action: u.action,
+          time: (i + 2) + ' hrs ago',
+          status: 'success'
+        });
+      }
+
+      if (append) {
+        saveLogs([...logs, ...newItems]);
+      } else {
+        saveLogs(newItems);
+      }
+      renderLogsTable();
+    }
+
+    function clearLogs() {
+      saveLogs([]);
+      renderLogsTable();
+    }
+
+    function renderLogsTable() {
+      const logs = getLogs();
+      const tbody = document.getElementById('logs-tbody');
+      tbody.innerHTML = '';
+      
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--gray-muted); padding:2rem 1rem;">No recent interactions. Type in the simulator to generate logs!</td></tr>`;
+        return;
+      }
+
+      logs.forEach(log => {
+        const tr = document.createElement('tr');
+        const statusClass = log.status === 'success' ? 'success' : 'pending';
+        const statusText = log.status.toUpperCase();
+        
+        tr.innerHTML = `
+          <td>
+            <div class="table-user-cell">
+              <span class="table-avatar">${log.initials || 'U'}</span>
+              <strong>${escapeHTML(log.user)}</strong>
+            </div>
+          </td>
+          <td>
+            <span class="table-trigger-badge">${escapeHTML(log.trigger)}</span>
+          </td>
+          <td style="color:var(--gray-muted); font-weight:500;">${escapeHTML(log.action)}</td>
+          <td>${log.time}</td>
+          <td>
+            <span class="table-status-text ${statusClass}">● ${statusText}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Export Leads as CSV
+    function exportLeadsCSV() {
+      const logs = getLogs();
+      if (logs.length === 0) {
+        alert('No leads collected to export.');
+        return;
+      }
+      
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Username,Triggered Keyword,Action,Timestamp,Status\n";
+      
+      logs.forEach(log => {
+        csvContent += `${log.user},${log.trigger},${log.action},${log.time},${log.status}\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "creatoros_leads.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Simulator Tab Switcher
+    function switchSimTab(tab) {
+      currentSimTab = tab;
+      if (tab === 'dm') {
+        document.getElementById('sim-tab-dm').classList.add('active');
+        document.getElementById('sim-tab-comments').classList.remove('active');
+        document.getElementById('sim-panel-dm').classList.remove('hidden');
+        document.getElementById('sim-panel-comments').classList.add('hidden');
+      } else {
+        document.getElementById('sim-tab-comments').classList.add('active');
+        document.getElementById('sim-tab-dm').classList.remove('active');
+        document.getElementById('sim-panel-comments').classList.remove('hidden');
+        document.getElementById('sim-panel-dm').classList.add('hidden');
+      }
+    }
+
+    function updateSimulatorDetails() {
+      const triggers = getTriggers();
+      const lastTrigger = triggers.length > 0 ? triggers[triggers.length - 1] : null;
+      if (lastTrigger && lastTrigger.platform === 'twitter') {
+        document.getElementById('sim-bot-avatar-char').textContent = '𝕏';
+        document.getElementById('sim-bot-avatar-char').style.backgroundColor = '#111111';
+        document.getElementById('sim-bot-avatar-char').style.color = '#FFFFFF';
+        document.getElementById('sim-bot-name').textContent = 'Mock Twitter Bot';
+      } else {
+        document.getElementById('sim-bot-avatar-char').textContent = 'IG';
+        document.getElementById('sim-bot-avatar-char').style.background = 'linear-gradient(135deg, #FFDD55, #E1306C)';
+        document.getElementById('sim-bot-avatar-char').style.color = '#FFFFFF';
+        document.getElementById('sim-bot-name').textContent = 'Mock Instagram Bot';
+      }
+    }
+
+    // DM Simulator send message
+    function sendSimMessage() {
+      const input = document.getElementById('sim-chat-input-field');
+      const msgText = input.value.trim();
+      if (!msgText) return;
+      
+      appendSimMessageBubble(escapeHTML(msgText), true, 'dm');
+      input.value = '';
+      
+      const chatContainer = document.getElementById('sim-chat-messages-container');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      const triggers = getTriggers();
+      const matched = [...triggers].reverse().find(t => {
+        if (!t.active) return false;
+        
+        const kwList = t.keyword.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        const msg = msgText.trim().toUpperCase();
+        
+        if (t.matchType === 'contains') {
+          return kwList.some(kw => msg.includes(kw));
+        } else {
+          return kwList.some(kw => msg === kw);
+        }
+      });
+      
+      const indicator = document.getElementById('sim-chat-typing-indicator');
+      indicator.classList.remove('hidden');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      const delayMs = matched && matched.delay !== undefined ? (matched.delay * 1000) : 1000;
+      
+      setTimeout(() => {
+        indicator.classList.add('hidden');
+        
+        if (matched) {
+          matched.count = (matched.count || 0) + 1;
+          saveTriggers(triggers);
+          updateDashboardUI();
+          
+          appendSimMessageBubble(escapeHTML(matched.response).replace(/\n/g, '<br/>'), false, 'dm');
+          
+          if (matched.ctaText || matched.ctaUrl) {
+            appendSimCTABubble(escapeHTML(matched.ctaText), matched.ctaUrl);
+          }
+          
+          logInteraction(msgText, matched.name || 'Keyword: ' + matched.keyword.split(',')[0], 'success');
+        } else {
+          appendSimMessageBubble(`Hey! I didn't quite catch that. Try typing one of your active triggers like <strong>GUIDE</strong> or <strong>CRM</strong>.`, false, 'dm');
+          logInteraction(msgText, 'Fallback Reply', 'success');
+        }
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, Math.max(delayMs, 600));
+    }
+
+    function appendSimMessageBubble(text, isUser, type = 'dm') {
+      const containerId = type === 'dm' ? 'sim-chat-messages-container' : 'sim-comments-thread-container';
+      const container = document.getElementById(containerId);
+      
+      const bubble = document.createElement('div');
+      bubble.className = `sim-msg ${isUser ? 'sent' : 'received'}`;
+      bubble.innerHTML = text;
+      container.appendChild(bubble);
+    }
+
+    function appendSimCTABubble(text, url) {
+      const container = document.getElementById('sim-chat-messages-container');
+      const ctaBlock = document.createElement('div');
+      ctaBlock.className = 'sim-msg-cta-block';
+      ctaBlock.innerHTML = `
+        <span style="font-size:0.75rem; color:var(--gray-muted); margin-bottom:2px;">Special Action Link:</span>
+        <a href="${url}" target="_blank" class="sim-msg-cta-btn">${escapeHTML(text)}</a>
+      `;
+      container.appendChild(ctaBlock);
+    }
+
+    // Comment Simulator send comment
+    function sendSimComment() {
+      const input = document.getElementById('sim-comment-input-field');
+      const commentText = input.value.trim();
+      if (!commentText) return;
+      
+      const threadBox = document.getElementById('sim-comments-thread-container');
+      const commentDiv = document.createElement('div');
+      commentDiv.className = 'post-comment-item';
+      commentDiv.innerHTML = `
+        <div class="table-avatar" style="width:1.5rem; height:1.5rem; font-size:0.7rem;">U</div>
+        <div>
+          <strong style="font-size:0.78rem;">@mock_user</strong>
+          <span style="font-size:0.78rem; margin-left:0.25rem;">${escapeHTML(commentText)}</span>
+        </div>
+      `;
+      threadBox.appendChild(commentDiv);
+      
+      input.value = '';
+      
+      const messagesContainer = document.getElementById('sim-comment-messages-container');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      const triggers = getTriggers();
+      const matched = [...triggers].reverse().find(t => {
+        if (!t.active) return false;
+        
+        const kwList = t.keyword.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        const msg = commentText.trim().toUpperCase();
+        return kwList.some(kw => msg === kw || msg.includes(kw));
+      });
+
+      const indicator = document.getElementById('sim-comment-typing-indicator');
+      indicator.classList.remove('hidden');
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      const delayMs = matched && matched.delay !== undefined ? (matched.delay * 1000) : 1000;
+
+      setTimeout(() => {
+        indicator.classList.add('hidden');
+        
+        const replyDiv = document.createElement('div');
+        replyDiv.className = 'post-comment-reply';
+        
+        if (matched) {
+          matched.count = (matched.count || 0) + 1;
+          saveTriggers(triggers);
+          updateDashboardUI();
+          
+          replyDiv.innerHTML = `
+            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem;">CO</div>
+            <div>
+              <strong style="font-size:0.75rem;">@creator_account</strong>
+              <span style="font-size:0.75rem; margin-left:0.25rem;">@mock_user check your inbox! I've sent you a DM. 📩</span>
+            </div>
+          `;
+          threadBox.appendChild(replyDiv);
+          
+          appendSimMessageBubble(`[Auto-Reply from Comments] ${escapeHTML(matched.response)}`, false, 'dm');
+          if (matched.ctaText || matched.ctaUrl) {
+            appendSimCTABubble(escapeHTML(matched.ctaText), matched.ctaUrl);
+          }
+          
+          logInteraction(commentText, 'Comment DM Sent', 'success');
+        } else {
+          replyDiv.innerHTML = `
+            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem;">CO</div>
+            <div>
+              <strong style="font-size:0.75rem;">@creator_account</strong>
+              <span style="font-size:0.75rem; margin-left:0.25rem;">@mock_user Thanks for commenting! Try typing "GUIDE" or "CRM" to trigger.</span>
+            </div>
+          `;
+          threadBox.appendChild(replyDiv);
+          logInteraction(commentText, 'Comment Reply Fallback', 'success');
+        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }, Math.max(delayMs, 700));
+    }
+
+    function logInteraction(triggerText, actionName, statusText) {
+      const logs = getLogs();
+      const newLog = {
+        user: '@mock_user',
+        initials: 'MU',
+        trigger: triggerText.substring(0, 15).toUpperCase(),
+        action: actionName,
+        time: 'Just now',
+        status: statusText
+      };
+      saveLogs([newLog, ...logs]);
+      renderLogsTable();
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    // Theme Toggle logic for DM Automation
+    const toggleBtn = document.getElementById("theme-toggle");
+    toggleBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      if (document.body.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        toggleBtn.innerText = "☀️";
+      } else {
+        localStorage.setItem("theme", "light");
+        toggleBtn.innerText = "🌙";
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        toggleBtn.innerText = "☀️";
+      } else {
+        document.body.classList.remove("dark-mode");
+        toggleBtn.innerText = "🌙";
+      }
+      
+      // Init page state
+      updateDashboardUI();
+    });
+  </script>
+</body>
+</html>

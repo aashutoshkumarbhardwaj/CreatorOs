@@ -9,101 +9,180 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Dashboard | CreatorOS</title>
+    
+    <!-- Import Google Fonts: Space Grotesk and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
-            --bg: #06101f;
-            --bg-2: #0b1730;
-            --surface: rgba(13, 24, 49, 0.72);
-            --surface-strong: rgba(8, 19, 39, 0.92);
-            --surface-soft: rgba(255, 255, 255, 0.05);
-            --border: rgba(148, 163, 184, 0.16);
-            --text: #f8fafc;
-            --muted: #cbd5e1;
-            --muted-2: #94a3b8;
-            --accent: #22d3ee;
-            --accent-2: #38bdf8;
-            --purple: #22d3ee;
-            --purple-2: #38bdf8;
-            --purple-3: #67e8f9;
-            --blue: #38bdf8;
-            --green: #22c55e;
-            --orange: #f59e0b;
-            --shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
-            --sidebar-width: 280px;
+            /* Default Theme: Light Cream Retro */
+            --bg: #F5F1EA;
+            --bg-secondary: #EFE8DC;
+            --card-bg: #FFFFFF;
+            --text: #111111;
+            --border: #111111;
+            --accent-teal: #37D6C8;
+            --accent-blue: #76A9FA;
+            --accent-yellow: #E4C13B;
+            --accent-red: #E13B3B;
+            --success: #2BB673;
+            --muted: #374151;
+            --muted-2: #4B5563;
+            
+            --chart-grid-color: #E3DDD3;
+            --chart-line-color: #37D6C8;
+            
+            --sidebar-width: 260px;
+            --border-thick: 2px solid var(--border);
+            --shadow-retro: 3px 3px 0px var(--border);
+            --shadow-retro-hover: 5px 5px 0px var(--border);
+            --shadow-retro-btn: 2px 2px 0px var(--border);
         }
 
+        /* Toggled Theme: Dark Charcoal Retro */
+        body.dark-mode {
+            --bg: #1A1A18;
+            --bg-secondary: #252522;
+            --card-bg: #2C2C28;
+            --text: #F5F1EA;
+            --border: #F5F1EA;
+            --muted: #D1D5DB;
+            --muted-2: #9CA3AF;
+            
+            --chart-grid-color: #3D3D39;
+            --chart-line-color: #37D6C8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         * { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             color: var(--text);
-            background:
-                radial-gradient(900px 320px at 50% -80px, rgba(56, 189, 248, 0.24), transparent 70%),
-                radial-gradient(720px 260px at 85% 0%, rgba(34, 211, 238, 0.18), transparent 70%),
-                linear-gradient(180deg, var(--bg-2), var(--bg));
+            background-color: var(--bg);
+            min-height: 100vh;
             overflow-x: hidden;
         }
 
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
         a { color: inherit; }
 
+        /* Headings & Typography */
+        h1, h2, h3, h4, .brand-text, .title-font {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        /* ── Layout ── */
         .dashboard-layout {
             min-height: 100vh;
             display: grid;
             grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-            transition: grid-template-columns 0.28s ease;
+            transition: grid-template-columns 0.2s ease;
         }
 
+        .dashboard-layout.sidebar-collapsed {
+            --sidebar-width: 80px;
+        }
         .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
 
+        /* ── Sidebar Redesign ── */
         .sidebar {
             position: sticky;
             top: 0;
             height: 100vh;
-            max-height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 1.4rem;
-            padding: 1.65rem 0.9rem;
-            border-right: 1px solid var(--border);
-            background: rgba(6, 16, 31, 0.82);
-            backdrop-filter: blur(18px);
-            animation: slideIn 0.65s ease both;
-            overflow: hidden;
-            transition: max-height 0.28s ease, padding 0.28s ease, border-color 0.28s ease;
+            background-color: var(--bg-secondary);
+            border-right: var(--border-thick);
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0 0.55rem 1.2rem;
-            text-decoration: none;
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: 0;
+            padding-bottom: 2.2rem;
+            border-bottom: var(--border-thick);
+            margin-bottom: 1.5rem;
+            position: relative;
         }
 
         .brand-mark {
-            width: 2.35rem;
-            height: 2.35rem;
+            width: 2.2rem;
+            height: 2.2rem;
+            background-color: var(--accent-teal);
+            border: var(--border-thick);
             display: grid;
             place-items: center;
-            border-radius: 0.8rem;
-            color: #042f3e;
-            background: linear-gradient(135deg, var(--purple-2), var(--purple));
-            box-shadow: 0 12px 30px rgba(34, 211, 238, 0.24);
+            font-weight: 800;
+            font-size: 1.1rem;
+            box-shadow: 2px 2px 0px var(--border);
+            flex-shrink: 0;
+            color: #111111;
         }
 
+        .brand-text {
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-version {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--muted-2);
+            margin-top: -2px;
+            display: block;
+        }
+
+        .theme-btn {
+            position: absolute;
+            right: 0.25rem;
+            top: 0.25rem;
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 50%;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: grid;
+            place-items: center;
+            box-shadow: 1px 1px 0px var(--border);
+            transition: transform 0.15s ease;
+        }
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+        }
         .sidebar-section { display: grid; gap: 0.45rem; }
 
         .sidebar-label {
-            margin: 0 0.55rem 0.25rem;
+            padding-left: 0.5rem;
+            margin-bottom: 0.35rem;
             color: var(--muted-2);
-            font-size: 0.72rem;
-            font-weight: 800;
+            font-size: 0.7rem;
+            font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
@@ -111,33 +190,108 @@
         .nav-link, .service-link {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
-            min-height: 3.25rem;
-            padding: 0.85rem 1rem;
-            border-radius: 0.65rem;
+            gap: 0.75rem;
+            padding: 0.75rem 0.85rem;
+            border: 2px solid transparent;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.15s ease;
+            cursor: pointer;
             color: var(--muted);
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
         }
 
+        .nav-link:hover,
+        .service-link:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
+        .nav-link.active,
+        .service-link.active {
+            color: #111111;
+            background-color: var(--accent-teal);
+            border: var(--border-thick);
+            box-shadow: var(--shadow-retro-btn);
+            font-weight: 700;
+        }
+
+        .nav-icon {
+            width: 1.2rem;
+            height: 1.2rem;
+            flex-shrink: 0;
+            stroke: currentColor;
+            fill: none;
         .nav-link:hover, .service-link:hover {
             transform: translateX(4px);
             color: #67e8f9;
             background: rgba(34, 211, 238, 0.08);
         }
 
-        .nav-link.active {
-            color: #042f3e;
-            background: linear-gradient(135deg, var(--purple-2), var(--purple));
-            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
+        .sidebar-footer {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
-        .service-link.available {
-            color: #67e8f9;
-            background: rgba(34, 211, 238, 0.08);
+        .upgrade-box {
+            background-color: var(--accent-yellow);
+            border: var(--border-thick);
+            padding: 1rem 0.85rem;
+            box-shadow: var(--shadow-retro-btn);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #111111;
         }
 
+        .upgrade-box h4 {
+            font-size: 0.95rem;
+            line-height: 1.1;
+            color: #111111;
+        }
+
+        .upgrade-box p {
+            font-size: 0.75rem;
+            color: #222222;
+            line-height: 1.3;
+        }
+
+        .upgrade-btn {
+            width: 100%;
+            background-color: var(--accent-blue);
+            border: var(--border-thick);
+            color: #111111;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 0.4rem;
+            text-align: center;
+            box-shadow: 2px 2px 0px var(--border);
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .upgrade-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border);
+        }
+
+        /* Collapsed Sidebar overrides */
+        .dashboard-layout.sidebar-collapsed .brand {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        .dashboard-layout.sidebar-collapsed .brand-text,
+        .dashboard-layout.sidebar-collapsed .brand-version,
+        .dashboard-layout.sidebar-collapsed .sidebar-label,
+        .dashboard-layout.sidebar-collapsed .service-name,
+        .dashboard-layout.sidebar-collapsed .upgrade-box,
+        .dashboard-layout.sidebar-collapsed .nav-text,
+        .dashboard-layout.sidebar-collapsed #theme-toggle {
+            display: none;
+        }
         .nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
         .service-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -152,42 +306,106 @@
         .dashboard-layout.sidebar-collapsed .nav-link,
         .dashboard-layout.sidebar-collapsed .service-link {
             justify-content: center;
-            gap: 0;
-            padding-inline: 0.8rem;
+            padding: 0.75rem;
             font-size: 0;
         }
 
+        /* ── Main Panel ── */
+        .main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
         .main { min-width: 0; animation: fadeIn 0.65s ease 0.1s both; }
 
+        /* Shared Top Navigation */
         .topbar {
             position: sticky;
             top: 0;
-            z-index: 5;
+            z-index: 10;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            min-height: 82px;
-            padding: 1rem 2.4rem;
-            border-bottom: 1px solid var(--border);
-            background: rgba(6, 16, 31, 0.76);
-            backdrop-filter: blur(18px);
+            gap: 1.5rem;
+            background-color: var(--bg);
+            border-bottom: var(--border-thick);
+            padding: 1rem 2rem;
         }
 
+        .menu-btn {
+            width: 2.2rem;
+            height: 2.2rem;
         .menu-btn, .icon-btn {
             width: 2.55rem;
             height: 2.55rem;
             display: grid;
             place-items: center;
-            border: 1px solid transparent;
-            border-radius: 999px;
-            color: var(--muted);
-            background: rgba(255, 255, 255, 0.04);
-            text-decoration: none;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
             cursor: pointer;
-            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+            box-shadow: var(--shadow-retro-btn);
+        }
+        .menu-btn:hover {
+            background-color: var(--bg-secondary);
         }
 
+        .search-container {
+            flex: 1;
+            max-width: 480px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
+            color: var(--text);
+            padding: 0.55rem 1rem 0.55rem 2.5rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .search-input:focus {
+            box-shadow: 2px 2px 0px var(--border);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.1rem;
+            height: 1.1rem;
+            pointer-events: none;
+            stroke: var(--muted-2);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-actions-icons {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .action-icon-btn {
+            width: 2rem;
+            height: 2rem;
+            display: grid;
+            place-items: center;
+            border: 2px solid transparent;
+            cursor: pointer;
+            color: var(--text);
+            background: transparent;
+        }
+        .action-icon-btn:hover {
+            border-color: var(--border);
+            background-color: rgba(0,0,0,0.03);
+        }
         .menu-btn:hover, .icon-btn:hover {
             transform: translateY(-2px);
             color: #67e8f9;
@@ -200,28 +418,69 @@
         .profile-chip {
             display: inline-flex;
             align-items: center;
-            gap: 0.7rem;
-            border-radius: 999px;
-            padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+            gap: 0.65rem;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
             color: var(--text);
-            text-decoration: none;
-            transition: background 0.18s ease, transform 0.18s ease;
+            padding: 0.35rem 0.75rem;
+            box-shadow: var(--shadow-retro-btn);
+            cursor: pointer;
+        }
+        .profile-chip:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border);
         }
 
         .profile-chip:hover { transform: translateY(-2px); background: rgba(34, 211, 238, 0.1); }
 
         .avatar {
-            width: 2.4rem;
-            height: 2.4rem;
+            width: 1.6rem;
+            height: 1.6rem;
             display: grid;
             place-items: center;
-            border-radius: 999px;
-            color: #042f3e;
-            background: linear-gradient(135deg, #67e8f9, var(--accent-2));
-            font-size: 0.88rem;
-            font-weight: 800;
+            background-color: var(--accent-teal);
+            border: 1px solid var(--border);
+            color: #111111;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
+        .profile-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .primary-action-btn {
+            background-color: var(--accent-teal);
+            border: var(--border-thick);
+            color: #111111;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 0.55rem 1.1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            box-shadow: var(--shadow-retro-btn);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .primary-action-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-retro-hover);
+        }
+        .primary-action-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--border);
+        }
+
+        /* ── Content ── */
+        .content {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
         .profile-name { font-weight: 700; }
 
         .content { padding: 2.2rem 2.4rem 2.8rem; }
@@ -230,17 +489,24 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 1.9rem;
+            border-bottom: var(--border-thick);
+            padding-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
         .dashboard-head h1 {
-            margin: 0 0 0.25rem;
-            font-size: clamp(2rem, 4vw, 2.9rem);
-            line-height: 1.08;
-            letter-spacing: 0;
+            font-size: 2.2rem;
+            line-height: 1.1;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
         }
 
+        .dashboard-head p {
+            font-size: 0.95rem;
+            color: var(--muted-2);
+        }
         .dashboard-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
 
         .primary-action {
@@ -260,13 +526,22 @@
 
         .primary-action:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(34, 211, 238, 0.26); }
 
+        /* ── Stats Grid ── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.25rem;
-            margin-bottom: 1.5rem;
         }
 
+        .stat-card-retro {
+            background-color: var(--card-bg);
+            border: var(--border-thick);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow-retro);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         .stat-card, .panel {
             border: 1px solid var(--border);
             border-radius: 0.9rem;
@@ -275,35 +550,130 @@
             box-shadow: var(--shadow);
         }
 
-        .stat-card {
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
-            gap: 1rem;
-            align-items: center;
-            min-height: 145px;
-            padding: 1.2rem;
-            animation: enterUp 0.58s ease both;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        .stat-card-retro:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-retro-hover);
         }
 
+        .stat-card-retro.accent-blue {
+            background-color: var(--accent-blue);
+            color: #111111;
+        }
+        .stat-card-retro.accent-blue .label,
+        .stat-card-retro.accent-blue .subtext,
+        .stat-card-retro.accent-blue .card-id,
+        .stat-card-retro.accent-blue h3 {
+            color: #333333;
+        }
+
+        .stat-card-retro .card-id {
+            position: absolute;
+            right: 1.25rem;
+            top: 1.25rem;
+            font-size: 0.7rem;
+            color: var(--muted-2);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card-retro .label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-retro .value {
+            font-size: 2.3rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
         .stat-card:nth-child(2) { animation-delay: 0.05s; }
         .stat-card:nth-child(3) { animation-delay: 0.1s; }
         .stat-card:nth-child(4) { animation-delay: 0.15s; }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(103, 232, 249, 0.34);
-            box-shadow: 0 28px 58px rgba(0, 0, 0, 0.34);
+        .stat-card-retro .subtext {
+            font-size: 0.78rem;
+            color: var(--muted-2);
+            font-weight: 500;
         }
 
-        .stat-icon {
-            width: 3.6rem;
-            height: 3.6rem;
+        .trend {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        /* Panels & Cards */
+        .panel-retro {
+            background-color: var(--card-bg);
+            border: var(--border-thick);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-retro);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .panel-retro-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border-thick);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .panel-retro-title-row h2 {
+            font-size: 1.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        .badge-retro {
+            border: var(--border-thick);
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            background-color: var(--accent-teal);
+            color: #111111;
+            box-shadow: 1.5px 1.5px 0px var(--border);
+        }
+
+        /* ── Invite Status ── */
+        .status-grid-retro {
             display: grid;
-            place-items: center;
-            border-radius: 0.8rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
         }
 
+        .status-card-retro {
+            padding: 1rem;
+            border: var(--border-thick);
+            box-shadow: 2px 2px 0px var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            color: #111111;
+        }
+
+        .status-card-retro h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #222222;
+            letter-spacing: 0.05em;
+        }
+
+        .status-card-retro p {
+            font-size: 1.6rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: #111111;
+        }
         .stat-icon.purple  { color: #67e8f9; background: rgba(34, 211, 238, 0.12); }
         .stat-icon.blue    { color: #38bdf8; background: rgba(56, 189, 248, 0.12); }
         .stat-icon.green   { color: #86efac; background: rgba(34, 197, 94, 0.12); }
@@ -314,54 +684,99 @@
         .stat-note         { grid-column: 1 / -1; margin: 0.1rem 0 0; color: var(--muted); font-size: 0.9rem; }
         .trend             { color: var(--green); font-weight: 700; }
 
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
+        .status-card-retro.pending {
+            background-color: var(--accent-yellow);
         }
 
+        .status-card-retro.accepted {
+            background-color: var(--success);
+        }
         .panel { padding: 1.35rem; animation: enterUp 0.62s ease 0.18s both; }
 
-        .panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1rem;
+        .status-card-retro.expired {
+            background-color: var(--accent-red);
+            color: var(--white);
+        }
+        .status-card-retro.expired h3,
+        .status-card-retro.expired p {
+            color: var(--white);
         }
 
+        /* ── Workspace 2 Columns Layout ── */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Invite Section */
+        .invite-panel p {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
         .panel h2 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
 
         .invite-panel p { margin: 0; color: var(--muted); line-height: 1.7; }
 
         .invite-form {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 0.85rem;
-            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
         }
 
         .invite-form input {
-            min-width: 0;
-            padding: 1rem 1.1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.85rem;
-            background: rgba(255, 255, 255, 0.06);
+            flex: 1;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
             color: var(--text);
-            font: inherit;
+            padding: 0.65rem 0.85rem;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .invite-form input:focus {
+            box-shadow: 2px 2px 0px var(--border);
         }
 
         .invite-form button {
-            border: none;
-            color: #042f3e;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            box-shadow: 0 16px 34px rgba(34, 211, 238, 0.2);
-            border-radius: 0.85rem;
-            padding: 1rem 1.35rem;
+            background-color: var(--accent-teal);
+            border: var(--border-thick);
+            color: #111111;
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.65rem 1.1rem;
             cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            box-shadow: var(--shadow-retro-btn);
+        }
+        .invite-form button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border);
+        }
+
+        .message-box {
+            padding: 0.75rem 1rem;
+            border: var(--border-thick);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .message-success {
+            background-color: var(--success);
+            color: #111111;
+        }
+
+        .message-error {
+            background-color: var(--accent-red);
+            color: var(--white);
         }
 
         .invite-form button:hover { transform: translateY(-1px); }
@@ -370,37 +785,100 @@
         .message-success { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.18); color: #d1fae5; }
         .message-error   { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.22); color: #fee2e2; }
 
-        .status-grid {
+        /* Donut Layout */
+        .donut-layout {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.85rem;
-            margin-top: 1rem;
+            grid-template-columns: 140px minmax(0, 1fr);
+            gap: 1.5rem;
+            align-items: center;
         }
 
-        .status-card {
-            padding: 1rem 1.1rem;
-            border-radius: 0.95rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(148, 163, 184, 0.12);
-            color: var(--text);
+        .donut {
+            width: 130px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: var(--border-thick);
+            background: conic-gradient(
+                var(--accent-teal) 0 65%, 
+                var(--accent-blue) 65% 85%, 
+                var(--success) 85% 92%, 
+                var(--accent-yellow) 92% 97%, 
+                var(--muted-2) 97% 100%
+            );
+            position: relative;
+            box-shadow: var(--shadow-retro-btn);
         }
 
+        .donut::after {
+            content: '';
+            position: absolute;
+            inset: 28%;
+            border-radius: inherit;
+            background-color: var(--bg-secondary);
+            border: var(--border-thick);
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .legend-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+            padding-bottom: 0.25rem;
+        }
+        body:not(.light-mode) .legend-row {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+
+        .legend-label-col {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
         .status-card h3 { margin: 0 0 0.45rem; font-size: 0.96rem; color: var(--muted); }
         .status-card p  { margin: 0; font-size: 1.66rem; font-weight: 800; letter-spacing: -0.02em; }
         .status-card.pending  { color: #facc15; }
         .status-card.accepted { color: #22c55e; }
         .status-card.expired  { color: #f87171; }
 
-        .select-pill {
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
             border: 1px solid var(--border);
-            border-radius: 0.55rem;
-            padding: 0.55rem 0.8rem;
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.06);
-            font: inherit;
-            font-weight: 600;
         }
 
+        /* SVG Line Chart Redesign */
+        .chart-wrap {
+            height: 220px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
+            padding: 0.75rem;
+        }
+
+        .line-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-grid {
+            stroke: var(--chart-grid-color);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+        }
+
+        .chart-area {
+            fill: rgba(55, 214, 200, 0.08);
+        }
         .chart-wrap { min-height: 280px; overflow: hidden; }
 
         .line-chart { width: 100%; height: 280px; }
@@ -408,11 +886,43 @@
         .chart-area { fill: url(#chartFill); }
         .chart-line {
             fill: none;
-            stroke: var(--purple-2);
-            stroke-width: 4;
+            stroke: var(--text);
+            stroke-width: 3.5;
             stroke-linecap: round;
             stroke-linejoin: round;
-            filter: drop-shadow(0 8px 12px rgba(34, 211, 238, 0.16));
+        }
+
+        .chart-dot {
+            fill: var(--accent-teal);
+            stroke: var(--text);
+            stroke-width: 2.5;
+            r: 6.5;
+        }
+
+        .chart-label,
+        .chart-y {
+            fill: var(--text);
+            font-size: 10px;
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .select-pill {
+            border: var(--border-thick);
+            background-color: var(--card-bg);
+            color: var(--text);
+            padding: 0.35rem 0.65rem;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ── Recent Links Table ── */
+        .table-panel-retro {
+            padding: 0;
+            overflow: hidden;
         }
         .chart-dot   { fill: var(--purple-2); stroke: #06101f; stroke-width: 3; }
         .chart-label, .chart-y { fill: var(--muted-2); font-size: 13px; font-family: 'Poppins', sans-serif; }
@@ -455,15 +965,75 @@
 
         .table-panel { padding: 0; overflow: hidden; animation-delay: 0.28s; }
 
-        .table-head {
+        .table-head-retro {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            padding: 1.35rem 1.5rem;
-            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+            border-bottom: var(--border-thick);
+            background-color: var(--bg-secondary);
         }
 
+        .table-head-retro h2 {
+            font-size: 1.25rem;
+        }
+
+        .table-head-retro a {
+            font-size: 0.78rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .recent-links-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 600px;
+        }
+
+        .recent-links-table th {
+            background-color: var(--bg-secondary);
+            border-bottom: var(--border-thick);
+            padding: 0.75rem 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--text);
+        }
+
+        .recent-links-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        .recent-links-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .recent-links-table tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        body:not(.light-mode) .recent-links-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .short-url {
+            color: var(--accent-teal);
+            font-weight: 700;
         .table-head h2 { margin: 0; font-size: 1.25rem; }
         .table-head a  { color: var(--purple); text-decoration: none; font-weight: 700; }
 
@@ -554,6 +1124,55 @@
 
         .qr-modal-head {
             display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .row-action {
+            width: 1.8rem;
+            height: 1.8rem;
+            display: grid;
+            place-items: center;
+            border: var(--border-thick);
+            background-color: var(--card-bg);
+            color: var(--text);
+            box-shadow: 1px 1px 0px var(--border);
+            cursor: pointer;
+        }
+
+        .row-action:hover {
+            background-color: var(--accent-teal);
+            color: #111111;
+        }
+
+        /* SVG Sizing */
+        svg {
+            width: 1.2rem;
+            height: 1.2rem;
+            stroke-width: 2.2;
+            fill: none;
+            stroke: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Responsive breakpoints */
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+            .topbar {
+                padding: 1rem;
+            }
+            .content {
+                padding: 1rem;
+            }
+            .status-grid-retro {
+                grid-template-columns: 1fr;
+            }
             align-items: flex-start;
             justify-content: space-between;
             gap: 1rem;
@@ -788,45 +1407,36 @@
 
 <body>
     <div class="dashboard-layout" id="dashboardLayout">
+        
+        <!-- Shared Sidebar Redesign -->
         <aside class="sidebar" aria-label="Dashboard navigation">
             <a class="brand" href="/dashboard">
-                <span class="brand-mark">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.2 4.73"></path>
-                        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.63-1.63"></path>
-                    </svg>
-                </span>
-                <span>CREATOROS</span>
-                <button id="theme-toggle" class="theme-btn">🌙</button>
+                <span class="brand-mark">CO</span>
+                <div>
+                    <span class="brand-text">CreatorOS</span>
+                    <span class="brand-version">v2.0 Beta</span>
+                </div>
+                <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">☀️</button>
             </a>
 
+            <!-- Workspace section -->
             <nav class="sidebar-section">
                 <p class="sidebar-label">Workspace</p>
                 <a class="nav-link active" href="/dashboard">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                    Dashboard
+                    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span class="nav-text">Dashboard</span>
                 </a>
                 <a class="nav-link" href="#recent-links">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path>
-                        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path>
-                    </svg>
-                    My Links
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
+                    <span class="nav-text">My Links</span>
                 </a>
                 <a class="nav-link" href="#analytics">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M4 19V5"></path>
-                        <path d="M9 19V9"></path>
-                        <path d="M14 19V3"></path>
-                        <path d="M19 19v-7"></path>
-                    </svg>
-                    Analytics
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
+                    <span class="nav-text">Analytics</span>
                 </a>
+                <a class="nav-link" href="#settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
+                    <span class="nav-text">Settings</span>
                 <a class="nav-link" href="/settings">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                         <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
@@ -836,8 +1446,12 @@
                 </a>
             </nav>
 
+            <!-- Services section -->
             <nav class="sidebar-section" aria-label="Services">
                 <p class="sidebar-label">Services</p>
+                <% services.forEach((service)=> { %>
+                    <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
+                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>
                 <% services.forEach((service) => { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -849,20 +1463,34 @@
                 <% }) %>
             </nav>
 
+            <!-- Sidebar footer -->
             <div class="sidebar-footer">
+                <div class="upgrade-box">
+                    <h4>Upgrade Plan</h4>
+                    <p>Get access to advanced webhooks & Unlimited Auto-Replies.</p>
+                    <button class="upgrade-btn" type="button">Upgrade Plan</button>
+                </div>
                 <a class="nav-link" href="/logout">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <path d="m16 17 5-5-5-5"></path>
-                        <path d="M21 12H9"></path>
-                    </svg>
-                    Logout
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+                    <span class="nav-text">Logout</span>
                 </a>
             </div>
         </aside>
 
+        <!-- Main Workspace Panel -->
         <main class="main">
+            
+            <!-- Shared Top Navigation Redesign -->
             <header class="topbar">
+                <button class="menu-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" id="sidebarToggle">
+                    <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+                </button>
+
+                <div class="search-container">
+                    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                    <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." aria-label="Search shortened links..." />
+                </div>
+
                 <button class="menu-btn" type="button" aria-label="Toggle sidebar" id="sidebarToggle">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                         <path d="M4 6h16"></path>
@@ -871,35 +1499,40 @@
                     </svg>
                 </button>
                 <div class="topbar-actions">
+                    <div class="nav-actions-icons">
+                        <button class="action-icon-btn" aria-label="Notifications" type="button">
+                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        </button>
+                        <button class="action-icon-btn" aria-label="Help" type="button">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
+                        </button>
+                    </div>
+
                     <a class="profile-chip" href="/profile" aria-label="Open profile">
                         <span class="avatar"><%= user.initials %></span>
                         <span class="profile-name"><%= user.name %></span>
                     </a>
-                    <a class="icon-btn" href="/logout" aria-label="Logout" title="Logout">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <path d="m16 17 5-5-5-5"></path>
-                            <path d="M21 12H9"></path>
-                        </svg>
+                    
+                    <a class="primary-action-btn" href="/services/url-shortener">
+                        <svg viewBox="0 0 24 24" style="width:1.1rem; height:1.1rem;"><path d="M12 5v14M5 12h14"></path></svg>
+                        Create New Link
                     </a>
                 </div>
             </header>
 
+            <!-- Main Content Scroll Area -->
+            <section class="content">
+                
+                <!-- Dashboard Head -->
             <section class="content" id="dashboard-view">
                 <div class="dashboard-head">
                     <div>
                         <h1>Dashboard</h1>
                         <p>Welcome back, <%= user.name %>.</p>
                     </div>
-                    <a class="primary-action" href="/services/url-shortener">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                            <path d="M12 5v14"></path>
-                            <path d="M5 12h14"></path>
-                        </svg>
-                        Create New Link
-                    </a>
                 </div>
 
+                <!-- Section 1: Statistics Cards Row (Analytics Page subset) -->
                 <!-- Stats -->
                 <div class="stats-grid" id="analytics">
                     <article class="stat-card">
@@ -914,7 +1547,38 @@
                             <p class="stat-value"><%= dashboardData.stats.totalLinks %></p>
                         </div>
                         <p class="stat-note">All time</p>
+                    <article class="stat-card-retro">
+                        <span class="card-id">STAT_01</span>
+                        <span class="label">Total Links</span>
+                        <span class="value">32</span>
+                        <span class="subtext"><span class="trend">+12%</span> from last month</span>
                     </article>
+
+                    <article class="stat-card-retro accent-blue">
+                        <span class="card-id">STAT_02</span>
+                        <span class="label">Total Clicks</span>
+                        <span class="value">1,256</span>
+                        <span class="subtext"><span class="trend">+18%</span> from last month</span>
+                    </article>
+
+                    <article class="stat-card-retro">
+                        <span class="card-id">STAT_03</span>
+                        <span class="label">Top Performing Link</span>
+                        <span class="value">423</span>
+                        <span class="subtext">Clicks accumulated</span>
+                    </article>
+
+                    <article class="stat-card-retro">
+                        <span class="card-id">STAT_04</span>
+                        <span class="label">Joined On</span>
+                        <span class="value" style="font-size:1.6rem; margin-top:0.4rem;">24 May 2025</span>
+                        <span class="subtext">2 weeks ago</span>
+                    </article>
+                </div>
+
+                <!-- Invite Status Panel Section -->
+                <section class="panel-retro">
+                    <div class="panel-retro-title-row">
                     <article class="stat-card">
                         <div class="stat-icon blue">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -962,28 +1626,31 @@
                 <section class="panel" style="margin-bottom:1.5rem;">
                     <div class="panel-head">
                         <h2>Invite Status</h2>
-                        <span class="badge">Team invites</span>
+                        <span class="badge-retro">Team invites</span>
                     </div>
-                    <div class="status-grid">
-                        <div class="status-card pending">
+                    <div class="status-grid-retro">
+                        <div class="status-card-retro pending">
                             <h3>Pending</h3>
                             <p><%= inviteSummary ? inviteSummary.pending : 0 %></p>
                         </div>
-                        <div class="status-card accepted">
+                        <div class="status-card-retro accepted">
                             <h3>Accepted</h3>
                             <p><%= inviteSummary ? inviteSummary.accepted : 0 %></p>
                         </div>
-                        <div class="status-card expired">
+                        <div class="status-card-retro expired">
                             <h3>Expired</h3>
                             <p><%= inviteSummary ? inviteSummary.expired : 0 %></p>
                         </div>
                     </div>
                 </section>
 
+                <!-- Core Analytics Workspace (SVG Chart and Referrers/Invites) -->
                 <!-- Analytics + Invite -->
                 <div class="analytics-grid">
-                    <section class="panel">
-                        <div class="panel-head">
+                    
+                    <!-- Left: SVG Line Chart -->
+                    <section class="panel-retro">
+                        <div class="panel-retro-title-row">
                             <h2>Clicks Overview</h2>
                             <select class="select-pill" aria-label="Analytics range">
                                 <option>Last 7 Days</option>
@@ -992,9 +1659,112 @@
                         </div>
                         <div class="chart-wrap" style="position: relative; height: 280px; width: 100%;">
                             <canvas id="clicksChart"></canvas>
+                        
+                        <div class="chart-wrap">
+                            <svg class="line-chart" viewBox="0 0 720 280" role="img" aria-label="Clicks overview chart">
+                                <defs>
+                                    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
+                                        <stop offset="0%"   stop-color="#22d3ee" stop-opacity="0.22"></stop>
+                                        <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.02"></stop>
+                                    </linearGradient>
+                                </defs>
+                                <path class="chart-grid" d="M70 28H700M70 88H700M70 148H700M70 208H700"></path>
+                                <text class="chart-y" x="24" y="32">400</text>
+                                <text class="chart-y" x="24" y="92">300</text>
+                                <text class="chart-y" x="24" y="152">200</text>
+                                <text class="chart-y" x="24" y="212">100</text>
+                                <text class="chart-y" x="36" y="262">0</text>
+                                <path class="chart-area" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92 L690 250 L90 250 Z"></path>
+                                <path class="chart-line" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92"></path>
+                                <circle class="chart-dot" cx="90"  cy="208" r="6"></circle>
+                                <circle class="chart-dot" cx="190" cy="182" r="6"></circle>
+                                <circle class="chart-dot" cx="290" cy="122" r="6"></circle>
+                                <circle class="chart-dot" cx="390" cy="164" r="6"></circle>
+                                <circle class="chart-dot" cx="490" cy="62"  r="6"></circle>
+                                <circle class="chart-dot" cx="590" cy="142" r="6"></circle>
+                                <circle class="chart-dot" cx="690" cy="92"  r="6"></circle>
+                                <text class="chart-label" x="72"  y="270">18 May</text>
+                                <text class="chart-label" x="172" y="270">19 May</text>
+                                <text class="chart-label" x="272" y="270">20 May</text>
+                                <text class="chart-label" x="372" y="270">21 May</text>
+                                <text class="chart-label" x="472" y="270">22 May</text>
+                                <text class="chart-label" x="572" y="270">23 May</text>
+                                <text class="chart-label" x="672" y="270">24 May</text>
+                            </svg>
                         </div>
                     </section>
 
+                    <!-- Right: Accept invite form & Top Referrers donut chart -->
+                    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+                        
+                        <!-- Accept Team Invite -->
+                        <section class="panel-retro invite-panel">
+                            <div class="panel-retro-title-row">
+                                <h2>Accept Invite</h2>
+                                <span class="badge-retro">Team</span>
+                            </div>
+                            <p>Paste a collaboration invite token below to accept your invitation into CreatorOS.</p>
+                            <% if (inviteAcceptMessage) { %>
+                                <div class="message-box message-success">
+                                    <%= inviteAcceptMessage %>
+                                </div>
+                            <% } %>
+                            <% if (inviteAcceptError) { %>
+                                <div class="message-box message-error">
+                                    <%= inviteAcceptError %>
+                                </div>
+                            <% } %>
+                            <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+                                <label for="invite-token" class="sr-only">Invite Token</label>
+                                <input id="invite-token" type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
+                                <button type="submit">Accept</button>
+                            </form>
+                        </section>
+
+                        <!-- Top Referrers Donut Chart -->
+                        <section class="panel-retro">
+                            <div class="panel-retro-title-row">
+                                <h2>Top Referrers</h2>
+                            </div>
+                            <div class="donut-layout">
+                                <div class="donut" aria-label="Top referrers chart"></div>
+                                <div class="legend">
+                                    <div class="legend-row">
+                                        <span class="legend-label-col">
+                                            <span class="legend-dot" style="background:var(--accent-teal)"></span>
+                                            <span>Direct</span>
+                                        </span>
+                                        <strong>65%</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span class="legend-label-col">
+                                            <span class="legend-dot" style="background:var(--accent-blue)"></span>
+                                            <span>Google</span>
+                                        </span>
+                                        <strong>20%</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span class="legend-label-col">
+                                            <span class="legend-dot" style="background:var(--success)"></span>
+                                            <span>Twitter</span>
+                                        </span>
+                                        <strong>7%</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span class="legend-label-col">
+                                            <span class="legend-dot" style="background:var(--accent-yellow)"></span>
+                                            <span>Instagram</span>
+                                        </span>
+                                        <strong>5%</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span class="legend-label-col">
+                                            <span class="legend-dot" style="background:var(--muted-2)"></span>
+                                            <span>Others</span>
+                                        </span>
+                                        <strong>3%</strong>
+                                    </div>
+                                </div>
                     <section class="panel invite-panel">
                         <div class="panel-head">
                             <h2>Accept an invitation</h2>
@@ -1022,8 +1792,24 @@
                             <canvas id="referrersChart"></canvas>
                         </div>
                     </section>
+                        <div class="donut-layout">
+                            <div class="donut" aria-label="Top referrers chart"></div>
+                            <div class="legend">
+                                <div class="legend-row"><span class="legend-dot" style="background:#22d3ee"></span><span>Direct</span><strong>65%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#38bdf8"></span><span>Google</span><strong>20%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#22c55e"></span><span>Twitter</span><strong>7%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#f59e0b"></span><span>Instagram</span><strong>5%</strong></div>
+                                <div class="legend-row"><span class="legend-dot" style="background:#64748b"></span><span>Others</span><strong>3%</strong></div>
+                            </div>
+                        </section>
+                        
+                    </div>
+
                 </div>
 
+                <!-- Recent Links Section (My Links Page subset) -->
+                <section class="panel-retro table-panel-retro" id="recent-links">
+                    <div class="table-head-retro">
                 <!-- Recent Links Table -->
                 <section class="panel table-panel" id="recent-links">
                     <div class="table-head">
@@ -1031,7 +1817,7 @@
                         <a href="/services/url-shortener">View all links</a>
                     </div>
                     <div class="table-scroll">
-                        <table>
+                        <table class="recent-links-table">
                             <thead>
                                 <tr>
                                     <th>Original URL</th>
@@ -1089,15 +1875,179 @@
                                         </tr>
                                     <% }) %>
                                 <% } %>
+                                <tr>
+                                    <td>https://example.com/awesome-video</td>
+                                    <td class="short-url">creatoros.link/abc123</td>
+                                    <td style="font-weight: 700;">342</td>
+                                    <td>24 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
+                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
+                                            </a>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
+                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>342</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>24 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <!-- QR button — data-shortid & data-shorturl drive the modal -->
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="abc123"
+                                                data-shorturl="https://creatoros.link/abc123">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>https://blog.example.com/seo-tips</td>
+                                    <td class="short-url">creatoros.link/def456</td>
+                                    <td style="font-weight: 700;">178</td>
+                                    <td>23 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
+                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
+                                            </a>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
+                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>178</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>23 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="def456"
+                                                data-shorturl="https://creatoros.link/def456">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>https://youtu.be/dQw4w9WgXcQ</td>
+                                    <td class="short-url">creatoros.link/ghi789</td>
+                                    <td style="font-weight: 700;">98</td>
+                                    <td>22 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
+                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
+                                            </a>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
+                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                                    <td>98</td>
+                                    <td><span class="qr-badge">Ready</span></td>
+                                    <td>22 May 2025</td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M4 19V5"></path>
+                                                    <path d="M9 19v-6"></path>
+                                                    <path d="M14 19V9"></path>
+                                                    <path d="M19 19V3"></path>
+                                                </svg>
+                                            </a>
+                                            <button
+                                                class="row-action qr-trigger"
+                                                aria-label="Show QR code"
+                                                title="QR Code"
+                                                data-shortid="ghi789"
+                                                data-shorturl="https://creatoros.link/ghi789">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                                                    <path d="M14 14h.01"></path>
+                                                    <path d="M14 17h3"></path>
+                                                    <path d="M17 14v3"></path>
+                                                    <path d="M20 14h.01"></path>
+                                                    <path d="M20 17h.01"></path>
+                                                    <path d="M20 20h.01"></path>
+                                                    <path d="M17 20h.01"></path>
+                                                </svg>
+                                            </button>
+                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
+                
             </section>
         
         </main>
     </div>
 
+    <script>
+        // Collapsible sidebar behavior
+        const dashboardLayout = document.getElementById('dashboardLayout');
     <!-- ── QR Modal ──────────────────────────────────────────────────────────── -->
     <div class="qr-modal-wrap" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
         <div class="qr-backdrop" id="qrBackdrop"></div>
@@ -1321,6 +2271,50 @@
                 </svg>
                 Apply Colors`;
         });
+        
+        // Theme toggle mechanism
+        const toggleBtn = document.getElementById("theme-toggle");
+
+        toggleBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+
+            if (document.body.classList.contains("dark-mode")) {
+                localStorage.setItem("theme", "dark");
+                toggleBtn.innerText = "☀️";
+            } else {
+                localStorage.setItem("theme", "light");
+                toggleBtn.innerText = "🌙";
+            }
+        });
+
+        window.onload = () => {
+            const savedTheme = localStorage.getItem("theme");
+
+            if (savedTheme === "dark") {
+                document.body.classList.add("dark-mode");
+                toggleBtn.innerText = "☀️";
+            } else {
+                document.body.classList.remove("dark-mode");
+                toggleBtn.innerText = "🌙";
+            }
+        };
+
+        // Live Table Search Filtering
+        const searchInput = document.getElementById('search-links-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('.recent-links-table tbody tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
 
         // ── Trigger buttons in table ────────────────────────────────────────
         document.querySelectorAll('.qr-trigger').forEach((btn) => {
