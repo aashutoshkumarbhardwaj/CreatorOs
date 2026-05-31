@@ -86,6 +86,23 @@ const userSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         }],
+
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+
+        verificationToken: {
+            type: String,
+            sparse: true,
+            unique: true,
+            index: true,
+        },
+
+        verificationTokenExpiry: {
+            type: Date,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -125,6 +142,10 @@ class MockUserModel {
             cardBrand: 'VISA',
             cardLast4: '4242',
         };
+        
+        this.isVerified = data.isVerified !== undefined ? data.isVerified : false;
+        this.verificationToken = data.verificationToken || null;
+        this.verificationTokenExpiry = data.verificationTokenExpiry || null;
         
         this.createdAt = new Date();
         this.updatedAt = new Date();
@@ -201,6 +222,9 @@ class MockUserModel {
         alias: "@test_creator",
         bio: "Test user bio goes here.",
         twoFactorEnabled: false,
+        isVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
         preferences: {
             appearanceMode: 'light',
             interfaceDensity: 'tactile',

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Verify Email | CreatorOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #fdf4e3;
+            --white: #FFFFFF;
+            --black: #000000;
+            --teal: #34D399;
+            --teal-hover: #10B981;
+            --green: #10B981;
+            --red: #EF4444;
+            
+            --border-width: 3px;
+            --shadow-ink: var(--black);
+            --shadow-md: 4px 4px 0px 0px var(--shadow-ink);
+            --shadow-lg: 6px 6px 0px 0px var(--shadow-ink);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            color: var(--black);
+            background-color: var(--cream);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--white);
+            border: var(--border-width) solid var(--black);
+            box-shadow: var(--shadow-lg);
+            padding: 3rem;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-family: 'Petrona', serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .success .status-icon {
+            color: var(--green);
+        }
+
+        .error .status-icon {
+            color: var(--red);
+        }
+
+        .message {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .message.success {
+            color: var(--green);
+        }
+
+        .message.error {
+            color: var(--red);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 700;
+            text-align: center;
+            border: var(--border-width) solid var(--black);
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0px 0px var(--shadow-ink);
+        }
+
+        .btn-primary {
+            background-color: var(--teal);
+            color: var(--black);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--teal-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--cream);
+            color: var(--black);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f0e5d0;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #999;
+        }
+
+        .small-text {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .expired-section {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-top: 1.5rem;
+        }
+
+        .expired-section p {
+            margin-bottom: 1rem;
+            color: var(--black);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="header success">
+                <div class="status-icon">✓</div>
+                <h1>Email Verified!</h1>
+            </div>
+            <div class="message success">
+                <%= success %>
+            </div>
+            <div class="actions">
+                <a href="/login" class="btn btn-primary">Go to Login</a>
+            </div>
+        <% } else if (typeof error !== 'undefined' && error) { %>
+            <div class="header error">
+                <div class="status-icon">✗</div>
+                <h1><%= expiredToken ? 'Link Expired' : 'Verification Failed' %></h1>
+            </div>
+            <div class="message error">
+                <%= error %>
+            </div>
+            
+            <% if (expiredToken && userEmail) { %>
+                <div class="expired-section">
+                    <p>Your verification link has expired. Request a new one below:</p>
+                </div>
+            <% } %>
+
+            <div class="actions">
+                <% if (expiredToken && userEmail) { %>
+                    <form method="POST" action="/resend-verification">
+                        <input type="hidden" name="email" value="<%= userEmail %>">
+                        <button type="submit" class="btn btn-primary" style="width: 100%; border: none;">
+                            Resend Verification Email
+                        </button>
+                    </form>
+                <% } %>
+                <a href="/signup" class="btn btn-secondary">Back to Signup</a>
+            </div>
+        <% } else { %>
+            <div class="header">
+                <h1>Email Verification</h1>
+            </div>
+            <div class="message">
+                <p>Processing your verification link...</p>
+                <p class="small-text">If you were redirected here, check the URL in your browser address bar to make sure it's correct.</p>
+            </div>
+            <div class="actions">
+                <a href="/resend-verification" class="btn btn-primary">Resend Verification Email</a>
+                <a href="/login" class="btn btn-secondary">Back to Login</a>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

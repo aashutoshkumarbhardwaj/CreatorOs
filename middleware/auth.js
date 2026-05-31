@@ -22,6 +22,18 @@ const protect = async (req, res, next) => {
             if (!session) {
                 return res.redirect("/login");
             }
+        } else {
+            // For regular users, check if email is verified
+            const User = require("../model/user");
+            const user = await User.findOne({ email: decoded.email });
+
+            if (!user) {
+                return res.redirect("/login");
+            }
+
+            if (!user.isVerified) {
+                return res.status(403).redirect("/resend-verification");
+            }
         }
 
         req.user = decoded;

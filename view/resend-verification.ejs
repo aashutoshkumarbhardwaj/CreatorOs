@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Resend Verification | CreatorOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #fdf4e3;
+            --white: #FFFFFF;
+            --black: #000000;
+            --teal: #34D399;
+            --teal-hover: #10B981;
+            --green: #10B981;
+            --red: #EF4444;
+            
+            --border-width: 3px;
+            --shadow-ink: var(--black);
+            --shadow-md: 4px 4px 0px 0px var(--shadow-ink);
+            --shadow-lg: 6px 6px 0px 0px var(--shadow-ink);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            color: var(--black);
+            background-color: var(--cream);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--white);
+            border: var(--border-width) solid var(--black);
+            box-shadow: var(--shadow-lg);
+            padding: 3rem;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-family: 'Petrona', serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .success .status-icon {
+            color: var(--green);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            border: 2px solid;
+        }
+
+        .alert.success {
+            background-color: #dcfce7;
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .alert.error {
+            background-color: #fee2e2;
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            border: var(--border-width) solid var(--black);
+            border-radius: 4px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+
+        input[type="email"]:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            background-color: #f5f5f5;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button, .btn {
+            display: inline-block;
+            padding: 14px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 700;
+            text-align: center;
+            border: var(--border-width) solid var(--black);
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        button:hover, .btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        button:active, .btn:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0px 0px var(--shadow-ink);
+        }
+
+        button {
+            background-color: var(--teal);
+            color: var(--black);
+        }
+
+        button:hover {
+            background-color: var(--teal-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--cream);
+            color: var(--black);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f0e5d0;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #999;
+        }
+
+        .help-text {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Resend Verification Email</h1>
+            <p>Enter your email address to receive a new verification link</p>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="alert error">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="alert success">
+                <%= success %>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="margin-bottom: 1rem;">Check your email for a verification link to activate your account.</p>
+                <a href="/login" class="btn btn-secondary">Back to Login</a>
+            </div>
+        <% } else { %>
+            <form method="POST" action="/resend-verification">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                    >
+                    <p class="help-text">We'll send a verification link to this address.</p>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Send Verification Email</button>
+                    <a href="/login" class="btn btn-secondary">Back to Login</a>
+                </div>
+            </form>
+
+            <div class="divider">
+                <p>Don't have an account? <a href="/signup">Sign up here</a></p>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

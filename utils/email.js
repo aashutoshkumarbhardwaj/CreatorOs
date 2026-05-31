@@ -87,6 +87,51 @@ If the link does not work, paste it into your browser.`;
   });
 }
 
+async function sendVerificationEmail({ to, verificationLink, userName }) {
+  const transporter = createTransporter();
+  const from = EMAIL_FROM || EMAIL_USER;
+  const fromName = EMAIL_FROM_NAME || 'CreatorOS';
+  const replyTo = EMAIL_REPLY_TO || from;
+  const subject = 'Verify Your CreatorOS Account';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+      <h2 style="color: #0f172a;">Verify Your Email Address</h2>
+      <p>Hi ${userName || 'there'},</p>
+      <p>Welcome to CreatorOS! Please verify your email address to activate your account.</p>
+      <p style="text-align:center; margin: 32px 0;">
+        <a href="${verificationLink}" style="display:inline-block; padding:14px 24px; background:#22d3ee; color:#0f172a; text-decoration:none; border-radius:999px; font-weight:700;">Verify Email Address</a>
+      </p>
+      <p style="color:#666; font-size:14px;">This link will expire in 24 hours. If you did not create this account, you can ignore this email.</p>
+      <p style="color:#666; font-size:14px;">If the button does not work, paste this URL into your browser:</p>
+      <p style="color:#2563eb; word-break:break-all;"><a href="${verificationLink}" style="color:#2563eb;">${verificationLink}</a></p>
+      <p>Best regards,<br />CreatorOS Team</p>
+    </div>
+  `;
+
+  const text = `Welcome to CreatorOS! 
+
+Please verify your email address by clicking this link:
+${verificationLink}
+
+This link will expire in 24 hours.
+
+If you did not create this account, you can ignore this email.
+
+Best regards,
+CreatorOS Team`;
+
+  return transporter.sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    replyTo,
+    subject,
+    text,
+    html,
+  });
+}
+
 module.exports = {
   sendInvitationEmail,
+  sendVerificationEmail,
 };

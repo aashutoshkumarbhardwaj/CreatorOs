@@ -342,6 +342,58 @@
             box-shadow: 4px 4px 0px 0px #ef4444;
         }
 
+        .auth-success {
+            background-color: #f0fdf4;
+            border: 2px solid #22c55e;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #166534;
+            font-weight: 600;
+            box-shadow: 4px 4px 0px 0px #22c55e;
+        }
+
+        .auth-success h3 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #166534;
+        }
+
+        .auth-success p {
+            margin: 0.5rem 0;
+            line-height: 1.6;
+        }
+
+        .success-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .success-actions a {
+            display: inline-block;
+            padding: 1rem;
+            text-align: center;
+            background-color: var(--teal);
+            color: var(--black);
+            text-decoration: none;
+            font-weight: 700;
+            border: var(--border-width) solid var(--black);
+            box-shadow: var(--shadow-solid);
+            transition: all 0.15s ease;
+        }
+
+        .success-actions a:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .success-actions a:active {
+            transform: translate(2px, 2px);
+            box-shadow: var(--shadow-active);
+        }
+
         .switch-link {
             text-align: center;
             margin-top: 2rem;
@@ -423,36 +475,47 @@
                 <h2>Identity</h2>
                 <p>Tell us who is behind the masterpiece.</p>
 
-                <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="auth-error" role="alert">
-                        <%= error %>
+                <% if (typeof success !== 'undefined' && success) { %>
+                    <div class="auth-success" role="alert">
+                        <h3>✓ Account Created!</h3>
+                        <p><%= success %></p>
+                        <div class="success-actions">
+                            <a href="/resend-verification">Resend Verification Email</a>
+                            <a href="/login">Back to Login</a>
+                        </div>
                     </div>
+                <% } else { %>
+                    <% if (typeof error !== 'undefined' && error) { %>
+                        <div class="auth-error" role="alert">
+                            <%= error %>
+                        </div>
+                    <% } %>
+
+                    <form action="/signup" method="POST">
+                        <div class="form-group">
+                            <label for="signup-name">Full Name</label>
+                            <input id="signup-name" type="text" name="name" placeholder="e.g. Alex Rivera" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signup-email">Email Address</label>
+                            <input id="signup-email" type="email" name="email" placeholder="e.g. alex@creator.os" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <input id="signup-password" type="password" name="password" placeholder="••••••••" required>
+                        </div>
+
+                        <button type="submit" class="primary">
+                            Continue to Dashboard &rarr;
+                        </button>
+                    </form>
+
+                    <p class="switch-link">
+                        Already have an account? <a href="/login">Login</a>
+                    </p>
                 <% } %>
-
-                <form action="/signup" method="POST">
-                    <div class="form-group">
-                        <label for="signup-name">Full Name</label>
-                        <input id="signup-name" type="text" name="name" placeholder="e.g. Alex Rivera" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="signup-email">Email Address</label>
-                        <input id="signup-email" type="email" name="email" placeholder="e.g. alex@creator.os" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <input id="signup-password" type="password" name="password" placeholder="••••••••" required>
-                    </div>
-
-                    <button type="submit" class="primary">
-                        Continue to Dashboard &rarr;
-                    </button>
-                </form>
-
-                <p class="switch-link">
-                    Already have an account? <a href="/login">Login</a>
-                </p>
             </div>
         </section>
     </main>
