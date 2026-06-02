@@ -222,6 +222,7 @@
             flex-shrink: 0;
             stroke: currentColor;
             fill: none;
+        }
         .nav-link:hover, .service-link:hover {
             transform: translateX(4px);
             color: #67e8f9;
@@ -335,6 +336,7 @@
         .menu-btn {
             width: 2.2rem;
             height: 2.2rem;
+        }
         .menu-btn, .icon-btn {
             width: 2.55rem;
             height: 2.55rem;
@@ -542,6 +544,7 @@
             flex-direction: column;
             position: relative;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
         .stat-card, .panel {
             border: 1px solid var(--border);
             border-radius: 0.9rem;
@@ -1034,6 +1037,7 @@
         .short-url {
             color: var(--accent-teal);
             font-weight: 700;
+        }
         .table-head h2 { margin: 0; font-size: 1.25rem; }
         .table-head a  { color: var(--purple); text-decoration: none; font-weight: 700; }
 
@@ -1449,9 +1453,7 @@
             <!-- Services section -->
             <nav class="sidebar-section" aria-label="Services">
                 <p class="sidebar-label">Services</p>
-                <% services.forEach((service)=> { %>
-                    <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
-                        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"></path></svg>
+
                 <% services.forEach((service) => { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -1814,7 +1816,7 @@
                 <section class="panel table-panel" id="recent-links">
                     <div class="table-head">
                         <h2>Recent Links</h2>
-                        <a href="/my-links">View all links</a>
+                        <a href="/services/url-shortener">View all links</a>
                     </div>
                     <div class="table-scroll">
                         <table class="recent-links-table">
@@ -2045,9 +2047,7 @@
         </main>
     </div>
 
-    <script>
-        // Collapsible sidebar behavior
-        const dashboardLayout = document.getElementById('dashboardLayout');
+
     <!-- ── QR Modal ──────────────────────────────────────────────────────────── -->
     <div class="qr-modal-wrap" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
         <div class="qr-backdrop" id="qrBackdrop"></div>

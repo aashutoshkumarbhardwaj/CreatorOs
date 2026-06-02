@@ -10,22 +10,6 @@ const urlSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-
-    userId: {
-        type: String,
-        index: true,
-    },
-
-    title: {
-        type: String,
-    },
-
-    tag: {
-        type: String,
-        enum: ["active", "social", "campaign", "general"],
-        default: "active",
-    },
-
     campaignName: {
         type: String,
         default: "Untitled Campaign",
@@ -34,13 +18,6 @@ const urlSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-
-    linkedAt: {
-        type: Date,
-        default: Date.now,
-    },
-
-    createdAt: [
     qrFgColor: {
         type: String,
         default: "#1a1a1a",
@@ -92,7 +69,6 @@ class MockUrlModel {
 
     async save() {
         const existing = mockUrls.find((u) => u.shortId === this.shortId);
-
         if (existing) {
             Object.assign(existing, this);
         } else {
@@ -149,4 +125,22 @@ class MockUrlModel {
     }
 }
 
-module.exports = process.env.USE_MOCK_DB === "true" ? MockUrlModel : MongooseUrlModel;
+function getActiveUrlModel() {
+    return process.env.USE_MOCK_DB === "true"
+        ? MockUrlModel
+        : MongooseUrlModel;
+}
+
+function UrlModel(data) {
+    const ActiveUrlModel = getActiveUrlModel();
+    return new ActiveUrlModel(data);
+}
+
+UrlModel.findOne = (...args) => getActiveUrlModel().findOne(...args);
+UrlModel.create = (...args) => getActiveUrlModel().create(...args);
+UrlModel.findById = (...args) => getActiveUrlModel().findById(...args);
+UrlModel.findOneAndUpdate = (...args) => getActiveUrlModel().findOneAndUpdate(...args);
+UrlModel.find = (...args) => getActiveUrlModel().find(...args);
+UrlModel.findByIdAndDelete = (...args) => getActiveUrlModel().findByIdAndDelete(...args);
+
+module.exports = UrlModel;

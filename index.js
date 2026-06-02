@@ -3,7 +3,6 @@ const cookieParser = require("cookie-parser");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
-const services = require('./services.config');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -29,9 +28,6 @@ const authRoutes = require("./routes/auth");
 const collaborationRoutes = require('./routes/collaboration');
 const analyticsRoutes = require("./routes/analytics");
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
-const { loginLimiter, uploadLimiter, urlShortenerPageLimiter } = require('./middleware/rateLimiters');
-const { wantsHtml } = require('./utils/requestType');
-const { findServiceByKey, buildShortenerViewModel } = require('./utils/viewModels');
 
 connectDB();
 require("./workers/analyticsRefreshWorker");
@@ -43,7 +39,26 @@ app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
 
+const rateLimit = require('express-rate-limit');
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    message: 'Too many login attempts, please try again later.'
+});
 app.post('/login', loginLimiter);
+
+const uploadLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    message: { error: 'Upload limit reached, please try again later.' }
+});
+
+const urlShortenerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 30,
+    message: 'Too many URLs generated, please try again later.'
+});
 
 app.use("/", authRoutes);
 
@@ -54,18 +69,17 @@ const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
 const shortid = require('shortid');
 const multer = require('multer');
+const services = require('./services.config');
 const User = require('./model/user');
 const Invite = require('./model/invite');
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
-const instagramRoutes = require('./routes/instagram');
 const asyncHandler = require('./utils/asyncHandler');
 
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
-app.use('/api/instagram', protect, instagramRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
@@ -90,10 +104,19 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + sanitizedFilename); 
     }
 });
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 } 
-});
+const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+function findServiceByKey(key) {
+    return services.find((service) => service.key === key);
+}
+
+function buildShortenerViewModel(req, shortId = null, error = null) {
+    return {
+        service: findServiceByKey('url-shortener'),
+        shortUrl: shortId ? `${req.protocol}://${req.get('host')}/u/${shortId}` : null,
+        error,
+    };
+}
 
 function buildAccountViewModel(userDoc, fallbackUser) {
     const name = userDoc?.name || fallbackUser?.name || 'Creator';
@@ -163,35 +186,45 @@ function buildAnalyticsViewModel() {
         isLoading: false,
         isEmpty: false,
         selectedRange: 'Last 30 days',
-        lastUpdated: null,
+        lastUpdated: '25 May 2026, 5:30 PM',
         profile: {
-            name: 'Profile not fetched',
-            handle: '@username',
-            category: 'Instagram public profile',
-            bio: 'Enter an Instagram username and click Analyze to fetch public profile details through the configured public-profile provider.',
-            avatarInitials: 'IG',
-            followers: '--',
-            following: '--',
-            totalPosts: '--',
-            growthLabel: 'Awaiting profile',
+            name: 'Aarav Studio',
+            handle: '@aaravstudio',
+            category: 'Digital creator',
+            bio: 'Short-form creator sharing design systems, creator workflows, and behind-the-scenes builds.',
+            avatarInitials: 'AS',
+            followers: '128.4K',
+            following: '642',
+            totalPosts: '318',
+            growthLabel: '+8.6%',
         },
         metrics: [
-            { label: 'Followers', value: '--', change: 'Fetch profile', tone: 'cyan' },
-            { label: 'Engagement rate', value: '--', change: 'Pending analytics', tone: 'green' },
-            { label: 'Avg. likes', value: '--', change: 'Pending posts', tone: 'blue' },
-            { label: 'Avg. comments', value: '--', change: 'Pending posts', tone: 'orange' },
-            { label: 'Posting frequency', value: '--', change: 'Pending history', tone: 'violet' },
-            { label: 'Best post', value: '--', change: 'Pending posts', tone: 'pink' },
+            { label: 'Followers', value: '128.4K', change: '+8.6%', tone: 'cyan' },
+            { label: 'Engagement rate', value: '6.82%', change: '+1.2%', tone: 'green' },
+            { label: 'Avg. likes', value: '8.7K', change: '+940', tone: 'blue' },
+            { label: 'Avg. comments', value: '412', change: '+38', tone: 'orange' },
+            { label: 'Posting frequency', value: '5.4/wk', change: 'Consistent', tone: 'violet' },
+            { label: 'Best post', value: '14.9%', change: 'Engagement', tone: 'pink' },
         ],
         charts: {
-            labels: ['Start', 'Profile fetched', 'Snapshot 1', 'Snapshot 2', 'Snapshot 3'],
-            followers: [0, 0, 0, 0, 0],
-            engagement: [0, 0, 0, 0, 0],
-            posts: ['No posts'],
-            postPerformance: [0],
+            labels: ['Apr 26', 'May 1', 'May 6', 'May 11', 'May 16', 'May 21', 'May 25'],
+            followers: [113200, 115400, 118900, 120500, 123300, 126100, 128400],
+            engagement: [5.4, 5.9, 6.1, 5.7, 6.4, 6.6, 6.82],
+            posts: ['Launch reel', 'Carousel tips', 'Studio vlog', 'Template drop', 'AMA clip'],
+            postPerformance: [14900, 12100, 9800, 8700, 7600],
         },
-        topPosts: [],
-        timeline: [],
+        topPosts: [
+            { title: 'How I plan 30 days of content', type: 'Reel', likes: '14.2K', comments: '612', engagement: '14.9%', date: '24 May' },
+            { title: 'Creator OS desk setup walkthrough', type: 'Carousel', likes: '11.8K', comments: '488', engagement: '12.4%', date: '22 May' },
+            { title: '5 hooks that increased watch time', type: 'Reel', likes: '9.6K', comments: '371', engagement: '10.1%', date: '19 May' },
+            { title: 'Behind the scenes: newsletter build', type: 'Post', likes: '7.4K', comments: '284', engagement: '8.7%', date: '16 May' },
+        ],
+        timeline: [
+            { title: 'Top post detected', detail: 'Planning reel crossed 14.9% engagement.', time: 'Today, 4:20 PM' },
+            { title: 'Audience growth spike', detail: 'Followers increased by 2.3K over the last 48 hours.', time: 'Today, 11:10 AM' },
+            { title: 'Weekly consistency check', detail: 'Posting cadence stayed above 5 posts per week.', time: 'Yesterday' },
+            { title: 'Profile snapshot saved', detail: 'Mock analytics snapshot prepared for dashboard UI.', time: '24 May' },
+        ],
     };
 }
 
@@ -241,35 +274,7 @@ app.get("/dashboard", protect, asyncHandler(async (req, res) => {
     });
 }));
 
-app.get("/my-links", protect, async (req, res) => {
-    const userDoc = isGuestContributor(req.user)
-        ? null
-        : await User.findById(req.user.id).select('name email').lean();
-
-    const host = req.get('host');
-    const domain = host || 'creatoros.link';
-
-    res.render("my-links", {
-        user: buildAccountViewModel(userDoc, req.user),
-        isGuestContributor: isGuestContributor(req.user),
-        domain,
-    });
-});
-
-app.get("/settings", protect, async (req, res) => {
-    const userDoc = isGuestContributor(req.user)
-        ? null
-        : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
-            .lean();
-
-    res.render("settings", {
-        user: buildAccountViewModel(userDoc, req.user),
-        isGuestContributor: isGuestContributor(req.user),
-    });
-});
-
-app.get("/profile", protect, async (req, res) => {
+app.get("/profile", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id).select('name email').lean();
@@ -286,6 +291,7 @@ app.get('/services', (req, res) => {
 });
 
 // Protected service pages
+
 app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     const service = findServiceByKey(req.params.serviceKey);
 
@@ -298,6 +304,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
             },
         });
     }
+
 
     if (service.status !== 'available') {
         return res.render('coming-soon', { service });
@@ -333,119 +340,64 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     }
 
     return res.render('coming-soon', { service });
-
 }));
 
 const { isValidUrl } = require('./utils/validators');
 
-app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerPageLimiter, asyncHandler(async (req, res) => {
+app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
     const { redirectUrl } = req.body;
     if (!redirectUrl || !isValidUrl(redirectUrl)) {
         return res.render('home', buildShortenerViewModel(req, null, 'Please enter a valid HTTP or HTTPS URL.'));
     }
 
-    const shortId = shortid();
+    try {
+        const shortId = shortid();
 
         await Url.create({
             shortId,
             redirectUrl,
-            userId: req.user?.id || null,
-            linkedAt: new Date(),
         });
 
-    return res.render('home', buildShortenerViewModel(req, shortId));
-}));
+        return res.render('home', buildShortenerViewModel(req, shortId));
+    } catch (err) {
+        console.error('Error creating short URL:', err);
+        return res.render('home', buildShortenerViewModel(req, null, 'An unexpected error occurred.'));
+    }
+});
 
 app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded', error: 'No file uploaded' });
+        return res.status(400).json({ error: 'No file uploaded' });
     }
     return res.json({
-        success: true,
         filename: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
 });
-// ── Mock Instagram Graph API Endpoint ──────────────────────────────────────
-app.get('/api/instagram/profile', protect, preventContributorWrites, asyncHandler(async (req, res) => {
-    const { username } = req.query;
-    if (!username) {
-        return res.status(400).json({ success: false, error: { message: 'Username is required' } });
-    }
-
-    // Generate dynamic mock data based on the requested username
-    const followersBase = Math.floor(Math.random() * 500000) + 10000;
-    
-    // Generate 90 days of mock chart data to support the date range filter
-    const labels = [];
-    const followers = [];
-    const engagement = [];
-    
-    const now = new Date();
-    for (let i = 89; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        
-        // Simulating some realistic growth/fluctuations
-        const dayFollowers = followersBase - (i * (Math.random() * 500 + 100));
-        followers.push(Math.max(0, Math.floor(dayFollowers)));
-        
-        const dayEngagement = (Math.random() * 4 + 3).toFixed(2); // 3% to 7%
-        engagement.push(parseFloat(dayEngagement));
-    }
-
-    const posts = ['Reel: Morning Routine', 'Carousel: Setup Tour', 'Photo: NYC', 'Reel: Q&A', 'Photo: BTS'];
-    const postPerformance = posts.map(() => Math.floor(Math.random() * 20000) + 1000);
-
-    return res.json({
-        success: true,
-        data: {
-            username: username,
-            name: username.charAt(0).toUpperCase() + username.slice(1),
-            followers: followers[followers.length - 1],
-            following: Math.floor(Math.random() * 1000),
-            totalPosts: Math.floor(Math.random() * 1000),
-            category: 'Digital creator',
-            bio: `Official profile of ${username}. Creating awesome content daily!`,
-            fetchedAt: new Date().toISOString(),
-            profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&size=200&background=random`,
-            charts: {
-                labels,
-                followers,
-                engagement,
-                posts,
-                postPerformance
-            }
-        }
-    });
-}));
 
 // Redirect for generated short URLs
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
 
-    const entry = await Url.findOneAndUpdate(
-        { shortId },
-        {
-            $inc:  { totalClicks: 1 },
-            $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
-        },
-        { new: true }
-    );
+    try {
+        const entry = await Url.findOneAndUpdate(
+            { shortId },
+            {
+                $inc:  { totalClicks: 1 },
+                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+            },
+            { new: true }
+        );
 
-    if (!entry) {
-        if (wantsHtml(req)) {
-            return res.status(404).render('error', {
-                error: 'The short URL you are looking for does not exist or has been removed.'
-            });
-        }
-        return res.status(404).json({ success: false, message: 'URL not found', error: 'URL not found' });
+        if (!entry) return res.status(404).send('URL not found');
+
+        return res.redirect(entry.redirectUrl);
+    } catch (err) {
+        console.error('[redirect]', err);
+        return res.status(500).send('Server error');
     }
-
-    return res.redirect(entry.redirectUrl);
 }));
 
 const errorHandler = require('./middleware/errorHandler');
