@@ -35,6 +35,11 @@ const connectDB = async () => {
     }
 
     if (isPlaceholder) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error("\n❌ FATAL ERROR: MongoDB URI is missing or invalid in production.");
+            console.error("❌ Do not deploy without a valid MONGODB_URI environment variable.");
+            process.exit(1);
+        }
         console.log("\n==================================================");
         console.log("⚠️  MongoDB URI not configured or using placeholder.");
         console.log("👉 CreatorOS is starting in MOCK DATABASE mode.");
@@ -46,13 +51,19 @@ const connectDB = async () => {
 
     try {
         connectionPromise = mongoose.connect(uri, {
-            serverSelectionTimeoutMS: 3000
+            serverSelectionTimeoutMS: 5000 // Slightly longer timeout for production
         });
         await connectionPromise;
 
         console.log("MongoDB Connected Successfully");
     } catch (error) {
         connectionPromise = null;
+        if (process.env.NODE_ENV === 'production') {
+            console.error("\n❌ FATAL ERROR: MongoDB Connection Failed in Production.");
+            console.error("Error specifics:", error.message);
+            console.error("👉 Ensure your MONGODB_URI is correct and the deployment server's IP is whitelisted in your MongoDB cluster (e.g., MongoDB Atlas Network Access).");
+            process.exit(1);
+        }
         console.log("\n==================================================");
         console.log("MongoDB Connection Error:", error.message);
         console.log("👉 CreatorOS is falling back to MOCK DATABASE mode.");
