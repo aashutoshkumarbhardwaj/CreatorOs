@@ -21,47 +21,57 @@
    NEO-BRUTALIST DASHBOARD CSS (STRICTLY FROM DESIGN.MD)
    ========================================================================== */
 :root {
-    /* Base & Neutrals */
-    --base-100: #F8F9FA;
-    --base-600: #4B5563;
-    --base-700: #374151;
-    --base-800: #1F2937;
-    --base-900: #111827;
+    /* Base & Neutrals - Retro Tech Palette */
+    --base-100: #FDF8EC; /* Warm Beige background */
+    --base-600: #71717A;
+    --base-700: #52525B;
+    --base-800: #3F3F46;
+    --base-900: #27272A;
     --black: #000000;
     --white: #FFFFFF;
     
     /* Vibrant Accent Colors */
-    --accent-500: #4338CA; 
-    --accent-600: #3730A3;
-    --warning-500: #F59E0B; 
-    --warning-600: #D97706; 
-    --success-500: #10B981; 
-    --success-600: #059669; 
+    --accent-500: #2DD4BF; /* Teal/Cyan for active nav and primary CTA */
+    --accent-600: #14B8A6;
+    --warning-500: #FEF9C3; /* Pale Yellow for Idea Bank cards */
+    --warning-600: #FEF08A;
+    --success-500: #065F46; /* Dark Green for Upgrade Plan and Active Tabs */
+    --success-600: #047857;
     --danger-500: #EF4444;  
+    
+    /* Panel Colors */
+    --blue-card: #93C5FD;
+    --yellow-card: #FEF9C3;
     
     /* Shadow System */
     --shadow-ink: var(--black);
-    --shadow-sm: 3px 3px 0px 0px var(--shadow-ink);
-    --shadow-md: 4px 4px 0px 0px var(--shadow-ink);
-    --shadow-lg: 6px 6px 0px 0px var(--shadow-ink);
-    --shadow-xl: 8px 8px 0px 0px var(--shadow-ink);
-    --shadow-xxl: 9px 9px 0px 0px var(--shadow-ink);
+    --shadow-sm: 4px 4px 0px 0px var(--shadow-ink);
+    --shadow-md: 6px 6px 0px 0px var(--shadow-ink);
+    --shadow-lg: 8px 8px 0px 0px var(--shadow-ink);
+    --shadow-xl: 10px 10px 0px 0px var(--shadow-ink);
+    --shadow-xxl: 12px 12px 0px 0px var(--shadow-ink);
     
     /* Border System */
     --border-base: 2px solid var(--black);
-    --border-thick: 4px solid var(--black);
+    --border-thick: 3px solid var(--black); /* Slightly thinner than 4px for this specific look */
 }
 
 /* Dark Mode Variables */
 [data-theme="dark"] {
-    --base-100: #111827; /* Dark background */
-    --base-600: #9CA3AF;
-    --base-700: #D1D5DB;
-    --base-800: #F3F4F6;
-    --base-900: #F9FAFB;
-    --black: #FFFFFF; /* Invert black to white for borders */
-    --white: #000000; /* Invert white to black for card backgrounds */
-    --shadow-ink: #FFFFFF; /* Shadows become white in dark mode */
+    --base-100: #1C1917; /* Dark warm gray instead of pure black for beige inversion */
+    --base-600: #A1A1AA;
+    --base-700: #D4D4D8;
+    --base-800: #E4E4E7;
+    --base-900: #F4F4F5;
+    --black: #FFFFFF; 
+    --white: #27272A; 
+    --shadow-ink: #FFFFFF; 
+    
+    /* Keep accent colors legible in dark mode */
+    --accent-500: #2DD4BF; 
+    --success-500: #10B981;
+    --blue-card: #3B82F6;
+    --yellow-card: #A16207;
 }
 
 /* Global Reset */
@@ -186,7 +196,7 @@ h1, h2, h3, h4, .font-display {
 .nav-link:hover, .service-link:hover, .nav-link.active {
     border: var(--border-base);
     background: var(--accent-500);
-    color: var(--white);
+    color: var(--black);
     transform: translate(-2px, -2px);
     box-shadow: var(--shadow-sm);
 }
@@ -198,33 +208,26 @@ h1, h2, h3, h4, .font-display {
     fill: none;
 }
 
-/* Upgrade Box */
+/* Upgrade Box / Button */
 .upgrade-box {
-    background: var(--warning-500);
-    border: var(--border-thick);
-    padding: 1.25rem;
-    box-shadow: var(--shadow-md);
     margin-bottom: 1.5rem;
-    transform: rotate(1deg);
-}
-.upgrade-box h4 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
 }
 .upgrade-btn {
     width: 100%;
-    margin-top: 1rem;
-    background: var(--black);
+    background: var(--success-500);
     color: var(--white);
     border: var(--border-base);
-    padding: 0.5rem;
-    font-weight: 600;
+    padding: 0.85rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
     box-shadow: var(--shadow-sm);
     transition: all 0.15s;
+    font-family: 'Azeret Mono', monospace;
+    letter-spacing: 0.05em;
 }
 .upgrade-btn:hover {
-    background: var(--accent-500);
+    background: var(--success-600);
     transform: translate(-2px, -2px);
     box-shadow: var(--shadow-md);
 }
@@ -311,7 +314,7 @@ h1, h2, h3, h4, .font-display {
 
 .primary-action-btn {
     background: var(--accent-500);
-    color: var(--white);
+    color: var(--black);
     border: var(--border-thick);
     padding: 0.75rem 1.5rem;
     font-family: 'Azeret Mono', monospace;
@@ -416,6 +419,8 @@ h1, h2, h3, h4, .font-display {
     box-shadow: var(--shadow-lg);
     margin-bottom: 2rem;
 }
+.panel-retro.bg-blue { background: var(--blue-card); }
+.panel-retro.bg-yellow { background: var(--yellow-card); }
 .panel-retro-title-row {
     display: flex;
     justify-content: space-between;
@@ -736,7 +741,7 @@ h1, h2, h3, h4, .font-display {
 
                     <!-- Accept Invite -->
                     <div style="display:flex; flex-direction:column; gap:2rem;">
-                        <section class="panel-retro">
+                        <section class="panel-retro bg-blue">
                             <div class="panel-retro-title-row">
                                 <h2>Accept Invite</h2>
                                 <span class="badge-retro">Team</span>
@@ -754,7 +759,7 @@ h1, h2, h3, h4, .font-display {
                             </form>
                         </section>
 
-                        <section class="panel-retro">
+                        <section class="panel-retro bg-yellow">
                             <div class="panel-retro-title-row">
                                 <h2>Top Referrers</h2>
                             </div>
