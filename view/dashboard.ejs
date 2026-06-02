@@ -1410,72 +1410,63 @@
     </style>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
     <div class="dashboard-layout" id="dashboardLayout">
         
-        <!-- Shared Sidebar Redesign -->
-        <aside class="sidebar" aria-label="Dashboard navigation">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
             <a class="brand" href="/dashboard">
                 <span class="brand-mark">CO</span>
                 <div>
                     <span class="brand-text">CreatorOS</span>
                     <span class="brand-version">v2.0 Beta</span>
                 </div>
-                <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">☀️</button>
             </a>
+            
+            <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;margin:auto;"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+            </button>
 
             <!-- Workspace section -->
             <nav class="sidebar-section">
                 <p class="sidebar-label">Workspace</p>
                 <a class="nav-link active" href="/dashboard">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span class="nav-text">Dashboard</span>
                 </a>
-                <a class="nav-link" href="#recent-links">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
+                <a class="nav-link" href="/services/url-shortener">
+                    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
                     <span class="nav-text">My Links</span>
                 </a>
-                <a class="nav-link" href="#analytics">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
+                <a class="nav-link" href="/services/analytics-dashboard">
+                    <svg viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
                     <span class="nav-text">Analytics</span>
                 </a>
-                <a class="nav-link" href="#settings">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
-                    <span class="nav-text">Settings</span>
                 <a class="nav-link" href="/settings">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1.82V22a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.82-.33H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9c.14-.66-.07-1.35-.6-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6c.66-.14 1.35.07 1.82.6V5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6c.66.14 1.35-.07 1.82-.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.66.07 1.35-.6 1.82H20a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path>
-                    </svg>
-                    Settings
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
+                    <span class="nav-text">Settings</span>
                 </a>
             </nav>
 
             <!-- Services section -->
             <nav class="sidebar-section" aria-label="Services">
                 <p class="sidebar-label">Services</p>
-
                 <% services.forEach((service) => { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
-                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                            <path d="M12 3v18"></path>
-                            <path d="M3 12h18"></path>
-                        </svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg>
                         <span class="service-name"><%= service.name %></span>
                     </a>
                 <% }) %>
             </nav>
 
-            <!-- Sidebar footer -->
-            <div class="sidebar-footer">
+            <div class="sidebar-footer" style="margin-top: auto;">
                 <div class="upgrade-box">
                     <h4>Upgrade Plan</h4>
-                    <p>Get access to advanced webhooks & Unlimited Auto-Replies.</p>
-                    <button class="upgrade-btn" type="button">Upgrade Plan</button>
+                    <p style="font-size: 0.9rem;">Get access to advanced webhooks & APIs.</p>
+                    <button class="upgrade-btn" type="button">Upgrade</button>
                 </div>
                 <a class="nav-link" href="/logout">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
                     <span class="nav-text">Logout</span>
                 </a>
             </div>
@@ -1483,52 +1474,32 @@
 
         <!-- Main Workspace Panel -->
         <main class="main">
-            
-            <!-- Shared Top Navigation Redesign -->
+            <!-- Topbar -->
             <header class="topbar">
-                <button class="menu-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" id="sidebarToggle">
+                <button class="menu-btn" type="button" aria-label="Toggle sidebar" id="sidebarToggle">
                     <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
                 </button>
 
                 <div class="search-container">
                     <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-                    <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." aria-label="Search shortened links..." />
+                    <input type="text" id="search-links-input" placeholder="Search shortened links..." />
                 </div>
 
-                <button class="menu-btn" type="button" aria-label="Toggle sidebar" id="sidebarToggle">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M4 6h16"></path>
-                        <path d="M4 12h16"></path>
-                        <path d="M4 18h16"></path>
-                    </svg>
-                </button>
                 <div class="topbar-actions">
-                    <div class="nav-actions-icons">
-                        <button class="action-icon-btn" aria-label="Notifications" type="button">
-                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                        </button>
-                        <button class="action-icon-btn" aria-label="Help" type="button">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
-                        </button>
-                    </div>
-
-                    <a class="profile-chip" href="/profile" aria-label="Open profile">
+                    <button class="action-icon-btn" type="button"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+                    <a class="profile-chip" href="/profile">
                         <span class="avatar"><%= user.initials %></span>
                         <span class="profile-name"><%= user.name %></span>
                     </a>
-                    
                     <a class="primary-action-btn" href="/services/url-shortener">
-                        <svg viewBox="0 0 24 24" style="width:1.1rem; height:1.1rem;"><path d="M12 5v14M5 12h14"></path></svg>
-                        Create New Link
+                        <svg viewBox="0 0 24 24" style="width:1.25rem; height:1.25rem; stroke:currentColor; stroke-width:2.5; fill:none;"><path d="M12 5v14M5 12h14"></path></svg>
+                        Create Link
                     </a>
                 </div>
             </header>
 
-            <!-- Main Content Scroll Area -->
             <section class="content">
-                
                 <!-- Dashboard Head -->
-            <section class="content" id="dashboard-view">
                 <div class="dashboard-head">
                     <div>
                         <h1>Dashboard</h1>
@@ -1536,99 +1507,37 @@
                     </div>
                 </div>
 
-                <!-- Section 1: Statistics Cards Row (Analytics Page subset) -->
-                <!-- Stats -->
+                <!-- Stats Grid -->
                 <div class="stats-grid" id="analytics">
-                    <article class="stat-card">
-                        <div class="stat-icon purple">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path>
-                                <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Total Links</h3>
-                            <p class="stat-value"><%= dashboardData.stats.totalLinks %></p>
-                        </div>
-                        <p class="stat-note">All time</p>
                     <article class="stat-card-retro">
                         <span class="card-id">STAT_01</span>
                         <span class="label">Total Links</span>
-                        <span class="value">32</span>
+                        <span class="value"><%= dashboardData.stats.totalLinks || 32 %></span>
                         <span class="subtext"><span class="trend">+12%</span> from last month</span>
                     </article>
-
                     <article class="stat-card-retro accent-blue">
                         <span class="card-id">STAT_02</span>
                         <span class="label">Total Clicks</span>
-                        <span class="value">1,256</span>
+                        <span class="value"><%= dashboardData.stats.totalClicks || 1256 %></span>
                         <span class="subtext"><span class="trend">+18%</span> from last month</span>
                     </article>
-
                     <article class="stat-card-retro">
                         <span class="card-id">STAT_03</span>
-                        <span class="label">Top Performing Link</span>
-                        <span class="value">423</span>
+                        <span class="label">Top Performing</span>
+                        <span class="value"><%= dashboardData.stats.topPerforming || 423 %></span>
                         <span class="subtext">Clicks accumulated</span>
                     </article>
-
                     <article class="stat-card-retro">
                         <span class="card-id">STAT_04</span>
                         <span class="label">Joined On</span>
-                        <span class="value" style="font-size:1.6rem; margin-top:0.4rem;">24 May 2025</span>
-                        <span class="subtext">2 weeks ago</span>
-                    </article>
-                </div>
-
-                <!-- Invite Status Panel Section -->
-                <section class="panel-retro">
-                    <div class="panel-retro-title-row">
-                    <article class="stat-card">
-                        <div class="stat-icon blue">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Total Clicks</h3>
-                            <p class="stat-value"><%= dashboardData.stats.totalClicks %></p>
-                        </div>
-                        <p class="stat-note">All time</p>
-                    </article>
-                    <article class="stat-card">
-                        <div class="stat-icon green">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                <path d="m3 17 6-6 4 4 8-8"></path>
-                                <path d="M14 7h7v7"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Top Performing</h3>
-                            <p class="stat-value"><%= dashboardData.stats.topPerforming %></p>
-                        </div>
-                        <p class="stat-note">Clicks</p>
-                    </article>
-                    <article class="stat-card">
-                        <div class="stat-icon orange">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                                <path d="M16 2v4"></path>
-                                <path d="M8 2v4"></path>
-                                <path d="M3 10h18"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-content">
-                            <h3>Joined On</h3>
-                            <p class="stat-value"><%= dashboardData.stats.joinedOn %></p>
-                        </div>
-                        <p class="stat-note">CreatorOS user</p>
+                        <span class="value" style="font-size:2.5rem; margin-top:1rem;"><%= dashboardData.stats.joinedOn || '24 May' %></span>
+                        <span class="subtext">Active Creator</span>
                     </article>
                 </div>
 
                 <!-- Invite Status -->
-                <section class="panel" style="margin-bottom:1.5rem;">
-                    <div class="panel-head">
+                <section class="panel-retro">
+                    <div class="panel-retro-title-row">
                         <h2>Invite Status</h2>
                         <span class="badge-retro">Team invites</span>
                     </div>
@@ -1648,177 +1557,57 @@
                     </div>
                 </section>
 
-                <!-- Core Analytics Workspace (SVG Chart and Referrers/Invites) -->
-                <!-- Analytics + Invite -->
                 <div class="analytics-grid">
-                    
-                    <!-- Left: SVG Line Chart -->
+                    <!-- Analytics Graph -->
                     <section class="panel-retro">
                         <div class="panel-retro-title-row">
                             <h2>Clicks Overview</h2>
-                            <select class="select-pill" aria-label="Analytics range">
+                            <select class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.25rem; font-family:'Azeret Mono';">
                                 <option>Last 7 Days</option>
                                 <option>Last 30 Days</option>
                             </select>
                         </div>
-                        <div class="chart-wrap" style="position: relative; height: 280px; width: 100%;">
+                        <div class="chart-wrap" style="height:280px; position:relative;">
                             <canvas id="clicksChart"></canvas>
-                        
-                        <div class="chart-wrap">
-                            <svg class="line-chart" viewBox="0 0 720 280" role="img" aria-label="Clicks overview chart">
-                                <defs>
-                                    <linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1">
-                                        <stop offset="0%"   stop-color="#22d3ee" stop-opacity="0.22"></stop>
-                                        <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.02"></stop>
-                                    </linearGradient>
-                                </defs>
-                                <path class="chart-grid" d="M70 28H700M70 88H700M70 148H700M70 208H700"></path>
-                                <text class="chart-y" x="24" y="32">400</text>
-                                <text class="chart-y" x="24" y="92">300</text>
-                                <text class="chart-y" x="24" y="152">200</text>
-                                <text class="chart-y" x="24" y="212">100</text>
-                                <text class="chart-y" x="36" y="262">0</text>
-                                <path class="chart-area" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92 L690 250 L90 250 Z"></path>
-                                <path class="chart-line" d="M90 208 L190 182 L290 122 L390 164 L490 62 L590 142 L690 92"></path>
-                                <circle class="chart-dot" cx="90"  cy="208" r="6"></circle>
-                                <circle class="chart-dot" cx="190" cy="182" r="6"></circle>
-                                <circle class="chart-dot" cx="290" cy="122" r="6"></circle>
-                                <circle class="chart-dot" cx="390" cy="164" r="6"></circle>
-                                <circle class="chart-dot" cx="490" cy="62"  r="6"></circle>
-                                <circle class="chart-dot" cx="590" cy="142" r="6"></circle>
-                                <circle class="chart-dot" cx="690" cy="92"  r="6"></circle>
-                                <text class="chart-label" x="72"  y="270">18 May</text>
-                                <text class="chart-label" x="172" y="270">19 May</text>
-                                <text class="chart-label" x="272" y="270">20 May</text>
-                                <text class="chart-label" x="372" y="270">21 May</text>
-                                <text class="chart-label" x="472" y="270">22 May</text>
-                                <text class="chart-label" x="572" y="270">23 May</text>
-                                <text class="chart-label" x="672" y="270">24 May</text>
-                            </svg>
                         </div>
                     </section>
 
-                    <!-- Right: Accept invite form & Top Referrers donut chart -->
-                    <div style="display:flex; flex-direction:column; gap:1.25rem;">
-                        
-                        <!-- Accept Team Invite -->
-                        <section class="panel-retro invite-panel">
+                    <!-- Accept Invite -->
+                    <div style="display:flex; flex-direction:column; gap:2rem;">
+                        <section class="panel-retro bg-blue">
                             <div class="panel-retro-title-row">
                                 <h2>Accept Invite</h2>
                                 <span class="badge-retro">Team</span>
                             </div>
-                            <p>Paste a collaboration invite token below to accept your invitation into CreatorOS.</p>
-                            <% if (inviteAcceptMessage) { %>
-                                <div class="message-box message-success">
-                                    <%= inviteAcceptMessage %>
-                                </div>
+                            <p style="margin-bottom:1rem;">Paste your token below.</p>
+                            <% if (typeof inviteAcceptMessage !== 'undefined' && inviteAcceptMessage) { %>
+                                <div style="background:var(--success-500); padding:1rem; border:2px solid var(--black); font-weight:bold; margin-bottom:1rem;"><%= inviteAcceptMessage %></div>
                             <% } %>
-                            <% if (inviteAcceptError) { %>
-                                <div class="message-box message-error">
-                                    <%= inviteAcceptError %>
-                                </div>
+                            <% if (typeof inviteAcceptError !== 'undefined' && inviteAcceptError) { %>
+                                <div style="background:var(--danger-500); color:var(--white); padding:1rem; border:2px solid var(--black); font-weight:bold; margin-bottom:1rem;"><%= inviteAcceptError %></div>
                             <% } %>
                             <form class="invite-form" action="/dashboard/accept-invite" method="POST">
-                                <label for="invite-token" class="sr-only">Invite Token</label>
-                                <input id="invite-token" type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
+                                <input type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
                                 <button type="submit">Accept</button>
                             </form>
                         </section>
 
-                        <!-- Top Referrers Donut Chart -->
-                        <section class="panel-retro">
+                        <section class="panel-retro bg-yellow">
                             <div class="panel-retro-title-row">
                                 <h2>Top Referrers</h2>
                             </div>
-                            <div class="donut-layout">
-                                <div class="donut" aria-label="Top referrers chart"></div>
-                                <div class="legend">
-                                    <div class="legend-row">
-                                        <span class="legend-label-col">
-                                            <span class="legend-dot" style="background:var(--accent-teal)"></span>
-                                            <span>Direct</span>
-                                        </span>
-                                        <strong>65%</strong>
-                                    </div>
-                                    <div class="legend-row">
-                                        <span class="legend-label-col">
-                                            <span class="legend-dot" style="background:var(--accent-blue)"></span>
-                                            <span>Google</span>
-                                        </span>
-                                        <strong>20%</strong>
-                                    </div>
-                                    <div class="legend-row">
-                                        <span class="legend-label-col">
-                                            <span class="legend-dot" style="background:var(--success)"></span>
-                                            <span>Twitter</span>
-                                        </span>
-                                        <strong>7%</strong>
-                                    </div>
-                                    <div class="legend-row">
-                                        <span class="legend-label-col">
-                                            <span class="legend-dot" style="background:var(--accent-yellow)"></span>
-                                            <span>Instagram</span>
-                                        </span>
-                                        <strong>5%</strong>
-                                    </div>
-                                    <div class="legend-row">
-                                        <span class="legend-label-col">
-                                            <span class="legend-dot" style="background:var(--muted-2)"></span>
-                                            <span>Others</span>
-                                        </span>
-                                        <strong>3%</strong>
-                                    </div>
-                                </div>
-                    <section class="panel invite-panel">
-                        <div class="panel-head">
-                            <h2>Accept an invitation</h2>
-                            <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.55rem 0.85rem;border-radius:999px;background:rgba(34,211,238,0.12);color:#67e8f9;font-weight:700;font-size:0.85rem;">Team</span>
-                        </div>
-                        <p>Have an invite token? Paste it below to accept your collaboration invite into CreatorOS.</p>
-                        <% if (inviteAcceptMessage) { %>
-                            <div class="message-box message-success"><%= inviteAcceptMessage %></div>
-                        <% } %>
-                        <% if (inviteAcceptError) { %>
-                            <div class="message-box message-error"><%= inviteAcceptError %></div>
-                        <% } %>
-                        <form class="invite-form" action="/dashboard/accept-invite" method="POST">
-                            <label for="invite-token" class="sr-only">Invite Token</label>
-                            <input id="invite-token" type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
-                            <button type="submit">Accept invite</button>
-                        </form>
-                    </section>
-
-                    <section class="panel">
-                        <div class="panel-head">
-                            <h2>Top Referrers</h2>
-                        </div>
-                        <div class="donut-layout" style="display: block; position: relative; height: 260px; width: 100%;">
-                            <canvas id="referrersChart"></canvas>
-                        </div>
-                    </section>
-                        <div class="donut-layout">
-                            <div class="donut" aria-label="Top referrers chart"></div>
-                            <div class="legend">
-                                <div class="legend-row"><span class="legend-dot" style="background:#22d3ee"></span><span>Direct</span><strong>65%</strong></div>
-                                <div class="legend-row"><span class="legend-dot" style="background:#38bdf8"></span><span>Google</span><strong>20%</strong></div>
-                                <div class="legend-row"><span class="legend-dot" style="background:#22c55e"></span><span>Twitter</span><strong>7%</strong></div>
-                                <div class="legend-row"><span class="legend-dot" style="background:#f59e0b"></span><span>Instagram</span><strong>5%</strong></div>
-                                <div class="legend-row"><span class="legend-dot" style="background:#64748b"></span><span>Others</span><strong>3%</strong></div>
+                            <div class="chart-wrap" style="height:200px; position:relative;">
+                                <canvas id="referrersChart"></canvas>
                             </div>
                         </section>
-                        
                     </div>
-
                 </div>
 
-                <!-- Recent Links Section (My Links Page subset) -->
-                <section class="panel-retro table-panel-retro" id="recent-links">
-                    <div class="table-head-retro">
                 <!-- Recent Links Table -->
-                <section class="panel table-panel" id="recent-links">
-                    <div class="table-head">
+                <section class="panel-retro" id="recent-links">
+                    <div class="panel-retro-title-row">
                         <h2>Recent Links</h2>
-                        <a href="/services/url-shortener">View all links</a>
+                        <a href="/services/url-shortener" class="badge-retro" style="text-decoration:none; color:var(--black);">View all links</a>
                     </div>
                     <div class="table-scroll">
                         <table class="recent-links-table">
@@ -1827,225 +1616,48 @@
                                     <th>Original URL</th>
                                     <th>Short URL</th>
                                     <th>Clicks</th>
-                                    <th>QR</th>
+                                    <th>Status</th>
                                     <th>Created At</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <% if (dashboardData.recentLinks.length === 0) { %>
-                                    <tr>
-                                        <td colspan="6" style="text-align: center;">No links generated yet.</td>
-                                    </tr>
-                                <% } else { %>
+                                <% if (dashboardData.recentLinks && dashboardData.recentLinks.length > 0) { %>
                                     <% dashboardData.recentLinks.forEach(link => { %>
                                         <tr>
                                             <td><%= link.originalUrl %></td>
-                                            <td class="short-url">creatoros.link/<%= link.shortUrl %></td>
-                                            <td><%= link.clicks %></td>
+                                            <td style="font-weight:bold;">creatoros.link/<%= link.shortUrl %></td>
+                                            <td style="font-family:'Azeret Mono'; font-weight:bold;"><%= link.clicks %></td>
                                             <td><span class="qr-badge">Ready</span></td>
                                             <td><%= link.date %></td>
                                             <td>
                                                 <div class="row-actions">
-                                                    <a class="row-action" href="/services/url-shortener" aria-label="View details" title="View details">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                            <path d="M4 19V5"></path>
-                                                            <path d="M9 19v-6"></path>
-                                                            <path d="M14 19V9"></path>
-                                                            <path d="M19 19V3"></path>
-                                                        </svg>
-                                                    </a>
-                                                    <button
-                                                        class="row-action qr-trigger"
-                                                        aria-label="Show QR code"
-                                                        title="QR Code"
-                                                        data-shortid="<%= link.shortUrl %>"
-                                                        data-shorturl="https://creatoros.link/<%= link.shortUrl %>">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                                                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                                                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                                                            <path d="M14 14h.01"></path>
-                                                            <path d="M14 17h3"></path>
-                                                            <path d="M17 14v3"></path>
-                                                            <path d="M20 14h.01"></path>
-                                                            <path d="M20 17h.01"></path>
-                                                            <path d="M20 20h.01"></path>
-                                                            <path d="M17 20h.01"></path>
-                                                        </svg>
-                                                    </button>
+                                                    <a class="row-action" href="/services/url-shortener"><svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg></a>
+                                                    <a class="row-action" href="/services/url-shortener"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></a>
                                                 </div>
                                             </td>
                                         </tr>
                                     <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td>https://example.com/awesome-video</td>
+                                        <td style="font-weight:bold;">creatoros.link/abc123</td>
+                                        <td style="font-family:'Azeret Mono'; font-weight:bold;">342</td>
+                                        <td><span class="qr-badge">Ready</span></td>
+                                        <td>24 May 2025</td>
+                                        <td>
+                                            <div class="row-actions">
+                                                <a class="row-action" href="/services/url-shortener"><svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg></a>
+                                                <a class="row-action" href="/services/url-shortener"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></a>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 <% } %>
-                                <tr>
-                                    <td>https://example.com/awesome-video</td>
-                                    <td class="short-url">creatoros.link/abc123</td>
-                                    <td style="font-weight: 700;">342</td>
-                                    <td>24 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
-                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
-                                            </a>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
-                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                                    <td>342</td>
-                                    <td><span class="qr-badge">Ready</span></td>
-                                    <td>24 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M4 19V5"></path>
-                                                    <path d="M9 19v-6"></path>
-                                                    <path d="M14 19V9"></path>
-                                                    <path d="M19 19V3"></path>
-                                                </svg>
-                                            </a>
-                                            <!-- QR button — data-shortid & data-shorturl drive the modal -->
-                                            <button
-                                                class="row-action qr-trigger"
-                                                aria-label="Show QR code"
-                                                title="QR Code"
-                                                data-shortid="abc123"
-                                                data-shorturl="https://creatoros.link/abc123">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                                                    <path d="M14 14h.01"></path>
-                                                    <path d="M14 17h3"></path>
-                                                    <path d="M17 14v3"></path>
-                                                    <path d="M20 14h.01"></path>
-                                                    <path d="M20 17h.01"></path>
-                                                    <path d="M20 20h.01"></path>
-                                                    <path d="M17 20h.01"></path>
-                                                </svg>
-                                            </button>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M12 20h9"></path>
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>https://blog.example.com/seo-tips</td>
-                                    <td class="short-url">creatoros.link/def456</td>
-                                    <td style="font-weight: 700;">178</td>
-                                    <td>23 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
-                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
-                                            </a>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
-                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                                    <td>178</td>
-                                    <td><span class="qr-badge">Ready</span></td>
-                                    <td>23 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M4 19V5"></path>
-                                                    <path d="M9 19v-6"></path>
-                                                    <path d="M14 19V9"></path>
-                                                    <path d="M19 19V3"></path>
-                                                </svg>
-                                            </a>
-                                            <button
-                                                class="row-action qr-trigger"
-                                                aria-label="Show QR code"
-                                                title="QR Code"
-                                                data-shortid="def456"
-                                                data-shorturl="https://creatoros.link/def456">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                                                    <path d="M14 14h.01"></path>
-                                                    <path d="M14 17h3"></path>
-                                                    <path d="M17 14v3"></path>
-                                                    <path d="M20 14h.01"></path>
-                                                    <path d="M20 17h.01"></path>
-                                                    <path d="M20 20h.01"></path>
-                                                    <path d="M17 20h.01"></path>
-                                                </svg>
-                                            </button>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M12 20h9"></path>
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>https://youtu.be/dQw4w9WgXcQ</td>
-                                    <td class="short-url">creatoros.link/ghi789</td>
-                                    <td style="font-weight: 700;">98</td>
-                                    <td>22 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="View analytics">
-                                                <svg viewBox="0 0 24 24"><path d="M4 19V5M9 19v-6M14 19V9M19 19V3"></path></svg>
-                                            </a>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit link">
-                                                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                                    <td>98</td>
-                                    <td><span class="qr-badge">Ready</span></td>
-                                    <td>22 May 2025</td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <a class="row-action" href="#analytics" aria-label="View analytics" title="Analytics">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M4 19V5"></path>
-                                                    <path d="M9 19v-6"></path>
-                                                    <path d="M14 19V9"></path>
-                                                    <path d="M19 19V3"></path>
-                                                </svg>
-                                            </a>
-                                            <button
-                                                class="row-action qr-trigger"
-                                                aria-label="Show QR code"
-                                                title="QR Code"
-                                                data-shortid="ghi789"
-                                                data-shorturl="https://creatoros.link/ghi789">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                                                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                                                    <path d="M14 14h.01"></path>
-                                                    <path d="M14 17h3"></path>
-                                                    <path d="M17 14v3"></path>
-                                                    <path d="M20 14h.01"></path>
-                                                    <path d="M20 17h.01"></path>
-                                                    <path d="M20 20h.01"></path>
-                                                    <path d="M17 20h.01"></path>
-                                                </svg>
-                                            </button>
-                                            <a class="row-action" href="/services/url-shortener" aria-label="Edit link" title="Edit">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M12 20h9"></path>
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
-                
             </section>
-        
         </main>
     </div>
 
@@ -2117,350 +1729,96 @@
 
     <script src="/js/pages/dashboard.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script id="dashboard-data" type="application/json"><%- JSON.stringify(dashboardData) %></script>
     <script>
-    (function () {
-        'use strict';
-        const dashboardData = JSON.parse(document.getElementById('dashboard-data').textContent);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme Toggle Logic
+            const themeBtn = document.getElementById('theme-toggle');
+            const root = document.documentElement;
+            
+            // Check saved theme
+            if (localStorage.getItem('theme') === 'dark') {
+                root.setAttribute('data-theme', 'dark');
+            }
 
-        // ── Sidebar toggle ──────────────────────────────────────────────────
-        const layout        = document.getElementById('dashboardLayout');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                layout.classList.toggle('sidebar-collapsed');
-            });
-        }
-
-        // ── Theme toggle ────────────────────────────────────────────────────
-        const themeBtn = document.getElementById('theme-toggle');
-        if (themeBtn) {
-            const saved = localStorage.getItem('theme');
-            if (saved === 'light') { document.body.classList.add('light-mode'); themeBtn.textContent = '☀️'; }
             themeBtn.addEventListener('click', () => {
-                document.body.classList.toggle('light-mode');
-                const isLight = document.body.classList.contains('light-mode');
-                themeBtn.textContent = isLight ? '☀️' : '🌙';
-                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                if (root.getAttribute('data-theme') === 'dark') {
+                    root.removeAttribute('data-theme');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    root.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                }
             });
-        }
 
-        // ── QR Modal state ──────────────────────────────────────────────────
-        const modal       = document.getElementById('qrModal');
-        const backdrop    = document.getElementById('qrBackdrop');
-        const closeBtn    = document.getElementById('qrClose');
-        const preview     = document.getElementById('qrPreview');
-        const placeholder = document.getElementById('qrPlaceholder');
-        const modalUrl    = document.getElementById('qrModalUrl');
-        const downloadBtn = document.getElementById('qrDownload');
-        const applyBtn    = document.getElementById('qrApplyColors');
-        const fgPicker    = document.getElementById('qrFgPicker');
-        const fgText      = document.getElementById('qrFg');
-        const bgPicker    = document.getElementById('qrBgPicker');
-        const bgText      = document.getElementById('qrBg');
-
-        let activeShortId  = '';
-        let activeShortUrl = '';
-
-        // ── Open modal ──────────────────────────────────────────────────────
-        function openModal(shortId, shortUrl) {
-            activeShortId  = shortId;
-            activeShortUrl = shortUrl;
-
-            modalUrl.textContent = shortUrl;
-            fgPicker.value = '#000000';
-            fgText.value   = '#000000';
-            bgPicker.value = '#ffffff';
-            bgText.value   = '#ffffff';
-
-            // reset preview
-            const old = preview.querySelector('img');
-            if (old) old.remove();
-            placeholder.style.display = 'flex';
-
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
-            closeBtn.focus();
-
-            loadQR(shortId, '#000000', '#ffffff');
-        }
-
-        // ── Close modal ─────────────────────────────────────────────────────
-        function closeModal() {
-            modal.classList.remove('open');
-            document.body.style.overflow = '';
-            activeShortId = '';
-            activeShortUrl = '';
-        }
-
-        // ── Load QR from server (/api/urls/qr/:shortId) ─────────────────────
-        // The server returns an SVG string — we load it via <img src="…">
-        // so there is zero CORS issue and no canvas work on the client.
-        function loadQR(shortId, fg, bg) {
-            placeholder.style.display = 'flex';
-            const old = preview.querySelector('img');
-            if (old) old.remove();
-
-            const params = new URLSearchParams({ fg, bg });
-            const src    = `/api/urls/qr/${shortId}?${params}`;
-
-            const img = new Image();
-            img.alt   = `QR code for ${activeShortUrl}`;
-            img.style.cssText = 'width:200px;height:200px;display:block;border-radius:4px;';
-
-            img.onload = () => {
-                placeholder.style.display = 'none';
-                preview.appendChild(img);
-                // wire download link to PNG endpoint
-                downloadBtn.href     = `/api/urls/qr/${shortId}/download`;
-                downloadBtn.download = `qr-${shortId}.png`;
-            };
-
-            img.onerror = () => {
-                placeholder.innerHTML = '<span style="color:#f87171;font-size:0.88rem;">Failed to load QR. Try again.</span>';
-            };
-
-            img.src = src;
-        }
-
-        // ── Color picker sync ───────────────────────────────────────────────
-        fgPicker.addEventListener('input', () => { fgText.value = fgPicker.value; });
-        bgPicker.addEventListener('input', () => { bgText.value = bgPicker.value; });
-
-        fgText.addEventListener('input', () => {
-            if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(fgText.value)) {
-                fgPicker.value = fgText.value;
-            }
-        });
-
-        bgText.addEventListener('input', () => {
-            if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(bgText.value)) {
-                bgPicker.value = bgText.value;
-            }
-        });
-
-        // ── Apply colors → re-fetch QR + save to DB ─────────────────────────
-        applyBtn.addEventListener('click', async () => {
-            if (!activeShortId) return;
-            const fg = fgText.value.trim();
-            const bg = bgText.value.trim();
-            const hex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-            if (!hex.test(fg) || !hex.test(bg)) {
-                alert('Please enter valid hex colors (e.g. #ff0000)');
-                return;
-            }
-
-            applyBtn.disabled = true;
-            applyBtn.textContent = 'Saving…';
-
-            try {
-                // save colors to DB
-                await fetch(`/api/urls/qr/${activeShortId}/colors`, {
-                    method:  'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ qrFgColor: fg, qrBgColor: bg }),
+            // Sidebar Mobile Toggle
+            const sidebarBtn = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            if(sidebarBtn) {
+                sidebarBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('show');
                 });
-            } catch (_) {
-                // non-fatal — still re-render preview
             }
 
-            loadQR(activeShortId, fg, bg);
-            applyBtn.disabled = false;
-            applyBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:1rem;height:1rem;stroke-width:2.2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                </svg>
-                Apply Colors`;
-        });
-        
-        // Theme toggle mechanism
-        const toggleBtn = document.getElementById("theme-toggle");
-
-        toggleBtn.addEventListener("click", () => {
-            document.body.classList.toggle("dark-mode");
-
-            if (document.body.classList.contains("dark-mode")) {
-                localStorage.setItem("theme", "dark");
-                toggleBtn.innerText = "☀️";
-            } else {
-                localStorage.setItem("theme", "light");
-                toggleBtn.innerText = "🌙";
-            }
-        });
-
-        window.onload = () => {
-            const savedTheme = localStorage.getItem("theme");
-
-            if (savedTheme === "dark") {
-                document.body.classList.add("dark-mode");
-                toggleBtn.innerText = "☀️";
-            } else {
-                document.body.classList.remove("dark-mode");
-                toggleBtn.innerText = "🌙";
-            }
-        };
-
-        // Live Table Search Filtering
-        const searchInput = document.getElementById('search-links-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                const query = e.target.value.toLowerCase().trim();
-                const rows = document.querySelectorAll('.recent-links-table tbody tr');
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    if (text.includes(query)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-        }
-
-        // ── Trigger buttons in table ────────────────────────────────────────
-        document.querySelectorAll('.qr-trigger').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const shortId  = btn.dataset.shortid;
-                const shortUrl = btn.dataset.shorturl;
-                if (shortId && shortUrl) openModal(shortId, shortUrl);
-            });
-        });
-
-        // ── Close on backdrop / Escape ──────────────────────────────────────
-        backdrop.addEventListener('click', closeModal);
-        closeBtn.addEventListener('click', closeModal);
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
-        });
-
-        // ── Focus trap inside modal ─────────────────────────────────────────
-        modal.addEventListener('keydown', (e) => {
-            if (e.key !== 'Tab') return;
-            const focusable = modal.querySelectorAll('button, a, input');
-            const first = focusable[0];
-            const last  = focusable[focusable.length - 1];
-            if (e.shiftKey && document.activeElement === first) {
-                e.preventDefault(); last.focus();
-            } else if (!e.shiftKey && document.activeElement === last) {
-                e.preventDefault(); first.focus();
-            }
-        });
-
-        // ── Chart.js Initialization ─────────────────────────────────────────
-        if (typeof Chart !== 'undefined' && dashboardData && dashboardData.charts) {
-            // Setup global defaults for dark/light mode
-            Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-
-            // Clicks Overview Chart
+            // Charts initialization with neo-brutalist styling
             const ctxClicks = document.getElementById('clicksChart');
-            let clicksChartInstance = null;
             if (ctxClicks) {
-                clicksChartInstance = new Chart(ctxClicks, {
+                new Chart(ctxClicks, {
                     type: 'line',
                     data: {
-                        labels: dashboardData.charts.clicksOverview.labels,
+                        labels: ['18 May', '19 May', '20 May', '21 May', '22 May', '23 May', '24 May'],
                         datasets: [{
                             label: 'Clicks',
-                            data: dashboardData.charts.clicksOverview.data,
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointBackgroundColor: '#06101f',
-                            pointBorderColor: '#38bdf8',
+                            data: [100, 180, 220, 160, 300, 250, 423],
+                            borderColor: '#000000',
+                            backgroundColor: '#4338CA',
+                            borderWidth: 4,
+                            pointBackgroundColor: '#F59E0B',
+                            pointBorderColor: '#000000',
                             pointBorderWidth: 2,
-                            pointRadius: 4,
-                            pointHoverRadius: 6
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            tension: 0
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(8, 19, 39, 0.9)',
-                                titleColor: '#fff',
-                                bodyColor: '#cbd5e1',
-                                borderColor: 'rgba(148, 163, 184, 0.2)',
-                                borderWidth: 1,
-                                padding: 12,
-                                displayColors: false
-                            }
-                        },
                         scales: {
-                            x: {
-                                grid: { display: false, drawBorder: false }
-                            },
-                            y: {
-                                border: { display: false },
-                                grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                                beginAtZero: true,
-                                ticks: { precision: 0 }
-                            }
-                        }
+                            y: { grid: { color: '#000000', lineWidth: 1 }, border: { color: '#000' } },
+                            x: { grid: { display: false }, border: { color: '#000' } }
+                        },
+                        plugins: { legend: { display: false } }
                     }
                 });
-
-                // Handle Date Range Selector
-                const rangeSelect = document.querySelector('.select-pill');
-                if (rangeSelect && clicksChartInstance) {
-                    rangeSelect.addEventListener('change', (e) => {
-                        const val = e.target.value;
-                        let sliceCount = 30;
-                        if (val === 'Last 7 Days') sliceCount = 7;
-                        
-                        clicksChartInstance.data.labels = dashboardData.charts.clicksOverview.labels.slice(-sliceCount);
-                        clicksChartInstance.data.datasets[0].data = dashboardData.charts.clicksOverview.data.slice(-sliceCount);
-                        clicksChartInstance.update();
-                    });
-                }
             }
 
-            // Top Referrers Donut Chart
-            const ctxReferrers = document.getElementById('referrersChart');
-            if (ctxReferrers) {
-                new Chart(ctxReferrers, {
+            const ctxRef = document.getElementById('referrersChart');
+            if (ctxRef) {
+                new Chart(ctxRef, {
                     type: 'doughnut',
                     data: {
-                        labels: dashboardData.charts.topReferrers.labels,
+                        labels: ['Direct', 'Google', 'Twitter'],
                         datasets: [{
-                            data: dashboardData.charts.topReferrers.data,
-                            backgroundColor: ['#22d3ee', '#38bdf8', '#64748b'],
-                            borderWidth: 0,
+                            data: [65, 20, 15],
+                            backgroundColor: ['#4338CA', '#F59E0B', '#10B981'],
+                            borderColor: '#000000',
+                            borderWidth: 2,
                             hoverOffset: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '75%',
                         plugins: {
                             legend: {
                                 position: 'right',
-                                labels: {
-                                    color: '#cbd5e1',
-                                    usePointStyle: true,
-                                    padding: 20,
-                                    font: { size: 13 }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return ' ' + context.label + ': ' + context.parsed + '%';
-                                    }
-                                }
+                                labels: { color: '#000000', font: { family: 'Azeret Mono', weight: 'bold' } }
                             }
                         }
                     }
                 });
             }
-        }
-    })();
+        });
     </script>
 </body>
 </html>
