@@ -44,7 +44,7 @@
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
-        body.dark-mode {
+        [data-theme="dark"] {
             --bg: #1A1A18;
             --bg-secondary: #252522;
             --card-bg: #2C2C28;
@@ -1338,34 +1338,34 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── Light mode ─────────────────────────────── */
-        body.light-mode { background: #f4f7fb; color: #111827; }
-        body.light-mode .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
-        body.light-mode .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
-        body.light-mode .stat-card, body.light-mode .panel {
+        [data-theme="light"] { background: #f4f7fb; color: #111827; }
+        [data-theme="light"] .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
+        [data-theme="light"] .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+        [data-theme="light"] .stat-card, [data-theme="light"] .panel {
             background: #ffffff;
             color: #06101f;
             border: 1px solid #e5e7eb;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        body.light-mode .nav-link { color: #111827; }
-        body.light-mode .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
-        body.light-mode .sidebar-label { color: #6b7280; }
-        body.light-mode h1, body.light-mode h2, body.light-mode h3,
-        body.light-mode h4, body.light-mode p, body.light-mode span { color: #111827; }
-        body.light-mode select { background: white; color: black; border: 1px solid #d1d5db; }
-        body.light-mode #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
-        body.light-mode #recent-links th { color:#374151; font-weight:600; }
-        body.light-mode #recent-links td { color:#111827; }
-        body.light-mode #recent-links .short-url { color:#06b6d4; }
-        body.light-mode #recent-links .table-head a { color:#06b6d4; }
-        body.light-mode #recent-links .row-action { color:#4b5563; }
-        body.light-mode #recent-links tbody tr:hover { background:#f9fafb; }
-        body.light-mode #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
-        body.light-mode .qr-modal { background: #ffffff; border-color: #e5e7eb; }
-        body.light-mode .qr-modal-head p { color: #6b7280; }
-        body.light-mode .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
-        body.light-mode .qr-color-row input[type="text"] { color: #111827; }
-        body.light-mode .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .nav-link { color: #111827; }
+        [data-theme="light"] .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
+        [data-theme="light"] .sidebar-label { color: #6b7280; }
+        [data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3,
+        [data-theme="light"] h4, [data-theme="light"] p, [data-theme="light"] span { color: #111827; }
+        [data-theme="light"] select { background: white; color: black; border: 1px solid #d1d5db; }
+        [data-theme="light"] #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
+        [data-theme="light"] #recent-links th { color:#374151; font-weight:600; }
+        [data-theme="light"] #recent-links td { color:#111827; }
+        [data-theme="light"] #recent-links .short-url { color:#06b6d4; }
+        [data-theme="light"] #recent-links .table-head a { color:#06b6d4; }
+        [data-theme="light"] #recent-links .row-action { color:#4b5563; }
+        [data-theme="light"] #recent-links tbody tr:hover { background:#f9fafb; }
+        [data-theme="light"] #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
+        [data-theme="light"] .qr-modal { background: #ffffff; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-modal-head p { color: #6b7280; }
+        [data-theme="light"] .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-color-row input[type="text"] { color: #111827; }
+        [data-theme="light"] .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
 
         .theme-btn {
             width: 42px; height: 42px;
@@ -1529,8 +1529,8 @@
                             
                             <form id="shorten-form" style="display:flex; flex-direction:column; gap:1rem;">
                                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                    <input type="url" id="redirect-url" placeholder="Paste your long link here... https://" required <%= isGuestContributor ? 'disabled' : '' %> style="flex:1; border:2px solid #111; padding:0.75rem; font-size:0.9rem; outline:none; background:var(--card-bg); color:var(--text); box-shadow:inset 2px 2px 0px rgba(0,0,0,0.05);" />
-                                    <button type="submit" id="shorten-btn" <%= isGuestContributor ? 'disabled' : '' %> style="background:var(--accent-yellow); border:2px solid #111; padding:0.75rem 1.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px #111;">SHORTEN NOW</button>
+                                    <input type="url" id="redirect-url" placeholder="Paste your long link here... https://" required <%= isGuestContributor ? 'disabled' : '' %> style="flex:1; border:2px solid var(--border); padding:0.75rem; font-size:0.9rem; outline:none; background:var(--card-bg); color:var(--text); box-shadow:inset 2px 2px 0px rgba(0,0,0,0.05);" />
+                                    <button type="submit" id="shorten-btn" <%= isGuestContributor ? 'disabled' : '' %> style="background:var(--accent-yellow); border:2px solid var(--border); padding:0.75rem 1.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px var(--border);">SHORTEN NOW</button>
                                 </div>
                                 
                                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
@@ -1538,18 +1538,18 @@
                                     <button type="button" id="slug-toggle" style="background:none; border:none; text-decoration:underline; cursor:pointer; font-weight:700; color:var(--text);">Edit slug & tag</button>
                                 </div>
 
-                                <div id="slug-panel" style="display:none; flex-direction:column; gap:1rem; padding:1rem; border:2px solid #111; background:var(--bg-secondary); margin-top:0.5rem;">
+                                <div id="slug-panel" style="display:none; flex-direction:column; gap:1rem; padding:1rem; border:2px solid var(--border); background:var(--bg-secondary); margin-top:0.5rem;">
                                     <div style="display:flex; flex-direction:column; gap:0.25rem;">
                                         <label for="custom-slug" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Custom slug (optional)</label>
-                                        <input type="text" id="custom-slug" placeholder="summer24" pattern="[a-zA-Z0-9-_]{3,32}" maxlength="32" style="border:2px solid #111; padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                        <input type="text" id="custom-slug" placeholder="summer24" pattern="[a-zA-Z0-9-_]{3,32}" maxlength="32" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
                                     </div>
                                     <div style="display:flex; flex-direction:column; gap:0.25rem;">
                                         <label for="link-title" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Title (optional)</label>
-                                        <input type="text" id="link-title" placeholder="Summer Campaign 2024" style="border:2px solid #111; padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                        <input type="text" id="link-title" placeholder="Summer Campaign 2024" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
                                     </div>
                                     <div style="display:flex; flex-direction:column; gap:0.25rem;">
                                         <label for="link-tag" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Tag</label>
-                                        <select id="link-tag" style="border:2px solid #111; padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                        <select id="link-tag" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
                                             <option value="active">Active</option>
                                             <option value="social">Social</option>
                                             <option value="campaign">Campaign</option>
@@ -1558,9 +1558,9 @@
                                     </div>
                                 </div>
                                 
-                                <div id="result-banner" style="display:none; justify-content:space-between; align-items:center; background:var(--success); color:#111; padding:0.75rem 1rem; border:2px solid #111; box-shadow:2px 2px 0px #111; font-weight:700; margin-top:0.5rem;">
+                                <div id="result-banner" style="display:none; justify-content:space-between; align-items:center; background:var(--success); color:var(--text); padding:0.75rem 1rem; border:2px solid var(--border); box-shadow:2px 2px 0px var(--border); font-weight:700; margin-top:0.5rem;">
                                     <span id="result-text"></span>
-                                    <button type="button" id="copy-result-btn" style="background:var(--card-bg); color:#111; border:2px solid #111; padding:0.35rem 0.75rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Copy</button>
+                                    <button type="button" id="copy-result-btn" style="background:var(--card-bg); color:var(--text); border:2px solid var(--border); padding:0.35rem 0.75rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Copy</button>
                                 </div>
                             </form>
                         </section>
@@ -1591,7 +1591,7 @@
                             <span class="label">Link Vault</span>
                             <span class="value" id="stat-total-links">0</span>
                             <span class="subtext">Total shortlinks created</span>
-                            <button type="button" id="widget-new-btn" style="margin-top:1rem; width:100%; background:var(--accent-teal); border:2px solid #111; padding:0.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px #111; color:#111;">Create Link</button>
+                            <button type="button" id="widget-new-btn" style="margin-top:1rem; width:100%; background:var(--accent-teal); border:2px solid var(--border); padding:0.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px var(--border); color:var(--text);">Create Link</button>
                         </article>
 
                         <article class="stat-card-retro accent-blue">
@@ -1605,7 +1605,7 @@
                                 <p id="stat-top-link" style="font-weight:700; word-break:break-all;">—</p>
                             </div>
                             
-                            <a href="/services/analytics-dashboard" style="display:block; margin-top:1rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; text-decoration:underline; color:#111;">View Analytics &rarr;</a>
+                            <a href="/services/analytics-dashboard" style="display:block; margin-top:1rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; text-decoration:underline; color:var(--text);">View Analytics &rarr;</a>
                         </article>
                     </aside>
                 </div>

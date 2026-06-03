@@ -44,7 +44,7 @@
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
-        body.dark-mode {
+        [data-theme="dark"] {
             --bg: #1A1A18;
             --bg-secondary: #252522;
             --card-bg: #2C2C28;
@@ -1337,34 +1337,34 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── Light mode ─────────────────────────────── */
-        body.light-mode { background: #f4f7fb; color: #111827; }
-        body.light-mode .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
-        body.light-mode .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
-        body.light-mode .stat-card, body.light-mode .panel {
+        [data-theme="light"] { background: #f4f7fb; color: #111827; }
+        [data-theme="light"] .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
+        [data-theme="light"] .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+        [data-theme="light"] .stat-card, [data-theme="light"] .panel {
             background: #ffffff;
             color: #06101f;
             border: 1px solid #e5e7eb;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        body.light-mode .nav-link { color: #111827; }
-        body.light-mode .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
-        body.light-mode .sidebar-label { color: #6b7280; }
-        body.light-mode h1, body.light-mode h2, body.light-mode h3,
-        body.light-mode h4, body.light-mode p, body.light-mode span { color: #111827; }
-        body.light-mode select { background: white; color: black; border: 1px solid #d1d5db; }
-        body.light-mode #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
-        body.light-mode #recent-links th { color:#374151; font-weight:600; }
-        body.light-mode #recent-links td { color:#111827; }
-        body.light-mode #recent-links .short-url { color:#06b6d4; }
-        body.light-mode #recent-links .table-head a { color:#06b6d4; }
-        body.light-mode #recent-links .row-action { color:#4b5563; }
-        body.light-mode #recent-links tbody tr:hover { background:#f9fafb; }
-        body.light-mode #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
-        body.light-mode .qr-modal { background: #ffffff; border-color: #e5e7eb; }
-        body.light-mode .qr-modal-head p { color: #6b7280; }
-        body.light-mode .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
-        body.light-mode .qr-color-row input[type="text"] { color: #111827; }
-        body.light-mode .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .nav-link { color: #111827; }
+        [data-theme="light"] .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
+        [data-theme="light"] .sidebar-label { color: #6b7280; }
+        [data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3,
+        [data-theme="light"] h4, [data-theme="light"] p, [data-theme="light"] span { color: #111827; }
+        [data-theme="light"] select { background: white; color: black; border: 1px solid #d1d5db; }
+        [data-theme="light"] #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
+        [data-theme="light"] #recent-links th { color:#374151; font-weight:600; }
+        [data-theme="light"] #recent-links td { color:#111827; }
+        [data-theme="light"] #recent-links .short-url { color:#06b6d4; }
+        [data-theme="light"] #recent-links .table-head a { color:#06b6d4; }
+        [data-theme="light"] #recent-links .row-action { color:#4b5563; }
+        [data-theme="light"] #recent-links tbody tr:hover { background:#f9fafb; }
+        [data-theme="light"] #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
+        [data-theme="light"] .qr-modal { background: #ffffff; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-modal-head p { color: #6b7280; }
+        [data-theme="light"] .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-color-row input[type="text"] { color: #111827; }
+        [data-theme="light"] .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
 
         .theme-btn {
             width: 42px; height: 42px;
@@ -1624,12 +1624,13 @@
                 const isDark = root.getAttribute('data-theme') === 'dark';
                 applyTheme(!isDark);
                 localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+                window.dispatchEvent(new Event('themeChanged'));
             });
         }
 
         // Chart.js Setup
-        const chartGrid = getComputedStyle(document.body).getPropertyValue('--chart-grid-color') || 'rgba(0,0,0,0.1)';
-        const textColor = getComputedStyle(document.body).getPropertyValue('--text') || '#111';
+        const chartGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid-color') || 'rgba(0,0,0,0.1)';
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#111';
         const accentTeal = '#37D6C8';
         const accentBlue = '#76A9FA';
         
@@ -1638,7 +1639,7 @@
 
         const followersCtx = document.getElementById('followersChart');
         if (followersCtx) {
-            new Chart(followersCtx, {
+            window.followersChart = new Chart(followersCtx, {
                 type: 'line',
                 data: {
                     labels: <%- JSON.stringify(analytics.charts.labels) %>,
@@ -1649,7 +1650,7 @@
                         backgroundColor: 'rgba(55, 214, 200, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: accentTeal,
-                        pointBorderColor: '#111',
+                        pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111',
                         pointBorderWidth: 2,
                         pointRadius: 5,
                         fill: true,
@@ -1670,7 +1671,7 @@
 
         const engagementCtx = document.getElementById('engagementChart');
         if (engagementCtx) {
-            new Chart(engagementCtx, {
+            window.engagementChart = new Chart(engagementCtx, {
                 type: 'line',
                 data: {
                     labels: <%- JSON.stringify(analytics.charts.labels) %>,
@@ -1681,7 +1682,7 @@
                         backgroundColor: 'rgba(118, 169, 250, 0.1)',
                         borderWidth: 3,
                         pointBackgroundColor: accentBlue,
-                        pointBorderColor: '#111',
+                        pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111',
                         pointBorderWidth: 2,
                         pointRadius: 5,
                         fill: true,
@@ -1700,6 +1701,26 @@
             });
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+        window.addEventListener('themeChanged', () => {
+            const newGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid-color').trim() || 'rgba(0,0,0,0.1)';
+            const newText = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111';
+            
+            Chart.defaults.color = newText;
+            
+            const charts = [window.followersChart, window.engagementChart, window.perfChart].filter(Boolean);
+            charts.forEach(chart => {
+                if (chart.options.scales.x) chart.options.scales.x.grid.color = newGrid;
+                if (chart.options.scales.y) chart.options.scales.y.grid.color = newGrid;
+                
+                chart.data.datasets.forEach(dataset => {
+                    if (dataset.pointBorderColor) dataset.pointBorderColor = newText;
+                });
+                
+                chart.update();
+            });
+        });
+</script>
+
 </body>
 </html>

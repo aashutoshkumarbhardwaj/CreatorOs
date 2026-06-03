@@ -44,7 +44,7 @@
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
-        body.dark-mode {
+        [data-theme="dark"] {
             --bg: #1A1A18;
             --bg-secondary: #252522;
             --card-bg: #2C2C28;
@@ -1337,34 +1337,34 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── Light mode ─────────────────────────────── */
-        body.light-mode { background: #f4f7fb; color: #111827; }
-        body.light-mode .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
-        body.light-mode .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
-        body.light-mode .stat-card, body.light-mode .panel {
+        [data-theme="light"] { background: #f4f7fb; color: #111827; }
+        [data-theme="light"] .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
+        [data-theme="light"] .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+        [data-theme="light"] .stat-card, [data-theme="light"] .panel {
             background: #ffffff;
             color: #06101f;
             border: 1px solid #e5e7eb;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        body.light-mode .nav-link { color: #111827; }
-        body.light-mode .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
-        body.light-mode .sidebar-label { color: #6b7280; }
-        body.light-mode h1, body.light-mode h2, body.light-mode h3,
-        body.light-mode h4, body.light-mode p, body.light-mode span { color: #111827; }
-        body.light-mode select { background: white; color: black; border: 1px solid #d1d5db; }
-        body.light-mode #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
-        body.light-mode #recent-links th { color:#374151; font-weight:600; }
-        body.light-mode #recent-links td { color:#111827; }
-        body.light-mode #recent-links .short-url { color:#06b6d4; }
-        body.light-mode #recent-links .table-head a { color:#06b6d4; }
-        body.light-mode #recent-links .row-action { color:#4b5563; }
-        body.light-mode #recent-links tbody tr:hover { background:#f9fafb; }
-        body.light-mode #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
-        body.light-mode .qr-modal { background: #ffffff; border-color: #e5e7eb; }
-        body.light-mode .qr-modal-head p { color: #6b7280; }
-        body.light-mode .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
-        body.light-mode .qr-color-row input[type="text"] { color: #111827; }
-        body.light-mode .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .nav-link { color: #111827; }
+        [data-theme="light"] .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
+        [data-theme="light"] .sidebar-label { color: #6b7280; }
+        [data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3,
+        [data-theme="light"] h4, [data-theme="light"] p, [data-theme="light"] span { color: #111827; }
+        [data-theme="light"] select { background: white; color: black; border: 1px solid #d1d5db; }
+        [data-theme="light"] #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
+        [data-theme="light"] #recent-links th { color:#374151; font-weight:600; }
+        [data-theme="light"] #recent-links td { color:#111827; }
+        [data-theme="light"] #recent-links .short-url { color:#06b6d4; }
+        [data-theme="light"] #recent-links .table-head a { color:#06b6d4; }
+        [data-theme="light"] #recent-links .row-action { color:#4b5563; }
+        [data-theme="light"] #recent-links tbody tr:hover { background:#f9fafb; }
+        [data-theme="light"] #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
+        [data-theme="light"] .qr-modal { background: #ffffff; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-modal-head p { color: #6b7280; }
+        [data-theme="light"] .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
+        [data-theme="light"] .qr-color-row input[type="text"] { color: #111827; }
+        [data-theme="light"] .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
 
         .theme-btn {
             width: 42px; height: 42px;
@@ -1518,8 +1518,8 @@
                             </div>
                             
                             <form action="/services/url-shortener/shorten" method="POST" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-                                <input type="url" name="redirectUrl" id="url-shortener-input" placeholder="https://your-super-long-link.com/to-shorten" required style="flex:1; border:2px solid #111; padding:0.9rem 1rem; font-family:'Space Grotesk',monospace; font-size:1rem; outline:none; background:var(--card-bg); color:var(--text); box-shadow:inset 2px 2px 0px rgba(0,0,0,0.05);" />
-                                <button type="submit" style="background:var(--accent-teal); border:2px solid #111; padding:0.9rem 1.75rem; font-weight:700; font-family:'Space Grotesk',monospace; font-size:1rem; cursor:pointer; box-shadow:2px 2px 0px #111; color:#111;">SHORTEN</button>
+                                <input type="url" name="redirectUrl" id="url-shortener-input" placeholder="https://your-super-long-link.com/to-shorten" required style="flex:1; border:2px solid var(--border); padding:0.9rem 1rem; font-family:'Space Grotesk',monospace; font-size:1rem; outline:none; background:var(--card-bg); color:var(--text); box-shadow:inset 2px 2px 0px rgba(0,0,0,0.05);" />
+                                <button type="submit" style="background:var(--accent-teal); border:2px solid var(--border); padding:0.9rem 1.75rem; font-weight:700; font-family:'Space Grotesk',monospace; font-size:1rem; cursor:pointer; box-shadow:2px 2px 0px var(--border); color:var(--text);">SHORTEN</button>
                             </form>
                         </section>
 
@@ -1546,26 +1546,26 @@
                                         </svg>
                                         <a href="<%= shortUrl %>" target="_blank" style="color:inherit; text-decoration:none;"><%= shortUrl %></a>
                                     </div>
-                                    <button type="button" class="btn-copy" onclick="copyToClipboard('<%= shortUrl %>')" style="background:var(--bg-secondary); color:var(--text); border:2px solid #111; padding:0.75rem 1.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px #111; transition:all 0.1s;">Copy</button>
+                                    <button type="button" class="btn-copy" onclick="copyToClipboard('<%= shortUrl %>')" style="background:var(--bg-secondary); color:var(--text); border:2px solid var(--border); padding:0.75rem 1.5rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px var(--border); transition:all 0.1s;">Copy</button>
                                 </div>
 
-                                <div style="border-top:2px solid #111; padding-top:1.5rem;">
+                                <div style="border-top:2px solid var(--border); padding-top:1.5rem;">
                                     <h3 style="font-size:1.1rem; margin-bottom:1rem;">QR Customization</h3>
                                     <div style="display:flex; gap:2rem;">
                                         <div>
                                             <label style="display:block; font-family:'Space Grotesk',monospace; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:0.5rem;">Preset Colors</label>
                                             <div style="display:flex; gap:0.5rem;">
-                                                <div style="width:36px; height:36px; border:2px solid #111; background:#1a1a1a; cursor:pointer;" onclick="applyPreset('#1a1a1a', '#ffffff')"></div>
-                                                <div style="width:36px; height:36px; border:2px solid #111; background:#3ecfb2; cursor:pointer;" onclick="applyPreset('#3ecfb2', '#ffffff')"></div>
-                                                <div style="width:36px; height:36px; border:2px solid #111; background:#3b82f6; cursor:pointer;" onclick="applyPreset('#3b82f6', '#ffffff')"></div>
-                                                <div style="width:36px; height:36px; border:2px solid #111; background:#8b5cf6; cursor:pointer;" onclick="applyPreset('#8b5cf6', '#ffffff')"></div>
+                                                <div style="width:36px; height:36px; border:2px solid var(--border); background:#1a1a1a; cursor:pointer;" onclick="applyPreset('#1a1a1a', '#ffffff')"></div>
+                                                <div style="width:36px; height:36px; border:2px solid var(--border); background:#3ecfb2; cursor:pointer;" onclick="applyPreset('#3ecfb2', '#ffffff')"></div>
+                                                <div style="width:36px; height:36px; border:2px solid var(--border); background:#3b82f6; cursor:pointer;" onclick="applyPreset('#3b82f6', '#ffffff')"></div>
+                                                <div style="width:36px; height:36px; border:2px solid var(--border); background:#8b5cf6; cursor:pointer;" onclick="applyPreset('#8b5cf6', '#ffffff')"></div>
                                             </div>
                                         </div>
                                         <div>
                                             <label style="display:block; font-family:'Space Grotesk',monospace; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:0.5rem;">Custom</label>
                                             <div style="display:flex; gap:0.5rem;">
-                                                <input type="color" id="fg-color-picker" value="#1a1a1a" onchange="updateQRColor('fg', this.value)" style="width:36px; height:36px; padding:0; border:2px solid #111; cursor:pointer;">
-                                                <input type="color" id="bg-color-picker" value="#ffffff" onchange="updateQRColor('bg', this.value)" style="width:36px; height:36px; padding:0; border:2px solid #111; cursor:pointer;">
+                                                <input type="color" id="fg-color-picker" value="#1a1a1a" onchange="updateQRColor('fg', this.value)" style="width:36px; height:36px; padding:0; border:2px solid var(--border); cursor:pointer;">
+                                                <input type="color" id="bg-color-picker" value="#ffffff" onchange="updateQRColor('bg', this.value)" style="width:36px; height:36px; padding:0; border:2px solid var(--border); cursor:pointer;">
                                             </div>
                                         </div>
                                     </div>
@@ -1575,17 +1575,17 @@
                             <!-- QR & Export -->
                             <section class="stat-card-retro" style="align-items:center;">
                                 <span class="card-id">QR ASSET</span>
-                                <div style="border:3px solid var(--accent-teal); padding:1rem; background:#fff; margin:1rem 0;">
+                                <div style="border:3px solid var(--accent-teal); border-radius:4px; padding:1rem; background:#fff; margin:1rem 0;">
                                     <div id="qr-canvas"></div>
                                 </div>
                                 <span class="subtext">Scan to Discover</span>
 
-                                <div style="width:100%; margin-top:1.5rem; border-top:2px dashed #111; padding-top:1rem; display:flex; flex-direction:column; gap:0.5rem;">
+                                <div style="width:100%; margin-top:1.5rem; border-top:2px dashed var(--border); padding-top:1rem; display:flex; flex-direction:column; gap:0.5rem;">
                                     <div style="display:flex; gap:0.5rem;">
-                                        <a id="download-png" download="titli-qr.png" style="flex:1; text-align:center; background:var(--bg-secondary); color:var(--text); border:2px solid #111; padding:0.5rem; font-size:0.8rem; font-weight:700; text-decoration:none; cursor:pointer;">PNG</a>
-                                        <a id="download-svg" download="titli-qr.svg" style="flex:1; text-align:center; background:var(--bg-secondary); color:var(--text); border:2px solid #111; padding:0.5rem; font-size:0.8rem; font-weight:700; text-decoration:none; cursor:pointer;">SVG</a>
+                                        <a id="download-png" download="titli-qr.png" style="flex:1; text-align:center; background:var(--bg-secondary); color:var(--text); border:2px solid var(--border); padding:0.5rem; font-size:0.8rem; font-weight:700; text-decoration:none; cursor:pointer;">PNG</a>
+                                        <a id="download-svg" download="titli-qr.svg" style="flex:1; text-align:center; background:var(--bg-secondary); color:var(--text); border:2px solid var(--border); padding:0.5rem; font-size:0.8rem; font-weight:700; text-decoration:none; cursor:pointer;">SVG</a>
                                     </div>
-                                    <a id="download-main" download="titli-qr.png" style="width:100%; text-align:center; background:#111; color:#fff; border:2px solid #111; padding:0.75rem; font-size:0.9rem; font-weight:700; text-decoration:none; cursor:pointer; margin-top:0.25rem;">
+                                    <a id="download-main" download="titli-qr.png" style="width:100%; text-align:center; background:var(--text); color:var(--bg); border:2px solid var(--border); padding:0.75rem; font-size:0.9rem; font-weight:700; text-decoration:none; cursor:pointer; margin-top:0.25rem;">
                                         Save &amp; Download
                                     </a>
                                 </div>
@@ -1660,6 +1660,7 @@
                 const isDark = root.getAttribute('data-theme') === 'dark';
                 applyTheme(!isDark);
                 localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+                window.dispatchEvent(new Event('themeChanged'));
             });
         }
     </script>
