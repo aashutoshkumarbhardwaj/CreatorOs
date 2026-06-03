@@ -113,6 +113,7 @@ function findServiceByKey(key) {
 function buildShortenerViewModel(req, shortId = null, error = null) {
     return {
         service: findServiceByKey('url-shortener'),
+        services,
         shortUrl: shortId ? `${req.protocol}://${req.get('host')}/u/${shortId}` : null,
         error,
     };

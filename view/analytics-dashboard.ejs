@@ -150,23 +150,22 @@
         }
 
         .theme-btn {
-            position: absolute;
-            right: 0.25rem;
-            top: 0.25rem;
-            width: 1.8rem;
-            height: 1.8rem;
+            margin-left: auto;
+            width: 2.2rem;
+            height: 2.2rem;
             border-radius: 50%;
             border: var(--border-thick);
             background-color: var(--card-bg);
+            color: var(--text);
             cursor: pointer;
-            font-size: 0.85rem;
             display: grid;
             place-items: center;
-            box-shadow: 1px 1px 0px var(--border);
-            transition: transform 0.15s ease;
+            box-shadow: 2px 2px 0px var(--border);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .theme-btn:hover {
-            transform: scale(1.1);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border);
         }
 
         .sidebar-section {
@@ -1423,9 +1422,7 @@
                 </div>
             </a>
             
-            <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;margin:auto;"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
-            </button>
+            
 
             <!-- Workspace section -->
             <nav class="sidebar-section">
@@ -1482,10 +1479,14 @@
 
                 <div class="search-container">
                     <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-                    <input type="text" id="search-links-input" placeholder="Search shortened links..." />
+                    <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." />
                 </div>
 
                 <div class="topbar-actions">
+                    <button id="theme-toggle" class="action-icon-btn" type="button" aria-label="Toggle Theme">
+                <svg class="icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;margin:auto;"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
+                <svg class="icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;margin:auto;display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
                     <button class="action-icon-btn" type="button"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
                     <a class="profile-chip" href="/profile">
                         <span class="avatar"><%= user.initials %></span>
@@ -1587,7 +1588,7 @@
     <script>
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');
-        const themeToggle = document.getElementById('theme-toggle');
+        
 
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', () => {
@@ -1595,9 +1596,34 @@
             });
         }
 
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
+        const themeBtn = document.getElementById('theme-toggle');
+        const root = document.documentElement;
+        const iconLight = themeBtn ? themeBtn.querySelector('.icon-light') : null;
+        const iconDark = themeBtn ? themeBtn.querySelector('.icon-dark') : null;
+        
+        function applyTheme(isDark) {
+            if (isDark) {
+                root.setAttribute('data-theme', 'dark');
+                if (iconLight) iconLight.style.display = 'none';
+                if (iconDark) iconDark.style.display = 'block';
+            } else {
+                root.removeAttribute('data-theme');
+                if (iconLight) iconLight.style.display = 'block';
+                if (iconDark) iconDark.style.display = 'none';
+            }
+        }
+
+        if (themeBtn) {
+            if (localStorage.getItem('theme') === 'dark') {
+                applyTheme(true);
+            } else {
+                applyTheme(false);
+            }
+
+            themeBtn.addEventListener('click', () => {
+                const isDark = root.getAttribute('data-theme') === 'dark';
+                applyTheme(!isDark);
+                localStorage.setItem('theme', !isDark ? 'dark' : 'light');
             });
         }
 
