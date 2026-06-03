@@ -142,8 +142,12 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="profile-bio">Bio / Description</label>
-                                <textarea class="form-textarea" id="profile-bio" name="bio" <%= isGuestContributor ? 'disabled' : '' %>><%= user.bio %></textarea>
-                            </div>
+<textarea class="form-textarea" id="profile-bio" name="bio" maxlength="150" <%= isGuestContributor ? 'disabled' : '' %>><%= user.bio %></textarea>
+
+<div class="char-counter">
+    <span id="bio-count">0</span>/150 characters
+</div>                           
+
                             <div class="divider"></div>
                             <button type="submit" class="btn-action btn-action-right" id="profile-submit" <%= isGuestContributor ? 'disabled' : '' %>>Update Profile</button>
                             <div style="clear:both"></div>

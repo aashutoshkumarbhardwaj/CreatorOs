@@ -44,7 +44,7 @@
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
-        body.dark-mode {
+        [data-theme="dark"] {
             --bg: #1A1A18;
             --bg-secondary: #252522;
             --card-bg: #2C2C28;
@@ -150,23 +150,22 @@
         }
 
         .theme-btn {
-            position: absolute;
-            right: 0.25rem;
-            top: 0.25rem;
-            width: 1.8rem;
-            height: 1.8rem;
+            margin-left: auto;
+            width: 2.2rem;
+            height: 2.2rem;
             border-radius: 50%;
             border: var(--border-thick);
             background-color: var(--card-bg);
+            color: var(--text);
             cursor: pointer;
-            font-size: 0.85rem;
             display: grid;
             place-items: center;
-            box-shadow: 1px 1px 0px var(--border);
-            transition: transform 0.15s ease;
+            box-shadow: 2px 2px 0px var(--border);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .theme-btn:hover {
-            transform: scale(1.1);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--border);
         }
 
         .sidebar-section {
@@ -1337,36 +1336,7 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Light mode ─────────────────────────────── */
-        body.light-mode { background: #f4f7fb; color: #111827; }
-        body.light-mode .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
-        body.light-mode .topbar  { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
-        body.light-mode .stat-card, body.light-mode .panel {
-            background: #ffffff;
-            color: #06101f;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        body.light-mode .nav-link { color: #111827; }
-        body.light-mode .nav-link.active { background: linear-gradient(90deg,#38bdf8,#22d3ee); color: white; }
-        body.light-mode .sidebar-label { color: #6b7280; }
-        body.light-mode h1, body.light-mode h2, body.light-mode h3,
-        body.light-mode h4, body.light-mode p, body.light-mode span { color: #111827; }
-        body.light-mode select { background: white; color: black; border: 1px solid #d1d5db; }
-        body.light-mode #recent-links { background:#ffffff; border:1px solid #e5e7eb; }
-        body.light-mode #recent-links th { color:#374151; font-weight:600; }
-        body.light-mode #recent-links td { color:#111827; }
-        body.light-mode #recent-links .short-url { color:#06b6d4; }
-        body.light-mode #recent-links .table-head a { color:#06b6d4; }
-        body.light-mode #recent-links .row-action { color:#4b5563; }
-        body.light-mode #recent-links tbody tr:hover { background:#f9fafb; }
-        body.light-mode #recent-links tbody tr { border-bottom:1px solid #e5e7eb; }
-        body.light-mode .qr-modal { background: #ffffff; border-color: #e5e7eb; }
-        body.light-mode .qr-modal-head p { color: #6b7280; }
-        body.light-mode .qr-color-row { background: #f9fafb; border-color: #e5e7eb; }
-        body.light-mode .qr-color-row input[type="text"] { color: #111827; }
-        body.light-mode .qr-preview { background: #f9fafb; border-color: #e5e7eb; }
-
+        
         .theme-btn {
             width: 42px; height: 42px;
             border-radius: 50%; border: none; cursor: pointer; font-size: 18px;
@@ -1423,9 +1393,7 @@
                 </div>
             </a>
             
-            <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;margin:auto;"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"></path></svg>
-            </button>
+            
 
             <!-- Workspace section -->
             <nav class="sidebar-section">
@@ -1482,10 +1450,14 @@
 
                 <div class="search-container">
                     <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-                    <input type="text" id="search-links-input" placeholder="Search shortened links..." />
+                    <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." />
                 </div>
 
                 <div class="topbar-actions">
+                    <button id="theme-toggle" class="action-icon-btn" type="button" aria-label="Toggle Theme">
+                <svg class="icon-light" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto;"><path d="M7.5 1.5V2.5M7.5 12.5V13.5M1.5 7.5H2.5M12.5 7.5H13.5M3.257 3.257L3.964 3.964M11.035 11.035L11.742 11.742M3.257 11.742L3.964 11.035M11.035 3.964L11.742 3.257" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><circle cx="7.5" cy="7.5" r="2.75" stroke="currentColor" stroke-width="1.5"/></svg>
+                <svg class="icon-dark" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto; display:none;"><path d="M1.66 7.452C1.66 10.67 4.268 13.278 7.485 13.278C10.02 13.278 12.18 11.65 12.987 9.388C12.103 10.199 10.899 10.706 9.57 10.706C6.884 10.706 4.706 8.528 4.706 5.842C4.706 4.542 5.193 3.364 5.976 2.493C3.541 3.195 1.66 5.128 1.66 7.453Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </button>
                     <button class="action-icon-btn" type="button"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
                     <a class="profile-chip" href="/profile">
                         <span class="avatar"><%= user.initials %></span>
@@ -1733,22 +1705,36 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Theme Toggle Logic
             const themeBtn = document.getElementById('theme-toggle');
-            const root = document.documentElement;
-            
-            // Check saved theme
-            if (localStorage.getItem('theme') === 'dark') {
+        const root = document.documentElement;
+        const iconLight = themeBtn ? themeBtn.querySelector('.icon-light') : null;
+        const iconDark = themeBtn ? themeBtn.querySelector('.icon-dark') : null;
+        
+        function applyTheme(isDark) {
+            if (isDark) {
                 root.setAttribute('data-theme', 'dark');
+                if (iconLight) iconLight.style.display = 'none';
+                if (iconDark) iconDark.style.display = 'block';
+            } else {
+                root.removeAttribute('data-theme');
+                if (iconLight) iconLight.style.display = 'block';
+                if (iconDark) iconDark.style.display = 'none';
+            }
+        }
+
+        if (themeBtn) {
+            if (localStorage.getItem('theme') === 'dark') {
+                applyTheme(true);
+            } else {
+                applyTheme(false);
             }
 
             themeBtn.addEventListener('click', () => {
-                if (root.getAttribute('data-theme') === 'dark') {
-                    root.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'light');
-                } else {
-                    root.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                }
+                const isDark = root.getAttribute('data-theme') === 'dark';
+                applyTheme(!isDark);
+                localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+                window.dispatchEvent(new Event('themeChanged'));
             });
+        }
 
             // Sidebar Mobile Toggle
             const sidebarBtn = document.getElementById('sidebarToggle');
