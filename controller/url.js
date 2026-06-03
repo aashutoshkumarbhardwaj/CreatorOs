@@ -115,11 +115,7 @@ async function handleListUserLinks(req, res) {
     });
 }
 
-async function handleGetAnalytics(req, res) {
-    const shortId = req.params.shortId;
-    const entry = await Url.findOne({ shortId });
-    if (!entry) {
-        return res.status(404).json({ error: 'Short URL not found' });
+
 /**
  * Helper function to generate a Base64 Data URL for the QR code server-side.
  */
@@ -147,7 +143,7 @@ const handleRenderDashboard = asyncHandler(async (req, res) => {
 });
 
 // ── Shorten and Re-render Template ───────────────────────────────────────────
-const handleGenerateShortUrl = asyncHandler(async (req, res) => {
+const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
     const { redirectUrl, url, campaignName, qrFgColor, qrBgColor } = req.body;
     const inputUrl = redirectUrl || url;
 
@@ -322,4 +318,5 @@ module.exports = {
     handleDownloadQRCode,
     handleUpdateQRColors,
     handleGetAnalytics,
+    handleListUserLinks,
 };
