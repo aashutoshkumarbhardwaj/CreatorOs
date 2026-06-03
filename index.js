@@ -116,6 +116,7 @@ function buildShortenerViewModel(req, shortId = null, error = null) {
         services,
         shortUrl: shortId ? `${req.protocol}://${req.get('host')}/u/${shortId}` : null,
         error,
+        user: buildAccountViewModel(null, req.user)
     };
 }
 
