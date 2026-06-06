@@ -507,9 +507,89 @@
                             <input id="signup-password" type="password" name="password" placeholder="••••••••" required>
                         </div>
 
-                        <button type="submit" class="primary">
-                            Continue to Dashboard &rarr;
-                        </button>
+                        <button
+type="submit"
+class="primary"
+data-loading-text="Creating Account..."
+
+>
+
+<button
+type="submit"
+class="primary"
+data-loading-text="Creating Account..."
+
+>
+
+```
+Continue to Dashboard &rarr;
+```
+
+</button>
+
+<script>
+    const signupForm = document.querySelector('form');
+    let signupLoading = false;
+
+    signupForm?.addEventListener('submit', function () {
+        if (signupLoading) return false;
+
+        signupLoading = true;
+
+        const submitButton = this.querySelector('button[type="submit"]');
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.setAttribute('aria-busy', 'true');
+
+            submitButton.dataset.originalText = submitButton.innerHTML;
+
+            submitButton.innerHTML = `
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span class="spinner"></span>
+                    ${submitButton.dataset.loadingText}
+                </span>
+            `;
+        }
+    });
+</script>
+
+<style>
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #000;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+</style>
+
+<style>
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #000;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+</style>
+
                     </form>
 
                     <p class="switch-link">

@@ -1,53 +1,96 @@
 const googleLogin = document.querySelector('.google-login');
-        const emailForm = document.querySelector('#email-login-form');
-        const contributorForm = document.querySelector('#contributor-login-form');
+const emailForm = document.querySelector('#email-login-form');
+const contributorForm = document.querySelector('#contributor-login-form');
 
-        googleLogin?.addEventListener('click', function () {
-            this.setAttribute('aria-busy', 'true');
-            this.querySelector('span').textContent = this.dataset.loadingText;
-        });
+let emailLoading = false;
+let contributorLoading = false;
 
-        emailForm?.addEventListener('submit', function () {
-            const submitButton = this.querySelector('button[type="submit"]');
+googleLogin?.addEventListener('click', function () {
+this.setAttribute('aria-busy', 'true');
 
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = submitButton.dataset.loadingText;
-            }
-        });
+```
+const span = this.querySelector('span');
 
-        contributorForm?.addEventListener('submit', async function (event) {
-            event.preventDefault();
+if (span) {
+    span.textContent = this.dataset.loadingText || 'Signing in...';
+}
 
-            const submitButton = this.querySelector('button[type="submit"]');
+this.disabled = true;
+```
 
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = submitButton.dataset.loadingText;
-            }
+});
 
-            try {
-                const response = await fetch('/api/auth/contributor-login', {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                    },
-                });
-                const data = await response.json();
+emailForm?.addEventListener('submit', function () {
+if (emailLoading) return false;
 
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Contributor login failed');
-                }
+```
+emailLoading = true;
 
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = '/dashboard';
-            } catch (error) {
-                console.error(error);
+const submitButton = this.querySelector('button[type="submit"]');
 
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Continue as Contributor';
-                }
-            }
-        });
+if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.setAttribute('aria-busy', 'true');
+
+    submitButton.dataset.originalText = submitButton.textContent;
+
+    submitButton.textContent =
+        submitButton.dataset.loadingText || 'Signing in...';
+}
+```
+
+});
+
+contributorForm?.addEventListener('submit', async function (event) {
+event.preventDefault();
+
+```
+if (contributorLoading) return;
+
+contributorLoading = true;
+
+const submitButton = this.querySelector('button[type="submit"]');
+
+const originalText =
+    submitButton?.textContent || 'Continue as Contributor';
+
+if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.setAttribute('aria-busy', 'true');
+
+    submitButton.textContent =
+        submitButton.dataset.loadingText || 'Signing in...';
+}
+
+try {
+    const response = await fetch('/api/auth/contributor-login', {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Contributor login failed');
+    }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    window.location.href = '/dashboard';
+} catch (error) {
+    console.error(error);
+
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.removeAttribute('aria-busy');
+        submitButton.textContent = originalText;
+    }
+} finally {
+    contributorLoading = false;
+}
+```
+
+});
