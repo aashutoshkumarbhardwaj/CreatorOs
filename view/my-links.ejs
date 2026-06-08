@@ -1371,6 +1371,139 @@
             .dashboard-head { flex-direction:column; }
         }
 
+/* BIO LINK BUILDER */
+
+.bio-builder-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.bio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bio-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.bio-field label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.bio-field input,
+.bio-field textarea {
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 0.85rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.bio-links-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.bio-add-btn {
+    background: var(--accent-yellow);
+    border: 2px solid var(--border);
+    padding: 0.55rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px var(--border);
+}
+
+.bio-link-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.bio-link-item input {
+    border: 2px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 0.75rem;
+}
+
+.remove-link-btn {
+    background: var(--accent-red);
+    color: white;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    padding: 0 1rem;
+    font-weight: 700;
+}
+
+.bio-preview {
+    position: sticky;
+    top: 100px;
+}
+
+.bio-preview-card {
+    border: var(--border-thick);
+    background: var(--card-bg);
+    padding: 2rem;
+    box-shadow: var(--shadow-retro);
+    text-align: center;
+}
+
+.bio-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--accent-teal);
+    border: 3px solid var(--border);
+    margin: 0 auto 1rem;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.preview-links {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.preview-link {
+    border: 2px solid var(--border);
+    padding: 0.85rem;
+    font-weight: 700;
+    background: var(--bg-secondary);
+}
+
+@media (max-width: 1000px) {
+    .bio-builder-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bio-preview {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .bio-link-item {
+        grid-template-columns: 1fr;
+    }
+}
+
+
         @media (max-width: 620px) {
             .stats-grid { grid-template-columns: 1fr; }
             .donut-layout { grid-template-columns:1fr; justify-items:center; }
@@ -1418,8 +1551,21 @@
             </nav>
 
             <!-- Services section -->
+             
             <nav class="sidebar-section" aria-label="Services">
                 <p class="sidebar-label">Services</p>
+
+<a class="service-link" href="/services/bio-builder">
+    <svg viewBox="0 0 24 24">
+        <path d="M12 3v18"></path>
+        <path d="M3 12h18"></path>
+    </svg>
+
+    <span class="service-name">
+        Smart Bio Builder
+    </span>
+</a>
+
                 <% services.forEach((service) => { %>
                     <a class="service-link <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
                         <svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M3 12h18"></path></svg>
@@ -1489,7 +1635,7 @@
                     </div>
                 <% } %>
 
-                <div class="analytics-grid">
+           <div class="analytics-grid">
                     <!-- Main Links Feed -->
                     <div style="display:flex; flex-direction:column; gap:1.5rem;">
                         
@@ -1531,6 +1677,8 @@
                                     </div>
                                 </div>
                                 
+                                    
+
                                 <div id="result-banner" style="display:none; justify-content:space-between; align-items:center; background:var(--success); color:var(--text); padding:0.75rem 1rem; border:2px solid var(--border); box-shadow:2px 2px 0px var(--border); font-weight:700; margin-top:0.5rem;">
                                     <span id="result-text"></span>
                                     <button type="button" id="copy-result-btn" style="background:var(--card-bg); color:var(--text); border:2px solid var(--border); padding:0.35rem 0.75rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Copy</button>
@@ -1555,6 +1703,7 @@
                                 </div>
                             </div>
                         </section>
+                    
                     </div>
 
                     <!-- Sidebar Widgets -->
@@ -1578,12 +1727,17 @@
                                 <p id="stat-top-link" style="font-weight:700; word-break:break-all;">—</p>
                             </div>
                             
-                            <a href="/services/analytics-dashboard" style="display:block; margin-top:1rem; font-size:0.75rem; font-weight:700; text-transform:uppercase; text-decoration:underline; color:var(--text);">View Analytics &rarr;</a>
+                           
                         </article>
-                    </aside>
-                </div>
-                
-                <footer style="margin-top:3rem; padding-top:1.5rem; border-top:var(--border-thick); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; font-size:0.8rem; color:var(--muted-2);">
+              </aside>
+
+</div>
+
+
+
+</main>
+
+<footer style="margin-top:3rem; padding-top:1.5rem; border-top:var(--border-thick); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; font-size:0.8rem; color:var(--muted-2);">
                     <span>© <%= new Date().getFullYear() %> CreatorOS Ecosystem · Titli Module v1.2.4</span>
                     <div style="display:flex; gap:1.5rem;">
                         <a href="/services/url-shortener" style="font-weight:700;">API Docs</a>
@@ -1591,8 +1745,10 @@
                         <a href="/" style="font-weight:700;">Terms</a>
                     </div>
                 </footer>
-            </section>
-        </main>
+            
+        
+
+    
     </div>
     
     <div class="toast" id="toast" role="status" aria-live="polite" style="display:none; position:fixed; bottom:20px; right:20px; background:var(--card-bg); border:var(--border-thick); padding:1rem; box-shadow:var(--shadow-retro); z-index:1000; font-weight:700;"></div>
@@ -1624,3 +1780,5 @@
     </script>
 </body>
 </html>
+
+
