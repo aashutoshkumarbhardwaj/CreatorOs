@@ -1,3 +1,35 @@
+.sidebar-nav a,
+.workspace-sidebar a,
+.sidebar a {
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.sidebar-nav a:hover,
+.workspace-sidebar a:hover,
+.sidebar a:hover {
+    transform: translateX(4px);
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.sidebar-nav a svg,
+.workspace-sidebar a svg,
+.sidebar a svg {
+    transition: transform 0.2s ease;
+}
+
+.sidebar-nav a:hover svg,
+.workspace-sidebar a:hover svg,
+.sidebar a:hover svg {
+    transform: scale(1.08);
+}
+
+
+
+
 :root {
     --links-hero: #fef9c3;
     --links-blue: #bfdbfe;
