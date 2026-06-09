@@ -36,6 +36,23 @@
 
 ---
 
+## Table of Contents
+
+- [🔥 The Problem](#-the-problem)
+- [✨ What CreatorOs Does](#-what-creatoros-does)
+- [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
+- [🚀 Getting Started](#-getting-started)
+- [📁 Project Structure](#-project-structure)
+- [🎯 Who Is This For?](#-who-is-this-for)
+- [💰 Pricing Model](#-pricing-model)
+- [🗺️ Roadmap](#%EF%B8%8F-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🌟 Our Contributors](#-our-contributors)
+- [📬 Connect](#-connect)
+
+---
+
 ## 🔥 The Problem
 
 Every creator knows this chaos:
