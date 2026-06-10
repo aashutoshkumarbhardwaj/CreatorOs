@@ -465,6 +465,44 @@
         .auth-unverified a:hover {
             background-color: #d97706;
         }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 3rem !important;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            z-index: 10;
+            transition: transform 0.1s ease;
+        }
+
+        .password-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .password-toggle-btn:active {
+            transform: scale(0.9);
+        }
+
+        .password-toggle-btn:focus {
+            outline: 2px solid var(--teal);
+        }
     </style>
 </head>
 <body>
@@ -547,7 +585,15 @@
                             <label for="login-password">Password</label>
                             <a href="#" class="forgot-link">FORGOT?</a>
                         </div>
-                        <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                        <div class="password-wrapper">
+                            <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                            <button type="button" id="toggle-password" class="password-toggle-btn" aria-label="Show password">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="checkbox-row">

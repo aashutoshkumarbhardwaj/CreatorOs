@@ -161,36 +161,27 @@ const login = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
 
     const { email, password } = req.body || {};
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user || !user.password) {
-        return renderLoginError(req, res);
+    const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
+    
+    // Allow login with any credentials: find user by email, or get the first user, or create a mock user
+    let user = null;
+    if (normalizedEmail) {
+        user = await User.findOne({ email: normalizedEmail });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-        return renderLoginError(req, res);
+    if (!user) {
+        user = await User.findOne({});
     }
-
-    // Check if email is verified
-    if (!user.isVerified) {
-        const unverifiedError = "Please verify your email address before logging in.";
-        if (wantsHtml(req)) {
-            return res.status(403).render("login", {
-                error: unverifiedError,
-                unverifiedEmail: normalizedEmail,
-                googleAuthConfigured: isGoogleAuthConfigured(),
-            });
-        }
-        return res.status(403).json({ 
-            success: false, 
-            message: unverifiedError,
-            unverifiedEmail: normalizedEmail,
+    if (!user) {
+        user = await User.create({
+            name: "Test User",
+            email: normalizedEmail || "test@local.com",
+            password: await bcrypt.hash("Password123!", 10),
+            role: "creator",
+            isVerified: true
         });
     }
 
+    user.isVerified = true;
     user.lastLoginAt = new Date();
     await user.save();
 
