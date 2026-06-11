@@ -259,24 +259,25 @@
             color: #222222;
             line-height: 1.3;
         }
+.upgrade-btn {
+    width: 100%;
+    background-color: var(--accent-blue);
+    border: var(--border-thick);
+    color: #111111;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.4rem;
+    text-align: center;
+    box-shadow: 2px 2px 0px var(--border);
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-        .upgrade-btn {
-            width: 100%;
-            background-color: var(--accent-blue);
-            border: var(--border-thick);
-            color: #111111;
-            font-weight: 700;
-            font-size: 0.8rem;
-            padding: 0.4rem;
-            text-align: center;
-            box-shadow: 2px 2px 0px var(--border);
-            cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif;
-        }
-        .upgrade-btn:hover {
-            transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0px var(--border);
-        }
+.upgrade-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 0px var(--border);
+}
 
         /* Collapsed Sidebar overrides */
         .dashboard-layout.sidebar-collapsed .brand {
@@ -453,29 +454,31 @@
             font-size: 0.85rem;
         }
 
-        .primary-action-btn {
-            background-color: var(--accent-teal);
-            border: var(--border-thick);
-            color: #111111;
-            font-weight: 700;
-            font-size: 0.9rem;
-            padding: 0.55rem 1.1rem;
-            font-family: 'Space Grotesk', sans-serif;
-            box-shadow: var(--shadow-retro-btn);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .primary-action-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: var(--shadow-retro-hover);
-        }
-        .primary-action-btn:active {
-            transform: translate(1px, 1px);
-            box-shadow: 1px 1px 0px var(--border);
-        }
+       .primary-action-btn {
+    background-color: var(--accent-teal);
+    border: var(--border-thick);
+    color: #111111;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.55rem 1.1rem;
+    font-family: 'Space Grotesk', sans-serif;
+    box-shadow: var(--shadow-retro-btn);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
+.primary-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-retro-hover);
+}
+
+.primary-action-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--border);
+}
         /* ── Content ── */
         .content {
             padding: 2rem;
@@ -748,45 +751,23 @@
             box-shadow: 2px 2px 0px var(--border);
         }
 
-        .invite-form button {
-            background-color: var(--accent-teal);
-            border: var(--border-thick);
-            color: #111111;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 0.65rem 1.1rem;
-            cursor: pointer;
-            box-shadow: var(--shadow-retro-btn);
-        }
-        .invite-form button:hover {
-            transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0px var(--border);
-        }
+     .invite-form button {
+    background-color: var(--accent-teal);
+    border: var(--border-thick);
+    color: #111111;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.65rem 1.1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-retro-btn);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-        .message-box {
-            padding: 0.75rem 1rem;
-            border: var(--border-thick);
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-
-        .message-success {
-            background-color: var(--success);
-            color: #111111;
-        }
-
-        .message-error {
-            background-color: var(--accent-red);
-            color: var(--white);
-        }
-
-        .invite-form button:hover { transform: translateY(-1px); }
-
-        .message-box { padding: 1rem 1.15rem; border-radius: 0.95rem; margin-top: 1rem; font-size: 0.95rem; }
-        .message-success { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.18); color: #d1fae5; }
-        .message-error   { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.22); color: #fee2e2; }
+.invite-form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 0px var(--border);
+}
 
         /* Donut Layout */
         .donut-layout {
@@ -1062,23 +1043,24 @@
 
         .row-actions { display: flex; align-items: center; gap: 0.7rem; }
 
-        .row-action {
-            width: 2rem;
-            height: 2rem;
-            display: grid;
-            place-items: center;
-            border-radius: 999px;
-            color: var(--muted);
-            text-decoration: none;
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: color 0.18s ease, background 0.18s ease;
-        }
+       .row-action {
+    width: 1.8rem;
+    height: 1.8rem;
+    display: grid;
+    place-items: center;
+    border: var(--border-thick);
+    background-color: var(--card-bg);
+    color: var(--text);
+    box-shadow: 1px 1px 0px var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
 
-        .row-action:hover { color: var(--purple); background: rgba(34, 211, 238, 0.1); }
-
-        svg { width: 1.2rem; height: 1.2rem; stroke-width: 2.2; }
+.row-action:hover {
+    background-color: var(--accent-teal);
+    color: #111111;
+    transform: translateY(-2px);
+}
 
         /* ── QR Badge in table ───────────────────────── */
         .qr-badge {
@@ -1144,7 +1126,9 @@
             cursor: pointer;
         }
 
-        .row-action:hover {
+        .row-action {
+    transition: all 0.2s ease;
+
             background-color: var(--accent-teal);
             color: #111111;
         }
