@@ -8,3 +8,15 @@
     transform: translateY(-4px);
     box-shadow: 6px 6px 0 rgba(0,0,0,0.12);
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-card-retro,
+    .panel-retro {
+        transition: none;
+    }
+    
+    .stat-card-retro:hover,
+    .panel-retro:hover {
+        transform: none;
+    }
+}
