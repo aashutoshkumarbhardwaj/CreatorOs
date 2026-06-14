@@ -1007,6 +1007,54 @@
             border-bottom: none;
         }
 
+
+        /* Empty State Animations */
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    border: 2px dashed var(--border);
+    color: var(--muted-2);
+    animation: fadeSlideUp 0.5s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: var(--card-bg);
+}
+
+.empty-state:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 4px 0px var(--border);
+}
+
+.empty-state h4 {
+    transition: letter-spacing 0.2s ease;
+}
+
+.empty-state:hover h4 {
+    letter-spacing: 0.5px;
+}
+
+/* CTA Hover Feedback */
+#shorten-btn,
+#widget-new-btn {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#shorten-btn:hover,
+#widget-new-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0px var(--border);
+}
+
+/* Entrance Animation */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
         .recent-links-table tbody tr:hover {
             background-color: rgba(0, 0, 0, 0.02);
         }
@@ -1533,7 +1581,7 @@
                             </div>
                             
                             <div id="links-feed" style="display:flex; flex-direction:column; gap:1rem;">
-                                <div class="empty-state" id="empty-state" style="padding:2rem; text-align:center; border:2px dashed var(--border); color:var(--muted-2);">
+                              <div class="empty-state" id="empty-state">
                                     <h4 style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; margin-bottom:0.5rem;">No links yet</h4>
                                     <p style="font-size:0.85rem;">Paste a URL above and hit SHORTEN NOW to create your first link.</p>
                                 </div>
