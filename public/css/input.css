@@ -1,4 +1,4 @@
 @import "tailwindcss";
-
+@import "./legacy-inline.css";
 @source "../../view/**/*.ejs";
 @source "../../components/**/*.jsx";
