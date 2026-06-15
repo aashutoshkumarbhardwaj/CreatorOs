@@ -553,6 +553,7 @@
 
         <!-- Form -->
         <form method="POST" action="/suggestions">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="form-row">
             <input class="styled-select" style="cursor: text;" type="text" name="topic" placeholder="e.g. Exploring the mountains with my dog..." value="<%= selected || '' %>" required autocomplete="off" />
             <button class="primary-btn" type="submit">

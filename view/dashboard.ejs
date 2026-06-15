@@ -1568,6 +1568,7 @@
                                 <div style="background:var(--danger-500); color:var(--white); padding:1rem; border:2px solid var(--black); font-weight:bold; margin-bottom:1rem;"><%= inviteAcceptError %></div>
                             <% } %>
                             <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <input type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
                                 <button type="submit">Accept</button>
                             </form>

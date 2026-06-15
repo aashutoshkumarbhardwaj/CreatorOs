@@ -1526,6 +1526,7 @@
                             </div>
                             
                             <form action="/services/url-shortener/shorten" method="POST" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                 <input type="url" name="redirectUrl" id="url-shortener-input" placeholder="https://your-super-long-link.com/to-shorten" required style="flex:1; border:2px solid var(--border); padding:0.9rem 1rem; font-family:'Space Grotesk',monospace; font-size:1rem; outline:none; background:var(--card-bg); color:var(--text); box-shadow:inset 2px 2px 0px rgba(0,0,0,0.05);" />
                                 <button type="submit" style="background:var(--accent-teal); border:2px solid var(--border); padding:0.9rem 1.75rem; font-weight:700; font-family:'Space Grotesk',monospace; font-size:1rem; cursor:pointer; box-shadow:2px 2px 0px var(--border); color:var(--text);">SHORTEN</button>
                             </form>

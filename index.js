@@ -31,9 +31,13 @@ const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collab
 
 connectDB();
 require("./workers/analyticsRefreshWorker");
+const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
+
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(generateCsrf);
+app.use(verifyCsrf);
 app.use(passport.initialize());
 
 app.set("view engine", "ejs");
