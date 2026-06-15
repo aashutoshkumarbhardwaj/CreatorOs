@@ -1775,13 +1775,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            <% if (locals.shortUrl) { %>
-            setTimeout(function() {
-                if (typeof QRCode !== 'undefined') {
-                    generateQR();
-                }
-            }, 150);
-            <% } %>
+            if (qrState.url) {
+                setTimeout(function() {
+                    if (typeof QRCode !== 'undefined') {
+                        generateQR();
+                    }
+                }, 150);
+            }
         });
     </script>
 
