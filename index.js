@@ -91,6 +91,11 @@ app.get('/services/bio-builder', (req, res) => {
 const Url = require('./model/url');
 
 app.use('/api/urls', urlRoutes);
+// API Documentation
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./utils/swaggerOptions');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
+
 app.use("/api/analytics", protect, analyticsRoutes);
 
 const settingsRoutes = require('./routes/settings');

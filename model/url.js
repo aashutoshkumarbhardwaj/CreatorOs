@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema urlSchema
+ * @description Mongoose schema definition for url.
+ */
 const urlSchema = new mongoose.Schema({
     shortId: {
         type: String,

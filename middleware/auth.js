@@ -2,6 +2,14 @@ const jwt = require("jsonwebtoken");
 const connectDB = require("../connect");
 const { wantsHtml } = require("../utils/requestType");
 
+/**
+ * @function protect
+ * @description Automatically generated JSDoc for protect
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const protect = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization || "";
@@ -60,6 +68,14 @@ const protect = async (req, res, next) => {
     }
 };
 
+/**
+ * @function requireAdmin
+ * @description Automatically generated JSDoc for requireAdmin
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const requireAdmin = (req, res, next) => {
     if (req.user.role !== "admin") {
         return res.status(403).json({
@@ -72,6 +88,14 @@ const requireAdmin = (req, res, next) => {
     return next();
 };
 
+/**
+ * @function preventContributorWrites
+ * @description Automatically generated JSDoc for preventContributorWrites
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const preventContributorWrites = (req, res, next) => {
     if (req.user.role === "contributor" || req.user.role === "guest_contributor") {
         return res.status(403).json({
