@@ -348,13 +348,17 @@ app.get('/analytics', protect, asyncHandler(async (req, res) => {
     });
 }));
 
-// Vault
-app.get('/vault', protect, asyncHandler(async (req, res) => {
+// Vault redirect to new File Upload page
+app.get('/vault', protect, (req, res) => {
+    return res.redirect('/file-upload');
+});
+// File Upload page
+app.get('/file-upload', protect, asyncHandler(async (req, res) => {
     const userDoc = await User.findById(req.user.id)
         .select('name email')
         .lean();
 
-    return res.render('vault', {
+    return res.render('file-upload', {
         services,
         user: buildAccountViewModel(userDoc, req.user),
     });
