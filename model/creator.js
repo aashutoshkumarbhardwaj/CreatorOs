@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema creatorSchema
+ * @description Mongoose schema definition for creator.
+ */
 const creatorSchema = new mongoose.Schema(
     {
 

@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema engagementHistorySchema
+ * @description Mongoose schema definition for engagementHistory.
+ */
 const engagementHistorySchema = new mongoose.Schema(
     {
         creatorId: {

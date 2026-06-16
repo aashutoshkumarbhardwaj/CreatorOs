@@ -35,6 +35,8 @@
     "qrcode": "^1.5.4",
     "qrcode-svg": "^1.1.0",
     "shortid": "^2.2.17",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.0"
   },
   "devDependencies": {

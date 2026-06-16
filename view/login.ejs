@@ -581,6 +581,7 @@
                 <div class="divider">OR EMAIL</div>
 
                 <form action="/login" method="POST" id="email-login-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">
                         <div class="label-row">
                             <label for="login-email">Email Address</label>
@@ -615,6 +616,7 @@
                 </form>
 
                 <form action="/login/contributor" method="POST" id="contributor-login-form" style="margin-bottom: 2.5rem;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="social-btn" style="box-shadow: var(--shadow-sm); justify-content: center;" data-loading-text="Continuing...">
                         Continue as Contributor
                     </button>

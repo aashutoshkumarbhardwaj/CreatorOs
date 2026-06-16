@@ -14,6 +14,11 @@ class InstagramProfileError extends Error {
     }
 }
 
+/**
+ * @function normalizeUsername
+ * @description Automatically generated JSDoc for normalizeUsername
+ * @returns {any}
+ */
 function normalizeUsername(username) {
     return String(username || '')
         .trim()
@@ -21,6 +26,11 @@ function normalizeUsername(username) {
         .toLowerCase();
 }
 
+/**
+ * @function validateUsername
+ * @description Automatically generated JSDoc for validateUsername
+ * @returns {any}
+ */
 function validateUsername(username) {
     const normalizedUsername = normalizeUsername(username);
 
@@ -43,6 +53,11 @@ function validateUsername(username) {
     return normalizedUsername;
 }
 
+/**
+ * @function runPythonProvider
+ * @description Automatically generated JSDoc for runPythonProvider
+ * @returns {any}
+ */
 function runPythonProvider(username) {
     const pythonPath = process.env.INSTAGRAM_PYTHON_PATH || 'python';
     const scriptPath = path.join(__dirname, 'instagram_public_profile.py');
@@ -100,6 +115,11 @@ function runPythonProvider(username) {
     });
 }
 
+/**
+ * @function parseMetricValue
+ * @description Automatically generated JSDoc for parseMetricValue
+ * @returns {any}
+ */
 function parseMetricValue(raw) {
     if (!raw) {
         return 0;
@@ -126,12 +146,22 @@ function parseMetricValue(raw) {
     return Math.round(base);
 }
 
+/**
+ * @function extractMetaContent
+ * @description Automatically generated JSDoc for extractMetaContent
+ * @returns {any}
+ */
 function extractMetaContent(html, property) {
     const pattern = new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i');
     const match = html.match(pattern);
     return match ? decodeHtmlEntities(match[1]) : '';
 }
 
+/**
+ * @function decodeHtmlEntities
+ * @description Automatically generated JSDoc for decodeHtmlEntities
+ * @returns {any}
+ */
 function decodeHtmlEntities(value) {
     if (!value) {
         return '';
@@ -147,6 +177,11 @@ function decodeHtmlEntities(value) {
         .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
+/**
+ * @function extractNameAndHandle
+ * @description Automatically generated JSDoc for extractNameAndHandle
+ * @returns {any}
+ */
 function extractNameAndHandle(ogTitle, username) {
     if (!ogTitle) {
         return { name: username, handle: username };
@@ -163,6 +198,11 @@ function extractNameAndHandle(ogTitle, username) {
     };
 }
 
+/**
+ * @function extractCounts
+ * @description Automatically generated JSDoc for extractCounts
+ * @returns {any}
+ */
 function extractCounts(ogDescription) {
     if (!ogDescription) {
         return { followers: 0, following: 0, totalPosts: 0, hasCountTokens: false };
@@ -181,6 +221,11 @@ function extractCounts(ogDescription) {
     };
 }
 
+/**
+ * @function isPrivateProfile
+ * @description Automatically generated JSDoc for isPrivateProfile
+ * @returns {any}
+ */
 function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
     return /this account is private/i.test(html)
         || /private account/i.test(html)
@@ -190,6 +235,11 @@ function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
         || /private/i.test(ogTitle);
 }
 
+/**
+ * @function buildNormalizedProfile
+ * @description Automatically generated JSDoc for buildNormalizedProfile
+ * @returns {any}
+ */
 function buildNormalizedProfile({ username, name, profileImage, bio, followers, following, totalPosts, source }) {
     return {
         username,
@@ -205,6 +255,14 @@ function buildNormalizedProfile({ username, name, profileImage, bio, followers, 
     };
 }
 
+/**
+ * @function fetchPublicHtmlProfile
+ * @description Automatically generated JSDoc for fetchPublicHtmlProfile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchPublicHtmlProfile(username) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -308,6 +366,14 @@ async function fetchPublicHtmlProfile(username) {
     }
 }
 
+/**
+ * @function fetchPythonPublicProfile
+ * @description Automatically generated JSDoc for fetchPythonPublicProfile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchPythonPublicProfile(username) {
     const data = await runPythonProvider(username);
 
@@ -331,6 +397,11 @@ async function fetchPythonPublicProfile(username) {
     });
 }
 
+/**
+ * @function resolveProvider
+ * @description Automatically generated JSDoc for resolveProvider
+ * @returns {any}
+ */
 function resolveProvider() {
     const provider = (process.env.INSTAGRAM_PUBLIC_PROVIDER || 'public_html').toLowerCase();
 
@@ -349,6 +420,14 @@ function resolveProvider() {
     );
 }
 
+/**
+ * @function fetchInstagramProfile
+ * @description Automatically generated JSDoc for fetchInstagramProfile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchInstagramProfile(username) {
     const normalizedUsername = validateUsername(username);
     const provider = resolveProvider();

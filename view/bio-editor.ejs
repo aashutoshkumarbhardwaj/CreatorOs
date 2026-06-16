@@ -12,6 +12,7 @@
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="<%= csrfToken %>" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -449,51 +450,12 @@
 <body>
 <div class="layout">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="brand">CreatorOS</div>
-
-    <a href="/dashboard" class="nav-item">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Dashboard
-    </a>
-    <a href="/vault" class="nav-item">
-      <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-      Vault
-    </a>
-    <a href="/analytics" class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M9 19V9"/><path d="M14 19V3"/><path d="M19 19v-7"/></svg>
-      Analytics
-    </a>
-    <a href="/services/creator-crm" class="nav-item">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      CRM
-    </a>
-    <a href="/bio" class="nav-item active">
-      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      Smart Bio
-    </a>
-    <a href="/settings" class="nav-item">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
-    </a>
-  </aside>
+  <%- include('partials/layout/sidebar', { activeNav: '' }) %>
 
   <!-- MAIN -->
   <div class="main">
 
-    <!-- TOPBAR -->
-    <header class="topbar">
-      <h2>Smart Bio Editor</h2>
-      <div class="share-url">
-        <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
-        <button class="copy-btn" onclick="copyUrl()">Copy</button>
-      </div>
-      <div class="topbar-actions">
-        <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
-        <button class="btn-retro primary" onclick="saveBio()">Save Changes</button>
-      </div>
-    </header>
+    <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
     <!-- CONTENT -->
     <div class="content">
@@ -738,7 +700,10 @@
 
     fetch('/bio/save', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-csrf-token': document.querySelector('meta[name="csrf-token"]').content 
+      },
       body: JSON.stringify(data),
     })
     .then(r => r.json())
@@ -778,5 +743,6 @@
   // Init preview
   updatePreview();
 </script>
+    <%- include('partials/layout/scripts') %>
 </body>
 </html>

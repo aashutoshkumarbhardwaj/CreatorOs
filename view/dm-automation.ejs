@@ -1771,102 +1771,13 @@
   <div class="dashboard-layout" id="dashboardLayout">
 
     <!-- Left Sidebar Redesign -->
-    <aside class="sidebar" aria-label="Dashboard navigation">
-      <a class="brand" href="/dashboard">
-        <span class="brand-mark">CO</span>
-        <div>
-          <span class="brand-text">CreatorOS</span>
-          <span class="brand-version">v2.0 Beta</span>
-        </div>
-        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle Theme">☀️</button>
-      </a>
-
-      <!-- Workspace section -->
-      <nav class="sidebar-section">
-        <p class="sidebar-label">Workspace</p>
-        <a class="nav-link" href="/dashboard">
-          <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          <span class="nav-text">Dashboard</span>
-        </a>
-        <a class="nav-link" href="/dashboard#recent-links">
-          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
-          <span class="nav-text">My Links</span>
-        </a>
-        <a class="nav-link" href="/dashboard#analytics">
-          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
-          <span class="nav-text">Analytics</span>
-        </a>
-        <a class="nav-link" href="/dashboard#settings">
-          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
-          <span class="nav-text">Settings</span>
-        </a>
-      </nav>
-
-      <!-- Services section -->
-      <nav class="sidebar-section" aria-label="Services">
-        <p class="sidebar-label">Services</p>
-        <% services.forEach(function(service) { %>
-          <a class="service-link <%= service.status %> <%= service.key === 'dm-automation' ? 'active' : '' %>"
-             href="<%= service.route %>" title="<%= service.name %>">
-            <svg class="nav-icon" viewBox="0 0 24 24"><%- service.svgPath || '<path d="M12 3v18M3 12h18"></path>' %></svg>
-            <span class="service-name"><%= service.name %></span>
-          </a>
-        <% }) %>
-      </nav>
-
-      <!-- Sidebar bottom footer -->
-      <div class="sidebar-footer">
-        <div class="upgrade-box">
-          <h4>Upgrade Plan</h4>
-          <p>Get access to advanced webhooks & Unlimited Auto-Replies.</p>
-          <button class="upgrade-btn" type="button">Upgrade Plan</button>
-        </div>
-        <a class="nav-link" href="#" style="margin-top:0.25rem;">
-          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
-          <span class="nav-text">Support</span>
-        </a>
-        <a class="nav-link" href="/logout">
-          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
-          <span class="nav-text">Log Out</span>
-        </a>
-      </div>
-    </aside>
+    <%- include('partials/layout/sidebar', { activeNav: 'dm-automation' }) %>
 
     <!-- Main Panel -->
     <main class="main">
       
       <!-- Top Navigation -->
-      <header class="topbar">
-        <button class="menu-btn" type="button" id="sidebarToggle" aria-label="Toggle sidebar" aria-expanded="true">
-          <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
-        </button>
-        
-        <div class="search-container">
-          <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-          <input type="text" id="search-automations-input" class="search-input" placeholder="Search automations..." aria-label="Search automations..." />
-        </div>
-
-        <div class="topbar-actions">
-          <div class="nav-actions-icons">
-            <button class="action-icon-btn" aria-label="Notifications" type="button">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            </button>
-            <button class="action-icon-btn" aria-label="Help" type="button">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"></path></svg>
-            </button>
-          </div>
-          
-          <a class="profile-chip" href="/profile">
-            <span class="avatar"><%= user.initials %></span>
-            <span class="profile-name"><%= user.name %></span>
-          </a>
-
-          <button class="btn-new-automation" type="button" onclick="openCreateView()">
-            <svg viewBox="0 0 24 24" style="width:1.1rem; height:1.1rem;"><path d="M12 5v14M5 12h14"></path></svg>
-            New Automation
-          </button>
-        </div>
-      </header>
+      <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
       <!-- Content wrapper scroll area -->
       <div class="content-scroll">
@@ -3145,5 +3056,6 @@
       updateDashboardUI();
     });
   </script>
+    <%- include('partials/layout/scripts') %>
 </body>
 </html>
