@@ -1249,7 +1249,7 @@
         /* QR Color Pickers */
         .qr-colors {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 2.5fr 1.2fr;
             gap: 0.85rem;
             margin-bottom: 1.2rem;
         }
@@ -1295,7 +1295,7 @@
         /* QR Actions */
         .qr-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 2.5fr 1.2fr;
             gap: 0.75rem;
         }
 
@@ -1580,15 +1580,21 @@
 
     /* ─── BOTTOM STRIP ─── */
     .bottom-strip {
-       border: 2px solid #1a1a1a;
+      border: 2px solid #1a1a1a;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      border-radius: 6px;
+      box-shadow: var(--shadow-retro);
+      overflow: hidden;
     }
 
     /* ─── RECENT CONTACTS TABLE ─── */
    .contacts-panel {
-  border-right: 1px solid #e2ddd6;
-}
+      min-width: 0;
+      border-right: 2px solid #1a1a1a;
+      overflow-x: auto;
+      background: var(--card-bg);
+    }
 
 .panel-header {
   display: flex;
@@ -1669,9 +1675,10 @@
     /* ─── INVOICED PANEL ─── */
     /* ─── INVOICED PANEL ─── */
 .invoiced-panel {
-  display: flex;
-  flex-direction: column;
-}
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+    }
 
 .invoiced-header {
   padding: 1.25rem 1.5rem;
@@ -1776,7 +1783,13 @@
   box-shadow: 5px 5px 0px #1a1a1a;
 }
   
+
+    @media (max-width: 1000px) {
+      .bottom-strip { grid-template-columns: 1fr; }
+      .contacts-panel { border-right: none; border-bottom: 2px solid #1a1a1a; }
+    }
 </style>
+
 </head>
 <body>
 <div class="dashboard-layout">
