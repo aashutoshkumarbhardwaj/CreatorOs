@@ -66,6 +66,7 @@ const MockInviteModel = {
   countDocuments: async () => 0,
   findOne: async () => null,
   findByIdAndDelete: async () => null,
+  create: async (data) => data,
   find: () => emptyInviteQuery,
 };
 
