@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getCreatorCrmPage, sendCollaboratorInvite } = require('../controller/collaborationController');
 const { preventContributorWrites } = require('../middleware/auth');
+const { inviteCollaboratorValidator } = require('../middleware/validators');
 
 
 /**
@@ -38,6 +39,6 @@ router.get('/', getCreatorCrmPage);
  *       500:
  *         description: Internal server error
  */
-router.post('/invite', preventContributorWrites, sendCollaboratorInvite);
+router.post('/invite', preventContributorWrites, inviteCollaboratorValidator, sendCollaboratorInvite);
 
 module.exports = router;

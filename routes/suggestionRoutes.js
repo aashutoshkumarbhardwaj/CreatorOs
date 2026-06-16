@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getPage, getSuggestions } = require('../controller/suggestionController');
+const { generateSuggestionValidator } = require('../middleware/validators');
 
 
 /**
@@ -37,6 +38,6 @@ router.get('/', getPage);
  *       500:
  *         description: Internal server error
  */
-router.post('/', getSuggestions);
+router.post('/', generateSuggestionValidator, getSuggestions);
 
 module.exports = router;

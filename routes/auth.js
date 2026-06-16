@@ -2,7 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail } = require("../controller/auth");
-const { signupValidator, loginValidator } = require("../middleware/validators");
+const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
 
 const router = express.Router();
@@ -171,7 +171,7 @@ router.post("/login", loginValidator, login);
  *       500:
  *         description: Internal server error
  */
-router.post("/login/contributor", loginAsContributor);
+router.post("/login/contributor", loginValidator, loginAsContributor);
 
 /**
  * @swagger
@@ -189,7 +189,7 @@ router.post("/login/contributor", loginAsContributor);
  *       500:
  *         description: Internal server error
  */
-router.post("/api/auth/contributor-login", loginAsContributor);
+router.post("/api/auth/contributor-login", loginValidator, loginAsContributor);
 
 
 /**
@@ -327,7 +327,7 @@ router.get("/resend-verification", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/resend-verification", resendVerificationEmail);
+router.post("/resend-verification", resendVerificationValidator, resendVerificationEmail);
 
 
 /**
