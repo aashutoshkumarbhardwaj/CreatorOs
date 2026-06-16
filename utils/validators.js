@@ -1,3 +1,8 @@
+/**
+ * @function isValidUrl
+ * @description Automatically generated JSDoc for isValidUrl
+ * @returns {any}
+ */
 function isValidUrl(string) {
     try {
         const url = new URL(string);

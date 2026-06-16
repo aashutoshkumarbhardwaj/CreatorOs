@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * @schema inviteSchema
+ * @description Mongoose schema definition for invite.
+ */
 const inviteSchema = new mongoose.Schema(
   {
     inviter: {

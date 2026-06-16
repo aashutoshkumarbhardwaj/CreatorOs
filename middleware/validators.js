@@ -12,6 +12,11 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+/**
+ * @function validate
+ * @description Automatically generated JSDoc for validate
+ * @returns {any}
+ */
 function validate(schema, viewName, buildLocals = () => ({})) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);

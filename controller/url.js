@@ -4,6 +4,11 @@ const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
 
+/**
+ * @function deriveTitle
+ * @description Automatically generated JSDoc for deriveTitle
+ * @returns {any}
+ */
 function deriveTitle(redirectUrl, fallback) {
     if (fallback) return fallback;
     try {
@@ -18,6 +23,11 @@ function deriveTitle(redirectUrl, fallback) {
     }
 }
 
+/**
+ * @function formatClicks
+ * @description Automatically generated JSDoc for formatClicks
+ * @returns {any}
+ */
 function formatClicks(count) {
     if (count >= 1000) {
         return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k`;
@@ -25,6 +35,11 @@ function formatClicks(count) {
     return String(count);
 }
 
+/**
+ * @function serializeLink
+ * @description Automatically generated JSDoc for serializeLink
+ * @returns {any}
+ */
 function serializeLink(entry, hostBase) {
     const linkedAt = entry.linkedAt || entry.createdAt?.[0]?.timeStamp || new Date();
     return {
@@ -44,6 +59,14 @@ function serializeLink(entry, hostBase) {
     };
 }
 
+/**
+ * @function handleGenerateShortUrl
+ * @description Automatically generated JSDoc for handleGenerateShortUrl
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function handleGenerateShortUrl(req, res) {
     const { redirectUrl, title, customSlug, tag } = req.body;
 
@@ -89,6 +112,14 @@ async function handleGenerateShortUrl(req, res) {
     });
 }
 
+/**
+ * @function handleListUserLinks
+ * @description Automatically generated JSDoc for handleListUserLinks
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function handleListUserLinks(req, res) {
     const hostBase = `${req.protocol}://${req.get('host')}`;
     const userId = req.user?.id;
@@ -118,6 +149,14 @@ async function handleListUserLinks(req, res) {
 
 /**
  * Helper function to generate a Base64 Data URL for the QR code server-side.
+ */
+/**
+ * @function generateBase64QR
+ * @description Automatically generated JSDoc for generateBase64QR
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
  */
 const generateBase64QR = async (text, fg, bg) => {
     return await QRCode.toDataURL(text, {
