@@ -706,20 +706,11 @@ body.appearance-dark .setting-info p {
 }
 
 .toast {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    padding: 1rem 1.25rem;
-    background: #000;
-    color: #fff;
-    border: 2px solid var(--settings-teal);
-    box-shadow: 4px 4px 0 var(--settings-teal);
-    font-weight: 600;
-    z-index: 1000;
     opacity: 0;
     transform: translateY(12px);
-    transition: opacity 0.2s, transform 0.2s;
-    max-width: 320px;
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
 }
 
 .toast.visible {
@@ -727,9 +718,16 @@ body.appearance-dark .setting-info p {
     transform: translateY(0);
 }
 
+.toast.success {
+    background: #dcfce7;
+    border: 2px solid #22c55e;
+    color: #166534;
+}
+
 .toast.error {
-    border-color: var(--settings-red-text);
-    box-shadow: 4px 4px 0 var(--settings-red-text);
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    color: #991b1b;
 }
 
 .modal-overlay {

@@ -1,7 +1,45 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema creatorSchema
+ * @description Mongoose schema definition for creator.
+ */
 const creatorSchema = new mongoose.Schema(
     {
+
+bio: {
+    type: String,
+    trim: true,
+    default: "",
+},
+
+theme: {
+    type: String,
+    enum: ["dark", "light"],
+    default: "dark",
+},
+
+accentColor: {
+    type: String,
+    default: "#8b5cf6",
+},
+
+links: [
+    {
+        title: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+
+        url: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+    },
+],
+
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

@@ -6,6 +6,11 @@ const { sendInvitationEmail } = require('../utils/email');
 const asyncHandler = require('../utils/asyncHandler');
 const { getDashboardData } = require('../utils/dashboardHelper');
 
+/**
+ * @function buildAccountViewModel
+ * @description Automatically generated JSDoc for buildAccountViewModel
+ * @returns {any}
+ */
 function buildAccountViewModel(userDoc, fallbackUser) {
   const name = userDoc?.name || 'Creator';
   const initials = name
@@ -92,6 +97,14 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   });
 });
 
+/**
+ * @function renderDashboard
+ * @description Automatically generated JSDoc for renderDashboard
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const renderDashboard = async (req, res, options = {}) => {
   const userDoc = await User.findById(req.user.id).select('name email').lean();
   

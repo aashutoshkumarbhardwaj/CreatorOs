@@ -6,13 +6,85 @@
     const toastEl = document.getElementById('toast');
     let toastTimer;
 
-    function showToast(message, isError) {
-        toastEl.textContent = message;
-        toastEl.classList.toggle('error', !!isError);
-        toastEl.classList.add('visible');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 3200);
-    }
+    let toastStart;
+let remainingTime = 4000;
+
+function startToastTimer() {
+toastStart = Date.now();
+
+```
+toastTimer = setTimeout(() => {
+    toastEl.classList.remove('visible');
+}, remainingTime);
+```
+
+}
+
+function showToast(message, isError) {
+// Prevent duplicate visible toast
+if (
+toastEl.classList.contains('visible') &&
+toastEl.textContent === message
+) {
+return;
+}
+
+.toast {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success {
+    background: #dcfce7;
+    border: 2px solid #22c55e;
+    color: #166534;
+}
+
+.toast.error {
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    color: #991b1b;
+}
+
+```
+clearTimeout(toastTimer);
+
+remainingTime = 4000;
+
+toastEl.textContent = message;
+
+toastEl.classList.remove('success', 'error');
+
+toastEl.classList.add(isError ? 'error' : 'success');
+
+toastEl.classList.add('visible');
+
+startToastTimer();
+```
+
+}
+
+toastEl.addEventListener('mouseenter', () => {
+clearTimeout(toastTimer);
+
+```
+remainingTime -= Date.now() - toastStart;
+```
+
+});
+
+toastEl.addEventListener('mouseleave', () => {
+startToastTimer();
+});
+
 
     function playSoundCue() {
         if (!userData.preferences?.soundCues) return;
@@ -346,3 +418,4 @@
     applyPreferences();
     refreshBilling();
 })();
+

@@ -1,6 +1,14 @@
 const services = require('../services.config');
 const asyncHandler = require('../utils/asyncHandler');
 
+/**
+ * @function generateAISuggestions
+ * @description Automatically generated JSDoc for generateAISuggestions
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function generateAISuggestions(topic) {
   // If OpenAI API key is configured, use it for real AI generation
   if (process.env.OPENAI_API_KEY) {

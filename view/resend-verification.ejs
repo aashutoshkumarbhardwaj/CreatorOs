@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <!-- SEO meta tags -->
+    <%- include('./partials/_seo', {
+        title: 'Resend Verification',
+        description: 'Resend your account verification email to activate your CreatorOS account.',
+        canonical: 'https://titli-link-shortner.vercel.app/resend-verification',
+        robots: 'noindex,nofollow'
+    }) %>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Resend Verification | CreatorOS</title>
     <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -229,6 +237,7 @@
             </div>
         <% } else { %>
             <form method="POST" action="/resend-verification">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input 
