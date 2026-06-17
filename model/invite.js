@@ -68,6 +68,15 @@ const MockInviteModel = {
   findByIdAndDelete: async () => null,
   create: async (data) => data,
   find: () => emptyInviteQuery,
+  create: async (data) => {
+    return {
+      _id: new mongoose.Types.ObjectId().toString(),
+      ...data,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  },
 };
 
 function getActiveInviteModel() {

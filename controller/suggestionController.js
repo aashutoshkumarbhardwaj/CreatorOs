@@ -75,11 +75,15 @@ exports.getPage = (req, res) => {
   res.render('suggestions', { categories: [], result: null, selected: null, services });
 };
 
+const { suggestionSchema } = require('../middleware/validators');
+
 exports.getSuggestions = async (req, res) => {
-  const { topic } = req.body;
-  if (!topic) {
+  const validationResult = suggestionSchema.safeParse(req.body);
+  if (!validationResult.success) {
     return res.render('suggestions', { categories: [], result: null, selected: null, services });
   }
+
+  const { topic } = validationResult.data;
 
   const result = await generateAISuggestions(topic);
   
