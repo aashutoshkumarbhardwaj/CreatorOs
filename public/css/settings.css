@@ -54,10 +54,38 @@ body.settings-page.no-motion * {
     animation: none !important;
 }
 
+body.settings-page {
+    --settings-bg: #f5f1ea;
+    --settings-surface: #fffaf0;
+    --settings-muted-surface: #f0ebe3;
+    --settings-card: #fffdf7;
+    --settings-text: #111111;
+    --settings-muted: #4b5563;
+    --settings-shadow: 3px 3px 0 var(--settings-border);
+    --settings-shadow-lg: 5px 5px 0 var(--settings-border);
+    --ws-bg: var(--settings-bg);
+    --ws-sidebar: var(--settings-muted-surface);
+    --ws-border: var(--settings-border);
+    color: var(--settings-text);
+}
+
+body.settings-page.appearance-dark {
+    --settings-bg: #1a1a18;
+    --settings-surface: #252522;
+    --settings-muted-surface: #2c2c28;
+    --settings-card: #2c2c28;
+    --settings-text: #f5f1ea;
+    --settings-muted: #d1d5db;
+    --settings-border: #f5f1ea;
+    --ws-bg: var(--settings-bg);
+    --ws-sidebar: var(--settings-surface);
+    --ws-border: var(--settings-border);
+    color: var(--settings-text);
+}
+
 .settings-layout {
-    display: grid;
-    grid-template-columns: var(--settings-sidebar-width) minmax(0, 1fr);
-    min-height: 100vh;
+    grid-template-columns: var(--ws-sidebar-width) minmax(0, 1fr);
+    background: var(--settings-bg);
 }
 
 .settings-sidebar {
@@ -172,32 +200,89 @@ body.settings-page.no-motion * {
 }
 
 .settings-main {
-    padding: 2.5rem 3rem 4rem;
+    padding: 0;
     overflow-y: auto;
+}
+
+.settings-main .topbar {
+    position: relative;
+}
+
+body.settings-page .topbar,
+body.settings-page .menu-btn,
+body.settings-page .icon-btn,
+body.settings-page .search-input,
+body.settings-page .profile-chip {
+    background-color: var(--settings-card);
+    color: var(--settings-text);
+}
+
+body.settings-page .action-icon-btn,
+body.settings-page .brand-text {
+    color: var(--settings-text);
+}
+
+body.settings-page .brand-version,
+body.settings-page .sidebar-label,
+body.settings-page .search-icon {
+    color: var(--settings-muted);
+    stroke: var(--settings-muted);
+}
+
+body.settings-page .nav-link,
+body.settings-page .service-link {
+    color: var(--settings-muted);
+}
+
+body.settings-page .nav-link:hover,
+body.settings-page .service-link:hover,
+body.settings-page .action-icon-btn:hover,
+body.settings-page .menu-btn:hover,
+body.settings-page .icon-btn:hover,
+body.settings-page .profile-chip:hover {
+    color: var(--settings-text);
+    background-color: rgba(26, 188, 156, 0.16);
+}
+
+body.settings-page .nav-link.active,
+body.settings-page .service-link.active,
+body.settings-page .primary-action-btn,
+body.settings-page .avatar,
+body.settings-page .brand-mark {
+    color: #111;
+}
+
+.settings-content {
+    padding: 2.2rem 2.4rem 2.8rem;
 }
 
 .settings-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
     gap: 1rem;
+    border-bottom: 2px solid var(--settings-border);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .settings-header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1.1;
     margin: 0 0 0.5rem;
 }
 
 .settings-header p {
     margin: 0;
-    color: #333;
-    font-size: 1rem;
+    color: var(--settings-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 body.appearance-dark .settings-header p {
-    color: #ccc;
+    color: var(--settings-muted);
 }
 
 .user-badge {
@@ -257,33 +342,45 @@ body.appearance-dark .settings-header p {
 
 .content-layout {
     display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 2.5rem;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    gap: 1.5rem;
     align-items: start;
 }
 
 .sub-nav {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.65rem;
     position: sticky;
-    top: 2rem;
+    top: 1rem;
+    padding: 1rem;
+    border: 2px solid var(--settings-border);
+    background: var(--settings-card);
+    box-shadow: var(--settings-shadow);
 }
 
 .sub-nav-item {
-    padding: 0.8rem 1rem;
+    padding: 0.75rem 0.85rem;
     border: 2px solid var(--settings-border);
-    background-color: #fff;
-    font-weight: 600;
+    background-color: transparent;
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 3px 3px 0 var(--settings-border);
     text-decoration: none;
-    color: #000;
+    color: var(--settings-muted);
+    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.sub-nav-item:hover {
+    background: rgba(26, 188, 156, 0.12);
+    color: var(--settings-text);
+    transform: translateX(4px);
 }
 
 .sub-nav-item.active {
+    color: #111;
     background-color: var(--settings-teal);
+    box-shadow: var(--settings-shadow);
 }
 
 .sub-nav-item:active {
@@ -294,30 +391,31 @@ body.appearance-dark .settings-header p {
 .settings-sections {
     display: flex;
     flex-direction: column;
-    gap: var(--card-gap, 3rem);
-    max-width: 760px;
+    gap: 1.5rem;
+    max-width: 1040px;
 }
 
 .section-card {
-    background-color: #fff;
+    background-color: var(--settings-card);
     border: 2px solid var(--settings-border);
-    padding: var(--section-pad, 2.5rem);
-    box-shadow: 8px 8px 0 var(--settings-border);
-    scroll-margin-top: 2rem;
+    padding: 1.5rem;
+    box-shadow: var(--settings-shadow);
+    scroll-margin-top: 1.5rem;
 }
 
 .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     gap: 1rem;
     flex-wrap: wrap;
 }
 
 .section-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    line-height: 1.2;
     margin: 0;
 }
 
@@ -358,24 +456,26 @@ body.appearance-dark .settings-header p {
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.08em;
+    color: var(--settings-muted);
 }
 
 .form-input,
 .form-textarea {
     padding: 0.8rem;
     border: 2px solid var(--settings-border);
-    background-color: var(--settings-sidebar);
+    background-color: var(--settings-muted-surface);
     font-family: inherit;
     font-size: 0.9rem;
     width: 100%;
-    color: inherit;
+    color: var(--settings-text);
 }
 
 .form-input:focus,
 .form-textarea:focus {
     outline: none;
-    background-color: #fff;
+    background-color: var(--settings-card);
+    box-shadow: var(--settings-shadow);
 }
 
 .form-textarea {
@@ -397,7 +497,7 @@ body.appearance-dark .settings-header p {
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 3px 3px 0 var(--settings-border);
+    box-shadow: var(--settings-shadow);
 }
 
 .btn-action:active {
@@ -416,7 +516,7 @@ body.appearance-dark .settings-header p {
     gap: 1rem;
     padding: 1.5rem;
     border: 2px solid var(--settings-border);
-    background-color: var(--settings-sidebar);
+    background-color: var(--settings-muted-surface);
     margin-bottom: 1rem;
     flex-wrap: wrap;
 }
@@ -424,12 +524,13 @@ body.appearance-dark .settings-header p {
 .setting-info h4 {
     margin: 0 0 0.3rem;
     font-size: 1rem;
+    color: var(--settings-text);
 }
 
 .setting-info p {
     margin: 0;
     font-size: 0.85rem;
-    color: #555;
+    color: var(--settings-muted);
 }
 
 body.appearance-dark .setting-info p {
@@ -486,13 +587,14 @@ body.appearance-dark .setting-info p {
 }
 
 .btn-secondary {
-    background: #fff;
+    background: var(--settings-card);
     border: 2px solid var(--settings-border);
     padding: 0.6rem 1.2rem;
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 2px 2px 0 var(--settings-border);
+    box-shadow: var(--settings-shadow);
+    color: var(--settings-text);
 }
 
 .pwd-panel {
@@ -500,7 +602,7 @@ body.appearance-dark .setting-info p {
     margin-bottom: 1.5rem;
     padding: 1rem;
     border: 2px solid var(--settings-border);
-    background: #fff;
+    background: var(--settings-card);
 }
 
 .pwd-panel.open {
@@ -548,12 +650,12 @@ body.appearance-dark .setting-info p {
 .billing-card {
     border: 2px solid var(--settings-border);
     padding: 1.5rem;
-    box-shadow: 6px 6px 0 var(--settings-border);
-    background: #fff;
+    box-shadow: var(--settings-shadow);
+    background: var(--settings-card);
 }
 
 .billing-card.active-plan {
-    background-color: var(--settings-sidebar);
+    background-color: var(--settings-muted-surface);
 }
 
 .billing-label {
@@ -562,13 +664,14 @@ body.appearance-dark .setting-info p {
     font-weight: 700;
     letter-spacing: 1px;
     margin-bottom: 1rem;
-    color: #555;
+    color: var(--settings-muted);
 }
 
 .plan-name,
 .invoice-date {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.8rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
     margin: 0 0 0.5rem;
 }
 
@@ -581,7 +684,7 @@ body.appearance-dark .setting-info p {
 
 .plan-price span {
     font-size: 1rem;
-    color: #333;
+    color: var(--settings-muted);
 }
 
 .btn-black {
@@ -597,7 +700,7 @@ body.appearance-dark .setting-info p {
 
 .invoice-est {
     font-size: 0.85rem;
-    color: #555;
+    color: var(--settings-muted);
     margin: 0 0 1.5rem;
 }
 
@@ -613,8 +716,8 @@ body.appearance-dark .setting-info p {
     width: 100%;
     border-collapse: collapse;
     border: 2px solid var(--settings-border);
-    background: #fff;
-    box-shadow: 6px 6px 0 var(--settings-border);
+    background: var(--settings-card);
+    box-shadow: var(--settings-shadow);
 }
 
 .invoices-table th {
@@ -646,7 +749,7 @@ body.appearance-dark .setting-info p {
 }
 
 .invoices-table tbody tr:hover {
-    background: var(--settings-sidebar);
+    background: var(--settings-muted-surface);
 }
 
 .badge-paid {
@@ -663,18 +766,27 @@ body.appearance-dark .setting-info p {
     gap: 2rem;
 }
 
+.pref-group {
+    margin-bottom: 1.75rem;
+}
+
+.pref-group:last-child {
+    margin-bottom: 0;
+}
+
 .pref-label {
     font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
 }
 
 .radio-group {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    padding: 0 0.25rem 0.25rem 0;
 }
 
 .radio-btn {
@@ -683,10 +795,12 @@ body.appearance-dark .setting-info p {
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    background: #fff;
+    background: var(--settings-card);
     flex: 1;
     text-align: center;
     min-width: 70px;
+    color: var(--settings-text);
+    box-shadow: 2px 2px 0 var(--settings-border);
 }
 
 .radio-btn.active {
@@ -746,7 +860,7 @@ body.appearance-dark .setting-info p {
 }
 
 .modal-card {
-    background: var(--settings-bg);
+    background: var(--settings-card);
     border: 3px solid var(--settings-border);
     box-shadow: 8px 8px 0 var(--settings-border);
     padding: 2rem;
@@ -755,7 +869,7 @@ body.appearance-dark .setting-info p {
 }
 
 .modal-card h3 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Space Grotesk', sans-serif;
     margin: 0 0 1rem;
 }
 
@@ -796,5 +910,9 @@ body.appearance-dark .setting-info p {
 
     .pref-grid {
         grid-template-columns: 1fr;
+    }
+
+    .settings-content {
+        padding: 2rem 1.25rem 3rem;
     }
 }

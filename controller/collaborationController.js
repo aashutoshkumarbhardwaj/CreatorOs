@@ -43,19 +43,23 @@ const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
   });
 });
 
-const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
-  const { email, projectName, message } = req.body || {};
+const { collaborationInviteSchema, collaborationAcceptSchema } = require('../middleware/validators');
 
-  if (!email) {
+const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
+  const result = collaborationInviteSchema.safeParse(req.body);
+
+  if (!result.success) {
     const userDoc = await User.findById(req.user.id).select('name email').lean();
     const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
     return res.status(400).render('creator-crm', {
       user: buildAccountViewModel(userDoc, req.user),
       invites,
       success: null,
-      error: 'Please provide an email address for the collaborator.',
+      error: result.error.issues[0].message,
     });
   }
+
+  const { email, projectName, message } = result.data;
 
   const token = crypto.randomBytes(22).toString('hex');
   const invite = await Invite.create({
@@ -160,11 +164,13 @@ const acceptInvite = asyncHandler(async (req, res, next) => {
 
 const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
   try {
-    const { inviteToken } = req.body || {};
+    const result = collaborationAcceptSchema.safeParse(req.body);
 
-    if (!inviteToken || !inviteToken.trim()) {
-      return renderDashboard(req, res, { inviteAcceptError: 'Please paste a valid invite token.' });
+    if (!result.success) {
+      return renderDashboard(req, res, { inviteAcceptError: result.error.issues[0].message });
     }
+
+    const { inviteToken } = result.data;
 
     const invite = await Invite.findOne({ token: inviteToken.trim() });
 

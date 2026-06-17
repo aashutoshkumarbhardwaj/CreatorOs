@@ -66,8 +66,14 @@
         return links;
     }
 
-    function renderLinks() {
-        const links = filterAndSortLinks();
+   function renderLinks() {
+    const skeleton = document.getElementById('links-skeleton');
+
+    if (skeleton) {
+        skeleton.style.display = 'none';
+    }
+
+    const links = filterAndSortLinks();
         feedEl.querySelectorAll('.link-card').forEach((el) => el.remove());
 
         if (links.length === 0) {
@@ -179,12 +185,10 @@
         }
     }
 
-    shortenForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (isGuest) return showToast('Contributors cannot create links', true);
+    emptyEl.style.display = 'none';
 
-        const btn = document.getElementById('shorten-btn');
-        btn.disabled = true;
+    try {
+        const data = await apiRequest('/url');
 
         try {
             const payload = await apiRequest('/api/urls', {
@@ -197,22 +201,33 @@
                 }),
             });
 
-            lastCreatedUrl = payload.link.shortUrl;
-            resultText.textContent = `✓ Created: ${payload.link.shortUrl}`;
-            resultBanner.classList.add('visible');
+        updateStats(
+            data.stats || {
+                totalLinks: 0,
+                totalClicksLabel: '0',
+                topLinkTitle: '—'
+            }
+        );
 
-            document.getElementById('redirect-url').value = '';
-            document.getElementById('custom-slug').value = '';
-            document.getElementById('link-title').value = '';
-
-            showToast('Link created!');
-            await loadLinks();
-        } catch (err) {
-            showToast(err.message, true);
-        } finally {
-            btn.disabled = false;
+        if (data.domain) {
+            document.getElementById('domain-label').textContent =
+                data.domain + '/';
         }
-    });
+
+        renderLinks();
+
+        if (skeleton) {
+            skeleton.style.display = 'none';
+        }
+
+    } catch (err) {
+        if (skeleton) {
+            skeleton.style.display = 'none';
+        }
+
+        showToast(err.message, true);
+    }
+}
 
     document.getElementById('copy-result-btn').addEventListener('click', () => {
         if (lastCreatedUrl) copyText(lastCreatedUrl, 'Short link copied!');
@@ -247,5 +262,16 @@
         document.getElementById('scroll-shorten-btn').click();
     });
 
+    const emptyCTA = document.getElementById('empty-state-cta');
+
+if (emptyCTA) {
+    emptyCTA.addEventListener('click', () => {
+        document.getElementById('shorten-section')
+            ?.scrollIntoView({ behavior: 'smooth' });
+
+        document.getElementById('redirect-url')
+            ?.focus();
+    });
+}
     loadLinks();
 })();
