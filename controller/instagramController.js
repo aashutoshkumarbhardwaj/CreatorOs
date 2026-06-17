@@ -2,15 +2,30 @@ const { fetchInstagramProfile, InstagramProfileError, validateUsername } = requi
 
 const lookupTracker = new Map();
 
+/**
+ * @function getCooldownSeconds
+ * @description Automatically generated JSDoc for getCooldownSeconds
+ * @returns {any}
+ */
 function getCooldownSeconds() {
     const value = Number(process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30);
     return Number.isFinite(value) && value >= 0 ? value : 30;
 }
 
+/**
+ * @function getLookupKey
+ * @description Automatically generated JSDoc for getLookupKey
+ * @returns {any}
+ */
 function getLookupKey(req) {
     return req.user?.id || req.ip || 'anonymous';
 }
 
+/**
+ * @function assertLookupAllowed
+ * @description Automatically generated JSDoc for assertLookupAllowed
+ * @returns {any}
+ */
 function assertLookupAllowed(req) {
     const cooldownSeconds = getCooldownSeconds();
 
@@ -35,6 +50,11 @@ function assertLookupAllowed(req) {
     lookupTracker.set(lookupKey, now + cooldownSeconds * 1000);
 }
 
+/**
+ * @function sendInstagramError
+ * @description Automatically generated JSDoc for sendInstagramError
+ * @returns {any}
+ */
 function sendInstagramError(res, error) {
     if (error instanceof InstagramProfileError) {
         return res.status(error.statusCode).json({
@@ -56,6 +76,14 @@ function sendInstagramError(res, error) {
     });
 }
 
+/**
+ * @function getInstagramProfile
+ * @description Automatically generated JSDoc for getInstagramProfile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);

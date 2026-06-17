@@ -1,6 +1,14 @@
 const services = require('../services.config');
 const asyncHandler = require('../utils/asyncHandler');
 
+/**
+ * @function generateAISuggestions
+ * @description Automatically generated JSDoc for generateAISuggestions
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function generateAISuggestions(topic) {
   // If OpenAI API key is configured, use it for real AI generation
   if (process.env.OPENAI_API_KEY) {
@@ -67,11 +75,15 @@ exports.getPage = (req, res) => {
   res.render('suggestions', { categories: [], result: null, selected: null, services });
 };
 
+const { suggestionSchema } = require('../middleware/validators');
+
 exports.getSuggestions = async (req, res) => {
-  const { topic } = req.body;
-  if (!topic) {
+  const validationResult = suggestionSchema.safeParse(req.body);
+  if (!validationResult.success) {
     return res.render('suggestions', { categories: [], result: null, selected: null, services });
   }
+
+  const { topic } = validationResult.data;
 
   const result = await generateAISuggestions(topic);
   

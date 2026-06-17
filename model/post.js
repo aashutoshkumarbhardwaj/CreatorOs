@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema postSchema
+ * @description Mongoose schema definition for post.
+ */
 const postSchema = new mongoose.Schema(
     {
         creatorId: {

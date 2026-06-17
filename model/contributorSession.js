@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema contributorSessionSchema
+ * @description Mongoose schema definition for contributorSession.
+ */
 const contributorSessionSchema = new mongoose.Schema(
     {
         contributorId: {

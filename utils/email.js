@@ -12,6 +12,11 @@ const {
   EMAIL_REPLY_TO,
 } = process.env;
 
+/**
+ * @function createTransporter
+ * @description Automatically generated JSDoc for createTransporter
+ * @returns {any}
+ */
 function createTransporter() {
   if (!EMAIL_USER || !EMAIL_PASSWORD) {
     throw new Error('Email transport is not configured. Set EMAIL_USER and EMAIL_PASSWORD.');
@@ -45,6 +50,14 @@ function createTransporter() {
   return nodemailer.createTransport(transporterOptions);
 }
 
+/**
+ * @function sendInvitationEmail
+ * @description Automatically generated JSDoc for sendInvitationEmail
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function sendInvitationEmail({ to, inviterName, projectName, inviteUrl, personalMessage }) {
   const transporter = createTransporter();
   const from = EMAIL_FROM || EMAIL_USER;
@@ -87,6 +100,14 @@ If the link does not work, paste it into your browser.`;
   });
 }
 
+/**
+ * @function sendVerificationEmail
+ * @description Automatically generated JSDoc for sendVerificationEmail
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function sendVerificationEmail({ to, verificationLink, userName }) {
   const transporter = createTransporter();
   const from = EMAIL_FROM || EMAIL_USER;

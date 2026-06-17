@@ -6,6 +6,11 @@ const { sendInvitationEmail } = require('../utils/email');
 const asyncHandler = require('../utils/asyncHandler');
 const { getDashboardData } = require('../utils/dashboardHelper');
 
+/**
+ * @function buildAccountViewModel
+ * @description Automatically generated JSDoc for buildAccountViewModel
+ * @returns {any}
+ */
 function buildAccountViewModel(userDoc, fallbackUser) {
   const name = userDoc?.name || 'Creator';
   const initials = name
@@ -38,19 +43,23 @@ const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
   });
 });
 
-const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
-  const { email, projectName, message } = req.body || {};
+const { collaborationInviteSchema, collaborationAcceptSchema } = require('../middleware/validators');
 
-  if (!email) {
+const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
+  const result = collaborationInviteSchema.safeParse(req.body);
+
+  if (!result.success) {
     const userDoc = await User.findById(req.user.id).select('name email').lean();
     const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
     return res.status(400).render('creator-crm', {
       user: buildAccountViewModel(userDoc, req.user),
       invites,
       success: null,
-      error: 'Please provide an email address for the collaborator.',
+      error: result.error.issues[0].message,
     });
   }
+
+  const { email, projectName, message } = result.data;
 
   const token = crypto.randomBytes(22).toString('hex');
   const invite = await Invite.create({
@@ -92,6 +101,14 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   });
 });
 
+/**
+ * @function renderDashboard
+ * @description Automatically generated JSDoc for renderDashboard
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const renderDashboard = async (req, res, options = {}) => {
   const userDoc = await User.findById(req.user.id).select('name email').lean();
   
@@ -147,11 +164,13 @@ const acceptInvite = asyncHandler(async (req, res, next) => {
 
 const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
   try {
-    const { inviteToken } = req.body || {};
+    const result = collaborationAcceptSchema.safeParse(req.body);
 
-    if (!inviteToken || !inviteToken.trim()) {
-      return renderDashboard(req, res, { inviteAcceptError: 'Please paste a valid invite token.' });
+    if (!result.success) {
+      return renderDashboard(req, res, { inviteAcceptError: result.error.issues[0].message });
     }
+
+    const { inviteToken } = result.data;
 
     const invite = await Invite.findOne({ token: inviteToken.trim() });
 
