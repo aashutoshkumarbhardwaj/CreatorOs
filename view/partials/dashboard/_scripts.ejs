@@ -33,4 +33,33 @@
       toggleBtn.innerText = '☀️';
     }
   });
+  document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById('scrollToTopBtn');
+  if (!btn) return;
+
+  // 1. Global Interception to watch scrolls inside dashboardLayout panels
+  window.addEventListener('scroll', (e) => {
+    const scrollPos = e.target.scrollTop || window.scrollY || 0;
+    if (scrollPos > 300) {
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
+    }
+  }, true); // 'true' enables event capturing to catch nested container scrolls
+
+  // 2. Global Execution to smooth scroll the wrapper components
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    const layouts = [
+      document.getElementById('dashboardLayout'),
+      document.querySelector('.dashboard-layout'),
+      document.querySelector('main')
+    ];
+    
+    layouts.forEach(container => {
+      if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+});
 </script>

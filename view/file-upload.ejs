@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <!-- SEO meta tags -->
+    <%- include('./partials/_seo', {
+        title: 'File Upload',
+        description: 'Upload and manage files within your CreatorOS workspace.',
+        canonical: 'https://titli-link-shortner.vercel.app/file-upload',
+        robots: 'noindex,nofollow'
+    }) %>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>File Upload - CreatorOS</title>
     <link href="/css/style.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-[#06101f] text-white font-[Poppins] min-h-screen">
+<body class="bg-[#06101f] text-white font-[Inter] min-h-screen">
     <div class="mx-auto max-w-2xl px-4 py-12">
         <a href="/" class="mb-6 inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">&larr; Back to services</a>
         <h1 class="text-3xl font-bold mb-2">File Upload</h1>

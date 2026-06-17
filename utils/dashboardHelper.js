@@ -6,6 +6,14 @@ const Url = require('../model/url');
  * @param {Object} userDoc - The current user's document
  * @returns {Object} dashboardData
  */
+/**
+ * @function getDashboardData
+ * @description Automatically generated JSDoc for getDashboardData
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function getDashboardData(userDoc) {
     let urlsQuery = Url.find({});
     let allUrls = await urlsQuery;

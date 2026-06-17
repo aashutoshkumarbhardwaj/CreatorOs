@@ -48,6 +48,23 @@ function daysSince(date) {
 }
 
 // PUT /api/settings/profile
+
+/**
+ * @swagger
+ * /profile:
+ *   put:
+ *     summary: PUT request for /profile
+ *     description: Automatically generated swagger documentation for /profile
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) => {
     const { name, alias, bio } = req.body;
     
@@ -69,6 +86,23 @@ router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) =
     });
 }));
 
+
+/**
+ * @swagger
+ * /billing:
+ *   get:
+ *     summary: GET request for /billing
+ *     description: Automatically generated swagger documentation for /billing
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/billing', asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -76,6 +110,23 @@ router.get('/billing', asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/settings/security/2fa
+
+/**
+ * @swagger
+ * /security/2fa:
+ *   put:
+ *     summary: PUT request for /security/2fa
+ *     description: Automatically generated swagger documentation for /security/2fa
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, res) => {
     const { enabled } = req.body;
     
@@ -89,6 +140,23 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
 }));
 
 // PUT /api/settings/security/password
+
+/**
+ * @swagger
+ * /security/password:
+ *   put:
+ *     summary: PUT request for /security/password
+ *     description: Automatically generated swagger documentation for /security/password
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/security/password', preventContributorWrites, asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     
@@ -122,6 +190,23 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
 }));
 
 // DELETE /api/settings/account
+
+/**
+ * @swagger
+ * /account:
+ *   delete:
+ *     summary: DELETE request for /account
+ *     description: Automatically generated swagger documentation for /account
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.delete('/account', preventContributorWrites, asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -135,6 +220,23 @@ router.delete('/account', preventContributorWrites, asyncHandler(async (req, res
 }));
 
 // PUT /api/settings/preferences
+
+/**
+ * @swagger
+ * /preferences:
+ *   put:
+ *     summary: PUT request for /preferences
+ *     description: Automatically generated swagger documentation for /preferences
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/preferences', asyncHandler(async (req, res) => {
     // Note: Not using preventContributorWrites here so contributors can still save personal UI preferences
     const preferences = req.body;

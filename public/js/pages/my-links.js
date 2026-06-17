@@ -127,7 +127,7 @@
         feedEl.querySelectorAll('.analytics-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
                 try {
-                    const data = await apiRequest(`/url/analytics/${btn.dataset.id}`);
+                    const data = await apiRequest(`/api/urls/analytics/${btn.dataset.id}`);
                     showToast(`${data.totalClicks} total clicks recorded`);
                 } catch (err) {
                     showToast(err.message, true);
@@ -171,15 +171,18 @@
                 : '—';
     }
 
-async function loadLinks() {
-    const skeleton = document.getElementById('links-skeleton');
-
-    if (skeleton) {
-        skeleton.style.display = 'flex';
-
-        feedEl.querySelectorAll('.link-card').forEach((el) => {
-            el.remove();
-        });
+    async function loadLinks() {
+        try {
+            const data = await apiRequest('/api/urls');
+            allLinks = data.links || [];
+            updateStats(data.stats || { totalLinks: 0, totalClicksLabel: '0', topLinkTitle: '—' });
+            if (data.domain) {
+                document.getElementById('domain-label').textContent = data.domain + '/';
+            }
+            renderLinks();
+        } catch (err) {
+            showToast(err.message, true);
+        }
     }
 
     emptyEl.style.display = 'none';
@@ -187,7 +190,16 @@ async function loadLinks() {
     try {
         const data = await apiRequest('/url');
 
-        allLinks = data.links || [];
+        try {
+            const payload = await apiRequest('/api/urls', {
+                method: 'POST',
+                body: JSON.stringify({
+                    redirectUrl: document.getElementById('redirect-url').value.trim(),
+                    title: document.getElementById('link-title').value.trim() || undefined,
+                    customSlug: document.getElementById('custom-slug').value.trim() || undefined,
+                    tag: document.getElementById('link-tag').value,
+                }),
+            });
 
         updateStats(
             data.stats || {
