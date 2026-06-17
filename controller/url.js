@@ -70,16 +70,9 @@ function serializeLink(entry, hostBase) {
 async function handleGenerateShortUrl(req, res) {
     const { redirectUrl, title, customSlug, tag } = req.body;
 
-    if (!redirectUrl || !isValidUrl(redirectUrl)) {
-        return res.status(400).json({ error: 'A valid HTTP or HTTPS URL is required.' });
-    }
-
     let shortId = shortid();
     if (customSlug) {
         const slug = String(customSlug).trim().toLowerCase();
-        if (!/^[a-z0-9-_]{3,32}$/.test(slug)) {
-            return res.status(400).json({ error: 'Custom slug must be 3–32 characters (letters, numbers, - or _).' });
-        }
         const existing = await Url.findOne({ shortId: slug });
         if (existing) {
             return res.status(409).json({ error: 'That slug is already taken. Try another.' });
@@ -294,14 +287,6 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
 const handleUpdateQRColors = asyncHandler(async (req, res) => {
     const { shortId } = req.params;
     const { qrFgColor, qrBgColor } = req.body;
-
-    const hexRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-    if (qrFgColor && !hexRegex.test(qrFgColor)) {
-        return res.status(400).json({ success: false, message: "Invalid qrFgColor hex value", error: "Invalid qrFgColor hex value" });
-    }
-    if (qrBgColor && !hexRegex.test(qrBgColor)) {
-        return res.status(400).json({ success: false, message: "Invalid qrBgColor hex value", error: "Invalid qrBgColor hex value" });
-    }
 
     const updated = await Url.findOneAndUpdate(
         { shortId },

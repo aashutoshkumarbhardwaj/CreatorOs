@@ -16,39 +16,56 @@ const resendVerificationSchema = z.object({
   email: z.string().email('Invalid email format'),
 });
 
-const shortenUrlSchema = z.object({
-  redirectUrl: z.string().url('A valid HTTP or HTTPS URL is required'),
-  title: z.string().optional(),
-  customSlug: z.string().optional(),
-  tag: z.string().optional(),
-});
-
-const updateQrColorsSchema = z.object({
-  qrFgColor: z.string().optional(),
-  qrBgColor: z.string().optional(),
-});
-
-const inviteCollaboratorSchema = z.object({
+const collaborationInviteSchema = z.object({
   email: z.string().email('Invalid email format'),
   projectName: z.string().optional(),
   message: z.string().optional(),
 });
 
-const generateSuggestionSchema = z.object({
+const collaborationAcceptSchema = z.object({
+  inviteToken: z.string().min(1, 'Invite token is required'),
+});
+
+const urlShortenSchema = z.object({
+  redirectUrl: z.string().url('A valid HTTP or HTTPS URL is required').optional(),
+  url: z.string().url('A valid HTTP or HTTPS URL is required').optional(),
+  title: z.string().optional(),
+  customSlug: z.string()
+    .regex(/^[a-z0-9-_]{3,32}$/, 'Custom slug must be 3–32 characters (letters, numbers, - or _).')
+    .optional()
+    .or(z.literal('')),
+  campaignName: z.string().optional(),
+  qrFgColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Invalid qrFgColor hex value').optional(),
+  qrBgColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Invalid qrBgColor hex value').optional(),
+  tag: z.enum(['active', 'social', 'campaign', 'general']).optional().or(z.literal('')),
+}).refine(data => data.redirectUrl || data.url, {
+  message: "A valid HTTP or HTTPS URL is required",
+  path: ["redirectUrl"]
+});
+
+const urlQRColorsSchema = z.object({
+  qrFgColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Invalid qrFgColor hex value').optional(),
+  qrBgColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Invalid qrBgColor hex value').optional(),
+});
+
+const suggestionSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
 });
 
-/**
- * @function validate
- * @description Automatically generated JSDoc for validate
- * @returns {any}
- */
-function validate(schema, viewName = null, buildLocals = () => ({})) {
+const objectIdParamSchema = z.object({
+  creatorId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid creatorId'),
+});
+
+const shortIdParamSchema = z.object({
+  shortId: z.string().min(1, 'Short ID is required'),
+});
+
+function validate(schema, source = 'body', viewName, buildLocals = () => ({})) {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req[source]);
     if (!result.success) {
       const message = result.error.issues?.[0]?.message || "Invalid request data";
-      if (viewName && wantsHtml(req)) {
+      if (wantsHtml(req) && viewName) {
         return res.status(400).render(viewName, {
             ...buildLocals(req),
             error: message,
@@ -56,7 +73,7 @@ function validate(schema, viewName = null, buildLocals = () => ({})) {
       }
       return res.status(400).json({ success: false, message, error: message });
     }
-    req.body = result.data;
+    req[source] = result.data;
     next();
   };
 }
@@ -65,17 +82,21 @@ module.exports = {
     signupSchema, 
     loginSchema, 
     resendVerificationSchema,
-    shortenUrlSchema,
-    updateQrColorsSchema,
-    inviteCollaboratorSchema,
-    generateSuggestionSchema,
-    signupValidator: validate(signupSchema, 'signup'),
-    loginValidator: validate(loginSchema, 'login', () => ({
+    collaborationInviteSchema,
+    collaborationAcceptSchema,
+    urlShortenSchema,
+    urlQRColorsSchema,
+    suggestionSchema,
+    objectIdParamSchema,
+    shortIdParamSchema,
+    validate,
+    signupValidator: validate(signupSchema, 'body', 'signup'),
+    loginValidator: validate(loginSchema, 'body', 'login', () => ({
         googleAuthConfigured: Boolean(process.env.GOOGLE_CLIENT_ID)
     })),
-    resendVerificationValidator: validate(resendVerificationSchema, 'resend-verification'),
-    shortenUrlValidator: validate(shortenUrlSchema),
-    updateQrColorsValidator: validate(updateQrColorsSchema),
-    inviteCollaboratorValidator: validate(inviteCollaboratorSchema),
-    generateSuggestionValidator: validate(generateSuggestionSchema)
+    resendVerificationValidator: validate(resendVerificationSchema, 'body', 'resend-verification'),
+    shortenUrlValidator: validate(urlShortenSchema, 'body'),
+    updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),
+    inviteCollaboratorValidator: validate(collaborationInviteSchema, 'body'),
+    generateSuggestionValidator: validate(suggestionSchema, 'body')
 };
