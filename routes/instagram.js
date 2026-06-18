@@ -10,7 +10,7 @@ const router = express.Router();
  * /profile:
  *   get:
  *     summary: GET request for /profile
- *     description: Automatically generated swagger documentation for /profile
+ *     description: Retrieves the authenticated user's profile information.
  *     responses:
  *       200:
  *         description: Successful response

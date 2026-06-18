@@ -14,7 +14,7 @@ const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not b
 
 /**
  * @function getUserModel
- * @description Automatically generated JSDoc for getUserModel
+ * @description Retrieves the User model instance.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -27,7 +27,7 @@ async function getUserModel() {
 
 /**
  * @function generateVerificationToken
- * @description Automatically generated JSDoc for generateVerificationToken
+ * @description Generates a cryptographically secure token for email verification.
  * @returns {any}
  */
 function generateVerificationToken() {
@@ -36,7 +36,7 @@ function generateVerificationToken() {
 
 /**
  * @function getVerificationTokenExpiry
- * @description Automatically generated JSDoc for getVerificationTokenExpiry
+ * @description Calculates the expiration timestamp for an email verification token.
  * @returns {any}
  */
 function getVerificationTokenExpiry() {
@@ -45,7 +45,7 @@ function getVerificationTokenExpiry() {
 
 /**
  * @function isVerificationTokenExpired
- * @description Automatically generated JSDoc for isVerificationTokenExpired
+ * @description Checks whether a given email verification token has expired.
  * @returns {any}
  */
 function isVerificationTokenExpired(expiryDate) {
@@ -53,7 +53,7 @@ function isVerificationTokenExpired(expiryDate) {
 }
 /**
  * @function isGoogleAuthConfigured
- * @description Automatically generated JSDoc for isGoogleAuthConfigured
+ * @description Determines if the Google OAuth credentials have been properly configured.
  * @returns {any}
  */
 function isGoogleAuthConfigured() {
@@ -66,7 +66,7 @@ function isGoogleAuthConfigured() {
 
 /**
  * @function serializeUser
- * @description Automatically generated JSDoc for serializeUser
+ * @description Serializes a user object into a simplified format for session or token storage.
  * @returns {any}
  */
 function serializeUser(user) {
@@ -80,7 +80,7 @@ function serializeUser(user) {
 
 /**
  * @function createToken
- * @description Automatically generated JSDoc for createToken
+ * @description Creates a JWT token for standard user authentication.
  * @returns {any}
  */
 function createToken(user) {
@@ -97,7 +97,7 @@ function createToken(user) {
 
 /**
  * @function createContributorToken
- * @description Automatically generated JSDoc for createContributorToken
+ * @description Creates a JWT token specifically for contributor access.
  * @returns {any}
  */
 function createContributorToken(session) {
@@ -117,7 +117,7 @@ function createContributorToken(session) {
 
 /**
  * @function setAuthCookie
- * @description Automatically generated JSDoc for setAuthCookie
+ * @description Sets the authentication JWT token as an HTTP-only cookie.
  * @returns {any}
  */
 function setAuthCookie(res, token) {
@@ -131,7 +131,7 @@ function setAuthCookie(res, token) {
 
 /**
  * @function redirectWithLoginError
- * @description Automatically generated JSDoc for redirectWithLoginError
+ * @description Redirects the client to the login page with a specific error message.
  * @returns {any}
  */
 function redirectWithLoginError(res, error) {
@@ -143,7 +143,7 @@ function redirectWithLoginError(res, error) {
 
 /**
  * @function renderLoginError
- * @description Automatically generated JSDoc for renderLoginError
+ * @description Renders the login view with an error message.
  * @returns {any}
  */
 function renderLoginError(req, res) {
@@ -252,7 +252,7 @@ const login = asyncHandler(async (req, res, next) => {
 
 /**
  * @function handleGoogleCallback
- * @description Automatically generated JSDoc for handleGoogleCallback
+ * @description Handles the OAuth callback from Google to authenticate or register a user.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

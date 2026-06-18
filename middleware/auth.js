@@ -4,7 +4,7 @@ const { wantsHtml } = require("../utils/requestType");
 
 /**
  * @function protect
- * @description Automatically generated JSDoc for protect
+ * @description Middleware to ensure the request is authenticated via a valid JWT token.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -70,7 +70,7 @@ const protect = async (req, res, next) => {
 
 /**
  * @function requireAdmin
- * @description Automatically generated JSDoc for requireAdmin
+ * @description Middleware to ensure the authenticated user has administrative privileges.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -90,7 +90,7 @@ const requireAdmin = (req, res, next) => {
 
 /**
  * @function preventContributorWrites
- * @description Automatically generated JSDoc for preventContributorWrites
+ * @description Middleware to restrict contributor accounts from performing write operations.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

@@ -14,7 +14,7 @@ const {
 
 /**
  * @function createTransporter
- * @description Automatically generated JSDoc for createTransporter
+ * @description Creates a nodemailer transporter object for sending emails.
  * @returns {any}
  */
 function createTransporter() {
@@ -52,7 +52,7 @@ function createTransporter() {
 
 /**
  * @function sendInvitationEmail
- * @description Automatically generated JSDoc for sendInvitationEmail
+ * @description Sends a collaboration invitation email to a specified recipient.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -102,7 +102,7 @@ If the link does not work, paste it into your browser.`;
 
 /**
  * @function sendVerificationEmail
- * @description Automatically generated JSDoc for sendVerificationEmail
+ * @description Sends an email containing a verification link for new user registration.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
