@@ -6,10 +6,13 @@ const {
     triggerRefresh,
     getEngagementHistory,
 } = require("../controller/analytics");
+const { validate, objectIdParamSchema } = require("../middleware/validators");
 
-router.get("/:creatorId/snapshots", getSnapshots);
-router.get("/:creatorId/snapshots/latest", getLatestSnapshot);
-router.get("/:creatorId/engagement-history", getEngagementHistory);
-router.post("/:creatorId/refresh", triggerRefresh);
+const validateCreatorId = validate(objectIdParamSchema, 'params');
+
+router.get("/:creatorId/snapshots", validateCreatorId, getSnapshots);
+router.get("/:creatorId/snapshots/latest", validateCreatorId, getLatestSnapshot);
+router.get("/:creatorId/engagement-history", validateCreatorId, getEngagementHistory);
+router.post("/:creatorId/refresh", validateCreatorId, triggerRefresh);
 
 module.exports = router;

@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * @schema inviteSchema
+ * @description Mongoose schema definition for invite.
+ */
 const inviteSchema = new mongoose.Schema(
   {
     inviter: {
@@ -63,6 +67,15 @@ const MockInviteModel = {
   findOne: async () => null,
   findByIdAndDelete: async () => null,
   find: () => emptyInviteQuery,
+  create: async (data) => {
+    return {
+      _id: new mongoose.Types.ObjectId().toString(),
+      ...data,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  },
 };
 
 function getActiveInviteModel() {

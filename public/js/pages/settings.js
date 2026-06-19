@@ -5,14 +5,84 @@
 
     const toastEl = document.getElementById('toast');
     let toastTimer;
+    let toastStart;
+    let remainingTime = 4000;
+
+    function initTopbar() {
+        const layout = document.getElementById('dashboardLayout');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const themeToggle = document.getElementById('theme-toggle');
+        const iconLight = themeToggle ? themeToggle.querySelector('.icon-light') : null;
+        const iconDark = themeToggle ? themeToggle.querySelector('.icon-dark') : null;
+
+        if (layout && sidebarToggle) {
+            const sidebarState = localStorage.getItem('creatorosSidebarCollapsed');
+            if (sidebarState === 'true') {
+                layout.classList.add('sidebar-collapsed');
+                sidebarToggle.setAttribute('aria-expanded', 'false');
+            }
+
+            sidebarToggle.addEventListener('click', () => {
+                const isCollapsed = layout.classList.toggle('sidebar-collapsed');
+                sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
+                localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
+            });
+        }
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', async () => {
+                const nextMode = body.classList.contains('appearance-dark') ? 'light' : 'dark';
+                document.querySelectorAll('#appearance-group .radio-btn').forEach((btn) => {
+                    btn.classList.toggle('active', btn.dataset.val === nextMode);
+                });
+                try {
+                    await updatePreferences({ appearanceMode: nextMode });
+                } catch (err) {
+                    showToast(err.message, true);
+                }
+            });
+        }
+
+        function syncThemeIcon() {
+            const isDark = body.classList.contains('appearance-dark');
+            if (iconLight) iconLight.style.display = isDark ? 'none' : 'block';
+            if (iconDark) iconDark.style.display = isDark ? 'block' : 'none';
+        }
+
+        window.addEventListener('creatorosSettingsAppearanceChanged', syncThemeIcon);
+        syncThemeIcon();
+    }
+
+    function startToastTimer() {
+        toastStart = Date.now();
+        toastTimer = setTimeout(() => {
+            toastEl.classList.remove('visible');
+        }, remainingTime);
+    }
 
     function showToast(message, isError) {
-        toastEl.textContent = message;
-        toastEl.classList.toggle('error', !!isError);
-        toastEl.classList.add('visible');
+        if (toastEl.classList.contains('visible') && toastEl.textContent === message) {
+            return;
+        }
+
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toastEl.classList.remove('visible'), 3200);
+        remainingTime = 4000;
+        toastEl.textContent = message;
+        toastEl.classList.remove('success', 'error');
+        toastEl.classList.add(isError ? 'error' : 'success');
+        toastEl.classList.add('visible');
+        startToastTimer();
     }
+
+    toastEl.addEventListener('mouseenter', () => {
+        clearTimeout(toastTimer);
+        remainingTime -= Date.now() - toastStart;
+    });
+
+    toastEl.addEventListener('mouseleave', () => {
+        startToastTimer();
+    });
+
 
     function playSoundCue() {
         if (!userData.preferences?.soundCues) return;
@@ -32,9 +102,15 @@
     }
 
     async function apiRequest(url, options) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const res = await fetch(url, {
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+                ...(options && options.headers ? options.headers : {}),
+            },
         });
         let payload = null;
         try {
@@ -78,13 +154,16 @@
         localStorage.setItem('creatorosDensity', prefs.interfaceDensity || 'tactile');
         localStorage.setItem('creatorosMotion', String(!!prefs.motionEffects));
         localStorage.setItem('creatorosAutoSaveLinks', String(!!prefs.autoSaveLinks));
+        window.dispatchEvent(new Event('creatorosSettingsAppearanceChanged'));
     }
 
     function updateHeaderProfile(name) {
-        document.getElementById('header-user-name').textContent = name;
         const parts = name.split(' ').filter(Boolean).slice(0, 2);
         const initials = parts.map((p) => p[0].toUpperCase()).join('') || 'CR';
-        document.getElementById('header-avatar').textContent = initials;
+        const profileName = document.querySelector('.profile-chip .profile-name');
+        const avatar = document.querySelector('.profile-chip .avatar');
+        if (profileName) profileName.textContent = name;
+        if (avatar) avatar.textContent = initials;
         userData.name = name;
         userData.initials = initials;
     }
@@ -331,18 +410,22 @@
         showToast('Invoice downloaded');
     });
 
-    document.getElementById('upgrade-plan-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        billingModal.querySelector('#billing-modal-title').textContent = 'Upgrade Plan';
-        billingModal.querySelector('#billing-modal-body').textContent =
-            'Team and Enterprise tiers are coming soon. Contact support to join the early access list.';
-        billingModal.classList.add('open');
-    });
+    const upgradePlanBtn = document.getElementById('upgrade-plan-btn');
+    if (upgradePlanBtn) {
+        upgradePlanBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            billingModal.querySelector('#billing-modal-title').textContent = 'Upgrade Plan';
+            billingModal.querySelector('#billing-modal-body').textContent =
+                'Team and Enterprise tiers are coming soon. Contact support to join the early access list.';
+            billingModal.classList.add('open');
+        });
+    }
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
         if (userData.preferences?.appearanceMode === 'system') applyPreferences();
     });
 
     applyPreferences();
+    initTopbar();
     refreshBilling();
 })();

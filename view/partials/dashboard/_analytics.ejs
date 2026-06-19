@@ -71,6 +71,7 @@
     <% } %>
 
     <form class="invite-form" action="/dashboard/accept-invite" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="text" name="inviteToken" placeholder="Invite token" required autocomplete="off" />
       <button type="submit">Accept invite</button>
     </form>

@@ -1,0 +1,45 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Theme Toggle Logic
+        const themeBtn = document.getElementById('theme-toggle');
+        const root = document.documentElement;
+        const iconLight = themeBtn ? themeBtn.querySelector('.icon-light') : null;
+        const iconDark = themeBtn ? themeBtn.querySelector('.icon-dark') : null;
+        
+        function applyTheme(isDark) {
+            if (isDark) {
+                root.setAttribute('data-theme', 'dark');
+                if (iconLight) iconLight.style.display = 'none';
+                if (iconDark) iconDark.style.display = 'block';
+            } else {
+                root.removeAttribute('data-theme');
+                if (iconLight) iconLight.style.display = 'block';
+                if (iconDark) iconDark.style.display = 'none';
+            }
+        }
+
+        if (themeBtn) {
+            if (localStorage.getItem('theme') === 'dark') {
+                applyTheme(true);
+            } else {
+                applyTheme(false);
+            }
+
+            themeBtn.addEventListener('click', () => {
+                const isDark = root.getAttribute('data-theme') === 'dark';
+                applyTheme(!isDark);
+                localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+                window.dispatchEvent(new Event('themeChanged'));
+            });
+        }
+
+        // Sidebar Mobile Toggle
+        const sidebarBtn = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        if(sidebarBtn) {
+            sidebarBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+    });
+</script>

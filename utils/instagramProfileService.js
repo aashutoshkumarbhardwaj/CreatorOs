@@ -14,6 +14,11 @@ class InstagramProfileError extends Error {
     }
 }
 
+/**
+ * @function normalizeUsername
+ * @description Normalizes a username by stripping whitespace and converting to lowercase.
+ * @returns {any}
+ */
 function normalizeUsername(username) {
     return String(username || '')
         .trim()
@@ -21,6 +26,11 @@ function normalizeUsername(username) {
         .toLowerCase();
 }
 
+/**
+ * @function validateUsername
+ * @description Validates a username against allowed character rules and length constraints.
+ * @returns {any}
+ */
 function validateUsername(username) {
     const normalizedUsername = normalizeUsername(username);
 
@@ -43,6 +53,11 @@ function validateUsername(username) {
     return normalizedUsername;
 }
 
+/**
+ * @function runPythonProvider
+ * @description Executes a Python script as a subprocess to fetch data from a provider.
+ * @returns {any}
+ */
 function runPythonProvider(username) {
     const pythonPath = process.env.INSTAGRAM_PYTHON_PATH || 'python';
     const scriptPath = path.join(__dirname, 'instagram_public_profile.py');
@@ -100,6 +115,11 @@ function runPythonProvider(username) {
     });
 }
 
+/**
+ * @function parseMetricValue
+ * @description Parses a string metric value (e.g., '1.5M') into a numeric representation.
+ * @returns {any}
+ */
 function parseMetricValue(raw) {
     if (!raw) {
         return 0;
@@ -126,12 +146,22 @@ function parseMetricValue(raw) {
     return Math.round(base);
 }
 
+/**
+ * @function extractMetaContent
+ * @description Extracts the 'content' attribute from a meta tag in an HTML document.
+ * @returns {any}
+ */
 function extractMetaContent(html, property) {
     const pattern = new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i');
     const match = html.match(pattern);
     return match ? decodeHtmlEntities(match[1]) : '';
 }
 
+/**
+ * @function decodeHtmlEntities
+ * @description Decodes HTML entities into their corresponding characters.
+ * @returns {any}
+ */
 function decodeHtmlEntities(value) {
     if (!value) {
         return '';
@@ -147,6 +177,11 @@ function decodeHtmlEntities(value) {
         .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
 }
 
+/**
+ * @function extractNameAndHandle
+ * @description Extracts the display name and handle from a profile page's metadata.
+ * @returns {any}
+ */
 function extractNameAndHandle(ogTitle, username) {
     if (!ogTitle) {
         return { name: username, handle: username };
@@ -163,6 +198,11 @@ function extractNameAndHandle(ogTitle, username) {
     };
 }
 
+/**
+ * @function extractCounts
+ * @description Extracts follower, following, and post counts from profile metadata.
+ * @returns {any}
+ */
 function extractCounts(ogDescription) {
     if (!ogDescription) {
         return { followers: 0, following: 0, totalPosts: 0, hasCountTokens: false };
@@ -181,6 +221,11 @@ function extractCounts(ogDescription) {
     };
 }
 
+/**
+ * @function isPrivateProfile
+ * @description Determines if a profile is set to private based on its metadata.
+ * @returns {any}
+ */
 function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
     return /this account is private/i.test(html)
         || /private account/i.test(html)
@@ -190,6 +235,11 @@ function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
         || /private/i.test(ogTitle);
 }
 
+/**
+ * @function buildNormalizedProfile
+ * @description Constructs a standardized profile object from raw extracted data.
+ * @returns {any}
+ */
 function buildNormalizedProfile({ username, name, profileImage, bio, followers, following, totalPosts, source }) {
     return {
         username,
@@ -205,6 +255,14 @@ function buildNormalizedProfile({ username, name, profileImage, bio, followers, 
     };
 }
 
+/**
+ * @function fetchPublicHtmlProfile
+ * @description Fetches a public profile by scraping its HTML content.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchPublicHtmlProfile(username) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -308,6 +366,14 @@ async function fetchPublicHtmlProfile(username) {
     }
 }
 
+/**
+ * @function fetchPythonPublicProfile
+ * @description Fetches a public profile using the Python-based extraction provider.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchPythonPublicProfile(username) {
     const data = await runPythonProvider(username);
 
@@ -331,6 +397,11 @@ async function fetchPythonPublicProfile(username) {
     });
 }
 
+/**
+ * @function resolveProvider
+ * @description Selects the appropriate provider to use for fetching profile data.
+ * @returns {any}
+ */
 function resolveProvider() {
     const provider = (process.env.INSTAGRAM_PUBLIC_PROVIDER || 'public_html').toLowerCase();
 
@@ -349,6 +420,14 @@ function resolveProvider() {
     );
 }
 
+/**
+ * @function fetchInstagramProfile
+ * @description Coordinates fetching an Instagram profile using multiple fallback providers.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function fetchInstagramProfile(username) {
     const normalizedUsername = validateUsername(username);
     const provider = resolveProvider();

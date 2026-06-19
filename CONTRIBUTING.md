@@ -6,8 +6,8 @@ Thank you for wanting to contribute to CreatorOS! We're excited to have you help
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/CreatorOs.git
-   cd CreatorOs
+   git clone https://github.com/YOUR_USERNAME/CreatorOS.git
+   cd CreatorOS
    ```
 
 2. **Create a feature branch**
