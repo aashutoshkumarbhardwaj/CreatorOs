@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <!-- SEO meta tags -->
+    <%- include('./partials/_seo', {
+        title: 'Login',
+        description: 'Sign in to your CreatorOS dashboard and manage your creator business.',
+        canonical: 'https://titli-link-shortner.vercel.app/login',
+    }) %>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Login | CreatorOS</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -465,6 +473,44 @@
         .auth-unverified a:hover {
             background-color: #d97706;
         }
+
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 3rem !important;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            z-index: 10;
+            transition: transform 0.1s ease;
+        }
+
+        .password-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .password-toggle-btn:active {
+            transform: scale(0.9);
+        }
+
+        .password-toggle-btn:focus {
+            outline: 2px solid var(--teal);
+        }
     </style>
 </head>
 <body>
@@ -535,6 +581,7 @@
                 <div class="divider">OR EMAIL</div>
 
                 <form action="/login" method="POST" id="email-login-form">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="form-group">
                         <div class="label-row">
                             <label for="login-email">Email Address</label>
@@ -547,7 +594,15 @@
                             <label for="login-password">Password</label>
                             <a href="#" class="forgot-link">FORGOT?</a>
                         </div>
-                        <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                        <div class="password-wrapper">
+                            <input id="login-password" type="password" name="password" placeholder="••••••••" required>
+                            <button type="button" id="toggle-password" class="password-toggle-btn" aria-label="Show password">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="checkbox-row">
@@ -561,6 +616,7 @@
                 </form>
 
                 <form action="/login/contributor" method="POST" id="contributor-login-form" style="margin-bottom: 2.5rem;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="social-btn" style="box-shadow: var(--shadow-sm); justify-content: center;" data-loading-text="Continuing...">
                         Continue as Contributor
                     </button>

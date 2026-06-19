@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema analyticsSnapshotSchema
+ * @description Mongoose schema definition for analyticsSnapshot.
+ */
 const analyticsSnapshotSchema = new mongoose.Schema(
     {
         creatorId: {

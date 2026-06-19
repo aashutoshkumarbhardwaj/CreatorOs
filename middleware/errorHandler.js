@@ -1,5 +1,10 @@
 const { wantsHtml } = require('../utils/requestType');
 
+/**
+ * @function errorHandler
+ * @description Global error handling middleware for formatting and sending error responses.
+ * @returns {any}
+ */
 function errorHandler(err, req, res, next) {
   console.error(err);
   if (res.headersSent) return next(err);
