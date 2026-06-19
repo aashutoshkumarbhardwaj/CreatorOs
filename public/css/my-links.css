@@ -645,11 +645,7 @@
         box-shadow: 0 0 0 0 rgba(0, 255, 200, 0);
     }
 }
-.empty-state p {
-    margin: 0;
-    color: #555;
-    font-size: 0.9rem;
-}
+
 
 /* ===== Button Active / Pressed State Feedback ===== */
 
@@ -670,4 +666,22 @@
     transition:
         transform 0.12s ease,
         box-shadow 0.12s ease;
+}
+
+/* ===== Cursor Consistency Improvements ===== */
+
+.btn-shorten,
+.link-action-btn,
+.widget-btn,
+.btn-new-link,
+.toolbar-btn,
+.slug-toggle,
+button,
+[role="button"] {
+    cursor: pointer;
+}
+
+a.link-action-btn,
+.widget-btn {
+    cursor: pointer;
 }
