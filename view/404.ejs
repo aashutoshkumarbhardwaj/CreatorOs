@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>404 - CreatorOS</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background: radial-gradient(circle at top, #0f172a, #020617);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* BRAND (clean, no gradient) */
+        .brand {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #60a5fa;
+            opacity: 0.8;
+        }
+
+        /* BIG 404 */
+        .code {
+            font-size: 120px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        h2 {
+            font-size: 28px;
+            margin: 10px 0;
+        }
+
+        p {
+            color: #94a3b8;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+            margin: 5px;
+        }
+
+        .primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .primary:hover {
+            background: #2563eb;
+        }
+
+        .ghost {
+            border: 1px solid #334155;
+            color: #cbd5e1;
+        }
+
+        .ghost:hover {
+            background: #1e293b;
+        }
+
+        .hint {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(59,130,246,0.15);
+            filter: blur(120px);
+            border-radius: 50%;
+            top: -120px;
+            left: -120px;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="glow"></div>
+
+<div class="container">
+
+    <!-- BRAND -->
+    <div class="brand">CreatorOS</div>
+
+    <!-- 404 -->
+    <div class="code">404</div>
+
+    <h2>Page not found</h2>
+
+    <p>
+        The page you’re looking for doesn’t exist or has been moved.
+    </p>
+
+    <!-- BUTTONS -->
+    <a class="btn primary" href="/">Go Home</a>
+    <a class="btn ghost" href="javascript:history.back()">Go Back</a>
+
+    <!-- DEBUG -->
+    <div class="hint">
+        Requested: <%= url %>
+    </div>
+
+</div>
+
+</body>
+</html>
