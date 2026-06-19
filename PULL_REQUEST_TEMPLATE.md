@@ -233,7 +233,7 @@ EMAIL_FROM=hello@creatorOS.com
 EMAIL_FROM_NAME=CreatorOS
 
 # Application
-APP_URL=https://yourdomain.com   # For verification links
+APP_URL=https://<your_production_domain>   # For verification links
 JWT_SECRET=your-secret-key       # Already required
 ```
 

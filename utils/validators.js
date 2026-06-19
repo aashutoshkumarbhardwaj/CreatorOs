@@ -1,6 +1,6 @@
 /**
  * @function isValidUrl
- * @description Automatically generated JSDoc for isValidUrl
+ * @description Validates whether a given string is a properly formatted HTTP/HTTPS URL.
  * @returns {any}
  */
 function isValidUrl(string) {

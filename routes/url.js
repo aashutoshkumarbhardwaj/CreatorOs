@@ -11,6 +11,7 @@ const {
 const protect = require('../middleware/auth');
 const { preventContributorWrites } = require('../middleware/auth');
 const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
+const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
 
 
 /**
@@ -18,7 +19,7 @@ const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
  * /:
  *   get:
  *     summary: GET request for /
- *     description: Automatically generated swagger documentation for /
+ *     description: Retrieves the main resource or renders the root page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -36,7 +37,7 @@ router.get('/', protect, handleListUserLinks);
  * /analytics/:shortId:
  *   get:
  *     summary: GET request for /analytics/:shortId
- *     description: Automatically generated swagger documentation for /analytics/:shortId
+ *     description: Retrieves analytics data for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -66,7 +67,7 @@ router.get('/analytics/:shortId', handleGetAnalytics);
  *       500:
  *         description: Internal server error
  */
-router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, handleGenerateShortUrl);
+router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortUrl);
 
 /**
  * @swagger
@@ -84,7 +85,7 @@ router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimite
  *       500:
  *         description: Internal server error
  */
-router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, handleGenerateShortUrl);
+router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortUrl);
 
 // ── QR Code Endpoints ───────────────────────────────────────────────────────
 
@@ -93,7 +94,7 @@ router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, hand
  * /qr/:shortId/download:
  *   get:
  *     summary: GET request for /qr/:shortId/download
- *     description: Automatically generated swagger documentation for /qr/:shortId/download
+ *     description: Downloads the QR code image for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -111,7 +112,7 @@ router.get('/qr/:shortId/download', handleDownloadQRCode);
  * /qr/:shortId:
  *   get:
  *     summary: GET request for /qr/:shortId
- *     description: Automatically generated swagger documentation for /qr/:shortId
+ *     description: Retrieves the QR code image for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -140,7 +141,7 @@ router.get('/qr/:shortId',          handleGetQRCode);
  *       500:
  *         description: Internal server error
  */
-router.patch('/qr/:shortId/colors', protect, preventContributorWrites, handleUpdateQRColors);
+router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrColorsValidator, handleUpdateQRColors);
 
 // ── Analytics Endpoints ─────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, handleUpd
  * /analytics/:shortId:
  *   get:
  *     summary: GET request for /analytics/:shortId
- *     description: Automatically generated swagger documentation for /analytics/:shortId
+ *     description: Retrieves analytics data for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response

@@ -6,7 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 /**
  * @function deriveTitle
- * @description Automatically generated JSDoc for deriveTitle
+ * @description Extracts or derives a meaningful title from a given URL.
  * @returns {any}
  */
 function deriveTitle(redirectUrl, fallback) {
@@ -25,7 +25,7 @@ function deriveTitle(redirectUrl, fallback) {
 
 /**
  * @function formatClicks
- * @description Automatically generated JSDoc for formatClicks
+ * @description Formats raw click count numbers into a human-readable string (e.g., 1.2k).
  * @returns {any}
  */
 function formatClicks(count) {
@@ -37,7 +37,7 @@ function formatClicks(count) {
 
 /**
  * @function serializeLink
- * @description Automatically generated JSDoc for serializeLink
+ * @description Serializes a link object for API responses.
  * @returns {any}
  */
 function serializeLink(entry, hostBase) {
@@ -61,7 +61,7 @@ function serializeLink(entry, hostBase) {
 
 /**
  * @function handleGenerateShortUrl
- * @description Automatically generated JSDoc for handleGenerateShortUrl
+ * @description Handles the generation of a new shortened URL.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -70,16 +70,9 @@ function serializeLink(entry, hostBase) {
 async function handleGenerateShortUrl(req, res) {
     const { redirectUrl, title, customSlug, tag } = req.body;
 
-    if (!redirectUrl || !isValidUrl(redirectUrl)) {
-        return res.status(400).json({ error: 'A valid HTTP or HTTPS URL is required.' });
-    }
-
     let shortId = shortid();
     if (customSlug) {
         const slug = String(customSlug).trim().toLowerCase();
-        if (!/^[a-z0-9-_]{3,32}$/.test(slug)) {
-            return res.status(400).json({ error: 'Custom slug must be 3–32 characters (letters, numbers, - or _).' });
-        }
         const existing = await Url.findOne({ shortId: slug });
         if (existing) {
             return res.status(409).json({ error: 'That slug is already taken. Try another.' });
@@ -114,7 +107,7 @@ async function handleGenerateShortUrl(req, res) {
 
 /**
  * @function handleListUserLinks
- * @description Automatically generated JSDoc for handleListUserLinks
+ * @description Retrieves and returns a list of URLs created by the authenticated user.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -152,7 +145,7 @@ async function handleListUserLinks(req, res) {
  */
 /**
  * @function generateBase64QR
- * @description Automatically generated JSDoc for generateBase64QR
+ * @description Generates a base64 encoded QR code image for a given URL.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -294,14 +287,6 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
 const handleUpdateQRColors = asyncHandler(async (req, res) => {
     const { shortId } = req.params;
     const { qrFgColor, qrBgColor } = req.body;
-
-    const hexRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-    if (qrFgColor && !hexRegex.test(qrFgColor)) {
-        return res.status(400).json({ success: false, message: "Invalid qrFgColor hex value", error: "Invalid qrFgColor hex value" });
-    }
-    if (qrBgColor && !hexRegex.test(qrBgColor)) {
-        return res.status(400).json({ success: false, message: "Invalid qrBgColor hex value", error: "Invalid qrBgColor hex value" });
-    }
 
     const updated = await Url.findOneAndUpdate(
         { shortId },

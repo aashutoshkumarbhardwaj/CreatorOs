@@ -5,7 +5,7 @@
 
     <div class="search-container">
         <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-        <input type="text" id="search-links-input" class="search-input" placeholder="Search shortened links..." />
+        <input type="text" id="search-links-input" class="search-input" placeholder="<%= typeof searchPlaceholder !== 'undefined' ? searchPlaceholder : 'Search shortened links...' %>" />
     </div>
 
     <div class="topbar-actions">
@@ -18,9 +18,11 @@
             <span class="avatar"><%= typeof user !== 'undefined' ? user.initials : 'U' %></span>
             <span class="profile-name"><%= typeof user !== 'undefined' ? user.name : 'User' %></span>
         </a>
-        <a class="primary-action-btn" href="/services/url-shortener">
+        <% if (typeof hideCta === 'undefined' || !hideCta) { %>
+        <a class="primary-action-btn" href="<%= typeof ctaLink !== 'undefined' ? ctaLink : '/services/url-shortener' %>">
             <svg viewBox="0 0 24 24" style="width:1.25rem; height:1.25rem; stroke:currentColor; stroke-width:2.5; fill:none;"><path d="M12 5v14M5 12h14"></path></svg>
-            Create Link
+            <%= typeof ctaText !== 'undefined' ? ctaText : 'Create Link' %>
         </a>
+        <% } %>
     </div>
 </header>

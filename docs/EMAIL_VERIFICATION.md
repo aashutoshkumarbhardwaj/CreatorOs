@@ -311,7 +311,7 @@ Create user with:
   - verificationTokenExpiry: now + 24h
      ↓
 Send verification email with link:
-  "https://yourapp.com/verify-email?token=<token>"
+  "https://<your_production_domain>/verify-email?token=<token>"
      ↓
 Show: "Sign up successful! Check your email..."
      ↓
@@ -482,7 +482,7 @@ EMAIL_FROM_NAME=CreatorOS
 EMAIL_REPLY_TO=support@creatorOS.com
 
 # Application URL (for verification links)
-APP_URL=https://yourdomain.com        # Must be set for production
+APP_URL=https://<your_production_domain>        # Must be set for production
 ```
 
 ### Example: Gmail Setup

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getPage, getSuggestions } = require('../controller/suggestionController');
+const { generateSuggestionValidator } = require('../middleware/validators');
 
 
 /**
@@ -8,7 +9,7 @@ const { getPage, getSuggestions } = require('../controller/suggestionController'
  * /:
  *   get:
  *     summary: GET request for /
- *     description: Automatically generated swagger documentation for /
+ *     description: Retrieves the main resource or renders the root page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -26,7 +27,7 @@ router.get('/', getPage);
  * /:
  *   post:
  *     summary: POST request for /
- *     description: Automatically generated swagger documentation for /
+ *     description: Creates a new resource at the root endpoint.
  *     responses:
  *       200:
  *         description: Successful response
@@ -37,6 +38,6 @@ router.get('/', getPage);
  *       500:
  *         description: Internal server error
  */
-router.post('/', getSuggestions);
+router.post('/', generateSuggestionValidator, getSuggestions);
 
 module.exports = router;

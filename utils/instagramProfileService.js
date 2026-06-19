@@ -16,7 +16,7 @@ class InstagramProfileError extends Error {
 
 /**
  * @function normalizeUsername
- * @description Automatically generated JSDoc for normalizeUsername
+ * @description Normalizes a username by stripping whitespace and converting to lowercase.
  * @returns {any}
  */
 function normalizeUsername(username) {
@@ -28,7 +28,7 @@ function normalizeUsername(username) {
 
 /**
  * @function validateUsername
- * @description Automatically generated JSDoc for validateUsername
+ * @description Validates a username against allowed character rules and length constraints.
  * @returns {any}
  */
 function validateUsername(username) {
@@ -55,7 +55,7 @@ function validateUsername(username) {
 
 /**
  * @function runPythonProvider
- * @description Automatically generated JSDoc for runPythonProvider
+ * @description Executes a Python script as a subprocess to fetch data from a provider.
  * @returns {any}
  */
 function runPythonProvider(username) {
@@ -117,7 +117,7 @@ function runPythonProvider(username) {
 
 /**
  * @function parseMetricValue
- * @description Automatically generated JSDoc for parseMetricValue
+ * @description Parses a string metric value (e.g., '1.5M') into a numeric representation.
  * @returns {any}
  */
 function parseMetricValue(raw) {
@@ -148,7 +148,7 @@ function parseMetricValue(raw) {
 
 /**
  * @function extractMetaContent
- * @description Automatically generated JSDoc for extractMetaContent
+ * @description Extracts the 'content' attribute from a meta tag in an HTML document.
  * @returns {any}
  */
 function extractMetaContent(html, property) {
@@ -159,7 +159,7 @@ function extractMetaContent(html, property) {
 
 /**
  * @function decodeHtmlEntities
- * @description Automatically generated JSDoc for decodeHtmlEntities
+ * @description Decodes HTML entities into their corresponding characters.
  * @returns {any}
  */
 function decodeHtmlEntities(value) {
@@ -179,7 +179,7 @@ function decodeHtmlEntities(value) {
 
 /**
  * @function extractNameAndHandle
- * @description Automatically generated JSDoc for extractNameAndHandle
+ * @description Extracts the display name and handle from a profile page's metadata.
  * @returns {any}
  */
 function extractNameAndHandle(ogTitle, username) {
@@ -200,7 +200,7 @@ function extractNameAndHandle(ogTitle, username) {
 
 /**
  * @function extractCounts
- * @description Automatically generated JSDoc for extractCounts
+ * @description Extracts follower, following, and post counts from profile metadata.
  * @returns {any}
  */
 function extractCounts(ogDescription) {
@@ -223,7 +223,7 @@ function extractCounts(ogDescription) {
 
 /**
  * @function isPrivateProfile
- * @description Automatically generated JSDoc for isPrivateProfile
+ * @description Determines if a profile is set to private based on its metadata.
  * @returns {any}
  */
 function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
@@ -237,7 +237,7 @@ function isPrivateProfile(html, ogDescription = '', ogTitle = '') {
 
 /**
  * @function buildNormalizedProfile
- * @description Automatically generated JSDoc for buildNormalizedProfile
+ * @description Constructs a standardized profile object from raw extracted data.
  * @returns {any}
  */
 function buildNormalizedProfile({ username, name, profileImage, bio, followers, following, totalPosts, source }) {
@@ -257,7 +257,7 @@ function buildNormalizedProfile({ username, name, profileImage, bio, followers, 
 
 /**
  * @function fetchPublicHtmlProfile
- * @description Automatically generated JSDoc for fetchPublicHtmlProfile
+ * @description Fetches a public profile by scraping its HTML content.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -368,7 +368,7 @@ async function fetchPublicHtmlProfile(username) {
 
 /**
  * @function fetchPythonPublicProfile
- * @description Automatically generated JSDoc for fetchPythonPublicProfile
+ * @description Fetches a public profile using the Python-based extraction provider.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -399,7 +399,7 @@ async function fetchPythonPublicProfile(username) {
 
 /**
  * @function resolveProvider
- * @description Automatically generated JSDoc for resolveProvider
+ * @description Selects the appropriate provider to use for fetching profile data.
  * @returns {any}
  */
 function resolveProvider() {
@@ -422,7 +422,7 @@ function resolveProvider() {
 
 /**
  * @function fetchInstagramProfile
- * @description Automatically generated JSDoc for fetchInstagramProfile
+ * @description Coordinates fetching an Instagram profile using multiple fallback providers.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

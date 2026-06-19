@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 /**
  * @function generateAISuggestions
- * @description Automatically generated JSDoc for generateAISuggestions
+ * @description Generates AI-powered content suggestions for the user.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -75,11 +75,15 @@ exports.getPage = (req, res) => {
   res.render('suggestions', { categories: [], result: null, selected: null, services });
 };
 
+const { suggestionSchema } = require('../middleware/validators');
+
 exports.getSuggestions = async (req, res) => {
-  const { topic } = req.body;
-  if (!topic) {
+  const validationResult = suggestionSchema.safeParse(req.body);
+  if (!validationResult.success) {
     return res.render('suggestions', { categories: [], result: null, selected: null, services });
   }
+
+  const { topic } = validationResult.data;
 
   const result = await generateAISuggestions(topic);
   
