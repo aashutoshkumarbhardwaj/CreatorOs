@@ -180,7 +180,7 @@ db.users.updateMany(
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
 EMAIL_SERVICE=gmail
-APP_URL=https://yourdomain.com
+APP_URL=https://<your_production_domain>
 ```
 
 ### Deployment Steps

@@ -1,6 +1,6 @@
 /**
  * @function wantsHtml
- * @description Automatically generated JSDoc for wantsHtml
+ * @description Determines if the incoming request expects an HTML response.
  * @returns {any}
  */
 function wantsHtml(req) {

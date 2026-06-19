@@ -8,7 +8,7 @@ const { getDashboardData } = require('../utils/dashboardHelper');
 
 /**
  * @function buildAccountViewModel
- * @description Automatically generated JSDoc for buildAccountViewModel
+ * @description Constructs the view model containing user account data for rendering the dashboard.
  * @returns {any}
  */
 function buildAccountViewModel(userDoc, fallbackUser) {
@@ -103,7 +103,7 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
 
 /**
  * @function renderDashboard
- * @description Automatically generated JSDoc for renderDashboard
+ * @description Renders the main user dashboard view.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

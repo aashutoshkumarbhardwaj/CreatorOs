@@ -39,17 +39,21 @@ const handleWebhook = async (req, res) => {
                             
                             // Enqueue the message for asynchronous processing instead of synchronous execution
                             // We set exponential backoff: 5 retries, starting with 2 seconds delay
-                            await dmQueue.add('process-dm', {
-                                senderId: senderId,
-                                message: message.text,
-                                triggerKeyword: message.text.toLowerCase()
-                            }, {
-                                attempts: 5,
-                                backoff: {
-                                    type: 'exponential',
-                                    delay: 2000
-                                }
-                            });
+                            try {
+                                await dmQueue.add('process-dm', {
+                                    senderId: senderId,
+                                    message: message.text,
+                                    triggerKeyword: message.text.toLowerCase()
+                                }, {
+                                    attempts: 5,
+                                    backoff: {
+                                        type: 'exponential',
+                                        delay: 2000
+                                    }
+                                });
+                            } catch (error) {
+                                console.warn(`[Webhook] DM queue unavailable, skipping async processing: ${error.message}`);
+                            }
                         }
                     }
                 }

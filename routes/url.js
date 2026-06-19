@@ -19,7 +19,7 @@ const { validate, urlShortenSchema, urlQRColorsSchema } = require('../middleware
  * /:
  *   get:
  *     summary: GET request for /
- *     description: Automatically generated swagger documentation for /
+ *     description: Retrieves the main resource or renders the root page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -37,7 +37,7 @@ router.get('/', protect, handleListUserLinks);
  * /analytics/:shortId:
  *   get:
  *     summary: GET request for /analytics/:shortId
- *     description: Automatically generated swagger documentation for /analytics/:shortId
+ *     description: Retrieves analytics data for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -60,7 +60,7 @@ router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, vali
  * /qr/:shortId/download:
  *   get:
  *     summary: GET request for /qr/:shortId/download
- *     description: Automatically generated swagger documentation for /qr/:shortId/download
+ *     description: Downloads the QR code image for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -78,7 +78,7 @@ router.get('/qr/:shortId/download', handleDownloadQRCode);
  * /qr/:shortId:
  *   get:
  *     summary: GET request for /qr/:shortId
- *     description: Automatically generated swagger documentation for /qr/:shortId
+ *     description: Retrieves the QR code image for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response
@@ -99,7 +99,7 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, validate(
  * /analytics/:shortId:
  *   get:
  *     summary: GET request for /analytics/:shortId
- *     description: Automatically generated swagger documentation for /analytics/:shortId
+ *     description: Retrieves analytics data for a specific shortened URL.
  *     responses:
  *       200:
  *         description: Successful response

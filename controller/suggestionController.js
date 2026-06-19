@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 
 /**
  * @function generateAISuggestions
- * @description Automatically generated JSDoc for generateAISuggestions
+ * @description Generates AI-powered content suggestions for the user.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
