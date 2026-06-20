@@ -1,4 +1,5 @@
 const { dmQueue } = require('../services/dmQueueService');
+const asyncHandler = require('../utils/asyncHandler');
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
@@ -22,7 +23,7 @@ const verifyWebhook = (req, res) => {
 };
 
 // Handle incoming webhook events
-const handleWebhook = async (req, res) => {
+const handleWebhook = asyncHandler(async (req, res, next) => {
     const body = req.body;
 
     // Check if it's a page or instagram event
@@ -63,7 +64,7 @@ const handleWebhook = async (req, res) => {
         // Return a '404 Not Found' if event is not from a supported object
         return res.sendStatus(404);
     }
-};
+});
 
 module.exports = {
     verifyWebhook,

@@ -77,7 +77,7 @@ exports.getPage = (req, res) => {
 
 const { suggestionSchema } = require('../middleware/validators');
 
-exports.getSuggestions = async (req, res) => {
+exports.getSuggestions = asyncHandler(async (req, res, next) => {
   const validationResult = suggestionSchema.safeParse(req.body);
   if (!validationResult.success) {
     return res.render('suggestions', { categories: [], result: null, selected: null, services });
@@ -88,4 +88,4 @@ exports.getSuggestions = async (req, res) => {
   const result = await generateAISuggestions(topic);
   
   res.render('suggestions', { categories: [], result, selected: topic, services });
-};
+});
