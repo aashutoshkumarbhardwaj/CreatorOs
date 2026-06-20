@@ -18,8 +18,8 @@ const options = {
         },
         servers: [
             {
-                url: 'http://localhost:3000',
-                description: 'Local Development Server'
+                url: process.env.BASE_URL || process.env.APP_URL || 'http://localhost:3000',
+                description: 'API Server'
             },
             {
                 url: 'https://titli-link-shortner.vercel.app',

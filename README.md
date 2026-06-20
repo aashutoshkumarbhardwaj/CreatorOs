@@ -250,7 +250,7 @@ OPENROUTER_API_KEY=sk-or-...
 
 # Base URL where the app is running
 
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
 
 # -------------------------------------------------------
 # Email Configuration
@@ -292,7 +292,7 @@ JWT_SECRET=your_jwt_secret
 
 # Backend application URL
 
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000 # Replace with your deployed URL in production
 
 # Development server port
 
@@ -349,6 +349,8 @@ Then open:
 ```text id="m4p8xc"
 http://localhost:3000
 ```
+
+> **Note**: In production, ensure your local development URL (`http://localhost:3000`) is replaced with your production domain (e.g., `https://your-domain.vercel.app`) in your environment configurations and OAuth settings.
 
 
 ## 📁 Project Structure

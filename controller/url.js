@@ -192,7 +192,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
     }
 
     const shortId = nanoid(8);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
     
     const fgColor = qrFgColor || "#1a1a1a";
@@ -230,7 +230,7 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
     const svgString = await QRCode.toString(shortUrl, {
@@ -263,7 +263,7 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
     const pngBuffer = await QRCode.toBuffer(shortUrl, {
