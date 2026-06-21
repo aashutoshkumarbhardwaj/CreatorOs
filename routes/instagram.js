@@ -1,6 +1,6 @@
 const express = require('express');
 const { getInstagramProfile } = require('../controller/instagramController');
-const { verifyWebhook, handleWebhook } = require('../controller/instagramWebhookController');
+const { verifyWebhook, verifyWebhookSignature, handleWebhook } = require('../controller/instagramWebhookController');
 
 const router = express.Router();
 
@@ -25,6 +25,6 @@ router.get('/profile', getInstagramProfile);
 
 // Instagram DM Automation Webhook Endpoints
 router.get('/webhook', verifyWebhook);
-router.post('/webhook', handleWebhook);
+router.post('/webhook', verifyWebhookSignature, handleWebhook);
 
 module.exports = router;

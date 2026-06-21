@@ -36,7 +36,11 @@ const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
