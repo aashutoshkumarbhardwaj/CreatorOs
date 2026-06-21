@@ -516,25 +516,9 @@
                             <input id="signup-password" type="password" name="password" placeholder="••••••••" required>
                         </div>
 
-                        <button
-type="submit"
-class="primary"
-data-loading-text="Creating Account..."
-
->
-
-<button
-type="submit"
-class="primary"
-data-loading-text="Creating Account..."
-
->
-
-```
-Continue to Dashboard &rarr;
-```
-
-</button>
+                        <button type="submit" class="primary" data-loading-text="Creating Account...">
+                            Create Account
+                        </button>
 
 <script>
     const signupForm = document.querySelector('form');
@@ -562,24 +546,6 @@ Continue to Dashboard &rarr;
         }
     });
 </script>
-
-<style>
-.spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #000;
-    border-top: 2px solid transparent;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: inline-block;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-</style>
 
 <style>
 .spinner {

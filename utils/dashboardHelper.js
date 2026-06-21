@@ -8,7 +8,7 @@ const Url = require('../model/url');
  */
 /**
  * @function getDashboardData
- * @description Automatically generated JSDoc for getDashboardData
+ * @description Aggregates and formats data required for rendering the user dashboard.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

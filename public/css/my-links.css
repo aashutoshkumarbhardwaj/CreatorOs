@@ -603,3 +603,71 @@
         text-align: left;
     }
 }
+.empty-state p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* ===== Empty State CTA Enhancements ===== */
+
+.btn-retro {
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    border: 2px solid var(--ws-border);
+    background: var(--ws-teal);
+    color: #000;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ws-border);
+    transition: all 0.25s ease;
+    animation: ctaPulse 2.5s infinite;
+}
+
+.btn-retro:hover {
+    transform: translateY(-2px);
+    box-shadow: 5px 5px 0 var(--ws-border);
+}
+
+.btn-retro:active {
+    transform: translateY(0);
+}
+
+@keyframes ctaPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 200, 0.25);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(0, 255, 200, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 255, 200, 0);
+    }
+}
+.empty-state p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* ===== Button Active / Pressed State Feedback ===== */
+
+.btn-shorten:active,
+.link-action-btn:active,
+.widget-btn:active,
+.btn-new-link:active,
+.toolbar-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.btn-shorten,
+.link-action-btn,
+.widget-btn,
+.btn-new-link,
+.toolbar-btn {
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease;
+}

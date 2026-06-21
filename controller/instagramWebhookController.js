@@ -1,4 +1,5 @@
 const { dmQueue } = require('../services/dmQueueService');
+const asyncHandler = require('../utils/asyncHandler');
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
@@ -22,7 +23,7 @@ const verifyWebhook = (req, res) => {
 };
 
 // Handle incoming webhook events
-const handleWebhook = async (req, res) => {
+const handleWebhook = asyncHandler(async (req, res, next) => {
     const body = req.body;
 
     // Check if it's a page or instagram event
@@ -39,17 +40,21 @@ const handleWebhook = async (req, res) => {
                             
                             // Enqueue the message for asynchronous processing instead of synchronous execution
                             // We set exponential backoff: 5 retries, starting with 2 seconds delay
-                            await dmQueue.add('process-dm', {
-                                senderId: senderId,
-                                message: message.text,
-                                triggerKeyword: message.text.toLowerCase()
-                            }, {
-                                attempts: 5,
-                                backoff: {
-                                    type: 'exponential',
-                                    delay: 2000
-                                }
-                            });
+                            try {
+                                await dmQueue.add('process-dm', {
+                                    senderId: senderId,
+                                    message: message.text,
+                                    triggerKeyword: message.text.toLowerCase()
+                                }, {
+                                    attempts: 5,
+                                    backoff: {
+                                        type: 'exponential',
+                                        delay: 2000
+                                    }
+                                });
+                            } catch (error) {
+                                console.warn(`[Webhook] DM queue unavailable, skipping async processing: ${error.message}`);
+                            }
                         }
                     }
                 }
@@ -63,7 +68,7 @@ const handleWebhook = async (req, res) => {
         // Return a '404 Not Found' if event is not from a supported object
         return res.sendStatus(404);
     }
-};
+});
 
 module.exports = {
     verifyWebhook,

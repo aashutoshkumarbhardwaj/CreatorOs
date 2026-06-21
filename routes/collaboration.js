@@ -10,7 +10,7 @@ const { inviteCollaboratorValidator } = require('../middleware/validators');
  * /:
  *   get:
  *     summary: GET request for /
- *     description: Automatically generated swagger documentation for /
+ *     description: Retrieves the main resource or renders the root page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -28,7 +28,7 @@ router.get('/', getCreatorCrmPage);
  * /invite:
  *   post:
  *     summary: POST request for /invite
- *     description: Automatically generated swagger documentation for /invite
+ *     description: Sends a new collaboration invitation.
  *     responses:
  *       200:
  *         description: Successful response

@@ -584,7 +584,8 @@ app.use(errorHandler);
 
 if (require.main === module) {
     app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`);
+        const url = process.env.APP_URL || `http://localhost:${port}`;
+        console.log(`Server is running on ${url}`);
     });
 }
 
