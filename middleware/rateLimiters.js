@@ -68,11 +68,31 @@ const emailVerificationLimiter = rateLimit({
     }
 });
 
+const MongoStore = require('rate-limit-mongo');
+
+const aiGenerationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 requests per 15 minutes
+    keyGenerator: (req) => req.user?.id || req.ip || 'anonymous',
+    store: process.env.MONGODB_URI ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 15 * 60 * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        const message = 'Too many AI generation requests. Please wait 15 minutes before trying again.';
+        if (wantsHtml(req)) {
+            return res.status(429).send(message);
+        }
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
 module.exports = {
     loginLimiter,
     uploadLimiter,
     urlShortenerPageLimiter,
     urlShortenerApiLimiter,
     signupLimiter,
-    emailVerificationLimiter
+    emailVerificationLimiter,
+    aiGenerationLimiter
 };
