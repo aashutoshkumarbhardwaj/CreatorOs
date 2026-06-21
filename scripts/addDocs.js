@@ -29,7 +29,7 @@ function processRoutes() {
  * ${routePath}:
  *   ${method}:
  *     summary: ${method.toUpperCase()} request for ${routePath}
- *     description: Automatically generated swagger documentation for ${routePath}
+ *     description: API endpoint for ${routePath}
  *     responses:
  *       200:
  *         description: Successful response
@@ -62,7 +62,7 @@ function processGeneric(dirName) {
     content = content.replace(/^(const|let|var)\s+([a-zA-Z0-9_]+)\s*=\s*(async\s+)?(\([^)]*\)|[a-zA-Z0-9_]+)\s*=>/gm, (match, decl, name) => {
       const doc = `/**
  * @function ${name}
- * @description Automatically generated JSDoc for ${name}
+ * @description Implementation for ${name}
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -76,7 +76,7 @@ function processGeneric(dirName) {
     content = content.replace(/^async\s+function\s+([a-zA-Z0-9_]+)\s*\(/gm, (match, name) => {
         const doc = `/**
  * @function ${name}
- * @description Automatically generated JSDoc for ${name}
+ * @description Implementation for ${name}
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -89,7 +89,7 @@ function processGeneric(dirName) {
     content = content.replace(/^function\s+([a-zA-Z0-9_]+)\s*\(/gm, (match, name) => {
         const doc = `/**
  * @function ${name}
- * @description Automatically generated JSDoc for ${name}
+ * @description Implementation for ${name}
  * @returns {any}
  */\n`;
         if (content.includes(`@function ${name}`)) return match;

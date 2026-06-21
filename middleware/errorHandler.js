@@ -2,7 +2,7 @@ const { wantsHtml } = require('../utils/requestType');
 
 /**
  * @function errorHandler
- * @description Automatically generated JSDoc for errorHandler
+ * @description Global error handling middleware for formatting and sending error responses.
  * @returns {any}
  */
 function errorHandler(err, req, res, next) {

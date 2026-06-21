@@ -1,6 +1,6 @@
 /**
  * @function asyncHandler
- * @description Automatically generated JSDoc for asyncHandler
+ * @description Wraps asynchronous Express route handlers to automatically catch and forward errors to the error handler.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

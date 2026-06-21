@@ -2,7 +2,7 @@ const services = require('../services.config');
 
 /**
  * @function findServiceByKey
- * @description Automatically generated JSDoc for findServiceByKey
+ * @description Locates a service configuration by its unique key.
  * @returns {any}
  */
 function findServiceByKey(key) {
@@ -11,7 +11,7 @@ function findServiceByKey(key) {
 
 /**
  * @function buildShortenerViewModel
- * @description Automatically generated JSDoc for buildShortenerViewModel
+ * @description Constructs the view model for the URL shortener interface.
  * @returns {any}
  */
 function buildShortenerViewModel(req, shortId = null, error = null) {

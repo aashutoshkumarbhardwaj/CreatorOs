@@ -274,4 +274,15 @@ if (emptyCTA) {
     });
 }
     loadLinks();
+    const emptyCTA = document.getElementById('empty-state-cta');
+
+if (emptyCTA) {
+    emptyCTA.addEventListener('click', () => {
+        document.getElementById('shorten-section')
+            ?.scrollIntoView({ behavior: 'smooth' });
+
+        document.getElementById('redirect-url')
+            ?.focus();
+    });
+}
 })();

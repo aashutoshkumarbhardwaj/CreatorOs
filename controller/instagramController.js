@@ -4,7 +4,7 @@ const lookupTracker = new Map();
 
 /**
  * @function getCooldownSeconds
- * @description Automatically generated JSDoc for getCooldownSeconds
+ * @description Calculates the remaining cooldown time for a specific rate-limited action.
  * @returns {any}
  */
 function getCooldownSeconds() {
@@ -14,7 +14,7 @@ function getCooldownSeconds() {
 
 /**
  * @function getLookupKey
- * @description Automatically generated JSDoc for getLookupKey
+ * @description Generates a unique lookup key for caching or rate-limiting requests.
  * @returns {any}
  */
 function getLookupKey(req) {
@@ -23,7 +23,7 @@ function getLookupKey(req) {
 
 /**
  * @function assertLookupAllowed
- * @description Automatically generated JSDoc for assertLookupAllowed
+ * @description Checks rate limits and throws an error if the lookup is not currently allowed.
  * @returns {any}
  */
 function assertLookupAllowed(req) {
@@ -52,7 +52,7 @@ function assertLookupAllowed(req) {
 
 /**
  * @function sendInstagramError
- * @description Automatically generated JSDoc for sendInstagramError
+ * @description Formats and sends a standardized error response for Instagram API failures.
  * @returns {any}
  */
 function sendInstagramError(res, error) {
@@ -78,7 +78,7 @@ function sendInstagramError(res, error) {
 
 /**
  * @function getInstagramProfile
- * @description Automatically generated JSDoc for getInstagramProfile
+ * @description Retrieves public profile information from Instagram.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function

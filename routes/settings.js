@@ -54,7 +54,7 @@ function daysSince(date) {
  * /profile:
  *   put:
  *     summary: PUT request for /profile
- *     description: Automatically generated swagger documentation for /profile
+ *     description: Updates operations for /profile.
  *     responses:
  *       200:
  *         description: Successful response
@@ -92,7 +92,7 @@ router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) =
  * /billing:
  *   get:
  *     summary: GET request for /billing
- *     description: Automatically generated swagger documentation for /billing
+ *     description: Retrieves the authenticated user's billing information.
  *     responses:
  *       200:
  *         description: Successful response
@@ -116,7 +116,7 @@ router.get('/billing', asyncHandler(async (req, res) => {
  * /security/2fa:
  *   put:
  *     summary: PUT request for /security/2fa
- *     description: Automatically generated swagger documentation for /security/2fa
+ *     description: Updates operations for /security/2fa.
  *     responses:
  *       200:
  *         description: Successful response
@@ -146,7 +146,7 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
  * /security/password:
  *   put:
  *     summary: PUT request for /security/password
- *     description: Automatically generated swagger documentation for /security/password
+ *     description: Updates operations for /security/password.
  *     responses:
  *       200:
  *         description: Successful response
@@ -196,7 +196,7 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
  * /account:
  *   delete:
  *     summary: DELETE request for /account
- *     description: Automatically generated swagger documentation for /account
+ *     description: Deletes operations for /account.
  *     responses:
  *       200:
  *         description: Successful response
@@ -226,7 +226,7 @@ router.delete('/account', preventContributorWrites, asyncHandler(async (req, res
  * /preferences:
  *   put:
  *     summary: PUT request for /preferences
- *     description: Automatically generated swagger documentation for /preferences
+ *     description: Updates operations for /preferences.
  *     responses:
  *       200:
  *         description: Successful response

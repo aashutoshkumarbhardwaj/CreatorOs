@@ -4,6 +4,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
+const { signupLimiter, emailVerificationLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -74,7 +75,7 @@ if (googleAuthConfigured) {
  * /signup:
  *   get:
  *     summary: GET request for /signup
- *     description: Automatically generated swagger documentation for /signup
+ *     description: Renders the user registration (signup) page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -95,7 +96,7 @@ router.get("/signup", (req, res) => {
  * /login:
  *   get:
  *     summary: GET request for /login
- *     description: Automatically generated swagger documentation for /login
+ *     description: Renders the user authentication (login) page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -124,7 +125,7 @@ router.get("/login", (req, res) => {
  * /signup:
  *   post:
  *     summary: POST request for /signup
- *     description: Automatically generated swagger documentation for /signup
+ *     description: Processes a new user registration.
  *     responses:
  *       200:
  *         description: Successful response
@@ -135,14 +136,14 @@ router.get("/login", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/signup", signupValidator, signup);
+router.post("/signup", signupLimiter, signupValidator, signup);
 
 /**
  * @swagger
  * /login:
  *   post:
  *     summary: POST request for /login
- *     description: Automatically generated swagger documentation for /login
+ *     description: Authenticates a user and establishes a session.
  *     responses:
  *       200:
  *         description: Successful response
@@ -160,7 +161,7 @@ router.post("/login", loginValidator, login);
  * /login/contributor:
  *   post:
  *     summary: POST request for /login/contributor
- *     description: Automatically generated swagger documentation for /login/contributor
+ *     description: Authenticates a contributor account.
  *     responses:
  *       200:
  *         description: Successful response
@@ -178,7 +179,7 @@ router.post("/login/contributor", loginValidator, loginAsContributor);
  * /api/auth/contributor-login:
  *   post:
  *     summary: POST request for /api/auth/contributor-login
- *     description: Automatically generated swagger documentation for /api/auth/contributor-login
+ *     description: API endpoint to authenticate a contributor account.
  *     responses:
  *       200:
  *         description: Successful response
@@ -197,7 +198,7 @@ router.post("/api/auth/contributor-login", loginValidator, loginAsContributor);
  * /auth/google:
  *   get:
  *     summary: GET request for /auth/google
- *     description: Automatically generated swagger documentation for /auth/google
+ *     description: Initiates the Google OAuth2 authentication flow.
  *     responses:
  *       200:
  *         description: Successful response
@@ -226,7 +227,7 @@ router.get("/auth/google", (req, res, next) => {
  * /auth/google/callback:
  *   get:
  *     summary: GET request for /auth/google/callback
- *     description: Automatically generated swagger documentation for /auth/google/callback
+ *     description: Handles the callback from the Google OAuth2 flow.
  *     responses:
  *       200:
  *         description: Successful response
@@ -255,7 +256,7 @@ router.get("/auth/google/callback", (req, res, next) => {
  * /verify-email:
  *   get:
  *     summary: GET request for /verify-email
- *     description: Automatically generated swagger documentation for /verify-email
+ *     description: Renders the email verification page.
  *     responses:
  *       200:
  *         description: Successful response
@@ -276,7 +277,7 @@ router.get("/verify-email", (req, res) => {
  * /verify-email:
  *   post:
  *     summary: POST request for /verify-email
- *     description: Automatically generated swagger documentation for /verify-email
+ *     description: Processes an email verification token to activate a user account.
  *     responses:
  *       200:
  *         description: Successful response
@@ -287,7 +288,7 @@ router.get("/verify-email", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/verify-email", verifyEmail);
+router.post("/verify-email", emailVerificationLimiter, verifyEmail);
 
 
 /**
@@ -295,7 +296,7 @@ router.post("/verify-email", verifyEmail);
  * /resend-verification:
  *   get:
  *     summary: GET request for /resend-verification
- *     description: Automatically generated swagger documentation for /resend-verification
+ *     description: Renders the page to request a new verification email.
  *     responses:
  *       200:
  *         description: Successful response
@@ -316,7 +317,7 @@ router.get("/resend-verification", (req, res) => {
  * /resend-verification:
  *   post:
  *     summary: POST request for /resend-verification
- *     description: Automatically generated swagger documentation for /resend-verification
+ *     description: Generates and sends a new email verification token.
  *     responses:
  *       200:
  *         description: Successful response
@@ -327,7 +328,7 @@ router.get("/resend-verification", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/resend-verification", resendVerificationValidator, resendVerificationEmail);
+router.post("/resend-verification", emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
 
 
 /**
@@ -335,7 +336,7 @@ router.post("/resend-verification", resendVerificationValidator, resendVerificat
  * /logout:
  *   get:
  *     summary: GET request for /logout
- *     description: Automatically generated swagger documentation for /logout
+ *     description: Terminates the user's session and redirects to login.
  *     responses:
  *       200:
  *         description: Successful response
