@@ -671,3 +671,11 @@
         transform 0.12s ease,
         box-shadow 0.12s ease;
 }
+
+/* Improve cursor consistency for clickable controls */
+
+.sidebar a,
+.link-action-btn,
+button {
+    cursor: pointer;
+}
