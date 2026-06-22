@@ -84,6 +84,22 @@ const aiGenerationLimiter = rateLimit({
             return res.status(429).send(message);
         }
         return res.status(429).json({ success: false, message, error: message });
+const instagramProfileLimiter = rateLimit({
+    windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+    max: 1,
+    keyGenerator: (req) => req.user?.id || req.ip || 'anonymous',
+    store: process.env.MONGODB_URI ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        return res.status(429).json({
+            success: false,
+            error: {
+                code: 'RATE_LIMITED',
+                message: `Please wait ${process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30} seconds before fetching another Instagram profile.`,
+            }
+        });
     }
 });
 
@@ -95,4 +111,5 @@ module.exports = {
     signupLimiter,
     emailVerificationLimiter,
     aiGenerationLimiter
+    instagramProfileLimiter
 };

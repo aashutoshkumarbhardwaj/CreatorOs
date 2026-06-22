@@ -1,54 +1,5 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
 
-const lookupTracker = new Map();
-
-/**
- * @function getCooldownSeconds
- * @description Calculates the remaining cooldown time for a specific rate-limited action.
- * @returns {any}
- */
-function getCooldownSeconds() {
-    const value = Number(process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30);
-    return Number.isFinite(value) && value >= 0 ? value : 30;
-}
-
-/**
- * @function getLookupKey
- * @description Generates a unique lookup key for caching or rate-limiting requests.
- * @returns {any}
- */
-function getLookupKey(req) {
-    return req.user?.id || req.ip || 'anonymous';
-}
-
-/**
- * @function assertLookupAllowed
- * @description Checks rate limits and throws an error if the lookup is not currently allowed.
- * @returns {any}
- */
-function assertLookupAllowed(req) {
-    const cooldownSeconds = getCooldownSeconds();
-
-    if (cooldownSeconds === 0) {
-        return;
-    }
-
-    const lookupKey = getLookupKey(req);
-    const now = Date.now();
-    const nextAllowedAt = lookupTracker.get(lookupKey) || 0;
-
-    if (now < nextAllowedAt) {
-        const retryAfter = Math.ceil((nextAllowedAt - now) / 1000);
-        throw new InstagramProfileError(
-            'RATE_LIMITED',
-            `Please wait ${retryAfter} seconds before fetching another Instagram profile.`,
-            429,
-            { retryAfter }
-        );
-    }
-
-    lookupTracker.set(lookupKey, now + cooldownSeconds * 1000);
-}
 
 /**
  * @function sendInstagramError
@@ -87,8 +38,6 @@ function sendInstagramError(res, error) {
 async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
-
-        assertLookupAllowed(req);
 
         const profile = await fetchInstagramProfile(username);
 
