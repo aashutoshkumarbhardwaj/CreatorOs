@@ -4,6 +4,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
+const { signupLimiter, emailVerificationLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -135,7 +136,7 @@ router.get("/login", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/signup", signupValidator, signup);
+router.post("/signup", signupLimiter, signupValidator, signup);
 
 /**
  * @swagger
@@ -287,7 +288,7 @@ router.get("/verify-email", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/verify-email", verifyEmail);
+router.post("/verify-email", emailVerificationLimiter, verifyEmail);
 
 
 /**
@@ -327,7 +328,7 @@ router.get("/resend-verification", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/resend-verification", resendVerificationValidator, resendVerificationEmail);
+router.post("/resend-verification", emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
 
 
 /**

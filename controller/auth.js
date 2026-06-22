@@ -258,7 +258,7 @@ const login = asyncHandler(async (req, res, next) => {
  * @param {Function} next - Express next middleware function
  * @returns {Promise<void>|void}
  */
-const handleGoogleCallback = async (req, res) => {
+const handleGoogleCallback = asyncHandler(async (req, res, next) => {
     try {
         if (!req.user) {
             return redirectWithLoginError(res, GOOGLE_AUTH_CANCELLED_ERROR);
@@ -272,7 +272,7 @@ const handleGoogleCallback = async (req, res) => {
         console.error("Google login error:", error);
         return redirectWithLoginError(res, "Google sign-in failed. Please try again.");
     }
-};
+});
 
 const loginAsContributor = asyncHandler(async (req, res, next) => {
     await connectDB();

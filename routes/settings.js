@@ -211,6 +211,20 @@ router.delete('/account', preventContributorWrites, asyncHandler(async (req, res
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
+    // Import other models for cascading deletion
+    const Url = require('../model/url');
+    const Invite = require('../model/invite');
+
+    // Delete shortened links and collaborator invites associated with the user
+    await Url.deleteMany({ userId: user._id });
+    await Invite.deleteMany({ inviter: user._id });
+
+    // Only attempt to delete Creator settings if not in mock database mode (Creator model is not mocked)
+    if (process.env.USE_MOCK_DB !== 'true') {
+        const Creator = require('../model/creator');
+        await Creator.deleteOne({ userId: user._id });
+    }
+
     if (typeof user.deleteOne === 'function') {
         await user.deleteOne();
     }

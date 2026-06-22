@@ -250,7 +250,7 @@ OPENROUTER_API_KEY=sk-or-...
 
 # Base URL where the app is running
 
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
 
 # -------------------------------------------------------
 # Email Configuration
@@ -292,7 +292,7 @@ JWT_SECRET=your_jwt_secret
 
 # Backend application URL
 
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000 # Replace with your deployed URL in production
 
 # Development server port
 
@@ -350,39 +350,7 @@ Then open:
 http://localhost:3000
 ```
 
-## ❓ FAQ
-
-### Why is CreatorOS running in Mock Database Mode?
-
-CreatorOS automatically starts in mock mode when a valid `MONGODB_URI` is not configured. This allows contributors to explore and test the UI without requiring a database connection.
-
-### Where should environment variables be added?
-
-Create a `.env.local` file in the project root and add the required variables listed in the Environment Setup section.
-
-### How do I create a new feature branch?
-
-Use:
-
-```bash
-git checkout -b feature/your-feature-name
-```
-
-### What should I do if `npm install` fails?
-
-Ensure you are using a supported Node.js version and remove `node_modules` before reinstalling dependencies.
-
-### How do I start the project locally?
-
-```bash
-npm run dev
-```
-
-Then open:
-
-```text
-http://localhost:3000
-```
+> **Note**: In production, ensure your local development URL (`http://localhost:3000`) is replaced with your production domain (e.g., `https://your-domain.vercel.app`) in your environment configurations and OAuth settings.
 
 
 ## 📁 Project Structure
