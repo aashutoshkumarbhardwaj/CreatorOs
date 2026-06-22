@@ -4,6 +4,7 @@ const { verifyWebhook, verifyWebhookSignature, handleWebhook } = require('../con
 
 const router = express.Router();
 
+const { instagramProfileLimiter } = require('../middleware/rateLimiters');
 
 /**
  * @swagger
@@ -21,7 +22,7 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.get('/profile', getInstagramProfile);
+router.get('/profile', instagramProfileLimiter, getInstagramProfile);
 
 // Instagram DM Automation Webhook Endpoints
 router.get('/webhook', verifyWebhook);
