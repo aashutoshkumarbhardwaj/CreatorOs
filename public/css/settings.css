@@ -181,6 +181,7 @@ body.settings-page.appearance-dark {
     text-decoration: none;
     box-shadow: 4px 4px 0 var(--settings-border);
     margin-bottom: 0.5rem;
+    cursor: pointer;
 }
 
 .btn-upgrade:active {
@@ -886,6 +887,19 @@ body.appearance-dark .setting-info p {
     margin-bottom: 1.5rem;
     font-weight: 600;
     font-size: 0.9rem;
+}
+
+.btn-action:disabled,
+.btn-secondary:disabled,
+.btn-black:disabled,
+.btn-upgrade:disabled,
+.btn-danger:disabled,
+.radio-btn:disabled,
+.sub-nav-item:disabled,
+.toggle-switch.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 @media (max-width: 960px) {

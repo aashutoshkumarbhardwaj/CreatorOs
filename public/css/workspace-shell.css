@@ -126,6 +126,7 @@ body.workspace-page {
     text-decoration: none;
     box-shadow: 4px 4px 0 var(--ws-border);
     margin-bottom: 0.5rem;
+    cursor: pointer;
 }
 
 .workspace-sidebar-footer a {
@@ -262,6 +263,7 @@ body.workspace-page {
     box-shadow: var(--shadow-retro-btn);
     color: #111;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .profile-chip:hover {
@@ -578,6 +580,17 @@ body.workspace-page {
 .toast.error {
     border-color: #c0392b;
     box-shadow: 4px 4px 0 #c0392b;
+}
+
+.menu-btn:disabled,
+.icon-btn:disabled,
+.action-icon-btn:disabled,
+.primary-action-btn:disabled,
+.upgrade-btn:disabled,
+.btn-upgrade:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 @media (max-width: 960px) {
