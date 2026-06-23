@@ -84,6 +84,8 @@ const aiGenerationLimiter = rateLimit({
             return res.status(429).send(message);
         }
         return res.status(429).json({ success: false, message, error: message });
+    }
+};
 const instagramProfileLimiter = rateLimit({
     windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
     max: 1,
@@ -110,6 +112,6 @@ module.exports = {
     urlShortenerApiLimiter,
     signupLimiter,
     emailVerificationLimiter,
-    aiGenerationLimiter
+    aiGenerationLimiter,
     instagramProfileLimiter
 };
