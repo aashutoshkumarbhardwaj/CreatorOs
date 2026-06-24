@@ -415,6 +415,8 @@ Before submitting a Pull Request:
 
 Following these practices helps maintainers review contributions more efficiently.
 
+---
+
 ## 🤝 Contributing
 
 Contributions are what make the open-source community amazing. Any contributions you make are **greatly appreciated**.
