@@ -402,6 +402,21 @@ If you're building an audience and monetizing your knowledge — CreatorOs is yo
 
 ---
 
+## 📝 Commit Message Guidelines
+
+Use clear and descriptive commit messages.
+
+Examples:
+
+- feat: add dashboard analytics widget
+- fix: resolve sidebar navigation bug
+- docs: update contribution guide
+- refactor: simplify authentication middleware
+
+Keeping commit messages consistent helps maintainers understand project history more effectively.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are what make the open-source community amazing. Any contributions you make are **greatly appreciated**.
