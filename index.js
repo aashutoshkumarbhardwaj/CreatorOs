@@ -36,7 +36,11 @@ const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
@@ -102,7 +106,7 @@ const swaggerSpec = require('./utils/swaggerOptions');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
 
 app.use("/api/analytics", protect, analyticsRoutes);
-app.use('/api/instagram', instagramRoutes);
+app.use('/api/instagram', protect, instagramRoutes);
 
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);

@@ -1,9 +1,10 @@
 const express = require('express');
 const { getInstagramProfile } = require('../controller/instagramController');
-const { verifyWebhook, handleWebhook } = require('../controller/instagramWebhookController');
+const { verifyWebhook, verifyWebhookSignature, handleWebhook } = require('../controller/instagramWebhookController');
 
 const router = express.Router();
 
+const { instagramProfileLimiter } = require('../middleware/rateLimiters');
 
 /**
  * @swagger
@@ -21,10 +22,10 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.get('/profile', getInstagramProfile);
+router.get('/profile', instagramProfileLimiter, getInstagramProfile);
 
 // Instagram DM Automation Webhook Endpoints
 router.get('/webhook', verifyWebhook);
-router.post('/webhook', handleWebhook);
+router.post('/webhook', verifyWebhookSignature, handleWebhook);
 
 module.exports = router;

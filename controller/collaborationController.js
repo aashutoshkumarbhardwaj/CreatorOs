@@ -177,6 +177,14 @@ const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
     if (!invite) {
       return renderDashboard(req, res, { inviteAcceptError: 'No invitation found for that token.' });
     }
+   if (
+       invite.status === "expired" ||
+       (invite.expiresAt && invite.expiresAt < new Date())
+   ) {
+       return renderDashboard(req, res, {
+           inviteAcceptError: "This invitation has expired.",
+       })
+   };
 
     if (invite.status === 'accepted') {
       return renderDashboard(req, res, { inviteAcceptMessage: 'This invitation has already been accepted.' });
