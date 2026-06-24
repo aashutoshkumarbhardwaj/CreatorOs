@@ -402,6 +402,19 @@ If you're building an audience and monetizing your knowledge — CreatorOs is yo
 
 ---
 
+## 🔍 Pull Request Best Practices
+
+Before submitting a Pull Request:
+
+- Keep changes focused on a single issue.
+- Use clear and descriptive commit messages.
+- Reference the related issue in the PR description.
+- Test changes locally whenever possible.
+- Ensure your branch is up to date with the latest project changes.
+- Provide screenshots or demos when UI changes are involved.
+
+Following these practices helps maintainers review contributions more efficiently.
+
 ## 🤝 Contributing
 
 Contributions are what make the open-source community amazing. Any contributions you make are **greatly appreciated**.
