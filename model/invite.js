@@ -77,6 +77,9 @@ const MockInviteModel = {
       updatedAt: new Date(),
     };
   },
+  deleteMany: async () => {
+    return { deletedCount: 0 };
+  },
 };
 
 function getActiveInviteModel() {
@@ -91,6 +94,7 @@ const InviteModel = {
   findByIdAndDelete: (...args) => getActiveInviteModel().findByIdAndDelete(...args),
   find: (...args) => getActiveInviteModel().find(...args),
   create: (...args) => getActiveInviteModel().create(...args),
+  deleteMany: (...args) => getActiveInviteModel().deleteMany(...args),
 };
 
 module.exports = InviteModel;

@@ -671,3 +671,14 @@
         transform 0.12s ease,
         box-shadow 0.12s ease;
 }
+
+.btn-shorten:disabled,
+.link-action-btn:disabled,
+.widget-btn:disabled,
+.btn-new-link:disabled,
+.toolbar-btn:disabled,
+.btn-retro:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
