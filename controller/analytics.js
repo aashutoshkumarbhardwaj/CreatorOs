@@ -43,21 +43,32 @@ const triggerRefresh = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Creator not found" });
     }
 
-    // TODO: Replace with real API fetch
-    const mockData = {
-        followers: Math.floor(Math.random() * 10000),
-        following: Math.floor(Math.random() * 1000),
-        totalPosts: Math.floor(Math.random() * 500),
-        totalLikes: Math.floor(Math.random() * 50000),
-        totalComments: Math.floor(Math.random() * 5000),
-        totalViews: Math.floor(Math.random() * 100000),
-        engagementRate: parseFloat((Math.random() * 10).toFixed(2)),
+    let fetchedData = {
+        followers: 0,
+        following: 0,
+        totalPosts: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalViews: 0,
+        engagementRate: 0,
     };
+
+    if (creator.platform === 'instagram') {
+        try {
+            const { fetchInstagramProfile } = require('../utils/instagramProfileService');
+            const profile = await fetchInstagramProfile(creator.username);
+            fetchedData.followers = profile.followers || 0;
+            fetchedData.following = profile.following || 0;
+            fetchedData.totalPosts = profile.totalPosts || 0;
+        } catch (err) {
+            console.error(`[Analytics] Failed to fetch profile for ${creator.username}:`, err.message);
+        }
+    }
 
     const snapshot = await AnalyticsSnapshot.create({
         creatorId: creator._id,
         platform: creator.platform,
-        ...mockData,
+        ...fetchedData,
         snapshotDate: new Date(),
     });
 
