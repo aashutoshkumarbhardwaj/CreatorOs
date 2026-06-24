@@ -402,6 +402,28 @@ If you're building an audience and monetizing your knowledge — CreatorOs is yo
 
 ---
 
+## 🌿 Branch Naming Conventions
+
+Use descriptive branch names that clearly indicate the purpose of your work.
+
+### Examples
+
+- feature/user-profile-page
+- fix/sidebar-navigation
+- docs/update-readme
+- refactor/auth-service
+
+### Recommended Prefixes
+
+- `feature/` → New features
+- `fix/` → Bug fixes
+- `docs/` → Documentation updates
+- `refactor/` → Code improvements without changing functionality
+
+Consistent branch naming makes collaboration, issue tracking, and code reviews easier.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are what make the open-source community amazing. Any contributions you make are **greatly appreciated**.
