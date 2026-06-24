@@ -11,16 +11,27 @@ cron.schedule("0 */6 * * *", async () => {
         const creators = await Creator.find({});
 
         for (const creator of creators) {
-            // TODO: Replace with real platform API call (e.g. Instagram Graph API)
-            const mockFetchedData = {
-                followers: Math.floor(Math.random() * 10000),
-                following: Math.floor(Math.random() * 1000),
-                totalPosts: Math.floor(Math.random() * 500),
-                totalLikes: Math.floor(Math.random() * 50000),
-                totalComments: Math.floor(Math.random() * 5000),
-                totalViews: Math.floor(Math.random() * 100000),
-                engagementRate: parseFloat((Math.random() * 10).toFixed(2)),
+            let fetchedData = {
+                followers: 0,
+                following: 0,
+                totalPosts: 0,
+                totalLikes: 0,
+                totalComments: 0,
+                totalViews: 0,
+                engagementRate: 0,
             };
+
+            if (creator.platform === 'instagram') {
+                try {
+                    const { fetchInstagramProfile } = require('../utils/instagramProfileService');
+                    const profile = await fetchInstagramProfile(creator.username);
+                    fetchedData.followers = profile.followers || 0;
+                    fetchedData.following = profile.following || 0;
+                    fetchedData.totalPosts = profile.totalPosts || 0;
+                } catch (err) {
+                    console.error(`[AnalyticsWorker] Failed to fetch profile for ${creator.username}:`, err.message);
+                }
+            }
 
             // Get last snapshot for growth comparison
             const lastSnapshot = await AnalyticsSnapshot.findOne(
@@ -33,7 +44,7 @@ cron.schedule("0 */6 * * *", async () => {
             const newSnapshot = await AnalyticsSnapshot.create({
                 creatorId: creator._id,
                 platform: creator.platform,
-                ...mockFetchedData,
+                ...fetchedData,
                 snapshotDate: new Date(),
             });
 
@@ -42,10 +53,10 @@ cron.schedule("0 */6 * * *", async () => {
                 await EngagementHistory.create({
                     creatorId: creator._id,
                     snapshotId: newSnapshot._id,
-                    followersGrowth: mockFetchedData.followers - lastSnapshot.followers,
-                    likesGrowth: mockFetchedData.totalLikes - lastSnapshot.totalLikes,
-                    commentsGrowth: mockFetchedData.totalComments - lastSnapshot.totalComments,
-                    engagementRateDelta: mockFetchedData.engagementRate - lastSnapshot.engagementRate,
+                    followersGrowth: fetchedData.followers - lastSnapshot.followers,
+                    likesGrowth: fetchedData.totalLikes - lastSnapshot.totalLikes,
+                    commentsGrowth: fetchedData.totalComments - lastSnapshot.totalComments,
+                    engagementRateDelta: fetchedData.engagementRate - lastSnapshot.engagementRate,
                 });
             }
 

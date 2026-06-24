@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
 
+/**
+ * @schema urlSchema
+ * @description Mongoose schema definition for url.
+ */
 const urlSchema = new mongoose.Schema({
     shortId: {
         type: String,
@@ -123,6 +127,19 @@ class MockUrlModel {
         if (idx === -1) return null;
         return mockUrls.splice(idx, 1)[0];
     }
+
+    static async deleteMany(query = {}) {
+        const keys = Object.keys(query);
+        let count = 0;
+        for (let i = mockUrls.length - 1; i >= 0; i--) {
+            const item = mockUrls[i];
+            if (keys.every(k => item[k]?.toString() === query[k]?.toString())) {
+                mockUrls.splice(i, 1);
+                count++;
+            }
+        }
+        return { deletedCount: count };
+    }
 }
 
 function getActiveUrlModel() {
@@ -142,5 +159,6 @@ UrlModel.findById = (...args) => getActiveUrlModel().findById(...args);
 UrlModel.findOneAndUpdate = (...args) => getActiveUrlModel().findOneAndUpdate(...args);
 UrlModel.find = (...args) => getActiveUrlModel().find(...args);
 UrlModel.findByIdAndDelete = (...args) => getActiveUrlModel().findByIdAndDelete(...args);
+UrlModel.deleteMany = (...args) => getActiveUrlModel().deleteMany(...args);
 
 module.exports = UrlModel;

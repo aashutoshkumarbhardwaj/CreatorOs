@@ -48,6 +48,23 @@ function daysSince(date) {
 }
 
 // PUT /api/settings/profile
+
+/**
+ * @swagger
+ * /profile:
+ *   put:
+ *     summary: PUT request for /profile
+ *     description: Updates operations for /profile.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) => {
     const { name, alias, bio } = req.body;
     
@@ -69,6 +86,23 @@ router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) =
     });
 }));
 
+
+/**
+ * @swagger
+ * /billing:
+ *   get:
+ *     summary: GET request for /billing
+ *     description: Retrieves the authenticated user's billing information.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/billing', asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -76,6 +110,23 @@ router.get('/billing', asyncHandler(async (req, res) => {
 }));
 
 // PUT /api/settings/security/2fa
+
+/**
+ * @swagger
+ * /security/2fa:
+ *   put:
+ *     summary: PUT request for /security/2fa
+ *     description: Updates operations for /security/2fa.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, res) => {
     const { enabled } = req.body;
     
@@ -89,6 +140,23 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
 }));
 
 // PUT /api/settings/security/password
+
+/**
+ * @swagger
+ * /security/password:
+ *   put:
+ *     summary: PUT request for /security/password
+ *     description: Updates operations for /security/password.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/security/password', preventContributorWrites, asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     
@@ -122,10 +190,41 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
 }));
 
 // DELETE /api/settings/account
+
+/**
+ * @swagger
+ * /account:
+ *   delete:
+ *     summary: DELETE request for /account
+ *     description: Deletes operations for /account.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.delete('/account', preventContributorWrites, asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
+    // Import other models for cascading deletion
+    const Url = require('../model/url');
+    const Invite = require('../model/invite');
+
+    // Delete shortened links and collaborator invites associated with the user
+    await Url.deleteMany({ userId: user._id });
+    await Invite.deleteMany({ inviter: user._id });
+
+    // Only attempt to delete Creator settings if not in mock database mode (Creator model is not mocked)
+    if (process.env.USE_MOCK_DB !== 'true') {
+        const Creator = require('../model/creator');
+        await Creator.deleteOne({ userId: user._id });
+    }
+
     if (typeof user.deleteOne === 'function') {
         await user.deleteOne();
     }
@@ -135,6 +234,23 @@ router.delete('/account', preventContributorWrites, asyncHandler(async (req, res
 }));
 
 // PUT /api/settings/preferences
+
+/**
+ * @swagger
+ * /preferences:
+ *   put:
+ *     summary: PUT request for /preferences
+ *     description: Updates operations for /preferences.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/preferences', asyncHandler(async (req, res) => {
     // Note: Not using preventContributorWrites here so contributors can still save personal UI preferences
     const preferences = req.body;

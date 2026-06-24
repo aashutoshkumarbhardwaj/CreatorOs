@@ -1,0 +1,10 @@
+.stat-card-retro,
+.panel-retro {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card-retro:hover,
+.panel-retro:hover {
+    transform: translateY(-4px);
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.12);
+}

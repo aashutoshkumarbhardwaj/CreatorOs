@@ -2,8 +2,9 @@ const express = require("express");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail } = require("../controller/auth");
-const { signupValidator, loginValidator } = require("../middleware/validators");
+const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
+const { signupLimiter, emailVerificationLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -68,10 +69,44 @@ if (googleAuthConfigured) {
     );
 }
 
+
+/**
+ * @swagger
+ * /signup:
+ *   get:
+ *     summary: GET request for /signup
+ *     description: Renders the user registration (signup) page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/signup", (req, res) => {
     res.render("signup", { error: null });
 });
 
+
+/**
+ * @swagger
+ * /login:
+ *   get:
+ *     summary: GET request for /login
+ *     description: Renders the user authentication (login) page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/login", (req, res) => {
     const errorMessages = {
         google_cancelled: "Google sign-in was cancelled.",
@@ -84,11 +119,96 @@ router.get("/login", (req, res) => {
     });
 });
 
-router.post("/signup", signupValidator, signup);
-router.post("/login", loginValidator, login);
-router.post("/login/contributor", loginAsContributor);
-router.post("/api/auth/contributor-login", loginAsContributor);
 
+/**
+ * @swagger
+ * /signup:
+ *   post:
+ *     summary: POST request for /signup
+ *     description: Processes a new user registration.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/signup", signupLimiter, signupValidator, signup);
+
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: POST request for /login
+ *     description: Authenticates a user and establishes a session.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/login", loginValidator, login);
+
+/**
+ * @swagger
+ * /login/contributor:
+ *   post:
+ *     summary: POST request for /login/contributor
+ *     description: Authenticates a contributor account.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/login/contributor", loginValidator, loginAsContributor);
+
+/**
+ * @swagger
+ * /api/auth/contributor-login:
+ *   post:
+ *     summary: POST request for /api/auth/contributor-login
+ *     description: API endpoint to authenticate a contributor account.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/api/auth/contributor-login", loginValidator, loginAsContributor);
+
+
+/**
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     summary: GET request for /auth/google
+ *     description: Initiates the Google OAuth2 authentication flow.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/auth/google", (req, res, next) => {
     if (!googleAuthConfigured) {
         return res.redirect("/login?error=Google%20sign-in%20is%20not%20configured%20yet.");
@@ -101,6 +221,23 @@ router.get("/auth/google", (req, res, next) => {
     })(req, res, next);
 });
 
+
+/**
+ * @swagger
+ * /auth/google/callback:
+ *   get:
+ *     summary: GET request for /auth/google/callback
+ *     description: Handles the callback from the Google OAuth2 flow.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/auth/google/callback", (req, res, next) => {
     if (req.query.error) {
         const errorCode = req.query.error === "access_denied" ? "google_cancelled" : "google_failed";
@@ -113,18 +250,103 @@ router.get("/auth/google/callback", (req, res, next) => {
     })(req, res, next);
 }, handleGoogleCallback);
 
+
+/**
+ * @swagger
+ * /verify-email:
+ *   get:
+ *     summary: GET request for /verify-email
+ *     description: Renders the email verification page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/verify-email", (req, res) => {
     res.render("verify-email", { error: null, success: null, expiredToken: false });
 });
 
-router.post("/verify-email", verifyEmail);
 
+/**
+ * @swagger
+ * /verify-email:
+ *   post:
+ *     summary: POST request for /verify-email
+ *     description: Processes an email verification token to activate a user account.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/verify-email", emailVerificationLimiter, verifyEmail);
+
+
+/**
+ * @swagger
+ * /resend-verification:
+ *   get:
+ *     summary: GET request for /resend-verification
+ *     description: Renders the page to request a new verification email.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/resend-verification", (req, res) => {
     res.render("resend-verification", { error: null, success: null });
 });
 
-router.post("/resend-verification", resendVerificationEmail);
 
+/**
+ * @swagger
+ * /resend-verification:
+ *   post:
+ *     summary: POST request for /resend-verification
+ *     description: Generates and sends a new email verification token.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/resend-verification", emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
+
+
+/**
+ * @swagger
+ * /logout:
+ *   get:
+ *     summary: GET request for /logout
+ *     description: Terminates the user's session and redirects to login.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/logout", (req, res) => {
     res.clearCookie("token");
     res.redirect("/login");

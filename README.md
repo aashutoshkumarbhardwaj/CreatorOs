@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=CreatorOs&fontSize=72&fontColor=fff&animation=twinkling&fontAlignY=32&desc=The%20Operating%20System%20for%20Creators&descAlignY=56&descSize=20&descColor=ffffff" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=CreatorOS&fontSize=72&fontColor=fff&animation=twinkling&fontAlignY=32&desc=The%20Operating%20System%20for%20Creators&descAlignY=56&descSize=20&descColor=ffffff" width="100%"/>
 
 <br/>
 
@@ -36,6 +36,23 @@
 
 ---
 
+## Table of Contents
+
+- [🔥 The Problem](#-the-problem)
+- [✨ What CreatorOS Does](#-what-creatoros-does)
+- [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
+- [🚀 Getting Started](#-getting-started)
+- [📁 Project Structure](#-project-structure)
+- [🎯 Who Is This For?](#-who-is-this-for)
+- [💰 Pricing Model](#-pricing-model)
+- [🗺️ Roadmap](#%EF%B8%8F-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🌟 Our Contributors](#-our-contributors)
+- [📬 Connect](#-connect)
+
+---
+
 ## 🔥 The Problem
 
 Every creator knows this chaos:
@@ -51,11 +68,11 @@ Every creator knows this chaos:
 
 **That's 6+ apps, 6+ subscriptions, 6+ logins — just to run your creator business.**
 
-CreatorOs ends this. One platform. Everything connected. Zero context-switching.
+CreatorOS ends this. One platform. Everything connected. Zero context-switching.
 
 ---
 
-## ✨ What CreatorOs Does
+## ✨ What CreatorOS Does
 
 <table>
 <tr>
@@ -154,10 +171,10 @@ npm >= 9.0.0
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/CreatorOs.git
+git clone https://github.com/<your_username>/CreatorOS.git
 
 # Navigate into the project
-cd CreatorOs
+cd CreatorOS
 
 # Install dependencies
 npm install
@@ -233,7 +250,7 @@ OPENROUTER_API_KEY=sk-or-...
 
 # Base URL where the app is running
 
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
 
 # -------------------------------------------------------
 # Email Configuration
@@ -275,7 +292,7 @@ JWT_SECRET=your_jwt_secret
 
 # Backend application URL
 
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000 # Replace with your deployed URL in production
 
 # Development server port
 
@@ -371,7 +388,7 @@ http://localhost:3000
 ## 📁 Project Structure
 
 ```
-CreatorOs/
+CreatorOS/
 ├── 📂 app/                    # Next.js App Router
 │   ├── 📂 (auth)/             # Auth pages (login, signup)
 │   ├── 📂 (dashboard)/        # Main dashboard routes
@@ -400,7 +417,7 @@ CreatorOs/
 
 </div>
 
-If you're building an audience and monetizing your knowledge — CreatorOs is your control center.
+If you're building an audience and monetizing your knowledge — CreatorOS is your control center.
 
 ---
 
@@ -472,13 +489,13 @@ We're proud to be part of **GSSoC 2026** 🚀. This project is built by our amaz
 
 ### Meet Our Community
 
-<a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=aashutoshkumarbhardwaj/CreatorOs" alt="Contributors" style="max-width: 100%; border-radius: 10px;"/>
+<a href="https://github.com/aashutoshkumarbhardwaj/CreatorOS/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=aashutoshkumarbhardwaj/CreatorOS" alt="Contributors" style="max-width: 100%; border-radius: 10px;"/>
 </a>
 
 <br/>
 
-<a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs/graphs/contributors">
+<a href="https://github.com/aashutoshkumarbhardwaj/CreatorOS/graphs/contributors">
   <img src="https://img.shields.io/badge/View%20All%20Contributors-7C4DFF?style=for-the-badge" alt="View Contributors" />
 </a>
 
@@ -486,7 +503,7 @@ We're proud to be part of **GSSoC 2026** 🚀. This project is built by our amaz
 
 Every contribution, no matter how small, helps us build something amazing for creators. Here's how you can get involved:
 
-1. **Pick an Issue** - Browse our [open issues](https://github.com/aashutoshkumarbhardwaj/CreatorOs/issues) and find something that interests you
+1. **Pick an Issue** - Browse our [open issues](https://github.com/aashutoshkumarbhardwaj/CreatorOS/issues) and find something that interests you
 2. **Fork & Create Branch** - Fork the repo and create a feature branch
 3. **Make Your Changes** - Implement your feature or fix
 4. **Submit PR** - Open a pull request with a clear description
@@ -513,8 +530,35 @@ Every contribution, no matter how small, helps us build something amazing for cr
 
 <br/>
 
-*If CreatorOs saves you time, give it a ⭐ — it means the world.*
+*If CreatorOS saves you time, give it a ⭐ — it means the world.*
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
 
 </div>
+
+## ✨ README Improvement Notes
+
+### 📌 Formatting Enhancements Needed
+- Improve heading hierarchy for better readability
+- Ensure consistent spacing between sections
+- Use proper Markdown formatting for code blocks and lists
+- Align all installation and usage steps properly
+
+### 🚀 Suggested Structure Upgrade
+- Introduction
+- Features
+- Tech Stack
+- Installation
+- Usage
+- Project Structure
+- Contribution Guidelines
+- License
+
+### 🛠️ Documentation Improvements
+- Add badges (optional): build, license, contributors
+- Add screenshots for better UI understanding
+- Standardize code blocks for commands
+
+### 🎯 Goal
+Improve onboarding experience for new contributors and users by making README more structured, readable, and professional
+

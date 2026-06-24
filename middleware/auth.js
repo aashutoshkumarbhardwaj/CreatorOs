@@ -2,6 +2,14 @@ const jwt = require("jsonwebtoken");
 const connectDB = require("../connect");
 const { wantsHtml } = require("../utils/requestType");
 
+/**
+ * @function protect
+ * @description Middleware to ensure the request is authenticated via a valid JWT token.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const protect = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization || "";
@@ -60,6 +68,14 @@ const protect = async (req, res, next) => {
     }
 };
 
+/**
+ * @function requireAdmin
+ * @description Middleware to ensure the authenticated user has administrative privileges.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const requireAdmin = (req, res, next) => {
     if (req.user.role !== "admin") {
         return res.status(403).json({
@@ -72,6 +88,14 @@ const requireAdmin = (req, res, next) => {
     return next();
 };
 
+/**
+ * @function preventContributorWrites
+ * @description Middleware to restrict contributor accounts from performing write operations.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 const preventContributorWrites = (req, res, next) => {
     if (req.user.role === "contributor" || req.user.role === "guest_contributor") {
         return res.status(403).json({

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bio Link Builder</title>
+
+    <style>
+        body{
+            background:#111;
+            color:white;
+            font-family:Arial;
+            padding:40px;
+        }
+
+        .container{
+            max-width:1000px;
+            margin:auto;
+        }
+
+        .grid{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:2rem;
+        }
+
+        .panel{
+            border:2px solid #37D6C8;
+            padding:20px;
+            border-radius:12px;
+        }
+
+        input,
+        textarea{
+            width:100%;
+            padding:12px;
+            margin-bottom:1rem;
+            background:#1b1b1b;
+            border:1px solid #444;
+            color:white;
+        }
+
+        button{
+            padding:12px 18px;
+            border:none;
+            background:#37D6C8;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        .preview-link{
+            display:block;
+            padding:12px;
+            border:2px solid #37D6C8;
+            margin-top:10px;
+            text-decoration:none;
+            color:white;
+            border-radius:8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Bio Link Builder</h1>
+
+    <div class="grid">
+
+        <div class="panel">
+
+            <input
+                type="text"
+                id="bio-title"
+                placeholder="Your Name"
+            />
+
+            <textarea
+                id="bio-description"
+                placeholder="Write your bio"
+            ></textarea>
+
+            <div id="bio-links-container"></div>
+
+            <button id="add-bio-link">
+                + Add Link
+            </button>
+
+        </div>
+
+        <div class="panel">
+
+            <h2 id="preview-title">
+                Your Name
+            </h2>
+
+            <p id="preview-description">
+                Your bio appears here
+            </p>
+
+            <div id="preview-links"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const titleInput =
+    document.getElementById('bio-title');
+
+const descriptionInput =
+    document.getElementById('bio-description');
+
+const previewTitle =
+    document.getElementById('preview-title');
+
+const previewDescription =
+    document.getElementById('preview-description');
+
+const previewLinks =
+    document.getElementById('preview-links');
+
+const linksContainer =
+    document.getElementById('bio-links-container');
+
+document
+    .getElementById('add-bio-link')
+    .addEventListener('click', () => {
+
+        const wrapper =
+            document.createElement('div');
+
+        wrapper.innerHTML = `
+            <input
+                type="text"
+                placeholder="Link title"
+                class="link-title"
+            />
+
+            <input
+                type="url"
+                placeholder="https://example.com"
+                class="link-url"
+            />
+        `;
+
+        linksContainer.appendChild(wrapper);
+
+        wrapper.querySelectorAll('input')
+            .forEach(input => {
+                input.addEventListener(
+                    'input',
+                    updatePreview
+                );
+            });
+    });
+
+titleInput.addEventListener(
+    'input',
+    updatePreview
+);
+
+descriptionInput.addEventListener(
+    'input',
+    updatePreview
+);
+
+function updatePreview(){
+
+    previewTitle.textContent =
+        titleInput.value || 'Your Name';
+
+    previewDescription.textContent =
+        descriptionInput.value ||
+        'Your bio appears here';
+
+    previewLinks.innerHTML = '';
+
+    document
+        .querySelectorAll('.link-title')
+        .forEach((titleInput, index) => {
+
+            const urlInput =
+                document.querySelectorAll('.link-url')[index];
+
+            if(!titleInput.value || !urlInput.value)
+                return;
+
+            const link =
+                document.createElement('a');
+
+            link.className = 'preview-link';
+
+            link.href = urlInput.value;
+
+            link.target = '_blank';
+
+            link.textContent =
+                titleInput.value;
+
+            previewLinks.appendChild(link);
+        });
+}
+
+</script>
+
+</body>
+</html>

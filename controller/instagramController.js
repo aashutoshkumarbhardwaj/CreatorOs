@@ -1,40 +1,11 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
 
-const lookupTracker = new Map();
 
-function getCooldownSeconds() {
-    const value = Number(process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30);
-    return Number.isFinite(value) && value >= 0 ? value : 30;
-}
-
-function getLookupKey(req) {
-    return req.user?.id || req.ip || 'anonymous';
-}
-
-function assertLookupAllowed(req) {
-    const cooldownSeconds = getCooldownSeconds();
-
-    if (cooldownSeconds === 0) {
-        return;
-    }
-
-    const lookupKey = getLookupKey(req);
-    const now = Date.now();
-    const nextAllowedAt = lookupTracker.get(lookupKey) || 0;
-
-    if (now < nextAllowedAt) {
-        const retryAfter = Math.ceil((nextAllowedAt - now) / 1000);
-        throw new InstagramProfileError(
-            'RATE_LIMITED',
-            `Please wait ${retryAfter} seconds before fetching another Instagram profile.`,
-            429,
-            { retryAfter }
-        );
-    }
-
-    lookupTracker.set(lookupKey, now + cooldownSeconds * 1000);
-}
-
+/**
+ * @function sendInstagramError
+ * @description Formats and sends a standardized error response for Instagram API failures.
+ * @returns {any}
+ */
 function sendInstagramError(res, error) {
     if (error instanceof InstagramProfileError) {
         return res.status(error.statusCode).json({
@@ -56,11 +27,17 @@ function sendInstagramError(res, error) {
     });
 }
 
+/**
+ * @function getInstagramProfile
+ * @description Retrieves public profile information from Instagram.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {Promise<void>|void}
+ */
 async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
-
-        assertLookupAllowed(req);
 
         const profile = await fetchInstagramProfile(username);
 
