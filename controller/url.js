@@ -79,9 +79,18 @@ async function handleGenerateShortUrl(req, res) {
         }
         shortId = slug;
     } else {
-        const existing = await Url.findOne({ shortId });
-        if (existing) {
+        let retries = 0;
+        const MAX_RETRIES = 5;
+        let existing = await Url.findOne({ shortId });
+        
+        while (existing && retries < MAX_RETRIES) {
             shortId = shortid();
+            existing = await Url.findOne({ shortId });
+            retries++;
+        }
+        
+        if (existing) {
+            return res.status(500).json({ error: 'Failed to generate a unique short URL. Please try again later.' });
         }
     }
 
