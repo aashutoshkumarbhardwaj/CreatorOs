@@ -1637,10 +1637,10 @@
                 new Chart(ctxClicks, {
                     type: 'line',
                     data: {
-                        labels: ['18 May', '19 May', '20 May', '21 May', '22 May', '23 May', '24 May'],
+                        labels: <%- JSON.stringify(dashboardData.charts.clicksOverview.labels) %>,
                         datasets: [{
                             label: 'Clicks',
-                            data: [100, 180, 220, 160, 300, 250, 423],
+                            data: <%- JSON.stringify(dashboardData.charts.clicksOverview.data) %>,
                             borderColor: '#000000',
                             backgroundColor: '#4338CA',
                             borderWidth: 4,
@@ -1669,9 +1669,9 @@
                 new Chart(ctxRef, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Direct', 'Google', 'Twitter'],
+                        labels: <%- JSON.stringify(dashboardData.charts.topReferrers.labels) %>,
                         datasets: [{
-                            data: [65, 20, 15],
+                            data: <%- JSON.stringify(dashboardData.charts.topReferrers.data) %>,
                             backgroundColor: ['#4338CA', '#F59E0B', '#10B981'],
                             borderColor: '#000000',
                             borderWidth: 2,
