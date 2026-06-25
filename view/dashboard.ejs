@@ -1633,14 +1633,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Charts initialization with neo-brutalist styling
             const ctxClicks = document.getElementById('clicksChart');
+            const clicksLabels = JSON.parse('<%- JSON.stringify(dashboardData.charts.clicksOverview.labels) %>');
+            const clicksData = JSON.parse('<%- JSON.stringify(dashboardData.charts.clicksOverview.data) %>');
+            
             if (ctxClicks) {
                 new Chart(ctxClicks, {
                     type: 'line',
                     data: {
-                        labels: <%- JSON.stringify(dashboardData.charts.clicksOverview.labels) %>,
+                        labels: clicksLabels,
                         datasets: [{
                             label: 'Clicks',
-                            data: <%- JSON.stringify(dashboardData.charts.clicksOverview.data) %>,
+                            data: clicksData,
                             borderColor: '#000000',
                             backgroundColor: '#4338CA',
                             borderWidth: 4,
@@ -1665,13 +1668,16 @@
             }
 
             const ctxRef = document.getElementById('referrersChart');
+            const refLabels = JSON.parse('<%- JSON.stringify(dashboardData.charts.topReferrers.labels) %>');
+            const refData = JSON.parse('<%- JSON.stringify(dashboardData.charts.topReferrers.data) %>');
+            
             if (ctxRef) {
                 new Chart(ctxRef, {
                     type: 'doughnut',
                     data: {
-                        labels: <%- JSON.stringify(dashboardData.charts.topReferrers.labels) %>,
+                        labels: refLabels,
                         datasets: [{
-                            data: <%- JSON.stringify(dashboardData.charts.topReferrers.data) %>,
+                            data: refData,
                             backgroundColor: ['#4338CA', '#F59E0B', '#10B981'],
                             borderColor: '#000000',
                             borderWidth: 2,
