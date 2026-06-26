@@ -1633,14 +1633,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Charts initialization with neo-brutalist styling
             const ctxClicks = document.getElementById('clicksChart');
+            const clicksLabels = JSON.parse('<%- JSON.stringify(dashboardData.charts.clicksOverview.labels) %>');
+            const clicksData = JSON.parse('<%- JSON.stringify(dashboardData.charts.clicksOverview.data) %>');
+            
             if (ctxClicks) {
                 new Chart(ctxClicks, {
                     type: 'line',
                     data: {
-                        labels: ['18 May', '19 May', '20 May', '21 May', '22 May', '23 May', '24 May'],
+                        labels: clicksLabels,
                         datasets: [{
                             label: 'Clicks',
-                            data: [100, 180, 220, 160, 300, 250, 423],
+                            data: clicksData,
                             borderColor: '#000000',
                             backgroundColor: '#4338CA',
                             borderWidth: 4,
@@ -1665,13 +1668,16 @@
             }
 
             const ctxRef = document.getElementById('referrersChart');
+            const refLabels = JSON.parse('<%- JSON.stringify(dashboardData.charts.topReferrers.labels) %>');
+            const refData = JSON.parse('<%- JSON.stringify(dashboardData.charts.topReferrers.data) %>');
+            
             if (ctxRef) {
                 new Chart(ctxRef, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Direct', 'Google', 'Twitter'],
+                        labels: refLabels,
                         datasets: [{
-                            data: [65, 20, 15],
+                            data: refData,
                             backgroundColor: ['#4338CA', '#F59E0B', '#10B981'],
                             borderColor: '#000000',
                             borderWidth: 2,

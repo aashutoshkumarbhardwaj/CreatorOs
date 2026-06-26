@@ -581,6 +581,13 @@ ${urls.map(url => `
     res.send(xml);
 });
 
+// ── 404 HANDLER ──
+app.use((req, res) => {
+    res.status(404).render('404', {
+        url: req.originalUrl
+    });
+});
+
 // ── ERROR HANDLER — must be last ──
 
 const errorHandler = require('./middleware/errorHandler');

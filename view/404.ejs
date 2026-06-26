@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 - CreatorOS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --bg:#f7f6f2;
+    --accent:#39d6cc;
+    --black:#111;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg);
+    font-family:'Space Mono', monospace;
+    min-height:100vh;
+
+    background-image:
+        radial-gradient(#ddd 1px, transparent 1px);
+    background-size:20px 20px;
+}
+
+.wrapper{
+    display:flex;
+    min-height:100vh;
+}
+
+.sidebar{
+    width:320px; /* was 280 */
+    border-right:4px solid #000;
+    padding:40px 25px;
+    background:#f5f1e8;
+}
+
+.logo{
+    font-family:'Playfair Display', serif;
+    font-size:52px;
+    font-weight:900;
+    letter-spacing:-1px;
+}
+
+.logo .small-s{
+    font-size:0.72em;
+}
+
+.beta{
+    margin-top:5px;
+    opacity:.8;
+}
+
+.nav{
+    margin-top:70px;
+}
+
+.nav a{
+    display:block;
+    text-decoration:none;
+    color:#222;
+    margin-bottom:35px;
+    font-size:20px;
+}
+
+.main{
+    flex:1;
+    padding:80px;
+    text-align:center;
+    position:relative;
+}
+
+.status{
+    position:absolute;
+    left:70px;
+    top:70px;
+
+    background:#d72626;
+    color:white;
+
+    padding:10px 18px;
+
+    border:4px solid black;
+    box-shadow:6px 6px 0 #000;
+}
+
+.coord{
+    position:absolute;
+    right:80px;
+    top:80px;
+
+    background:#111;
+    color:#fff;
+    padding:10px 18px;
+
+    transform:rotate(-2deg);
+}
+
+.big404{
+    margin-top:120px;
+
+    font-size:220px;
+    line-height:1;
+
+    font-family:'Playfair Display', serif;
+    color:#111;
+
+    text-shadow:
+       8px 8px 0 var(--accent);
+}
+
+.title{
+    font-family:'Playfair Display', serif;
+    font-size:72px;
+    margin-top:10px;
+}
+
+.subtitle{
+    max-width:700px;
+    margin:30px auto;
+    font-size:24px;
+    color:#444;
+}
+
+.actions{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin-top:60px;
+}
+
+.btn{
+    padding:22px 40px;
+    text-decoration:none;
+    color:#111;
+    border:4px solid #111;
+    font-size:20px;
+
+    box-shadow:8px 8px 0 #111;
+}
+
+.primary{
+    background:var(--accent);
+}
+
+.terminal{
+    max-width:900px;
+    margin:90px auto 0;
+    text-align:left;
+
+    border-top:2px solid #ccc;
+    padding-top:30px;
+
+    color:#999;
+    font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <aside class="sidebar">
+        <div class="logo">
+            CreatorO<span class="small-s">s</span>
+        </div>
+        <div class="beta">v2.0 Beta</div>
+
+        <div class="nav">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/services/url-shortener">My Links</a>
+            <a href="/services/analytics-dashboard">Analytics</a>
+            <a href="/settings">Settings</a>
+        </div>
+    </aside>
+
+    <main class="main">
+
+        <div class="status">
+            STATUS: 404_NOT_FOUND
+        </div>
+
+        <div class="coord">
+            COORD: 0x44_ERR
+        </div>
+
+        <div class="big404">404</div>
+
+        <h1 class="title">Lost in the Empire?</h1>
+
+        <p class="subtitle">
+            This page doesn't exist or has moved.
+            Let's get you back to building your digital realm.
+        </p>
+
+        <div class="actions">
+            <a href="/dashboard" class="btn primary">
+                RETURN TO DASHBOARD →
+            </a>
+
+            <a href="/services/url-shortener" class="btn">
+                My Links
+            </a>
+
+        </div>
+
+        <div class="terminal">
+            GET /undefined 404 <br>
+            User-Agent: CreatorOS/2.0 <br>
+            Trace: ID_49201-ERROR
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
