@@ -146,13 +146,13 @@ Never stare at a blank screen again.
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | ![Next.js](https://img.shields.io/badge/Next.js-000?logo=nextdotjs&logoColor=white&style=flat-square) ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black&style=flat-square) ![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square) |
+| **Frontend** | ![EJS](https://img.shields.io/badge/EJS-A91E50?logo=ejs&logoColor=white&style=flat-square) ![Vanilla CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white&style=flat-square) |
 | **Backend** | ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square) ![Express](https://img.shields.io/badge/Express-000?logo=express&logoColor=white&style=flat-square) |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white&style=flat-square) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat-square) |
-| **Auth** | ![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white&style=flat-square) ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black&style=flat-square) |
-| **Automation** | ![Instagram](https://img.shields.io/badge/Instagram%20Graph%20API-E4405F?logo=instagram&logoColor=white&style=flat-square) |
-| **AI** | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=flat-square) ![OpenRouter](https://img.shields.io/badge/OpenRouter-FF6B35?style=flat-square) |
-| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white&style=flat-square) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white&style=flat-square) ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white&style=flat-square) |
+| **Database** | ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat-square) ![Mongoose](https://img.shields.io/badge/Mongoose-880000?logo=mongoose&logoColor=white&style=flat-square) |
+| **Auth** | ![Passport](https://img.shields.io/badge/Passport-34E27A?logo=passport&logoColor=white&style=flat-square) ![Google Auth](https://img.shields.io/badge/Google_Auth-4285F4?logo=google&logoColor=white&style=flat-square) |
+| **Automation** | ![Instagram](https://img.shields.io/badge/Instagram%20Graph%20API-E4405F?logo=instagram&logoColor=white&style=flat-square) ![BullMQ](https://img.shields.io/badge/BullMQ-FF4081?style=flat-square) |
+| **AI** | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=flat-square) |
+| **Hosting** | ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white&style=flat-square) |
 
 </div>
 
@@ -389,20 +389,14 @@ http://localhost:3000
 
 ```
 CreatorOS/
-├── 📂 app/                    # Next.js App Router
-│   ├── 📂 (auth)/             # Auth pages (login, signup)
-│   ├── 📂 (dashboard)/        # Main dashboard routes
-│   │   ├── 📂 bio/            # Smart Bio System
-│   │   ├── 📂 automation/     # DM Automation
-│   │   ├── 📂 crm/            # Creator CRM
-│   │   ├── 📂 analytics/      # Analytics Dashboard
-│   │   └── 📂 content/        # Content OS
-│   └── 📂 api/                # API Routes
-├── 📂 components/             # Reusable UI components
-├── 📂 lib/                    # Utility functions & configs
-├── 📂 hooks/                  # Custom React hooks
-├── 📂 prisma/                 # DB schema & migrations
-└── 📂 public/                 # Static assets
+├── 📂 controller/             # Express route controllers
+├── 📂 model/                  # Mongoose database schemas
+├── 📂 view/                   # EJS frontend templates
+├── 📂 routes/                 # API & web routes
+├── 📂 workers/                # Background job processors (BullMQ)
+├── 📂 utils/                  # Utility functions & helpers
+├── 📂 public/                 # Static assets (CSS, JS, images)
+└── 📂 tests/                  # Test suites
 ```
 
 ---
@@ -535,30 +529,4 @@ Every contribution, no matter how small, helps us build something amazing for cr
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
 
 </div>
-
-## ✨ README Improvement Notes
-
-### 📌 Formatting Enhancements Needed
-- Improve heading hierarchy for better readability
-- Ensure consistent spacing between sections
-- Use proper Markdown formatting for code blocks and lists
-- Align all installation and usage steps properly
-
-### 🚀 Suggested Structure Upgrade
-- Introduction
-- Features
-- Tech Stack
-- Installation
-- Usage
-- Project Structure
-- Contribution Guidelines
-- License
-
-### 🛠️ Documentation Improvements
-- Add badges (optional): build, license, contributors
-- Add screenshots for better UI understanding
-- Standardize code blocks for commands
-
-### 🎯 Goal
-Improve onboarding experience for new contributors and users by making README more structured, readable, and professional
 
