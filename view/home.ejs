@@ -7,15 +7,12 @@
     <%- include('./partials/_seo', {
         title: 'CreatorOS - All-in-One Creator Platform',
         description: 'CreatorOS — the all-in-one operating system for creators. Bio links, DM automation, CRM, analytics, and AI content suggestions in one dashboard.',
-        canonical: 'https://titli-link-shortner.vercel.app/'}) 
+        canonical: 'https://creatoros.com/'}) 
     %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%- include('./partials/_brand_head') %>
 
     
     <!-- Import Google Fonts: Space Grotesk and Inter -->
@@ -1709,7 +1706,7 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "CreatorOS - Link Shortener & Creator Platform",
-        "url": "https://titli-link-shortner.vercel.app/",
+        "url": "https://creatoros.com/",
         "description": "All-in-one creator platform with bio links, CRM, analytics, and automation tools.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web"

@@ -52,11 +52,11 @@ body.workspace-page {
     color: inherit;
 }
 
-.workspace-brand h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem;
-    margin: 0;
-    line-height: 1.1;
+.workspace-brand-logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    max-width: 100%;
 }
 
 .workspace-brand span {
@@ -346,12 +346,24 @@ body.workspace-page {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background-color: var(--ws-teal);
-    border: var(--border-thick);
-    box-shadow: 2px 2px 0 var(--ws-border);
-    color: #111;
-    font-size: 1.1rem;
-    font-weight: 800;
+}
+
+.brand-mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.brand-copy {
+    min-width: 0;
+}
+
+.brand-logo {
+    display: block;
+    height: 42px;
+    width: auto;
+    max-width: 100%;
 }
 
 .brand-text {
@@ -497,7 +509,7 @@ body.workspace-page {
     padding-inline: 0;
 }
 
-.workspace-layout.sidebar-collapsed .brand > div,
+.workspace-layout.sidebar-collapsed .brand-copy,
 .workspace-layout.sidebar-collapsed .sidebar-label,
 .workspace-layout.sidebar-collapsed .service-name,
 .workspace-layout.sidebar-collapsed .upgrade-box,

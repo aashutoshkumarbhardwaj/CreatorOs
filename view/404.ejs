@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>404 - CreatorOS</title>
+<%- include('./partials/_brand_head') %>
 
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 
@@ -43,14 +44,10 @@ body{
 }
 
 .logo{
-    font-family:'Playfair Display', serif;
-    font-size:52px;
-    font-weight:900;
-    letter-spacing:-1px;
-}
-
-.logo .small-s{
-    font-size:0.72em;
+    display:block;
+    height:46px;
+    width:auto;
+    max-width:100%;
 }
 
 .beta{
@@ -168,9 +165,7 @@ body{
 <div class="wrapper">
 
     <aside class="sidebar">
-        <div class="logo">
-            CreatorO<span class="small-s">s</span>
-        </div>
+        <img class="logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo">
         <div class="beta">v2.0 Beta</div>
 
         <div class="nav">

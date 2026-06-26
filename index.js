@@ -22,6 +22,7 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
+const { BRAND } = require('./utils/brand');
 
 const connectDB = require("./connect");
 const authRoutes = require("./routes/auth");
@@ -47,6 +48,7 @@ app.use(passport.initialize());
 
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
+app.locals.BRAND = BRAND;
 
 const rateLimit = require('express-rate-limit');
 
@@ -547,7 +549,7 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get('/sitemap.xml', (req, res) => {
-    const baseUrl = 'https://titli-link-shortner.vercel.app';
+    const baseUrl = BRAND.siteUrl;
 
     const urls = [
         '/',

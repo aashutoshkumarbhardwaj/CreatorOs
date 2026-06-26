@@ -6,15 +6,12 @@
     <%- include('./partials/_seo', {
         title: 'Sign Up',
         description: 'Create your CreatorOS account and start managing your creator business from one dashboard.',
-        canonical: 'https://titli-link-shortner.vercel.app/signup'
+        canonical: 'https://creatoros.com/signup'
     }) %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%- include('./partials/_brand_head') %>
     
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -85,7 +82,7 @@
         .brand-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0;
             font-weight: 700;
             font-size: 1.25rem;
             text-decoration: none;
@@ -93,21 +90,10 @@
             margin-bottom: 4rem;
         }
 
-        .lightning-icon {
-            background-color: var(--black);
-            color: var(--teal);
-            width: 2.25rem;
-            height: 2.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            box-shadow: 2px 2px 0px 0px var(--teal);
-        }
-        
-        .lightning-icon svg {
-            width: 16px;
-            height: 16px;
+        .brand-badge-logo {
+            display: block;
+            height: 44px;
+            width: auto;
         }
 
         .left-panel h1 {
@@ -426,12 +412,7 @@
         <!-- Left Panel -->
         <section class="left-panel">
             <a href="/" class="brand-badge">
-                <div class="lightning-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                </div>
-                CreatorOS
+                <img class="brand-badge-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo">
             </a>
 
             <h1>Start your <br><span class="highlight-text">empire</span> today.</h1>

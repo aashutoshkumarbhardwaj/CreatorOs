@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <%- include('./partials/_brand_head') %>
   <title>Bio Editor | CreatorOS</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
@@ -61,6 +62,13 @@
       padding-bottom: 1.25rem;
       border-bottom: 2px solid var(--border);
       margin-bottom: 1.25rem;
+    }
+
+    .brand-logo {
+      display: block;
+      height: 40px;
+      width: auto;
+      max-width: 100%;
     }
 
     .nav-item {
@@ -443,7 +451,7 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="brand">CreatorOS</div>
+    <div class="brand"><img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo"></div>
 
     <a href="/dashboard" class="nav-item">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>

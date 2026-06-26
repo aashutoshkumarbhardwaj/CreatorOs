@@ -6,12 +6,13 @@
   <%- include('./partials/_seo', {
     title: 'DM Automation',
     description: 'Automate creator messaging workflows.',
-    canonical: 'https://titli-link-shortner.vercel.app/dm-automation',
+    canonical: 'https://creatoros.com/dm-automation',
     robots: 'noindex,nofollow'
   }) %>
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <%- include('./partials/_brand_head') %>
   
   <!-- Import Clash Display/Space Grotesk & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2980,7 +2981,7 @@
           updateDashboardUI();
           
           replyDiv.innerHTML = `
-            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem;">CO</div>
+            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem; background:none; border:none;"><img src="<%= BRAND.icon %>" alt="CreatorOS Icon" style="display:block; width:100%; height:100%; object-fit:contain;"></div>
             <div>
               <strong style="font-size:0.75rem;">@creator_account</strong>
               <span style="font-size:0.75rem; margin-left:0.25rem;">@mock_user check your inbox! I've sent you a DM. 📩</span>
@@ -2996,7 +2997,7 @@
           logInteraction(commentText, 'Comment DM Sent', 'success');
         } else {
           replyDiv.innerHTML = `
-            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem;">CO</div>
+            <div class="avatar" style="width:1.3rem; height:1.3rem; font-size:0.6rem; background:none; border:none;"><img src="<%= BRAND.icon %>" alt="CreatorOS Icon" style="display:block; width:100%; height:100%; object-fit:contain;"></div>
             <div>
               <strong style="font-size:0.75rem;">@creator_account</strong>
               <span style="font-size:0.75rem; margin-left:0.25rem;">@mock_user Thanks for commenting! Try typing "GUIDE" or "CRM" to trigger.</span>

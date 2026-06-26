@@ -22,7 +22,7 @@ const options = {
                 description: 'API Server'
             },
             {
-                url: 'https://titli-link-shortner.vercel.app',
+                url: 'https://creatoros.com',
                 description: 'Production Server'
             }
         ],

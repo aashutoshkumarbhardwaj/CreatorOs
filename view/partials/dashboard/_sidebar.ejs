@@ -6,14 +6,13 @@
 <aside class="sidebar" aria-label="Dashboard navigation">
 
   <!-- Brand / Logo -->
-  <a class="brand" href="/dashboard">
-    <span class="brand-mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-        <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.2 4.73"></path>
-        <path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.63-1.63"></path>
-      </svg>
+  <a class="brand" href="/dashboard" aria-label="CreatorOS">
+    <span class="brand-mark" style="background:none;border:none;box-shadow:none;">
+      <img src="<%= BRAND.icon %>" alt="CreatorOS Icon" style="display:block;width:100%;height:100%;object-fit:contain;">
     </span>
-    <span>CREATOROS</span>
+    <span class="brand-copy">
+      <img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo" style="display:block;height:42px;width:auto;max-width:100%;">
+    </span>
     <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">🌙</button>
   </a>
 

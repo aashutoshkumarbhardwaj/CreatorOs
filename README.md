@@ -2,6 +2,10 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=CreatorOS&fontSize=72&fontColor=fff&animation=twinkling&fontAlignY=32&desc=The%20Operating%20System%20for%20Creators&descAlignY=56&descSize=20&descColor=ffffff" width="100%"/>
 
+<p align="center">
+  <img src="./public/assets/branding/creatoros-logo.png" alt="CreatorOS Logo" height="72" />
+</p>
+
 <br/>
 
 <p align="center">

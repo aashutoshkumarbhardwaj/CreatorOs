@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Caption & Hashtag Generator | CreatorOS</title>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <%- include('./partials/_brand_head') %>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,7 +62,7 @@
     }
 
     .brand { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border); }
-    .brand-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-logo { display:block; height:40px; width:auto; max-width:100%; }
     .brand-ver  { font-size: 0.65rem; color: var(--muted-2); font-family: 'DM Mono', monospace; }
 
     .sidebar-label {
@@ -536,7 +536,7 @@
   <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-name">CreatorOS</div>
+      <img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo">
       <div class="brand-ver">v2.0 Beta</div>
     </div>
 
