@@ -216,6 +216,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
         qrFgColor: fgColor,
         qrBgColor: bgColor,
         qrGenerated: true,
+        userId: req.user?.id || null,
     });
 
     const qrCodeDataUrl = await generateBase64QR(shortUrl, fgColor, bgColor);
@@ -328,6 +329,10 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
 
     if (!entry) {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId?.toString() !== req.user.id) {
+        return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;

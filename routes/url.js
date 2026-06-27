@@ -48,7 +48,7 @@ router.get('/', protect, handleListUserLinks);
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId', handleGetAnalytics);
+router.get('/analytics/:shortId', protect, handleGetAnalytics);
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
 /**
@@ -161,6 +161,6 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrC
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId',   handleGetAnalytics);
+router.get('/analytics/:shortId', protect, handleGetAnalytics);
 
 module.exports = router;
