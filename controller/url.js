@@ -348,6 +348,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
 module.exports = {
     handleRenderDashboard,
     handleGenerateShortUrl,
+    handleGenerateShortUrlRender,
     handleGetQRCode,
     handleDownloadQRCode,
     handleUpdateQRColors,

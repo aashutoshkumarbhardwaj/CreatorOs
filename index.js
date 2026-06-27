@@ -494,21 +494,8 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 
 const { isValidUrl } = require('./utils/validators');
 
-app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
-    const { redirectUrl } = req.body;
-    if (!redirectUrl || !isValidUrl(redirectUrl)) {
-        return res.render('home', buildShortenerViewModel(req, null, 'Please enter a valid HTTP or HTTPS URL.'));
-    }
-
-    try {
-        const shortId = shortid();
-        await Url.create({ shortId, redirectUrl });
-        return res.render('home', buildShortenerViewModel(req, shortId));
-    } catch (err) {
-        console.error('Error creating short URL:', err);
-        return res.render('home', buildShortenerViewModel(req, null, 'An unexpected error occurred.'));
-    }
-});
+const { handleGenerateShortUrlRender } = require('./controller/url');
+app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
 // ── FILE UPLOAD POST ──
 
