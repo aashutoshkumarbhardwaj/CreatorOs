@@ -1,8 +1,8 @@
 const BRAND = {
   name: 'CreatorOS',
   siteUrl: 'https://creatoros.com',
-  logo: '/assets/branding/creatoros-logo.png',
-  icon: '/assets/branding/creatoros-icon.png',
+  logo: '/assets/creatoros-logo.jpeg',
+  icon: '/assets/creatoros-icon.jpeg',
   favicon16: '/favicon-16x16.png',
   favicon32: '/favicon-32x32.png',
   favicon48: '/favicon-48x48.png',
@@ -12,7 +12,7 @@ const BRAND = {
   android192: '/android-chrome-192x192.png',
   android512: '/android-chrome-512x512.png',
   manifest: '/site.webmanifest',
-  ogImage: 'https://creatoros.com/assets/branding/creatoros-logo.png',
+  ogImage: 'https://creatoros.com/assets/creatoros-logo.jpeg',
   description: 'CreatorOS is the all-in-one operating system for creators, unifying links, analytics, automation, CRM, and publishing workflows in one workspace.',
 };
 

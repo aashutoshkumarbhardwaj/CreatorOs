@@ -884,25 +884,29 @@ nav.scrolled {
 
 .brand {
 
-  display: flex; align-items: center; gap: 0.85rem;
+  display: flex; align-items: center; gap: 0.7rem;
 
   text-decoration: none; color: var(--text);
 
 }
 
-.brand-mark {
+.nav-brand-mark {
 
-  position: relative;
+  width: 46px;
 
-  width: 44px; height: 44px;
+  height: 46px;
 
-  display: grid; place-items: center;
+  border-radius: 12px;
 
-  animation: markPulse 3s ease-in-out infinite;
+  overflow: hidden;
+
+  flex: 0 0 auto;
+
+  display: block;
 
 }
 
-.brand-mark img {
+.nav-brand-icon {
 
   display: block;
 
@@ -910,41 +914,57 @@ nav.scrolled {
 
   height: 100%;
 
-  object-fit: contain;
+  object-fit: cover;
 
 }
 
-@keyframes markPulse {
+.nav-brand-copy {
 
-  0%,100% { box-shadow: 0 0 0 0 rgba(34,211,238,0.4), 0 8px 24px rgba(34,211,238,0.2); }
+  display: flex;
 
-  50% { box-shadow: 0 0 0 8px rgba(34,211,238,0), 0 8px 32px rgba(34,211,238,0.35); }
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: flex-start;
+
+  min-width: 0;
 
 }
 
-.brand-copy strong {
+.nav-brand-title {
+
+  font-family: 'Fraunces', serif;
+
+  font-size: 1.08rem;
+
+  font-weight: 900;
+
+  line-height: 1.02;
+
+  letter-spacing: -0.02em;
+
+  color: #000;
+
+}
+
+.nav-brand-subtitle {
 
   display: block;
 
-}
+  margin-top: 0.2rem;
 
-.brand-logo {
+  font-size: 0.68rem;
 
-  display: block;
+  line-height: 1.05;
 
-  height: 42px;
+  color: #444;
 
-  width: auto;
+  letter-spacing: 0.14em;
 
-  max-width: 100%;
+  text-transform: uppercase;
 
-}
-
-.brand-copy span {
-
-  display: block; font-size: 0.68rem; color: #444;
-
-  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 300;
+  font-weight: 500;
 
 }
 
@@ -2114,6 +2134,14 @@ footer span { color: var(--cyan); }
 
   nav { left: 12px; right: 12px; transform: none; width: auto; top: 12px; border-radius: 10px; }
 
+  .brand { gap: 0.68rem; }
+
+  .nav-brand-mark { width: 44px; height: 44px; }
+
+  .nav-brand-title { font-size: 1rem; }
+
+  .nav-brand-subtitle { font-size: 0.64rem; }
+
   .nav-links { display:none; }
 
   .nav-toggle { display:inline-flex; }
@@ -2147,6 +2175,14 @@ footer span { color: var(--cyan); }
 @media (max-width: 600px) {
 
   h1 { font-size: 2.5rem; }
+
+  .brand { gap: 0.62rem; }
+
+  .nav-brand-mark { width: 40px; height: 40px; border-radius: 10px; }
+
+  .nav-brand-title { font-size: 0.94rem; }
+
+  .nav-brand-subtitle { font-size: 0.58rem; letter-spacing: 0.1em; }
 
   .nav-links { display: none; }
 
@@ -2194,15 +2230,14 @@ footer span { color: var(--cyan); }
 
           <a class="brand" href="/">
 
-            <div class="brand-mark"><img src="<%= BRAND.icon %>" alt="CreatorOS Icon"></div>
+            <span class="nav-brand-mark">
+              <img class="nav-brand-icon" src="<%= BRAND.icon %>" alt="CreatorOS Icon">
+            </span>
 
-            <div class="brand-copy">
-
-              <strong><img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo"></strong>
-
-              <span>Unified Dashboard</span>
-
-            </div>
+            <span class="nav-brand-copy">
+              <strong class="nav-brand-title">CreatorOS</strong>
+              <span class="nav-brand-subtitle">Unified Dashboard</span>
+            </span>
 
           </a>
 
