@@ -503,12 +503,22 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-    return res.json({
+
+    res.json({
         filename: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
+
+    // Clean up temporary file to prevent DoS via disk exhaustion
+    try {
+        fs.unlink(req.file.path, (err) => {
+            if (err) console.error(`[upload] Failed to delete temp file ${req.file.path}:`, err);
+        });
+    } catch (e) {
+        console.error(`[upload] Error deleting temp file:`, e);
+    }
 });
 
 // ── SHORT URL REDIRECT ──
