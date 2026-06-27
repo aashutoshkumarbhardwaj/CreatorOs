@@ -35,7 +35,13 @@ async function generateAISuggestions(topic) {
       });
       const data = await response.json();
       if (data.choices && data.choices[0]) {
-        return JSON.parse(data.choices[0].message.content);
+        try {
+          let rawContent = data.choices[0].message.content;
+          rawContent = rawContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+          return JSON.parse(rawContent);
+        } catch (parseError) {
+          console.error('JSON Parse Failed, falling back to mock generator:', parseError);
+        }
       }
     } catch (e) {
       console.error('AI Generation Failed, falling back to mock generator:', e);
