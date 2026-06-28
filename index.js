@@ -50,6 +50,15 @@ app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
 app.locals.BRAND = BRAND;
 
+// Content Security Policy (CSP) header - defense-in-depth against XSS
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none';"
+    );
+    next();
+});
+
 const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
