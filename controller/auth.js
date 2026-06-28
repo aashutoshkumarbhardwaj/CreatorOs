@@ -117,15 +117,25 @@ function createContributorToken(session) {
 
 /**
  * @function setAuthCookie
- * @description Sets the authentication JWT token as an HTTP-only cookie.
+ * @description Sets the authentication JWT token as an HTTP-only cookie with security hardening.
+ * Ensures the session cookie is protected against:
+ * - XSS attacks (httpOnly prevents JS access via document.cookie)
+ * - Man-in-the-middle attacks (secure flag prevents transmission over HTTP)
+ * - CSRF attacks (sameSite strict prevents cross-origin cookie inclusion)
  * @returns {any}
  */
 function setAuthCookie(res, token) {
+    // Determine if we should enforce HTTPS-only cookies
+    // In production, this is mandatory. In development, allow HTTP for localhost testing.
+    const isProduction = process.env.NODE_ENV === "production";
+    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === "true";
+
     res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.COOKIE_SAME_SITE || "lax",
+        httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
+        secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
+        sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
         maxAge: ONE_WEEK_MS,
+        path: "/", // Explicitly set path for clarity
     });
 }
 
