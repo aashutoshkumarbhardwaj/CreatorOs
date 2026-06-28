@@ -130,7 +130,7 @@ Know exactly what's working.
 <tr>
 <td colspan="2">
 
-### 🧠 Content OS
+###  🧠 Content OS
 Never stare at a blank screen again.
 - Idea bank with tagging & search
 - Script & caption storage
