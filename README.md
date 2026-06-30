@@ -193,9 +193,7 @@ cp .env.example .env.local
 > The following variables are required for the application to function correctly:
 >
 > 1. **`MONGODB_URI`** → Required for persistent database storage
-> 2. **`JWT_SECRET`** → Required for authentication and session security
-> 3. **`CLERK_SECRET_KEY`** → Required for Clerk authentication
-> 4. **`DATABASE_URL`** → Required for database connectivity
+> 2. **`JWT_SECRET`** → Required for local authentication and session security
 >
 > Missing these variables may cause authentication failures, API errors, or application crashes.
 
@@ -203,22 +201,7 @@ Create a `.env.local` file in the project root:
 
 ```env id="r9tjlwm"
 # -------------------------------------------------------
-# Clerk Authentication
-# dashboard.clerk.com → API Keys
-
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-
-# -------------------------------------------------------
 # Database Configuration
-
-# Primary SQL database connection string
-# Example providers:
-# - Neon
-# - PostgreSQL
-# - Supabase
-
-DATABASE_URL=your_database_connection_url
 
 # MongoDB Atlas connection string
 # mongodb.com/cloud/atlas
@@ -248,13 +231,6 @@ OPENAI_API_KEY=sk-...
 # openrouter.ai → Keys
 
 OPENROUTER_API_KEY=sk-or-...
-
-# -------------------------------------------------------
-# Application URL
-
-# Base URL where the app is running
-
-NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
 
 # -------------------------------------------------------
 # Email Configuration
