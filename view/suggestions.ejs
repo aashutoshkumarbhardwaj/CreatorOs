@@ -812,6 +812,19 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<% if (typeof error !== 'undefined' && error) { %>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const t = document.getElementById('toast');
+    if (t) {
+      t.textContent = "<%= error %>";
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+  });
+</script>
+<% } %>
+
 <script>
   // ── PLATFORM TOGGLE ──
   function togglePlatform(el) {
