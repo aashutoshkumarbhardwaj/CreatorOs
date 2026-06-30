@@ -52,11 +52,13 @@ if (googleAuthConfigured) {
                         user.avatar = googleUser.avatar || user.avatar;
                         user.authProvider = user.password ? user.authProvider : "google";
                         user.lastLoginAt = googleUser.lastLoginAt;
+                        user.isVerified = true;
                         await user.save();
                     } else {
                         user = await User.create({
                             ...googleUser,
                             authProvider: "google",
+                            isVerified: true,
                         });
                     }
 

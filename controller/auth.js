@@ -248,7 +248,6 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
-    user.isVerified = true;
     user.lastLoginAt = new Date();
     await user.save();
 

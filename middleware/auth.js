@@ -50,7 +50,7 @@ const protect = async (req, res, next) => {
                 return res.redirect("/login");
             }
 
-            if (!user.isVerified) {
+            if (!user.isVerified && user.authProvider !== 'google') {
                 return res.status(403).redirect("/resend-verification");
             }
         }
