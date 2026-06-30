@@ -152,7 +152,53 @@ CreatorOS Team`;
   });
 }
 
+async function sendPasswordResetEmail({ to, resetLink, userName }) {
+  const transporter = createTransporter();
+  const from = EMAIL_FROM || EMAIL_USER;
+  const fromName = EMAIL_FROM_NAME || 'CreatorOS';
+  const replyTo = EMAIL_REPLY_TO || from;
+  const subject = 'Reset Your CreatorOS Password';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+      <h2 style="color: #0f172a;">Reset Your Password</h2>
+      <p>Hi ${userName || 'there'},</p>
+      <p>We received a request to reset your CreatorOS password. Click the button below to set a new password.</p>
+      <p style="text-align:center; margin: 32px 0;">
+        <a href="${resetLink}" style="display:inline-block; padding:14px 24px; background:#22d3ee; color:#0f172a; text-decoration:none; border-radius:999px; font-weight:700;">Reset Password</a>
+      </p>
+      <p style="color:#666; font-size:14px;">This link will expire in 15 minutes. If you did not request a password reset, you can ignore this email.</p>
+      <p style="color:#666; font-size:14px;">If the button does not work, paste this URL into your browser:</p>
+      <p style="color:#2563eb; word-break:break-all;"><a href="${resetLink}" style="color:#2563eb;">${resetLink}</a></p>
+      <p>Best regards,<br />CreatorOS Team</p>
+    </div>
+  `;
+
+  const text = `Hi ${userName || 'there'},
+
+We received a request to reset your CreatorOS password. Click the link below to set a new password:
+
+${resetLink}
+
+This link will expire in 15 minutes.
+
+If you did not request a password reset, you can ignore this email.
+
+Best regards,
+CreatorOS Team`;
+
+  return transporter.sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    replyTo,
+    subject,
+    text,
+    html,
+  });
+}
+
 module.exports = {
   sendInvitationEmail,
   sendVerificationEmail,
+  sendPasswordResetEmail,
 };

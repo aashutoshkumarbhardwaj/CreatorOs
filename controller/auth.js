@@ -532,10 +532,10 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         });
     } catch (emailError) {
         console.error('Failed to send password reset email:', emailError);
-        // Don't fail the request if email fails
+        return res.json({ success: true, message: 'If email exists, reset link has been sent. If you do not receive an email, please contact support or try again later.' });
     }
 
-    return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+    return res.json({ success: true, message: 'If email exists, reset link has been sent. Please check your email inbox (and spam folder).' });
 });
 
 /**
