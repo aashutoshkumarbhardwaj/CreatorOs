@@ -177,7 +177,8 @@ const handleRenderDashboard = asyncHandler(async (req, res) => {
     const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
 
-    const query = cursor ? { _id: { $lt: cursor } } : {};
+    const userId = req.user?.id || null;
+    const query = cursor ? { _id: { $lt: cursor }, userId } : { userId };
     const allUrls = await Url.find(query)
         .sort({ _id: -1 })
         .limit(pageSize + 1)
@@ -207,7 +208,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
     if (!inputUrl || !isValidUrl(inputUrl)) {
         // Implement cursor-based pagination to avoid loading all records
         const pageSize = 20;
-        const allUrls = await Url.find({})
+        const allUrls = await Url.find({ userId: req.user?.id || null })
             .sort({ _id: -1 })
             .limit(pageSize)
             .lean();
@@ -243,7 +244,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
     const qrCodeDataUrl = await generateBase64QR(shortUrl, fgColor, bgColor);
     // Implement cursor-based pagination to prevent full table scans
     const pageSize = 20;
-    const allUrls = await Url.find({})
+    const allUrls = await Url.find({ userId: req.user?.id || null })
         .sort({ _id: -1 })
         .limit(pageSize)
         .lean();
