@@ -4,6 +4,16 @@ const crypto = require("crypto");
 const connectDB = require("../connect");
 const asyncHandler = require("../utils/asyncHandler");
 const { wantsHtml } = require("../utils/requestType");
+const {
+    checkIfLoginLocked,
+    recordFailedLoginAttempt,
+    clearLoginAttempts,
+    getRemainingLoginLockoutTime,
+    checkIfResetLocked,
+    recordFailedResetAttempt,
+    clearResetAttempts,
+    getRemainingResetLockoutTime,
+} = require("../utils/loginAttemptManager");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -230,23 +240,35 @@ const login = asyncHandler(async (req, res, next) => {
 
     const { email, password } = req.body || {};
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
-    
+
     if (!normalizedEmail || !password) {
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
+    const isLocked = await checkIfLoginLocked(normalizedEmail);
+    if (isLocked) {
+        const remainingTime = await getRemainingLoginLockoutTime(normalizedEmail);
+        const lockoutMessage = `Account locked due to too many failed login attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) return res.status(429).render("login", { error: lockoutMessage });
+        return res.status(429).json({ success: false, message: lockoutMessage });
+    }
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+        await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+        await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
+
+    await clearLoginAttempts(normalizedEmail);
 
     user.lastLoginAt = new Date();
     await user.save();
@@ -500,9 +522,18 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const isLocked = await checkIfResetLocked(normalizedEmail);
+    if (isLocked) {
+        const remainingTime = await getRemainingResetLockoutTime(normalizedEmail);
+        const lockoutMessage = `Too many password reset attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        return res.status(429).json({ success: false, message: lockoutMessage });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-        // Don't reveal whether email exists for security
+        await recordFailedResetAttempt(normalizedEmail);
         return res.json({ success: true, message: 'If email exists, reset link has been sent' });
     }
 
@@ -582,6 +613,8 @@ const resetPassword = asyncHandler(async (req, res) => {
     resetTokenDoc.used = true;
     resetTokenDoc.usedAt = new Date();
     await resetTokenDoc.save();
+
+    await clearResetAttempts(user.email);
 
     return res.json({ success: true, message: 'Password reset successfully. Please log in with your new password.' });
 });
