@@ -33,6 +33,7 @@ const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collab
 
 connectDB();
 require("./workers/analyticsRefreshWorker");
+require("./workers/contentPublishWorker").startContentPublishWorker();
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cookieParser());
@@ -121,6 +122,9 @@ app.use('/api/instagram', protect, instagramRoutes);
 
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
+
+const contentRoutes = require('./routes/content');
+app.use('/api/content', protect, contentRoutes);
 
 const uploadDir = "/tmp";
 
