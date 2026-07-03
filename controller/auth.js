@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const connectDB = require("../connect");
 const asyncHandler = require("../utils/asyncHandler");
 const { wantsHtml } = require("../utils/requestType");
+const { AccountLockedError, loginAttempts, resetAttempts } = require("../middleware/loginLockout");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -230,23 +231,37 @@ const login = asyncHandler(async (req, res, next) => {
 
     const { email, password } = req.body || {};
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
-    
+
     if (!normalizedEmail || !password) {
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
+    try {
+        await loginAttempts.checkAttempts(normalizedEmail);
+    } catch (error) {
+        if (error instanceof AccountLockedError) {
+            if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(error.message));
+            return res.status(429).json({ success: false, message: error.message });
+        }
+        throw error;
+    }
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+        await loginAttempts.recordFailure(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+        await loginAttempts.recordFailure(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
+
+    await loginAttempts.resetAttempts(normalizedEmail);
 
     user.lastLoginAt = new Date();
     await user.save();
@@ -500,11 +515,30 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Cap repeated reset requests per email so the flow can't be used to
+    // enumerate accounts (timing/side-channel probing) or to spam a
+    // victim's inbox with reset emails. Always returns the same generic
+    // response regardless of lockout state, same as the "user not found"
+    // branch below, so a locked-out attacker learns nothing new.
+    try {
+        await resetAttempts.checkAttempts(normalizedEmail);
+    } catch (error) {
+        if (error instanceof AccountLockedError) {
+            return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+        }
+        throw error;
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+        await resetAttempts.recordFailure(normalizedEmail);
         // Don't reveal whether email exists for security
         return res.json({ success: true, message: 'If email exists, reset link has been sent' });
     }
+
+    await resetAttempts.recordFailure(normalizedEmail);
 
     // Create password reset token (15 minute validity)
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -582,6 +616,9 @@ const resetPassword = asyncHandler(async (req, res) => {
     resetTokenDoc.used = true;
     resetTokenDoc.usedAt = new Date();
     await resetTokenDoc.save();
+
+    await resetAttempts.resetAttempts(user.email);
+    await loginAttempts.resetAttempts(user.email);
 
     return res.json({ success: true, message: 'Password reset successfully. Please log in with your new password.' });
 });
