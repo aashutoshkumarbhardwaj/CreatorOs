@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../model/user');
 const { preventContributorWrites } = require('../middleware/auth');
+const { invalidateProfileCache } = require('../utils/creatorProfileCache');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -76,6 +77,7 @@ router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) =
     if (bio !== undefined) user.bio = bio;
     
     await user.save();
+    await invalidateProfileCache(user._id);
     res.json({
         message: 'Profile updated successfully',
         user: {
@@ -135,7 +137,8 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
     
     user.twoFactorEnabled = !!enabled;
     await user.save();
-    
+    await invalidateProfileCache(user._id);
+
     res.json({ message: '2FA settings updated successfully', twoFactorEnabled: user.twoFactorEnabled });
 }));
 
@@ -180,6 +183,7 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
     user.password = await bcrypt.hash(newPassword, salt);
     user.passwordChangedAt = new Date();
     await user.save();
+    await invalidateProfileCache(user._id);
 
     const days = daysSince(user.passwordChangedAt);
     res.json({
@@ -264,6 +268,7 @@ router.put('/preferences', asyncHandler(async (req, res) => {
     };
     
     await user.save();
+    await invalidateProfileCache(user._id);
     res.json({ message: 'Preferences updated successfully', preferences: user.preferences });
 }));
 

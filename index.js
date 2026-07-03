@@ -98,6 +98,17 @@ const asyncHandler = require('./utils/asyncHandler');
 
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
+const { getCachedUserProfile } = require('./utils/creatorProfileCache');
+
+// Nearly every page route below re-fetches the signed-in creator's own User
+// document. Wrapping it here caches the result for PROFILE_TTL (5 min, see
+// utils/creatorProfileCache.js) and sets X-Cache so cache hits/misses are
+// visible in responses, per the issue's observability request.
+async function loadCreatorProfile(req, res) {
+    const { doc, hit } = await getCachedUserProfile(req.user.id, User);
+    res.setHeader('X-Cache', hit ? 'HIT' : 'MISS');
+    return doc;
+}
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
@@ -283,9 +294,7 @@ app.get('/services', (req, res) => {
 app.get("/dashboard", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
-        : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
-            .lean();
+        : await loadCreatorProfile(req, res);
 
     const inviteSummary = isGuestContributor(req.user)
         ? buildEmptyInviteSummary()
@@ -316,7 +325,7 @@ app.get("/dashboard", protect, asyncHandler(async (req, res) => {
 app.get("/profile", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
-        : await User.findById(req.user.id).select('name email').lean();
+        : await loadCreatorProfile(req, res);
 
     res.render("profile", { user: buildAccountViewModel(userDoc, req.user) });
 }));
@@ -325,9 +334,7 @@ app.get("/profile", protect, asyncHandler(async (req, res) => {
 app.get('/settings', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
-        : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
-            .lean();
+        : await loadCreatorProfile(req, res);
 
     res.render('settings', {
         services,
@@ -340,9 +347,7 @@ app.get('/settings', protect, asyncHandler(async (req, res) => {
 app.get('/my-links', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
-        : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
-            .lean();
+        : await loadCreatorProfile(req, res);
 
     res.render('my-links', {
         services,
@@ -355,9 +360,7 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
+    const userDoc = await loadCreatorProfile(req, res);
 
     return res.render('analytics', {
         services,
@@ -371,9 +374,7 @@ app.get('/vault', protect, (req, res) => {
 });
 // File Upload page
 app.get('/file-upload', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
+    const userDoc = await loadCreatorProfile(req, res);
 
     return res.render('file-upload', {
         services,
@@ -385,9 +386,7 @@ app.get('/file-upload', protect, asyncHandler(async (req, res) => {
 
 // Editor — creator configures their bio page
 app.get('/bio', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email alias bio')
-        .lean();
+    const userDoc = await loadCreatorProfile(req, res);
 
     return res.render('bio-editor', {
         services,
@@ -468,9 +467,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     }
 
     if (service.key === 'analytics-dashboard') {
-        const userDoc = await User.findById(req.user.id)
-            .select('name email')
-            .lean();
+        const userDoc = await loadCreatorProfile(req, res);
 
         return res.render('analytics-dashboard', {
             service,
@@ -481,9 +478,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
     }
 
     if (service.key === 'smart-bio') {
-        const userDoc = await User.findById(req.user.id)
-            .select('name email alias bio')
-            .lean();
+        const userDoc = await loadCreatorProfile(req, res);
 
         return res.render('bio-editor', {
             service,
