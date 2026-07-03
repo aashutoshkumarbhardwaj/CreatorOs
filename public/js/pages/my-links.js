@@ -1,4 +1,4 @@
-(function () {
+(async function () {
     const body = document.body;
     const userData = JSON.parse(body.getAttribute('data-user') || '{}');
     const isGuest = !!userData.isGuestContributor;
@@ -186,48 +186,7 @@
     }
 
     emptyEl.style.display = 'none';
-
-    try {
-        const data = await apiRequest('/url');
-
-        try {
-            const payload = await apiRequest('/api/urls', {
-                method: 'POST',
-                body: JSON.stringify({
-                    redirectUrl: document.getElementById('redirect-url').value.trim(),
-                    title: document.getElementById('link-title').value.trim() || undefined,
-                    customSlug: document.getElementById('custom-slug').value.trim() || undefined,
-                    tag: document.getElementById('link-tag').value,
-                }),
-            });
-
-        updateStats(
-            data.stats || {
-                totalLinks: 0,
-                totalClicksLabel: '0',
-                topLinkTitle: '—'
-            }
-        );
-
-        if (data.domain) {
-            document.getElementById('domain-label').textContent =
-                data.domain + '/';
-        }
-
-        renderLinks();
-
-        if (skeleton) {
-            skeleton.style.display = 'none';
-        }
-
-    } catch (err) {
-        if (skeleton) {
-            skeleton.style.display = 'none';
-        }
-
-        showToast(err.message, true);
-    }
-}
+    loadLinks();
 
     document.getElementById('copy-result-btn').addEventListener('click', () => {
         if (lastCreatedUrl) copyText(lastCreatedUrl, 'Short link copied!');
@@ -262,18 +221,6 @@
         document.getElementById('scroll-shorten-btn').click();
     });
 
-    const emptyCTA = document.getElementById('empty-state-cta');
-
-if (emptyCTA) {
-    emptyCTA.addEventListener('click', () => {
-        document.getElementById('shorten-section')
-            ?.scrollIntoView({ behavior: 'smooth' });
-
-        document.getElementById('redirect-url')
-            ?.focus();
-    });
-}
-    loadLinks();
     const emptyCTA = document.getElementById('empty-state-cta');
 
 if (emptyCTA) {
