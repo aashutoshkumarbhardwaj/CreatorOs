@@ -3,6 +3,8 @@ const cookieParser = require("cookie-parser");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
+const helmet = require('helmet');
+const crypto = require('crypto');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -36,6 +38,26 @@ require("./workers/analyticsRefreshWorker");
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+    res.locals.nonce = crypto.randomBytes(16).toString('hex');
+    next();
+});
+
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`, "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+    },
+    reportOnly: process.env.CSP_REPORT_ONLY === 'true',
+}));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({
     verify: (req, res, buf) => {
@@ -49,15 +71,6 @@ app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
 app.locals.BRAND = BRAND;
-
-// Content Security Policy (CSP) header - defense-in-depth against XSS
-app.use((req, res, next) => {
-    res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none';"
-    );
-    next();
-});
 
 const rateLimit = require('express-rate-limit');
 
