@@ -58,4 +58,11 @@ const urlSchema = new mongoose.Schema({
     ],
 });
 
+urlSchema.statics.listForUser = async function (userId, limit = 100) {
+    return this.find({ userId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+};
+
 module.exports = mongoose.models.Url || mongoose.model("Url", urlSchema);

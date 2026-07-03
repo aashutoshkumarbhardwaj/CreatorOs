@@ -43,6 +43,23 @@ describe('URL Controller Endpoints', () => {
         }
     });
 
+    it('should list user links (or return clear error if auth fails)', async () => {
+        const req = request(app)
+            .get('/api/urls/')
+            .set(csrfHeader);
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        // Must NOT crash with 500 - listForUser must be callable
+        expect(res.statusCode).not.toEqual(500);
+        expect([200, 302, 401]).toContain(res.statusCode);
+    });
+
     it('should fail short URL creation with invalid URL', async () => {
         const req = request(app)
             .post('/api/urls/shorten')
