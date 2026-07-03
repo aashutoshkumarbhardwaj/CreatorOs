@@ -98,14 +98,22 @@ async function handleGenerateShortUrl(req, res) {
     const allowedTags = ['active', 'social', 'campaign', 'general'];
     const linkTag = allowedTags.includes(tag) ? tag : 'active';
 
-    const entry = await Url.create({
-        shortId,
-        redirectUrl,
-        userId: req.user?.id || null,
-        title: deriveTitle(redirectUrl, title?.trim()),
-        tag: linkTag,
-        linkedAt: new Date(),
-    });
+    let entry;
+    try {
+        entry = await Url.create({
+            shortId,
+            redirectUrl,
+            userId: req.user?.id || null,
+            title: deriveTitle(redirectUrl, title?.trim()),
+            tag: linkTag,
+            linkedAt: new Date(),
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({ error: 'That slug is already taken. Try another.' });
+        }
+        return res.status(500).json({ error: 'Failed to create short URL. Please try again.' });
+    }
 
     const hostBase = `${req.protocol}://${req.get('host')}`;
 
@@ -268,6 +276,10 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
+
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
@@ -301,6 +313,10 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
+
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
@@ -325,6 +341,16 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
 const handleUpdateQRColors = asyncHandler(async (req, res) => {
     const { shortId } = req.params;
     const { qrFgColor, qrBgColor } = req.body;
+
+    const entry = await Url.findOne({ shortId });
+
+    if (!entry) {
+        return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
 
     const updated = await Url.findOneAndUpdate(
         { shortId },

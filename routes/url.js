@@ -105,25 +105,9 @@ router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shor
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId/download', handleDownloadQRCode);      
+router.get('/qr/:shortId/download', protect, handleDownloadQRCode);      
 
-/**
- * @swagger
- * /qr/:shortId:
- *   get:
- *     summary: GET request for /qr/:shortId
- *     description: Retrieves the QR code image for a specific shortened URL.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/qr/:shortId',          handleGetQRCode);       
+router.get('/qr/:shortId',          protect, handleGetQRCode);
 
 /**
  * @swagger
