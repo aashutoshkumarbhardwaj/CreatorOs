@@ -813,7 +813,7 @@
 <div class="toast" id="toast"></div>
 
 <% if (typeof error !== 'undefined' && error) { %>
-<script>
+<script nonce="<%= nonce %>">
   document.addEventListener('DOMContentLoaded', () => {
     const t = document.getElementById('toast');
     if (t) {
@@ -825,7 +825,7 @@
 </script>
 <% } %>
 
-<script>
+<script nonce="<%= nonce %>">
   // ── PLATFORM TOGGLE ──
   function togglePlatform(el) {
     el.classList.toggle('selected');

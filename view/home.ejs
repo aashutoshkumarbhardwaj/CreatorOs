@@ -1497,7 +1497,7 @@
     </div>
 
     <!-- Scripts -->
-    <script>
+    <script nonce="<%= nonce %>">
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');
         
@@ -1543,7 +1543,7 @@
 
     <!-- QR Code Script (Pulled exactly from old home.ejs) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
+    <script nonce="<%= nonce %>">
         var qrState = {
             url: '<%= locals.shortUrl || "" %>',
             fgColor: '#1a1a1a',
