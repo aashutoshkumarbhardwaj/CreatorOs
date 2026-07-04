@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - CreatorOS</title>
+    <%- include('./partials/_brand_head') %>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg, #F5F1EA);
+            color: var(--text, #111111);
+            padding: 2rem 1rem 4rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111111;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            border: 2px solid #111111;
+            padding: 0.4rem 0.85rem;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .back-link:hover { background: #37D6C8; }
+
+        .badge-retro {
+            display: inline-block;
+            border: 2px solid #111111;
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            background-color: #37D6C8;
+            color: #111111;
+            box-shadow: 2px 2px 0px #111111;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #374151;
+            margin: 0 0 2.5rem;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            padding: 1.5rem;
+            box-shadow: 3px 3px 0px #111111;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #111111;
+        }
+
+        .feature-chip {
+            border: 2px solid #111111;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            background: #F5F1EA;
+            box-shadow: 2px 2px 0px #111111;
+            text-align: center;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            cursor: pointer;
+        }
+
+        .feature-chip:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px #111111;
+            background: #37D6C8;
+        }
+
+        .stack-chip {
+            border: 2px solid #111111;
+            padding: 0.6rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: monospace;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            text-align: center;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            cursor: pointer;
+        }
+
+        .stack-chip:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px #111111;
+            background: #37D6C8;
+        }
+
+        
+        .card.accent-teal {
+            background: linear-gradient(135deg, #37D6C8 0%, #5ee8dc 50%, #37D6C8 100%);
+        }
+        .card.full-width { grid-column: 1 / -1; }
+
+        .card-label {
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.1em;
+        }
+
+        
+        .card.accent-teal .card-label { color: #333333; }
+        .card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+            border-left: 4px solid #37D6C8;
+            padding-left: 0.65rem;
+        }
+
+        
+        .card.accent-teal h2 { border-left-color: #111111; }
+
+        .card p {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.75;
+            margin: 0;
+        }
+
+        
+        .card.accent-teal p { color: #111111; }
+        .card.accent-teal li { color: #111111; }
+
+        .card ul {
+            padding-left: 1.1rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .card li {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.65;
+        }
+
+        .card.accent-gradient {
+            background: linear-gradient(135deg, #f0d060 0%, #E4C13B 50%, #f0d060 100%);
+        }
+
+        .card.accent-gradient .card-label,
+        .card.accent-gradient h2 ~ *,
+        .card.accent-gradient p { color: #111111; }
+        .card.accent-gradient h2 { border-left-color: #111111; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .feature-chip {
+            border: 2px solid #111111;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            background: #F5F1EA;
+            box-shadow: 2px 2px 0px #111111;
+            text-align: center;
+        }
+
+        .stack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .stack-chip {
+            border: 2px solid #111111;
+            padding: 0.6rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: monospace;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            text-align: center;
+        }
+
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid #111111;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            text-decoration: none;
+            color: #111111;
+            box-shadow: 2px 2px 0px #111111;
+            background: #FFFFFF;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .cta-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px #111111;
+        }
+
+        .cta-btn.primary { background: #37D6C8; }
+
+        .footer-note {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 2px solid #111111;
+            padding-top: 1.5rem;
+        }
+
+        @media (max-width: 700px) {
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <span class="badge-retro">ABOUT</span>
+        <h1>About CreatorOS</h1>
+        <p class="subtitle">The all-in-one operating system for creators - stop juggling 10 tools and start owning your creator empire from one dashboard.</p>
+
+        <div class="cards-grid">
+
+            <div class="card accent-gradient full-width">
+                <span class="card-label">MISSION</span>
+                <h2>What We're Building</h2>
+                <p>CreatorOS replaces the chaos of managing Linktree, ManyChat, Notion, Buffer, and native dashboards separately. One platform. Everything connected. Zero context-switching. Built for creators who are serious about growing their audience and monetizing their knowledge.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-label">FEATURES</span>
+                <h2>What CreatorOS Does</h2>
+                <div class="features-grid">
+                    <div class="feature-chip">🔗 Smart Bio Links</div>
+                    <div class="feature-chip">🤖 DM Automation</div>
+                    <div class="feature-chip">🤝 Creator CRM</div>
+                    <div class="feature-chip">📊 Analytics</div>
+                    <div class="feature-chip">🧠 Content OS</div>
+                    <div class="feature-chip">✂️ URL Shortener</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <span class="card-label">WHO IT'S FOR</span>
+                <h2>Built For Creators</h2>
+                <ul>
+                    <li>📸 Instagram Influencers</li>
+                    <li>🎬 YouTubers & Video Creators</li>
+                    <li>🎓 Coaches & Solopreneurs</li>
+                    <li>📦 Digital Product Sellers</li>
+                    <li>✍️ Indie Creators & Writers</li>
+                    <li>🏷️ Brand Deal Hunters</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-label">TECH STACK</span>
+                <h2>How It's Built</h2>
+                <div class="stack-grid">
+                    <div class="stack-chip">Node.js</div>
+                    <div class="stack-chip">Express</div>
+                    <div class="stack-chip">MongoDB</div>
+                    <div class="stack-chip">EJS</div>
+                    <div class="stack-chip">Passport</div>
+                    <div class="stack-chip">BullMQ</div>
+                    <div class="stack-chip">OpenAI</div>
+                    <div class="stack-chip">Railway</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <span class="card-label">ROADMAP</span>
+                <h2>What's Coming</h2>
+                <ul>
+                    <li>✅ Smart Bio System v1</li>
+                    <li>✅ Analytics Dashboard v1</li>
+                    <li>✅ DM Automation</li>
+                    <li>✅ Creator CRM v1</li>
+                    <li>✅ Content OS + AI suggestions</li>
+                    <li>⏳ Payments & subscriptions (Stripe)</li>
+                    <li>⏳ Mobile app (React Native)</li>
+                    <li>⏳ Multi-platform support (YouTube, TikTok)</li>
+                    <li>⏳ Public API for integrations</li>
+                </ul>
+            </div>
+
+            <div class="card accent-teal full-width">
+                <span class="card-label">OPEN SOURCE</span>
+                <h2>Part of GSSoC 2026</h2>
+                <p>CreatorOS is proudly open source and part of GirlScript Summer of Code 2026. Every contribution, no matter how small, helps us build something amazing for creators worldwide. Join our community and help shape the future of creator tools.</p>
+                <div class="cta-row">
+                    <a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs" target="_blank" class="cta-btn">⭐ Star on GitHub</a>
+                    <a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs/issues" target="_blank" class="cta-btn">🐛 Report a Bug</a>
+                    <a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs/issues" target="_blank" class="cta-btn">💡 Request Feature</a>
+                </div>
+            </div>
+
+        </div>
+
+        <p class="footer-note">© 2026 CreatorOS. Built with 🖤 for creators, by creators.</p>
+    </div>
+</body>
+</html>

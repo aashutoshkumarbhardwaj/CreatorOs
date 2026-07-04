@@ -279,6 +279,14 @@ app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
+app.get('/about', (req, res) => {
+    res.render('about');
+});
+
+app.get('/changelog', (req, res) => {
+    res.render('changelog');
+});
+
 // Dashboard
 app.get("/dashboard", protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)

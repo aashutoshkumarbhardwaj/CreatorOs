@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - CreatorOS</title>
+    <%- include('./partials/_brand_head') %>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg, #F5F1EA);
+            color: var(--text, #111111);
+            padding: 2rem 1rem 4rem;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111111;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            border: 2px solid #111111;
+            padding: 0.4rem 0.85rem;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .back-link:hover { background: #37D6C8; }
+
+        .badge-retro {
+            display: inline-block;
+            border: 2px solid #111111;
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            background-color: #37D6C8;
+            color: #111111;
+            box-shadow: 2px 2px 0px #111111;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #374151;
+            margin: 0 0 2.5rem;
+            line-height: 1.6;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .release-card {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            padding: 1.5rem;
+            box-shadow: 3px 3px 0px #111111;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .release-card:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #111111;
+        }
+
+        .release-card.latest {
+            background: linear-gradient(135deg, #37D6C8 0%, #5ee8dc 50%, #37D6C8 100%);
+        }
+
+        .release-card.latest .release-notes li,
+        .release-card.latest .release-meta { color: #111111; }
+        .accent-gradient-teal {
+            background: linear-gradient(135deg, #37D6C8 0%, #a5f5ea 50%, #37D6C8 100%) !important;
+        }
+
+        .release-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .version-badge {
+            display: inline-block;
+            border: 2px solid #111111;
+            font-size: 0.75rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            background: #111111;
+            color: #F5F1EA;
+            box-shadow: 2px 2px 0px #374151;
+        }
+
+        .release-card.latest .version-badge {
+            background: #111111;
+            color: #37D6C8;
+        }
+
+        .release-date {
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .release-card.latest .release-date { color: #333333; }
+
+        .release-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            border-left: 4px solid #37D6C8;
+            padding-left: 0.65rem;
+        }
+
+        .release-card.latest .release-title {
+            border-left-color: #111111;
+        }
+
+        .release-notes {
+            padding-left: 1.1rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .release-notes li {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.65;
+        }
+
+        .release-meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-family: monospace;
+        }
+
+        .tag {
+            display: inline-block;
+            border: 1.5px solid #111111;
+            font-size: 0.65rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.15rem 0.4rem;
+            margin-right: 0.3rem;
+        }
+
+        .tag.feature { background: #37D6C8; }
+        .tag.fix { background: #E4C13B; }
+        .tag.improvement { background: #d1fae5; }
+
+        .footer-note {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 2px solid #111111;
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <span class="badge-retro">CHANGELOG</span>
+        <h1>Changelog</h1>
+        <p class="subtitle">Every update, improvement, and fix - tracked and documented.</p>
+
+        <div class="timeline">
+
+            <div class="release-card latest accent-gradient-teal">
+                <div class="release-header">
+                    <span class="version-badge">IN PROGRESS</span>
+                    <span class="release-date">JUNE – JULY 2026</span>
+                </div>
+                <h2 class="release-title">GSSoC 2026 Contributions</h2>
+                <ul class="release-notes">
+                    <li><span class="tag feature">FEATURE</span> Creator CRM with contact management</li>
+                    <li><span class="tag feature">FEATURE</span> AI-powered content suggestions via OpenAI</li>
+                    <li><span class="tag feature">FEATURE</span> DM Automation system with sequence builder</li>
+                    <li><span class="tag feature">FEATURE</span> Analytics dashboard with detailed metrics</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> Redesigned dashboard with retro neo-brutalist UI</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> Dark mode support across all pages</li>
+                    <li><span class="tag fix">FIX</span> Replaced dead footer placeholder links with valid routes</li>
+                    <li><span class="tag fix">FIX</span> Security patches and rate limiting improvements</li>
+                    <li><span class="tag fix">FIX</span> Various UI/UX bug fixes across multiple pages</li>
+                </ul>
+                <span class="release-meta">🚀 Ongoing - GSSoC 2026 open source contributions</span>
+            </div>
+
+            <div class="release-card">
+                <div class="release-header">
+                    <span class="version-badge">VERSION-1</span>
+                    <span class="release-date">MAY 26, 2026</span>
+                </div>
+                <h2 class="release-title">Initial Public Release</h2>
+                <ul class="release-notes">
+                    <li><span class="tag feature">FEATURE</span> Landing page with services hub navigation</li>
+                    <li><span class="tag feature">FEATURE</span> JWT authentication system with login & signup</li>
+                    <li><span class="tag feature">FEATURE</span> Caption, hashtag and song suggestion feature</li>
+                    <li><span class="tag feature">FEATURE</span> Collaboration invite dashboard flow</li>
+                    <li><span class="tag feature">FEATURE</span> Gaming and finance backend data arrays</li>
+                    <li><span class="tag feature">FEATURE</span> Footer added across all pages</li>
+                    <li><span class="tag fix">FIX</span> File drag and drop not working in Firefox</li>
+                    <li><span class="tag fix">FIX</span> Auth validation and error handling standardized</li>
+                    <li><span class="tag fix">FIX</span> Prevent orphaned invites on email failure</li>
+                    <li><span class="tag fix">FIX</span> Resource exhaustion and rate limiting patch</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> Standardized CreatorOS naming across all docs</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> Local dev environment and env variable config</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> UI/UX improvements across dashboard</li>
+                    <li><span class="tag improvement">IMPROVEMENT</span> Dynamic contributors showcase added to README</li>
+                </ul>
+                <span class="release-meta">🎉 First public release - 11 contributors - <a href="https://github.com/aashutoshkumarbhardwaj/CreatorOs/releases/tag/version-1" target="_blank" style="color: #37D6C8; font-weight: 700;">View on GitHub</a></span>
+            </div>
+        </div>
+
+    </div>
+
+        <p class="footer-note">© 2026 CreatorOS. All rights reserved.</p>
+    </div>
+</body>
+</html>
