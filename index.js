@@ -288,6 +288,7 @@ app.get('/services', (req, res) => {
 
 app.get('/terms', (req, res) => {
     res.render('terms');
+});
 app.get('/about', (req, res) => {
     res.render('about');
 });
