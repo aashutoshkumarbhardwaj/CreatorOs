@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Conditions - CreatorOS</title>
+    <%- include('./partials/_brand_head') %>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg, #F5F1EA);
+            color: var(--text, #111111);
+            padding: 2rem 1rem 4rem;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111111;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            border: 2px solid #111111;
+            padding: 0.4rem 0.85rem;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .back-link:hover {
+            background: #37D6C8;
+        }
+
+        .hero {
+            margin-bottom: 2.5rem;
+        }
+
+        .badge-retro {
+            display: inline-block;
+            border: 2px solid #111111;
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            background-color: #37D6C8;
+            color: #111111;
+            box-shadow: 2px 2px 0px #111111;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #374151;
+            margin: 0;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            padding: 1.5rem;
+            box-shadow: 3px 3px 0px #111111;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #111111;
+        }
+
+        .card-number {
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.1em;
+        }
+
+        .card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+            border-left: 4px solid #37D6C8;
+            padding-left: 0.65rem;
+        }
+
+        .card p {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.75;
+            margin: 0;
+        }
+
+        .card ul {
+            padding-left: 1.1rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .card li {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.65;
+        }
+
+
+        .card.full-width {
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+
+        .card.full-width h2 {
+            border-left: none;
+            padding-left: 0;
+            text-align: center;
+        }
+
+        a.contact-link {
+            color: #37D6C8;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 2px solid #111111;
+            padding-top: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <div class="hero">
+            <span class="badge-retro">LEGAL</span>
+            <h1>Terms & Conditions</h1>
+            <p class="subtitle">Last updated: July 2026 - Please read carefully before using CreatorOS.</p>
+        </div>
+
+        <div class="cards-grid">
+
+            <div class="card">
+                <span class="card-number">01 — ACCEPTANCE</span>
+                <h2>Acceptance of Terms</h2>
+                <p>By creating an account or using any part of CreatorOS, you agree to these Terms and Conditions and our Privacy Policy. If you do not agree, please do not use the platform.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">02 — USAGE</span>
+                <h2>Use of the Platform</h2>
+                <ul>
+                    <li>You must be at least 13 years old to use CreatorOS.</li>
+                    <li>You are responsible for maintaining the security of your account.</li>
+                    <li>You agree not to use the platform for any unlawful or harmful purpose.</li>
+                    <li>You must not attempt to gain unauthorized access to any part of the platform.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-number">03 — LINKS</span>
+                <h2>URL Shortening & Links</h2>
+                <p>CreatorOS provides URL shortening services. You agree not to shorten links that point to illegal, harmful, or malicious content. We reserve the right to disable any shortened URL that violates these terms.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">04 — IP</span>
+                <h2>Intellectual Property</h2>
+                <p>All content, branding, and code on CreatorOS is the property of CreatorOS and its contributors. You may not copy, reproduce, or distribute any part of the platform without explicit permission.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">05 — LIABILITY</span>
+                <h2>Limitation of Liability</h2>
+                <p>CreatorOS is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the platform, including data loss or service interruptions.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">06 — TERMINATION</span>
+                <h2>Termination</h2>
+                <p>We reserve the right to suspend or terminate your account at any time if you violate these Terms and Conditions without prior notice.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">07 — UPDATES</span>
+                <h2>Changes to Terms</h2>
+                <p>We may update these Terms and Conditions at any time. Continued use of the platform after changes implies acceptance of the updated terms. Please review this page periodically.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">08 — CONTACT</span>
+                <h2>Contact Us</h2>
+                <p>If you have any questions about these terms, please contact us at <a href="mailto:support@creatoros.com" class="contact-link">support@creatoros.com</a>.</p>
+            </div>
+
+        </div>
+
+        <p class="footer-note">© 2026 CreatorOS. All rights reserved.</p>
+    </div>
+</body>
+</html>
