@@ -137,10 +137,11 @@ app.use('/api/settings', protect, settingsRoutes);
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
-const uploadDir = "/tmp";
+const os = require('os');
+const uploadDir = os.tmpdir();
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) { cb(null, "/tmp"); },
+    destination: function (req, file, cb) { cb(null, uploadDir); },
     filename: function (req, file, cb) {
         let sanitizedFilename = path.basename(file.originalname);
         sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
@@ -546,9 +547,27 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
 // ── FILE UPLOAD POST ──
 
-app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
+const { uploadToS3 } = require('./utils/s3Upload');
+
+app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    let fileUrl = null;
+    try {
+        fileUrl = await uploadToS3(req.file.path, req.file.originalname, req.file.mimetype);
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to upload file to cloud storage' });
+    } finally {
+        // Clean up temporary file to prevent DoS via disk exhaustion
+        try {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error(`[upload] Failed to delete temp file ${req.file.path}:`, err);
+            });
+        } catch (e) {
+            console.error(`[upload] Error deleting temp file:`, e);
+        }
     }
 
     res.json({
@@ -556,17 +575,9 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
         size: req.file.size,
         mimetype: req.file.mimetype,
         path: req.file.filename,
+        url: fileUrl
     });
-
-    // Clean up temporary file to prevent DoS via disk exhaustion
-    try {
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error(`[upload] Failed to delete temp file ${req.file.path}:`, err);
-        });
-    } catch (e) {
-        console.error(`[upload] Error deleting temp file:`, e);
-    }
-});
+}));
 
 // ── SHORT URL REDIRECT ──
 
