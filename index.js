@@ -104,6 +104,7 @@ const multer = require('multer');
 const services = require('./services.config');
 const User = require('./model/user');
 const Invite = require('./model/invite');
+const BioProfile = require('./model/bioProfile');
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
@@ -446,27 +447,23 @@ app.get('/@:handle', asyncHandler(async (req, res) => {
 
     res.setCacheStatus('MISS');
 
-    // Replace with DB lookup when BioProfile model is ready:
-    // const bioProfile = await BioProfile.findOne({ handle }).lean();
+    const bioProfile = await BioProfile.findOne({ handle }).lean();
+
+    if (!bioProfile) {
+        return res.status(404).render('404', { url: req.originalUrl });
+    }
 
     const profile = {
-        name: 'Sudeepti Singh',
+        name: bioProfile.name || handle,
         handle,
-        bio: 'AI/ML Enthusiast | Creator | B.Tech CS @ JUET',
-        tags: ['AI/ML', 'Creator', 'Open Source'],
-        avatarUrl: null,
-        initials: 'SS',
-        stats: { links: 6, views: '1.2K', clicks: '342' },
+        bio: bioProfile.bio || '',
+        tags: bioProfile.tags || [],
+        avatarUrl: bioProfile.avatarUrl || null,
+        initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
+        stats: bioProfile.stats || { links: bioProfile.links?.length || 0, views: 0, clicks: 0 },
     };
 
-    const links = [
-        { id: 1, type: 'instagram', icon: '📸', label: 'Instagram',  url: 'https://instagram.com/', category: 'social' },
-        { id: 2, type: 'youtube',   icon: '🎥', label: 'YouTube',    url: 'https://youtube.com/',   category: 'social' },
-        { id: 3, type: 'github',    icon: '💻', label: 'GitHub',     url: 'https://github.com/',    category: 'work'   },
-        { id: 4, type: 'linkedin',  icon: '💼', label: 'LinkedIn',   url: 'https://linkedin.com/',  category: 'work'   },
-        { id: 5, type: 'portfolio', icon: '🌐', label: 'Portfolio',  url: 'https://portfolio.dev/', category: 'work'   },
-        { id: 6, type: 'email',     icon: '📧', label: 'Contact Me', url: 'mailto:hello@example.com', category: 'other' },
-    ];
+    const links = bioProfile.links || [];
 
     const cacheData = { profile, links };
     await setProfileInCache(handle, cacheData);
