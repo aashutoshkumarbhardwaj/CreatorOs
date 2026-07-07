@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MongoDB database service
+  mongodb:
+    image: mongo:6.0
+    container_name: creatoros_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+
+  # Redis caching & rate-limiting service
+  redis:
+    image: redis:7.0-alpine
+    container_name: creatoros_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  # Node.js application service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: creatoros_web:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/creatoros
+      - REDIS_URI=redis://redis:6379
+      - JWT_SECRET=super_secret_jwt_key_for_production_testing
+      - APP_URL=http://localhost
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - app-network
+
+  # Nginx Reverse Proxy and Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: creatoros_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+    networks:
+      - app-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
