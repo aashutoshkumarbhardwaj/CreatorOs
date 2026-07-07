@@ -423,14 +423,59 @@ app.get('/bio', protect, asyncHandler(async (req, res) => {
 
 // Save bio data
 app.post('/bio/save', protect, asyncHandler(async (req, res) => {
-    // Wire to BioProfile model later
-    return res.json({ success: true });
+    const BioProfile = require('./model/bioProfile');
+    const userDoc = await User.findById(req.user.id);
+    if (!userDoc) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const userHandle = handle || userDoc.alias;
+    
+    if (!userHandle) {
+         return res.status(400).json({ success: false, message: 'Handle is required' });
+    }
+    
+    if (handle && handle !== userDoc.alias) {
+        userDoc.alias = handle;
+        await userDoc.save();
+    }
+    
+    const updateData = {
+        userId: userDoc._id,
+        handle: userHandle,
+        name: name || userDoc.name,
+        bio: bio || userDoc.bio,
+        tags: tags || [],
+        avatarUrl: avatarUrl || userDoc.avatar,
+        links: links || []
+    };
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { userId: userDoc._id },
+        updateData,
+        { new: true, upsert: true }
+    );
+    
+    return res.json({ success: true, data: bioProfile });
 }));
 
 // Track link click
 app.post('/bio/track/:linkId', asyncHandler(async (req, res) => {
-    // Wire to analytics later
-    return res.json({ tracked: true });
+    const BioProfile = require('./model/bioProfile');
+    const { linkId } = req.params;
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { "links._id": linkId },
+        { $inc: { "stats.clicks": 1 } },
+        { new: true }
+    );
+    
+    if (!bioProfile) {
+        return res.status(404).json({ success: false, message: 'Link not found' });
+    }
+    
+    return res.json({ success: true, tracked: true });
 }));
 
 // Public profile — anyone can visit creatoros.com/@handle
