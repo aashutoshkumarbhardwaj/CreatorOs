@@ -137,10 +137,11 @@ app.use('/api/settings', protect, settingsRoutes);
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
-const uploadDir = "/tmp";
+const os = require('os');
+const uploadDir = os.tmpdir();
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) { cb(null, "/tmp"); },
+    destination: function (req, file, cb) { cb(null, uploadDir); },
     filename: function (req, file, cb) {
         let sanitizedFilename = path.basename(file.originalname);
         sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
