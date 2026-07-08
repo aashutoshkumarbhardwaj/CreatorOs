@@ -621,7 +621,13 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
-                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+                $push: {
+                    visitHistory: {
+                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $sort: { timestamp: -1 },
+                        $slice: 1000,
+                    },
+                },
             },
             { new: true }
         );
