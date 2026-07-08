@@ -1,7 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const User = require('../model/user');
+const Url = require('../model/url');
+const Invite = require('../model/invite');
+const Creator = require('../model/creator');
+const AnalyticsSnapshot = require('../model/analyticsSnapshot');
+const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
 
 const asyncHandler = fn => (req, res, next) =>
@@ -210,27 +216,40 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
 router.delete('/account', preventContributorWrites, asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    // Import other models for cascading deletion
-    const Url = require('../model/url');
-    const Invite = require('../model/invite');
 
-    // Delete shortened links and collaborator invites associated with the user
-    await Url.deleteMany({ userId: user._id });
-    await Invite.deleteMany({ inviter: user._id });
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
 
-    // Only attempt to delete Creator settings if not in mock database mode (Creator model is not mocked)
-    if (process.env.USE_MOCK_DB !== 'true') {
-        const Creator = require('../model/creator');
-        await Creator.deleteOne({ userId: user._id });
+        await Url.deleteMany({ userId: user._id }).session(session);
+        await Invite.deleteMany({ inviter: user._id }).session(session);
+
+        if (process.env.USE_MOCK_DB !== 'true') {
+            await Creator.deleteOne({ userId: user._id }).session(session);
+            await AnalyticsSnapshot.deleteMany({ creatorId: user._id }).session(session);
+            await EngagementHistory.deleteMany({ creatorId: user._id }).session(session);
+        }
+
+        await User.deleteOne({ _id: user._id }).session(session);
+
+        await session.commitTransaction();
+        res.clearCookie('token');
+        res.json({ message: 'Account deleted successfully' });
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('[account-deletion] Transaction failed:', error);
+        const isReplicaSetError = error.message && (
+            error.message.includes('transaction numbers') ||
+            error.message.includes('replica set') ||
+            error.message.includes('Transaction isn\'t supported')
+        );
+        const message = isReplicaSetError
+            ? 'Account deletion requires a MongoDB replica set. Please check your database configuration.'
+            : 'Failed to delete account. Please try again.';
+        res.status(500).json({ error: message });
+    } finally {
+        session.endSession();
     }
-
-    if (typeof user.deleteOne === 'function') {
-        await user.deleteOne();
-    }
-
-    res.clearCookie('token');
-    res.json({ message: 'Account deleted successfully' });
 }));
 
 // PUT /api/settings/preferences
