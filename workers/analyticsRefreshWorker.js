@@ -91,32 +91,34 @@ if (!REDIS_URI) {
         console.error(`[AnalyticsWorker] Job failed for creator: ${job?.data?.username}:`, err.message);
     });
 
-    // Runs every 6 hours
-    cron.schedule("0 */6 * * *", async () => {
-        console.log("[AnalyticsWorker] Scheduling refresh jobs...");
+    // Runs every 6 hours (disabled in test environment)
+    if (process.env.NODE_ENV !== 'test') {
+        cron.schedule("0 */6 * * *", async () => {
+            console.log("[AnalyticsWorker] Scheduling refresh jobs...");
 
-        try {
-            const creators = await Creator.find({});
+            try {
+                const creators = await Creator.find({});
 
-            for (const creator of creators) {
-                await analyticsQueue.add("refresh", {
-                    creatorId: creator._id,
-                    platform: creator.platform,
-                    username: creator.username
-                }, {
-                    attempts: 3,
-                    backoff: {
-                        type: 'exponential',
-                        delay: 5000
-                    }
-                });
+                for (const creator of creators) {
+                    await analyticsQueue.add("refresh", {
+                        creatorId: creator._id,
+                        platform: creator.platform,
+                        username: creator.username
+                    }, {
+                        attempts: 3,
+                        backoff: {
+                            type: 'exponential',
+                            delay: 5000
+                        }
+                    });
+                }
+
+                console.log(`[AnalyticsWorker] Scheduled ${creators.length} refresh jobs.`);
+            } catch (err) {
+                console.error("[AnalyticsWorker] Error scheduling refresh:", err.message);
             }
-
-            console.log(`[AnalyticsWorker] Scheduled ${creators.length} refresh jobs.`);
-        } catch (err) {
-            console.error("[AnalyticsWorker] Error scheduling refresh:", err.message);
-        }
-    });
+        });
+    }
 }
 
 module.exports = { analyticsQueue, analyticsWorker };
