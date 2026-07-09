@@ -4,6 +4,38 @@ const bcrypt = require("bcryptjs");
 /**
  * @schema userSchema
  * @description Mongoose schema definition for user.
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *       properties:
+ *         name:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         authProvider:
+ *           type: string
+ *           enum: [local, google]
+ *         role:
+ *           type: string
+ *           enum: [creator, contributor, admin]
+ *         googleId:
+ *           type: string
+ *         avatar:
+ *           type: string
+ *         alias:
+ *           type: string
+ *         bio:
+ *           type: string
+ *         twoFactorEnabled:
+ *           type: boolean
+ *         isVerified:
+ *           type: boolean
  */
 const userSchema = new mongoose.Schema(
     {

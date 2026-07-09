@@ -74,89 +74,30 @@ if (googleAuthConfigured) {
 
 /**
  * @swagger
- * /signup:
- *   get:
- *     summary: GET request for /signup
- *     description: Renders the user registration (signup) page.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get("/signup", (req, res) => {
-    res.render("signup", { error: null });
-});
-
-
-/**
- * @swagger
- * /login:
- *   get:
- *     summary: GET request for /login
- *     description: Renders the user authentication (login) page.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get("/login", (req, res) => {
-    const errorMessages = {
-        google_cancelled: "Google sign-in was cancelled.",
-        google_failed: "Google sign-in failed. Please try again.",
-    };
-
-    res.render("login", {
-        error: errorMessages[req.query.error] || req.query.error || null,
-        googleAuthConfigured,
-        verificationUnavailable: req.query.verificationUnavailable === "1" || req.query.verificationUnavailable === "true",
-        unverifiedEmail: req.query.email || null,
-    });
-});
-
-
-/**
- * @swagger
- * /signup:
- *   post:
- *     summary: POST request for /signup
- *     description: Processes a new user registration.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.post("/signup", signupLimiter, signupValidator, signup);
-
-/**
- * @swagger
  * /login:
  *   post:
- *     summary: POST request for /login
- *     description: Authenticates a user and establishes a session.
+ *     summary: Authenticate user
+ *     description: Authenticates a user using email and password, setting a session cookie.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
+ *         description: Successfully authenticated
  *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
+ *         description: Invalid credentials
  */
 router.post("/login", loginValidator, login);
 

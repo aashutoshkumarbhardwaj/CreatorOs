@@ -16,56 +16,33 @@ const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/
 
 /**
  * @swagger
- * /:
- *   get:
- *     summary: GET request for /
- *     description: Retrieves the main resource or renders the root page.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/', protect, handleListUserLinks);
-
-/**
- * @swagger
- * /analytics/:shortId:
- *   get:
- *     summary: GET request for /analytics/:shortId
- *     description: Retrieves analytics data for a specific shortened URL.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/analytics/:shortId', protect, handleGetAnalytics);
-// ── Short URL Endpoints ─────────────────────────────────────────────────────
-
-/**
- * @swagger
  * /shorten:
  *   post:
- *     summary: POST request for /shorten
- *     description: Automatically generated swagger documentation for /shorten
+ *     summary: Create a short URL
+ *     description: Generates a new short URL for the given redirect URL.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - url
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 format: uri
+ *               campaignName:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Successful response
+ *         description: Short URL created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Url'
  *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
+ *         description: Invalid URL
  */
 router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortUrl);
 

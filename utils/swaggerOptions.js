@@ -42,7 +42,7 @@ const options = {
         ]
     },
     // Files containing OpenAPI annotations
-    apis: ['./routes/*.js', './model/*.js'],
+    apis: ['./routes/*.js', './model/*.js', './index.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

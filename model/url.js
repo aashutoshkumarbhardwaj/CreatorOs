@@ -58,7 +58,46 @@ const urlSchema = new mongoose.Schema({
     ],
 });
 
-
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Url:
+ *       type: object
+ *       required:
+ *         - shortId
+ *         - redirectUrl
+ *       properties:
+ *         shortId:
+ *           type: string
+ *         redirectUrl:
+ *           type: string
+ *         campaignName:
+ *           type: string
+ *         userId:
+ *           type: string
+ *         totalClicks:
+ *           type: integer
+ *         qrFgColor:
+ *           type: string
+ *         qrBgColor:
+ *           type: string
+ *         qrGenerated:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         visitHistory:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *               source:
+ *                 type: string
+ */
 urlSchema.statics.listForUser = async function (userId, limit = 100) {
     return this.find({ userId })
         .sort({ createdAt: -1 })

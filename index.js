@@ -656,6 +656,24 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 // ── SHORT URL REDIRECT ──
 
+/**
+ * @swagger
+ * /u/{shortId}:
+ *   get:
+ *     summary: Redirect to original URL
+ *     description: Redirects the user to the original URL and tracks the click.
+ *     parameters:
+ *       - in: path
+ *         name: shortId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       302:
+ *         description: Redirects to the original URL
+ *       404:
+ *         description: Short URL not found
+ */
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
 
