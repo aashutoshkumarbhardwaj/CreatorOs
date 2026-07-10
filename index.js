@@ -105,6 +105,7 @@ const services = require('./services.config');
 const User = require('./model/user');
 const Creator = require('./model/creator');
 const Invite = require('./model/invite');
+const BioProfile = require('./model/bioProfile');
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
@@ -138,10 +139,11 @@ app.use('/api/settings', protect, settingsRoutes);
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
-const uploadDir = "/tmp";
+const os = require('os');
+const uploadDir = os.tmpdir();
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) { cb(null, "/tmp"); },
+    destination: function (req, file, cb) { cb(null, uploadDir); },
     filename: function (req, file, cb) {
         let sanitizedFilename = path.basename(file.originalname);
         sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
@@ -465,14 +467,59 @@ app.get('/bio', protect, asyncHandler(async (req, res) => {
 
 // Save bio data
 app.post('/bio/save', protect, asyncHandler(async (req, res) => {
-    // Wire to BioProfile model later
-    return res.json({ success: true });
+    const BioProfile = require('./model/bioProfile');
+    const userDoc = await User.findById(req.user.id);
+    if (!userDoc) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const userHandle = handle || userDoc.alias;
+    
+    if (!userHandle) {
+         return res.status(400).json({ success: false, message: 'Handle is required' });
+    }
+    
+    if (handle && handle !== userDoc.alias) {
+        userDoc.alias = handle;
+        await userDoc.save();
+    }
+    
+    const updateData = {
+        userId: userDoc._id,
+        handle: userHandle,
+        name: name || userDoc.name,
+        bio: bio || userDoc.bio,
+        tags: tags || [],
+        avatarUrl: avatarUrl || userDoc.avatar,
+        links: links || []
+    };
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { userId: userDoc._id },
+        updateData,
+        { new: true, upsert: true }
+    );
+    
+    return res.json({ success: true, data: bioProfile });
 }));
 
 // Track link click
 app.post('/bio/track/:linkId', asyncHandler(async (req, res) => {
-    // Wire to analytics later
-    return res.json({ tracked: true });
+    const BioProfile = require('./model/bioProfile');
+    const { linkId } = req.params;
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { "links._id": linkId },
+        { $inc: { "stats.clicks": 1 } },
+        { new: true }
+    );
+    
+    if (!bioProfile) {
+        return res.status(404).json({ success: false, message: 'Link not found' });
+    }
+    
+    return res.json({ success: true, tracked: true });
 }));
 
 // Public profile — anyone can visit creatoros.com/@handle
@@ -488,27 +535,23 @@ app.get('/@:handle', asyncHandler(async (req, res) => {
 
     res.setCacheStatus('MISS');
 
-    // Replace with DB lookup when BioProfile model is ready:
-    // const bioProfile = await BioProfile.findOne({ handle }).lean();
+    const bioProfile = await BioProfile.findOne({ handle }).lean();
+
+    if (!bioProfile) {
+        return res.status(404).render('404', { url: req.originalUrl });
+    }
 
     const profile = {
-        name: 'Sudeepti Singh',
+        name: bioProfile.name || handle,
         handle,
-        bio: 'AI/ML Enthusiast | Creator | B.Tech CS @ JUET',
-        tags: ['AI/ML', 'Creator', 'Open Source'],
-        avatarUrl: null,
-        initials: 'SS',
-        stats: { links: 6, views: '1.2K', clicks: '342' },
+        bio: bioProfile.bio || '',
+        tags: bioProfile.tags || [],
+        avatarUrl: bioProfile.avatarUrl || null,
+        initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
+        stats: bioProfile.stats || { links: bioProfile.links?.length || 0, views: 0, clicks: 0 },
     };
 
-    const links = [
-        { id: 1, type: 'instagram', icon: '📸', label: 'Instagram',  url: 'https://instagram.com/', category: 'social' },
-        { id: 2, type: 'youtube',   icon: '🎥', label: 'YouTube',    url: 'https://youtube.com/',   category: 'social' },
-        { id: 3, type: 'github',    icon: '💻', label: 'GitHub',     url: 'https://github.com/',    category: 'work'   },
-        { id: 4, type: 'linkedin',  icon: '💼', label: 'LinkedIn',   url: 'https://linkedin.com/',  category: 'work'   },
-        { id: 5, type: 'portfolio', icon: '🌐', label: 'Portfolio',  url: 'https://portfolio.dev/', category: 'work'   },
-        { id: 6, type: 'email',     icon: '📧', label: 'Contact Me', url: 'mailto:hello@example.com', category: 'other' },
-    ];
+    const links = bioProfile.links || [];
 
     const cacheData = { profile, links };
     await setProfileInCache(handle, cacheData);
@@ -623,7 +666,13 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
-                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+                $push: {
+                    visitHistory: {
+                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $sort: { timestamp: -1 },
+                        $slice: 1000,
+                    },
+                },
             },
             { new: true }
         );

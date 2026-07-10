@@ -36,10 +36,22 @@
         // Sidebar Mobile Toggle
         const sidebarBtn = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
-        if(sidebarBtn) {
-            sidebarBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('show');
-            });
+        const layout = document.getElementById('dashboardLayout');
+        
+        if (layout) {
+            // Hide by default on screens < 768px
+            if (window.innerWidth < 768 || localStorage.getItem('creatorosSidebarCollapsed') === 'true') {
+                layout.classList.add('sidebar-collapsed');
+                if (sidebarBtn) sidebarBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            if (sidebarBtn) {
+                sidebarBtn.addEventListener('click', () => {
+                    const isCollapsed = layout.classList.toggle('sidebar-collapsed');
+                    sidebarBtn.setAttribute('aria-expanded', String(!isCollapsed));
+                    localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
+                });
+            }
         }
     });
 </script>

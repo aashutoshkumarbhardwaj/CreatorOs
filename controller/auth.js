@@ -184,6 +184,14 @@ const signup = asyncHandler(async (req, res, next) => {
     const { sendVerificationEmail } = require("../utils/email");
 
     const { name, email, password } = req.body || {};
+
+    if (!name || !email || !password) {
+        if (wantsHtml(req)) {
+            return res.status(400).render("signup", { error: "Name, email, and password are required" });
+        }
+        return res.status(400).json({ success: false, message: "Name, email, and password are required" });
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });

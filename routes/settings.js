@@ -11,6 +11,7 @@ const AnalyticsSnapshot = require('../model/analyticsSnapshot');
 const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
 const { sendDeletionConfirmationEmail, isEmailTransportConfigured } = require('../utils/email');
+const { validate, updateProfileSchema } = require('../middleware/validators');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -73,7 +74,7 @@ function daysSince(date) {
  *       500:
  *         description: Internal server error
  */
-router.put('/profile', preventContributorWrites, asyncHandler(async (req, res) => {
+router.put('/profile', preventContributorWrites, validate(updateProfileSchema, 'body'), asyncHandler(async (req, res) => {
     const { name, alias, bio } = req.body;
     
     const user = await User.findById(req.user.id);

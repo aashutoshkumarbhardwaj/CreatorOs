@@ -53,6 +53,12 @@ const suggestionSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters').optional(),
+  alias: z.string().min(1, 'Alias is required').max(50, 'Alias must be at most 50 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Alias can only contain letters, numbers, hyphens and underscores').optional(),
+  bio: z.string().max(500, 'Bio must be at most 500 characters').optional(),
+});
+
 const objectIdParamSchema = z.object({
   creatorId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid creatorId'),
 });
@@ -88,6 +94,7 @@ module.exports = {
     urlShortenSchema,
     urlQRColorsSchema,
     suggestionSchema,
+    updateProfileSchema,
     objectIdParamSchema,
     shortIdParamSchema,
     validate,

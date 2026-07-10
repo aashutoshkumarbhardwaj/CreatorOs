@@ -51,10 +51,12 @@ const userSchema = new mongoose.Schema(
         
         alias: {
             type: String,
+            maxlength: 50,
         },
         
         bio: {
             type: String,
+            maxlength: 500,
         },
         
         twoFactorEnabled: {
