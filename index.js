@@ -547,7 +547,7 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
 // ── FILE UPLOAD POST ──
 
-const { uploadToS3 } = require('./utils/s3Upload');
+const { uploadToFreeStorage } = require('./utils/cloudinaryUpload');
 
 app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -556,7 +556,7 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
     let fileUrl = null;
     try {
-        fileUrl = await uploadToS3(req.file.path, req.file.originalname, req.file.mimetype);
+        fileUrl = await uploadToFreeStorage(req.file.path, req.file.originalname, req.file.mimetype);
     } catch (error) {
         return res.status(500).json({ error: 'Failed to upload file to cloud storage' });
     } finally {
