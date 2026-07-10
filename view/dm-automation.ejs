@@ -1775,7 +1775,7 @@
     <%- include('partials/layout/sidebar', { activeNav: 'dm-automation' }) %>
 
     <!-- Main Panel -->
-    <main class="main">
+    <main class="main" id="main-content" tabindex="-1">
       
       <!-- Top Navigation -->
       <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>

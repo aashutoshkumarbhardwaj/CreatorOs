@@ -1617,7 +1617,7 @@
         <%- include('partials/layout/sidebar', { activeNav: 'my-links' }) %>
 
         <!-- Main Workspace Panel -->
-        <main class="main">
+        <main class="main" id="main-content" tabindex="-1">
             <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
             <section class="content">
@@ -1784,5 +1784,4 @@
     <%- include('partials/layout/scripts') %>
 </body>
 </html>
-
 

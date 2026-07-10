@@ -34,7 +34,7 @@
     <div class="workspace-layout settings-layout" id="dashboardLayout">
         <%- include('partials/layout/sidebar', { activeNav: 'settings' }) %>
 
-        <main class="workspace-main settings-main">
+        <main class="workspace-main settings-main" id="main-content" tabindex="-1">
             <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
             <div class="settings-content">
