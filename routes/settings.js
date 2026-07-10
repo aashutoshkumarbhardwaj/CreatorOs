@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = require('../model/user');
 const Url = require('../model/url');
@@ -9,6 +10,7 @@ const Creator = require('../model/creator');
 const AnalyticsSnapshot = require('../model/analyticsSnapshot');
 const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
+const { sendDeletionConfirmationEmail, isEmailTransportConfigured } = require('../utils/email');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -195,6 +197,161 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
     });
 }));
 
+// POST /api/settings/account/request-deletion
+
+/**
+ * @swagger
+ * /account/request-deletion:
+ *   post:
+ *     summary: POST request for /account/request-deletion
+ *     description: Requests account deletion with password verification and sends confirmation email.
+ *     responses:
+ *       200:
+ *         description: Deletion request scheduled
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/account/request-deletion', preventContributorWrites, asyncHandler(async (req, res) => {
+    const { password } = req.body;
+    
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required to request account deletion' });
+    }
+    
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user.scheduledDeletionAt && !user.deletionConfirmed) {
+        return res.status(400).json({ error: 'Account deletion is already pending. Check your email for the confirmation link.' });
+    }
+    
+    if (user.authProvider === 'local') {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Incorrect password' });
+        }
+    } else {
+        if (password !== 'google-auth') {
+            return res.status(401).json({ error: 'For Google-authenticated accounts, please use "google-auth" as password' });
+        }
+    }
+    
+    const scheduledDate = new Date();
+    scheduledDate.setDate(scheduledDate.getDate() + 30);
+    
+    const confirmationToken = crypto.randomBytes(32).toString('hex');
+    
+    user.scheduledDeletionAt = scheduledDate;
+    user.deletionConfirmed = false;
+    user.deletionConfirmationToken = confirmationToken;
+    await user.save();
+    
+    if (isEmailTransportConfigured()) {
+        try {
+            const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const confirmLink = `${appUrl}/api/settings/account/confirm-deletion?token=${confirmationToken}`;
+            
+            await sendDeletionConfirmationEmail({
+                to: user.email,
+                confirmLink,
+                userName: user.name,
+                scheduledDate: scheduledDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })
+            });
+        } catch (emailError) {
+            console.error('[account-deletion] Failed to send confirmation email:', emailError);
+        }
+    }
+    
+    res.json({ 
+        message: 'Account deletion requested. Please check your email to confirm the deletion.',
+        scheduledDeletionAt: scheduledDate.toISOString(),
+        daysUntilDeletion: 30
+    });
+}));
+
+// GET /api/settings/account/confirm-deletion
+
+/**
+ * @swagger
+ * /account/confirm-deletion:
+ *   get:
+ *     summary: GET request for /account/confirm-deletion
+ *     description: Confirms account deletion via token from email.
+ *     responses:
+ *       200:
+ *         description: Account deletion confirmed
+ *       400:
+ *         description: Invalid token
+ *       404:
+ *         description: User not found
+ */
+router.get('/account/confirm-deletion', asyncHandler(async (req, res) => {
+    const { token } = req.query;
+    
+    if (!token) {
+        return res.status(400).json({ error: 'Invalid confirmation token' });
+    }
+    
+    const user = await User.findOne({ deletionConfirmationToken: token });
+    if (!user) {
+        return res.status(404).json({ error: 'Invalid or expired confirmation token' });
+    }
+    
+    if (!user.scheduledDeletionAt) {
+        return res.status(400).json({ error: 'No deletion scheduled for this account' });
+    }
+    
+    if (user.deletionConfirmed) {
+        return res.redirect('/settings?message=deletion_already_confirmed');
+    }
+    
+    user.deletionConfirmed = true;
+    await user.save();
+    
+    res.redirect('/settings?message=deletion_confirmed');
+}));
+
+// POST /api/settings/account/cancel-deletion
+
+/**
+ * @swagger
+ * /account/cancel-deletion:
+ *   post:
+ *     summary: POST request for /account/cancel-deletion
+ *     description: Cancels a pending account deletion request.
+ *     responses:
+ *       200:
+ *         description: Deletion cancelled
+ *       400:
+ *         description: No deletion pending
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/account/cancel-deletion', preventContributorWrites, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (!user.scheduledDeletionAt) {
+        return res.status(400).json({ error: 'No account deletion is pending' });
+    }
+    
+    user.scheduledDeletionAt = null;
+    user.deletionConfirmed = false;
+    user.deletionConfirmationToken = null;
+    await user.save();
+    
+    res.json({ message: 'Account deletion request cancelled successfully' });
+}));
+
 // DELETE /api/settings/account
 
 /**
@@ -202,12 +359,12 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
  * /account:
  *   delete:
  *     summary: DELETE request for /account
- *     description: Deletes operations for /account.
+ *     description: Executes pending account deletion after 30-day grace period.
  *     responses:
  *       200:
- *         description: Successful response
+ *         description: Account deleted successfully
  *       400:
- *         description: Bad request
+ *         description: No pending deletion or not confirmed
  *       401:
  *         description: Unauthorized
  *       500:
@@ -216,6 +373,19 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
 router.delete('/account', preventContributorWrites, asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (!user.scheduledDeletionAt) {
+        return res.status(400).json({ error: 'No account deletion is scheduled. Please request deletion first.' });
+    }
+    
+    if (!user.deletionConfirmed) {
+        return res.status(400).json({ error: 'Account deletion is not confirmed. Please confirm via the email sent to you.' });
+    }
+    
+    if (new Date() < new Date(user.scheduledDeletionAt)) {
+        const daysRemaining = Math.ceil((new Date(user.scheduledDeletionAt) - new Date()) / (1000 * 60 * 60 * 24));
+        return res.status(400).json({ error: `Account deletion is scheduled for the future. ${daysRemaining} day(s) remaining.` });
+    }
 
     const session = await mongoose.startSession();
     try {

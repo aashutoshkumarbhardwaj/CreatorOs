@@ -107,6 +107,23 @@ const userSchema = new mongoose.Schema(
             type: Date,
             index: true,
         },
+
+        scheduledDeletionAt: {
+            type: Date,
+            index: true,
+        },
+
+        deletionConfirmed: {
+            type: Boolean,
+            default: false,
+        },
+
+        deletionConfirmationToken: {
+            type: String,
+            sparse: true,
+            unique: true,
+            index: true,
+        },
     },
     {
         timestamps: true,

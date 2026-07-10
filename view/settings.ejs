@@ -28,7 +28,9 @@
         preferences: user.preferences,
         passwordAgeDays: user.passwordAgeDays,
         billing: user.billing,
-        isGuestContributor: isGuestContributor
+        isGuestContributor: isGuestContributor,
+        scheduledDeletionAt: user.scheduledDeletionAt,
+        deletionConfirmed: user.deletionConfirmed
     }) %>'>
 
     <div class="workspace-layout settings-layout" id="dashboardLayout">
@@ -229,6 +231,47 @@
             <div class="modal-actions">
                 <button type="button" class="btn-action" id="invoice-download-btn">Download PDF</button>
                 <button type="button" class="btn-secondary" id="invoice-modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deletion-modal" aria-hidden="true">
+        <div class="modal-card deletion-modal" role="dialog" aria-labelledby="deletion-modal-title">
+            <div class="deletion-modal-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <h3 id="deletion-modal-title">Delete Account</h3>
+            </div>
+            <div class="deletion-modal-body">
+                <p class="deletion-warning">This action is <strong>irreversible</strong>. Your account and all associated data will be permanently deleted after a 30-day grace period.</p>
+                <div class="deletion-info-box">
+                    <h4>What will be deleted:</h4>
+                    <ul>
+                        <li>All your links and analytics</li>
+                        <li>Your creator profile and content</li>
+                        <li>Your collaborations and invites</li>
+                        <li>All personal data and preferences</li>
+                    </ul>
+                </div>
+                <div class="deletion-info-box">
+                    <h4>30-Day Grace Period:</h4>
+                    <p>After confirmation, your account will be scheduled for deletion in 30 days. During this period, you can cancel the deletion request by logging into your account.</p>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label" for="deletion-password">Enter your password to confirm</label>
+                    <input type="password" id="deletion-password" class="form-input" autocomplete="current-password" placeholder="Enter your password">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label" for="deletion-confirm-text">Type <strong>DELETE</strong> to confirm</label>
+                    <input type="text" id="deletion-confirm-text" class="form-input" placeholder="Type DELETE" autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="deletion-modal-close">Cancel</button>
+                <button type="button" class="btn-danger" id="confirm-deletion-btn">Delete Account</button>
             </div>
         </div>
     </div>

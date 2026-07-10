@@ -226,6 +226,8 @@ function buildAccountViewModel(userDoc, fallbackUser) {
             ],
         },
         initials,
+        scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
+        deletionConfirmed: userDoc?.deletionConfirmed || false,
     };
 }
 
@@ -392,7 +394,7 @@ app.get('/settings', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
+            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription scheduledDeletionAt deletionConfirmed')
             .lean();
 
     res.render('settings', {
