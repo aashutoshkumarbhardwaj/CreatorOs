@@ -105,17 +105,28 @@ router.post("/login", loginValidator, login);
  * @swagger
  * /login/contributor:
  *   post:
- *     summary: POST request for /login/contributor
+ *     summary: Authenticate contributor
  *     description: Authenticates a contributor account.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
+ *         description: Successfully authenticated
  *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
+ *         description: Invalid credentials
  */
 router.post("/login/contributor", loginValidator, loginAsContributor);
 

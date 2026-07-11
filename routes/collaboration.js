@@ -7,37 +7,50 @@ const { inviteCollaboratorValidator } = require('../middleware/validators');
 
 /**
  * @swagger
- * /:
+ * /services/creator-crm:
  *   get:
- *     summary: GET request for /
- *     description: Retrieves the main resource or renders the root page.
+ *     summary: Get Creator CRM page
+ *     description: Retrieves the main page for the Creator CRM (Collaboration) service.
  *     responses:
  *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
+ *         description: Successfully retrieved the CRM page
  *       401:
  *         description: Unauthorized
- *       500:
- *         description: Internal server error
  */
 router.get('/', getCreatorCrmPage);
 
 /**
  * @swagger
- * /invite:
+ * /services/creator-crm/invite:
  *   post:
- *     summary: POST request for /invite
- *     description: Sends a new collaboration invitation.
+ *     summary: Send collaborator invite
+ *     description: Sends an email invitation to a new collaborator to join the CRM.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - role
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the collaborator
+ *               role:
+ *                 type: string
+ *                 description: The role assigned to the collaborator
  *     responses:
  *       200:
- *         description: Successful response
+ *         description: Invitation sent successfully
  *       400:
- *         description: Bad request
+ *         description: Invalid request body
  *       401:
  *         description: Unauthorized
- *       500:
- *         description: Internal server error
+ *       403:
+ *         description: Forbidden (Contributor writes are prevented)
  */
 router.post('/invite', preventContributorWrites, inviteCollaboratorValidator, sendCollaboratorInvite);
 
