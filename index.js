@@ -24,6 +24,11 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
+const urlRoute = require("./routes/url");
+const userRoute = require("./routes/user");
+const analyticsRoute = require("./routes/analytics");
+const collaborationRoute = require("./routes/collaboration");
+const aiRoute = require("./routes/ai");
 const { BRAND } = require('./utils/brand');
 
 const connectDB = require("./connect");
@@ -125,6 +130,7 @@ app.get('/services/bio-builder', (req, res) => {
 const Url = require('./model/url');
 
 app.use('/api/urls', urlRoutes);
+app.use('/api/ai', aiRoute);
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
