@@ -485,6 +485,22 @@
                         </div>
                     <% } %>
 
+                    <a class="social-btn" href="/auth/google" style="background-color: var(--white); border: var(--border-width) solid var(--black); display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 1.25rem; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.125rem; color: var(--black); box-shadow: var(--shadow-solid); transition: all 0.15s ease; margin-bottom: 2rem; text-decoration: none; cursor: pointer;">
+                        <svg class="social-icon" viewBox="0 0 48 48" style="width: 24px; height: 24px;">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
+                            <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
+                            <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
+                        </svg>
+                        Sign up with Google
+                    </a>
+                    
+                    <div style="display: flex; align-items: center; text-align: center; margin: 2rem 0; font-weight: 700; color: var(--black); text-transform: uppercase; letter-spacing: 2px; font-size: 0.875rem;">
+                        <span style="flex: 1; border-bottom: 2px solid var(--black); margin-right: 1rem;"></span>
+                        OR EMAIL
+                        <span style="flex: 1; border-bottom: 2px solid var(--black); margin-left: 1rem;"></span>
+                    </div>
+
                     <form action="/signup" method="POST">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <div class="form-group">
