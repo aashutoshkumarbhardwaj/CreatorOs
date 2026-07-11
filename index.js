@@ -136,6 +136,13 @@ app.use('/api/instagram', protect, instagramRoutes);
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
 
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
+const domainRoute = require('./routes/domain');
+app.use('/api/domain', domainRoute);
+const sponsorRoute = require('./routes/sponsor');
+app.use('/api/sponsors', sponsorRoute);
+
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
