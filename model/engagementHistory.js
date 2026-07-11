@@ -25,6 +25,9 @@ const engagementHistorySchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Compound index for optimal querying in /api/analytics
+engagementHistorySchema.index({ creatorId: 1, createdAt: -1 });
+
 const EngagementHistoryModel =
     mongoose.models.EngagementHistory ||
     mongoose.model("EngagementHistory", engagementHistorySchema);
