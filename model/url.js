@@ -54,10 +54,11 @@ const urlSchema = new mongoose.Schema({
                 enum: ["qr", "direct", "unknown"],
                 default: "unknown",
             },
+            x: { type: Number },
+            y: { type: Number },
         },
     ],
 });
-
 
 urlSchema.statics.listForUser = async function (userId, limit = 100) {
     return this.find({ userId })

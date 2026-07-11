@@ -658,15 +658,23 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
+    const x = req.query.x ? parseFloat(req.query.x) : null;
+    const y = req.query.y ? parseFloat(req.query.y) : null;
 
     try {
+        const visitData = { timestamp: new Date(), source: 'direct' };
+        if (x !== null && y !== null) {
+            visitData.x = x;
+            visitData.y = y;
+        }
+        
         const entry = await Url.findOneAndUpdate(
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
                 $push: {
                     visitHistory: {
-                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $each: [visitData],
                         $sort: { timestamp: -1 },
                         $slice: 1000,
                     },
