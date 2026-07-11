@@ -125,6 +125,9 @@ app.get('/services/bio-builder', (req, res) => {
 const Url = require('./model/url');
 
 app.use('/api/urls', urlRoutes);
+app.use('/api/ai', aiRoute);
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
