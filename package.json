@@ -10,7 +10,8 @@
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
-    "test": "jest"
+    "test": "jest",
+    "worker": "node worker.js"
   },
   "keywords": [],
   "author": "",
