@@ -109,6 +109,17 @@ const userSchema = new mongoose.Schema(
             type: Date,
             index: true,
         },
+        
+        customDomain: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+
+        domainVerified: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

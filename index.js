@@ -122,6 +122,11 @@ app.get('/services/bio-builder', (req, res) => {
 });
 
 
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
+const domainRoute = require('./routes/domain');
+app.use('/api/domain', domainRoute);
+
 const Url = require('./model/url');
 
 app.use('/api/urls', urlRoutes);
