@@ -8,8 +8,11 @@ const {
     handleUpdateQRColors,
     handleGetAnalytics,
 } = require('../controller/url');
-const protect = require('../middleware/auth');
-const { preventContributorWrites } = require('../middleware/auth');
+const {
+    protect,
+    preventContributorWrites,
+} = require('../middleware/auth');
+
 const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
 const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
 
