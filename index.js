@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== "production") {
     dotenv.config({ path: ".env.local", override: true });
 }
 const cookieParser = require("cookie-parser");
+const mongoSanitize = require("express-mongo-sanitize");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
@@ -45,6 +46,7 @@ app.use(express.json({
         req.rawBody = buf;
     }
 }));
+app.use(mongoSanitize());
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
