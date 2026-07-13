@@ -175,10 +175,20 @@ class MockUserModel {
     }
 
     static async findOne(query) {
-        let found = null;
-        if (query.email) {
-            found = mockUsers.find(u => u.email === query.email);
-        }
+        const keys = Object.keys(query);
+        const found = mockUsers.find((u) => {
+            return keys.every((k) => {
+                const userVal = u[k];
+                const queryVal = query[k];
+                if (userVal === undefined || userVal === null) {
+                    return queryVal === undefined || queryVal === null;
+                }
+                if (queryVal === undefined || queryVal === null) {
+                    return false;
+                }
+                return userVal.toString() === queryVal.toString();
+            });
+        });
         return found ? new MockUserModel(found) : null;
     }
 
