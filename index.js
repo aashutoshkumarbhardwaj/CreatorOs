@@ -150,7 +150,25 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + sanitizedFilename);
     }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+const fileFilter = (req, file, cb) => {
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !ALLOWED_EXTENSIONS.includes(fileExtension)) {
+        return cb(new Error('Only image files (JPEG, PNG, WebP, GIF) are allowed.'), false);
+    }
+
+    cb(null, true);
+};
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
