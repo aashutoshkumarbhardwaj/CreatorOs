@@ -1940,11 +1940,15 @@
               <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
                 <% contacts.forEach(function(c) { %>
                   <tr>
-                    <td class="contact-company"><%= c.company %></td>
-                    <td><%= c.contact %></td>
-                    <td><%= c.lastActivity %></td>
-                    <td><span class="status-chip chip-<%= c.statusClass %>"><%= c.status %></span></td>
-                    <td><span class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span></td>
+                    <td class="contact-company"><%= c.company || 'N/A' %></td>
+                    <td><%= c.name %></td>
+                    <td><%= new Date(c.updatedAt).toLocaleDateString() %></td>
+                    <td><span class="status-chip chip-<%= c.status ? c.status.toLowerCase() : 'lead' %>"><%= c.status %></span></td>
+                    <td>
+                      <span class="action-icon" style="cursor: pointer;" onclick="deleteSponsor('<%= c._id %>')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </span>
+                    </td>
                   </tr>
                 <% }) %>
               <% } else { %>
@@ -2025,5 +2029,17 @@
 
 </div><!-- /layout -->
     <%- include('partials/layout/scripts') %>
+    <script>
+      async function deleteSponsor(id) {
+        if (!confirm('Are you sure you want to delete this contact?')) return;
+        try {
+          const res = await fetch(`/api/crm/sponsors/${id}`, { method: 'DELETE' });
+          if (res.ok) window.location.reload();
+          else alert('Failed to delete sponsor');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    </script>
 </body>
 </html>

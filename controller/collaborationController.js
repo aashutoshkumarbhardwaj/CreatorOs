@@ -35,9 +35,15 @@ const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
     .limit(12)
     .lean();
 
+  const Sponsor = require('../model/sponsor');
+  const sponsors = await Sponsor.find({ creatorId: req.user.id })
+    .sort({ createdAt: -1 })
+    .lean();
+
   res.render('creator-crm', {
     user: buildAccountViewModel(userDoc, req.user),
     invites,
+    contacts: sponsors, // Pass sponsors to the view as 'contacts'
     success: null,
     error: null,
   });

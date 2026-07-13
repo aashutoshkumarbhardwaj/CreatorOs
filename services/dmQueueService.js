@@ -79,11 +79,35 @@ if (REDIS_URI) {
 
 // Optional: you can define a dummy function for actually sending a DM
 async function sendInstagramDM(recipientId, text) {
-    // In reality, this would make an Axios/Fetch call to the Graph API
-    // e.g. await axios.post(`https://graph.facebook.com/v19.0/me/messages`, ...)
-    console.log(`[Instagram API] Sending DM to ${recipientId}: "${text}"`);
+    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+    if (!accessToken) {
+        console.warn('[Instagram API] INSTAGRAM_ACCESS_TOKEN is missing. Sending DM mock.');
+        return true;
+    }
+
+    const url = `https://graph.instagram.com/v19.0/me/messages?access_token=${accessToken}`;
     
-    
+    const body = {
+        recipient: { id: recipientId },
+        message: { text }
+    };
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`[Instagram API] Failed to send DM: ${JSON.stringify(errorData)}`);
+        
+        const error = new Error('Failed to send Instagram DM');
+        if (response.status === 429) error.code = 429;
+        throw error;
+    }
+
+    console.log(`[Instagram API] Successfully sent DM to ${recipientId}: "${text}"`);
     return true;
 }
 

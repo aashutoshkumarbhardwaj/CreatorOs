@@ -136,6 +136,9 @@ app.use('/api/instagram', protect, instagramRoutes);
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
 
+const crmRoutes = require('./routes/crm');
+app.use('/api/crm', crmRoutes); // Note: crmRoutes already uses protect middleware internally
+
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
