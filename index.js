@@ -139,6 +139,9 @@ app.use('/api/settings', protect, settingsRoutes);
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
+const aiRoutes = require('./routes/ai');
+app.use('/api/ai', protect, aiRoutes);
+
 const os = require('os');
 const uploadDir = os.tmpdir();
 

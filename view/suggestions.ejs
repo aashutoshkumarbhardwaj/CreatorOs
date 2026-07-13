@@ -910,7 +910,7 @@
   };
 
   // ── GENERATE ──
-  function generateCaptions() {
+  async function generateCaptions() {
     const topic = document.getElementById('topicInput').value.trim();
     if (!topic) {
       showToast('Please enter a topic first!');
@@ -928,30 +928,54 @@
     const selectedPlatforms = [...document.querySelectorAll('.platform-chip.selected')]
       .map(el => el.dataset.platform);
 
-    setTimeout(() => {
-      btn.classList.remove('loading');
-      renderCaptions(mood, topic, selectedPlatforms);
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Target platforms: ${selectedPlatforms.join(', ')}. Topic: ${topic}. Mood/Vibe: ${mood}`,
+          type: 'caption'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        showToast(data.error || 'Failed to generate captions');
+        btn.classList.remove('loading');
+        return;
+      }
+
+      renderAiResponse(data.result);
       updateHashtags(selectedPlatforms[0] || 'instagram');
       updateUsage();
-    }, 1200);
+    } catch (err) {
+      console.error(err);
+      showToast('An error occurred during generation');
+    }
+    
+    btn.classList.remove('loading');
   }
 
-  function renderCaptions(mood, topic, platforms) {
+  function renderAiResponse(text) {
     const list = document.getElementById('captionsList');
     const empty = document.getElementById('emptyState');
     if (empty) empty.remove();
 
-    const captions = captionTemplates[mood] || captionTemplates.energetic;
-
-    list.innerHTML = captions.map((c, i) => `
-      <div class="caption-card" style="animation-delay:${i*0.08}s">
-        <span class="caption-option-label">${c.label}</span>
-        <p class="caption-text">${c.text}</p>
+    // Extract hashtags from the text
+    const tagsMatch = text.match(/#[\w]+/g) || [];
+    // Remove hashtags from text for cleaner display, or just display the whole text. 
+    // Here we'll just display the whole text including tags in the main body, and also as clickable tags if we want.
+    
+    list.innerHTML = `
+      <div class="caption-card" style="animation-delay:0.08s">
+        <span class="caption-option-label">AI GENERATED</span>
+        <p class="caption-text">${text.replace(/\n/g, '<br>')}</p>
         <div class="caption-tags">
-          ${c.tags.map(t => `<span class="caption-tag" onclick="copyText('${t}')">${t}</span>`).join('')}
+          ${tagsMatch.map(t => `<span class="caption-tag" onclick="copyText('${t}')">${t}</span>`).join('')}
         </div>
         <div class="caption-actions">
-          <button class="caption-btn" onclick="copyCaption(${i})">
+          <button class="caption-btn" onclick="copyCaption(0)">
             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             COPY
           </button>
@@ -961,7 +985,7 @@
           </button>
         </div>
       </div>
-    `).join('');
+    `;
   }
 
   function updateHashtags(platform) {
