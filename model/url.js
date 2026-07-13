@@ -54,6 +54,8 @@ const urlSchema = new mongoose.Schema({
                 enum: ["qr", "direct", "unknown"],
                 default: "unknown",
             },
+            x: { type: Number },
+            y: { type: Number }
         },
     ],
 });

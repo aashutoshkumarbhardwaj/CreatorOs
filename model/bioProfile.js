@@ -11,6 +11,7 @@ const linkSchema = new mongoose.Schema({
 const bioProfileSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     handle: { type: String, required: true, unique: true, index: true },
+    customDomain: { type: String, unique: true, sparse: true, trim: true },
     name: { type: String, required: true },
     bio: { type: String },
     tags: [{ type: String }],

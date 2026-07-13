@@ -79,8 +79,10 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   const inviteUrl = `${process.env.APP_URL || `${req.protocol}://${req.get('host')}`}/invites/accept/${token}`;
   const userDoc = await User.findById(req.user.id).select('name email').lean();
 
+  const { addEmailJob } = require('../services/emailQueueService');
+
   try {
-    await sendInvitationEmail({
+    await addEmailJob({
       to: invite.email,
       inviterName: userDoc?.name || 'CreatorOS',
       projectName: invite.projectName,

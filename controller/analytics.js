@@ -65,4 +65,30 @@ const triggerRefresh = asyncHandler(async (req, res) => {
     res.json({ success: true, message: "Refresh successful", data: snapshot });
 });
 
-module.exports = { getSnapshots, getLatestSnapshot, triggerRefresh, getEngagementHistory };
+const getHeatmapData = asyncHandler(async (req, res) => {
+    const Url = require("../model/url");
+    const link = await Url.findById(req.params.linkId).lean();
+    if (!link) {
+        return res.status(404).json({ success: false, message: "Link not found" });
+    }
+
+    // Ensure the user owns this link (or is a collaborator)
+    // For simplicity:
+    if (link.userId.toString() !== req.user.id) {
+        return res.status(401).json({ success: false, message: "Not authorized" });
+    }
+
+    const heatmapData = link.visitHistory
+        .filter(visit => visit.x !== undefined && visit.y !== undefined)
+        .map(visit => ({ x: visit.x, y: visit.y }));
+
+    res.json({ success: true, data: heatmapData });
+});
+
+module.exports = {
+    getSnapshots,
+    getLatestSnapshot,
+    triggerRefresh,
+    getEngagementHistory,
+    getHeatmapData
+};

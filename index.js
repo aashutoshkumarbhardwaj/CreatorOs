@@ -142,6 +142,9 @@ app.use('/api/crm', crmRoutes); // Note: crmRoutes already uses protect middlewa
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
 
+const bioRoutes = require('./routes/bio');
+app.use('/api/bio', bioRoutes);
+
 const os = require('os');
 const uploadDir = os.tmpdir();
 
