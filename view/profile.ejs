@@ -6,16 +6,14 @@
     <%- include('./partials/_seo', {
         title: 'Profile',
         description: 'Creator profile on CreatorOS.',
-        canonical: 'https://titli-link-shortner.vercel.app/profile'
+        canonical: 'https://creatoros.com/profile'
     }) %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <%- include('./partials/_brand_head') %>
+    <!-- Google Fonts: loaded once from shared partial -->
+    <%- include('./partials/_fonts') %>
     <style>
         :root {
             --bg: #f5f1ea;
@@ -75,16 +73,10 @@
             gap: 0.75rem;
         }
 
-        .brand-mark {
-            width: 2.4rem;
-            height: 2.4rem;
-            display: grid;
-            place-items: center;
-            background: var(--accent-teal);
-            border: 2px solid var(--border);
-            box-shadow: var(--shadow-retro);
-            font-weight: 700;
-            color: #111;
+        .brand-logo {
+            display: block;
+            height: 42px;
+            width: auto;
             flex: 0 0 auto;
         }
 
@@ -461,7 +453,7 @@
         <main class="profile-card">
             <header class="page-header">
                 <div class="brand-block">
-                    <div class="brand-mark">CO</div>
+                    <img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo">
                     <div class="brand-copy">
                         <h1>Profile</h1>
                     </div>

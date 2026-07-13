@@ -83,12 +83,6 @@ async function sendInstagramDM(recipientId, text) {
     // e.g. await axios.post(`https://graph.facebook.com/v19.0/me/messages`, ...)
     console.log(`[Instagram API] Sending DM to ${recipientId}: "${text}"`);
     
-    // Simulate rate-limiting randomly for testing the queue logic
-    if (Math.random() < 0.2) {
-        const error = new Error('Instagram API Rate Limit Exceeded');
-        error.code = 429;
-        throw error;
-    }
     
     return true;
 }

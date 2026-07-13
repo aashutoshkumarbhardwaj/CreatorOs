@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid');
+const shortid = require('shortid');
 const QRCode = require('qrcode');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
@@ -68,7 +69,10 @@ function serializeLink(entry, hostBase) {
  * @returns {Promise<void>|void}
  */
 async function handleGenerateShortUrl(req, res) {
-    const { redirectUrl, title, customSlug, tag } = req.body;
+    // The Zod schema accepts either `redirectUrl` or `url` as an alias;
+    // normalize here so the rest of the function only deals with one field.
+    const { redirectUrl: redirectUrlField, url, title, customSlug, tag } = req.body;
+    const redirectUrl = redirectUrlField || url;
 
     let shortId = shortid();
     if (customSlug) {
@@ -79,23 +83,45 @@ async function handleGenerateShortUrl(req, res) {
         }
         shortId = slug;
     } else {
-        const existing = await Url.findOne({ shortId });
-        if (existing) {
+        let retries = 0;
+        const MAX_RETRIES = 5;
+        let existing = await Url.findOne({ shortId });
+        
+        while (existing && retries < MAX_RETRIES) {
             shortId = shortid();
+            existing = await Url.findOne({ shortId });
+            retries++;
+        }
+        
+        if (existing) {
+            return res.status(500).json({ error: 'Failed to generate a unique short URL. Please try again later.' });
         }
     }
 
     const allowedTags = ['active', 'social', 'campaign', 'general'];
     const linkTag = allowedTags.includes(tag) ? tag : 'active';
 
-    const entry = await Url.create({
-        shortId,
-        redirectUrl,
-        userId: req.user?.id || null,
-        title: deriveTitle(redirectUrl, title?.trim()),
-        tag: linkTag,
-        linkedAt: new Date(),
-    });
+    let entry;
+    try {
+        entry = await Url.create({
+            shortId,
+            redirectUrl,
+            userId: req.user?.id || null,
+            title: deriveTitle(redirectUrl, title?.trim()),
+            tag: linkTag,
+            linkedAt: new Date(),
+        });
+    } catch (err) {
+        // TOCTOU: two concurrent requests can both pass the findOne() check
+        // above before either create() resolves. The unique index on
+        // shortId (see model/url.js) is the real guard against duplicates;
+        // this catch turns the resulting MongoDB E11000 error into a clean
+        // 409 instead of an unhandled 500.
+        if (err && err.code === 11000) {
+            return res.status(409).json({ error: 'That slug is already taken. Try another.' });
+        }
+        throw err;
+    }
 
     const hostBase = `${req.protocol}://${req.get('host')}`;
 
@@ -160,12 +186,28 @@ const generateBase64QR = async (text, fg, bg) => {
     });
 };
 
-// ── Render Home Page (Dashboard) ──────────────────────────────────────────────
+// ── Render Home Page (Dashboard) with Pagination ──────────────────────────────
 const handleRenderDashboard = asyncHandler(async (req, res) => {
-    const allUrls = await Url.find({}).sort({ createdAt: -1 });
-    
+    // Implement cursor-based pagination for performance
+    // Prevent loading entire collection into memory on large datasets
+    const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+    const cursor = req.query.cursor;
+
+    const userId = req.user?.id || null;
+    const query = cursor ? { _id: { $lt: cursor }, userId } : { userId };
+    const allUrls = await Url.find(query)
+        .sort({ _id: -1 })
+        .limit(pageSize + 1)
+        .lean();
+
+    const hasNextPage = allUrls.length > pageSize;
+    const urls = allUrls.slice(0, pageSize);
+    const nextCursor = hasNextPage ? urls[urls.length - 1]?._id : null;
+
     return res.render("home", {
-        urls: allUrls,
+        urls: urls,
+        nextCursor: nextCursor,
+        hasMore: hasNextPage,
         id: null,
         shortUrl: null,
         qrCode: null,
@@ -180,19 +222,25 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
     const inputUrl = redirectUrl || url;
 
     if (!inputUrl || !isValidUrl(inputUrl)) {
-        const allUrls = await Url.find({}).sort({ createdAt: -1 });
+        // Implement cursor-based pagination to avoid loading all records
+        const pageSize = 20;
+        const allUrls = await Url.find({ userId: req.user?.id || null })
+            .sort({ _id: -1 })
+            .limit(pageSize)
+            .lean();
+
         return res.status(400).render("home", {
             urls: allUrls,
             error: "A valid HTTP or HTTPS URL is required",
-            id: null, 
-            shortUrl: null, 
+            id: null,
+            shortUrl: null,
             qrCode: null, 
             campaignName: ""
         });
     }
 
     const shortId = nanoid(8);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
     
     const fgColor = qrFgColor || "#1a1a1a";
@@ -206,10 +254,16 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
         qrFgColor: fgColor,
         qrBgColor: bgColor,
         qrGenerated: true,
+        userId: req.user?.id || null,
     });
 
     const qrCodeDataUrl = await generateBase64QR(shortUrl, fgColor, bgColor);
-    const allUrls = await Url.find({}).sort({ createdAt: -1 });
+    // Implement cursor-based pagination to prevent full table scans
+    const pageSize = 20;
+    const allUrls = await Url.find({ userId: req.user?.id || null })
+        .sort({ _id: -1 })
+        .limit(pageSize)
+        .lean();
 
     return res.render("home", {
         urls: allUrls,
@@ -230,7 +284,11 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
+
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
     const svgString = await QRCode.toString(shortUrl, {
@@ -263,7 +321,11 @@ const handleDownloadQRCode = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:8001';
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
+
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/u/${shortId}`;
 
     const pngBuffer = await QRCode.toBuffer(shortUrl, {
@@ -288,6 +350,16 @@ const handleUpdateQRColors = asyncHandler(async (req, res) => {
     const { shortId } = req.params;
     const { qrFgColor, qrBgColor } = req.body;
 
+    const entry = await Url.findOne({ shortId });
+
+    if (!entry) {
+        return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Not your URL", error: "Not your URL" });
+    }
+
     const updated = await Url.findOneAndUpdate(
         { shortId },
         {
@@ -298,10 +370,6 @@ const handleUpdateQRColors = asyncHandler(async (req, res) => {
         },
         { new: true }
     );
-
-    if (!updated) {
-        return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
-    }
 
     return res.json({
         success: true,
@@ -318,6 +386,10 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
 
     if (!entry) {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId?.toString() !== req.user.id) {
+        return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;
@@ -338,6 +410,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
 module.exports = {
     handleRenderDashboard,
     handleGenerateShortUrl,
+    handleGenerateShortUrlRender,
     handleGetQRCode,
     handleDownloadQRCode,
     handleUpdateQRColors,

@@ -6,16 +6,13 @@
     <%- include('./partials/_seo', {
         title: 'Verify Email',
         description: 'Verify your email address to activate your CreatorOS account.',
-        canonical: 'https://titli-link-shortner.vercel.app/verify-email',
+        canonical: 'https://creatoros.com/verify-email',
         robots: 'noindex,nofollow'
     }) %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%- include('./partials/_brand_head') %>
     <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -208,18 +205,25 @@
             <% if (expiredToken && userEmail) { %>
                 <div class="expired-section">
                     <p>Your verification link has expired. Request a new one below:</p>
+                    <% if (typeof verificationDeliveryUnavailable !== 'undefined' && verificationDeliveryUnavailable) { %>
+                        <p>Email delivery is temporarily unavailable, so resend is disabled right now.</p>
+                    <% } %>
                 </div>
             <% } %>
 
             <div class="actions">
                 <% if (expiredToken && userEmail) { %>
-                    <form method="POST" action="/resend-verification">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <input type="hidden" name="email" value="<%= userEmail %>">
-                        <button type="submit" class="btn btn-primary" style="width: 100%; border: none;">
-                            Resend Verification Email
-                        </button>
-                    </form>
+                    <% if (typeof verificationDeliveryUnavailable !== 'undefined' && verificationDeliveryUnavailable) { %>
+                        <a href="/resend-verification?email=<%= encodeURIComponent(userEmail) %>" class="btn btn-primary" aria-disabled="true" style="pointer-events: none; opacity: 0.6;">Resend Verification Email</a>
+                    <% } else { %>
+                        <form method="POST" action="/resend-verification">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="email" value="<%= userEmail %>">
+                            <button type="submit" class="btn btn-primary" style="width: 100%; border: none;">
+                                Resend Verification Email
+                            </button>
+                        </form>
+                    <% } %>
                 <% } %>
                 <a href="/signup" class="btn btn-secondary">Back to Signup</a>
             </div>

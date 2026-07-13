@@ -303,13 +303,7 @@ async function fetchPublicHtmlProfile(username) {
 
         const html = await response.text();
 
-        if (isPrivateProfile(html)) {
-            throw new InstagramProfileError(
-                'PRIVATE_PROFILE_UNSUPPORTED',
-                'This Instagram profile is private and cannot be fetched without authorized access.',
-                403
-            );
-        }
+      
 
         const ogTitle = extractMetaContent(html, 'og:title');
         const ogDescription = extractMetaContent(html, 'og:description');

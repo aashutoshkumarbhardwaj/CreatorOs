@@ -10,12 +10,14 @@ if (!fs.existsSync(partialsDir)) {
 
 // 1. Create the sidebar partial based on the extracted dashboard layout
 const sidebarContent = `<aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
-    <a class="brand" href="/dashboard">
-        <span class="brand-mark">CO</span>
-        <div>
-            <span class="brand-text">CreatorOS</span>
+    <a class="brand" href="/dashboard" aria-label="CreatorOS">
+        <span class="brand-mark" style="background:none;border:none;box-shadow:none;">
+            <img src="<%= BRAND.icon %>" alt="CreatorOS Icon" style="display:block;width:100%;height:100%;object-fit:contain;" />
+        </span>
+        <span class="brand-copy">
+            <img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo" style="display:block;height:42px;width:auto;max-width:100%;" />
             <span class="brand-version">v2.0 Beta</span>
-        </div>
+        </span>
     </a>
 
     <!-- Workspace section -->

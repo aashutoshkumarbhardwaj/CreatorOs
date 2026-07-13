@@ -1,9 +1,10 @@
 const express = require("express");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail } = require("../controller/auth");
+const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
+const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -51,11 +52,13 @@ if (googleAuthConfigured) {
                         user.avatar = googleUser.avatar || user.avatar;
                         user.authProvider = user.password ? user.authProvider : "google";
                         user.lastLoginAt = googleUser.lastLoginAt;
+                        user.isVerified = true;
                         await user.save();
                     } else {
                         user = await User.create({
                             ...googleUser,
                             authProvider: "google",
+                            isVerified: true,
                         });
                     }
 
@@ -115,6 +118,8 @@ router.get("/login", (req, res) => {
     res.render("login", {
         error: errorMessages[req.query.error] || req.query.error || null,
         googleAuthConfigured,
+        verificationUnavailable: req.query.verificationUnavailable === "1" || req.query.verificationUnavailable === "true",
+        unverifiedEmail: req.query.email || null,
     });
 });
 
@@ -135,7 +140,7 @@ router.get("/login", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/signup", signupValidator, signup);
+router.post("/signup", signupLimiter, signupValidator, signup);
 
 /**
  * @swagger
@@ -153,7 +158,7 @@ router.post("/signup", signupValidator, signup);
  *       500:
  *         description: Internal server error
  */
-router.post("/login", loginValidator, login);
+router.post("/login", loginLimiter, loginValidator, login);
 
 /**
  * @swagger
@@ -171,7 +176,7 @@ router.post("/login", loginValidator, login);
  *       500:
  *         description: Internal server error
  */
-router.post("/login/contributor", loginValidator, loginAsContributor);
+router.post("/login/contributor", loginLimiter, loginValidator, loginAsContributor);
 
 /**
  * @swagger
@@ -189,7 +194,7 @@ router.post("/login/contributor", loginValidator, loginAsContributor);
  *       500:
  *         description: Internal server error
  */
-router.post("/api/auth/contributor-login", loginValidator, loginAsContributor);
+router.post("/api/auth/contributor-login", loginLimiter, loginValidator, loginAsContributor);
 
 
 /**
@@ -266,28 +271,7 @@ router.get("/auth/google/callback", (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.get("/verify-email", (req, res) => {
-    res.render("verify-email", { error: null, success: null, expiredToken: false });
-});
-
-
-/**
- * @swagger
- * /verify-email:
- *   post:
- *     summary: POST request for /verify-email
- *     description: Processes an email verification token to activate a user account.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.post("/verify-email", verifyEmail);
+router.get("/verify-email", emailVerificationLimiter, verifyEmail);
 
 
 /**
@@ -307,7 +291,15 @@ router.post("/verify-email", verifyEmail);
  *         description: Internal server error
  */
 router.get("/resend-verification", (req, res) => {
-    res.render("resend-verification", { error: null, success: null });
+    res.render("resend-verification", {
+        error: null,
+        success: null,
+        prefilledEmail: req.query.email || null,
+        verificationDeliveryUnavailable: req.query.delivery === "unavailable",
+        backToLoginUrl: req.query.delivery === "unavailable"
+            ? `/login?verificationUnavailable=1&email=${encodeURIComponent(req.query.email || "")}`
+            : "/login",
+    });
 });
 
 
@@ -327,7 +319,7 @@ router.get("/resend-verification", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/resend-verification", resendVerificationValidator, resendVerificationEmail);
+router.post("/resend-verification", emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
 
 
 /**
@@ -350,5 +342,53 @@ router.get("/logout", (req, res) => {
     res.clearCookie("token");
     res.redirect("/login");
 });
+
+/**
+ * @swagger
+ * /forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     description: Generates and sends a password reset token to the user's email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reset email sent if account exists
+ *       400:
+ *         description: Invalid request
+ */
+router.post("/forgot-password", forgotPasswordLimiter, requestPasswordReset);
+
+/**
+ * @swagger
+ * /reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     description: Validates reset token and updates user password. Token can only be used once.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid, expired, or already used token
+ */
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

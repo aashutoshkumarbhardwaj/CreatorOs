@@ -8,20 +8,14 @@
   <%- include('./partials/_seo', {
     title: 'Services Hub',
     description: 'Explore CreatorOS tools including DM automation, analytics, creator CRM, bio links, and growth tools for creators.',
-    canonical: 'https://titli-link-shortner.vercel.app/services'
+    canonical: 'https://creatoros.com/services'
   }) %>
 
 <meta charset="UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<%- include('./partials/_brand_head') %>
 
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -370,9 +364,9 @@
 
   display: flex;
 
-  align-items: center;
+  flex-direction: column;
 
-  gap: 12px;
+  align-items: center;
 
   margin-bottom: 20px;
 
@@ -380,47 +374,15 @@
 
 
 
-.footer-logo-icon {
+.footer-logo {
 
-  width: 42px;
+  display: block;
 
-  height: 42px;
+  height: 46px;
 
-  background: linear-gradient(135deg, #5ab4f0, #6a7fe8);
+  width: auto;
 
-  border: none;
-
-  border-radius: 14px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  font-weight: 700;
-
-  font-size: 22px;
-
-  color: #fff;
-
-  box-shadow: none;
-
-  font-family: 'Georgia', serif;
-
-}
-
-
-
-.footer-logo-name {
-
-  font-size: 17px;
-
-  font-weight: 700;
-
-  color: #1a1a1a;
-
-  margin: 0;
+  max-width: 100%;
 
 }
 
@@ -493,6 +455,18 @@
   background: #1aba9c;
 
   color: #fff;
+
+}
+
+.footer-social svg {
+
+  width: 20px;
+
+  height: 20px;
+
+  display: block;
+
+  fill: currentColor;
 
 }
 
@@ -922,57 +896,87 @@ nav.scrolled {
 
 .brand {
 
-  display: flex; align-items: center; gap: 0.85rem;
+  display: flex; align-items: center; gap: 0.7rem;
 
   text-decoration: none; color: var(--text);
 
 }
 
-.brand-mark {
+.nav-brand-mark {
 
-  position: relative;
+  width: 46px;
 
-  width: 44px; height: 44px;
+  height: 46px;
 
-  border-radius: 13px;
+  border-radius: 12px;
 
-  background: linear-gradient(135deg, #22d3ee, #6366f1);
+  overflow: hidden;
 
-  display: grid; place-items: center;
+  flex: 0 0 auto;
+
+  display: block;
+
+}
+
+.nav-brand-icon {
+
+  display: block;
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+
+}
+
+.nav-brand-copy {
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: flex-start;
+
+  min-width: 0;
+
+}
+
+.nav-brand-title {
 
   font-family: 'Fraunces', serif;
 
-  font-weight: 900; font-size: 1.2rem; color: #fff;
+  font-size: 1.08rem;
 
-  box-shadow: 0 0 0 0 rgba(34,211,238,0.5);
+  font-weight: 900;
 
-  animation: markPulse 3s ease-in-out infinite;
+  line-height: 1.02;
 
-}
+  max-width: 100%;
 
-@keyframes markPulse {
-
-  0%,100% { box-shadow: 0 0 0 0 rgba(34,211,238,0.4), 0 8px 24px rgba(34,211,238,0.2); }
-
-  50% { box-shadow: 0 0 0 8px rgba(34,211,238,0), 0 8px 32px rgba(34,211,238,0.35); }
+  color: #000;
 
 }
 
-.brand-copy strong {
+.nav-brand-subtitle {
 
-  display: block; font-family: 'Fraunces', serif;
+  display: block;
 
-  font-size: 1.05rem; font-weight: 900; color: #000;
+  margin-top: 0.2rem;
 
-  letter-spacing: -0.02em;
+  font-size: 0.68rem;
 
-}
+  line-height: 1.05;
 
-.brand-copy span {
+  color: #444;
 
-  display: block; font-size: 0.68rem; color: #444;
+  letter-spacing: 0.14em;
 
-  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 300;
+  text-transform: uppercase;
+
+  font-weight: 500;
 
 }
 
@@ -1552,6 +1556,8 @@ h1 em {
 
   background: #f7f0e4;
 
+  --timeline-spine-start: 25rem;
+
 }
 
 
@@ -1622,7 +1628,7 @@ h1 em {
 
   position: absolute;
 
-  left: 50%; top: 0; bottom: 0;
+  left: 50%; top: var(--timeline-spine-start); bottom: 0;
 
   width: 1px;
 
@@ -2142,6 +2148,14 @@ footer span { color: var(--cyan); }
 
   nav { left: 12px; right: 12px; transform: none; width: auto; top: 12px; border-radius: 10px; }
 
+  .brand { gap: 0.68rem; }
+
+  .nav-brand-mark { width: 44px; height: 44px; }
+
+  .nav-brand-title { font-size: 1rem; }
+
+  .nav-brand-subtitle { font-size: 0.64rem; }
+
   .nav-links { display:none; }
 
   .nav-toggle { display:inline-flex; }
@@ -2176,6 +2190,14 @@ footer span { color: var(--cyan); }
 
   h1 { font-size: 2.5rem; }
 
+  .brand { gap: 0.62rem; }
+
+  .nav-brand-mark { width: 40px; height: 40px; border-radius: 10px; }
+
+  .nav-brand-title { font-size: 0.94rem; }
+
+  .nav-brand-subtitle { font-size: 0.58rem; letter-spacing: 0.1em; }
+
   .nav-links { display: none; }
 
   .service-item { transform: translateY(30px) !important; }
@@ -2185,8 +2207,6 @@ footer span { color: var(--cyan); }
 }
 
 </style>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 </head>
 
@@ -2218,19 +2238,18 @@ footer span { color: var(--cyan); }
 
         <div class="nav-left">
 
-          <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+          <button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
 
           <a class="brand" href="/">
 
-            <div class="brand-mark">C</div>
+            <span class="nav-brand-mark">
+              <img class="nav-brand-icon" src="<%= BRAND.icon %>" alt="CreatorOS Icon">
+            </span>
 
-            <div class="brand-copy">
-
-              <strong>CreatorOS</strong>
-
-              <span>Unified Dashboard</span>
-
-            </div>
+            <span class="nav-brand-copy">
+              <strong class="nav-brand-title">CreatorOS</strong>
+              <span class="nav-brand-subtitle">Unified Dashboard</span>
+            </span>
 
           </a>
 
@@ -2246,7 +2265,7 @@ footer span { color: var(--cyan); }
 
           </div>
 
-          <button class="nav-3d-toggle" id="nav3dToggle" aria-pressed="true" title="Toggle 3D Background">3D</button>
+          <button type="button" class="nav-3d-toggle" id="nav3dToggle" aria-pressed="true" title="Toggle 3D Background">3D</button>
 
         </div>
 
@@ -3046,9 +3065,9 @@ footer span { color: var(--cyan); }
 
     <div class="footer-btns">
 
-      <a href="#" class="footer-btn-primary">Launch Dashboard →</a>
+      <a href="/dashboard" class="footer-btn-primary">Launch Dashboard →</a>
 
-      <a href="#" class="footer-btn-secondary">Explore Modules</a>
+      <a href="/services" class="footer-btn-secondary">Explore Modules</a>
 
     </div>
 
@@ -3064,9 +3083,7 @@ footer span { color: var(--cyan); }
 
       <div class="footer-logo-wrap">
 
-        <div class="footer-logo-icon">C</div>
-
-        <p class="footer-logo-name">CreatorOS</p>
+        <img class="footer-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo">
 
       </div>
 
@@ -3074,27 +3091,35 @@ footer span { color: var(--cyan); }
 
       <div class="footer-socials">
 
-        <a href="#" class="footer-social" aria-label="GitHub">
+        <a href="https://github.com/aashutoshkumarbhardwaj/CreatorOS" class="footer-social" aria-label="GitHub">
 
-          <i class="fa-brands fa-github"></i>
-
-        </a>
-
-        <a href="#" class="footer-social" aria-label="Instagram">
-
-          <i class="fa-brands fa-instagram"></i>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.92.58.1.79-.25.79-.56v-2.02c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.16 1.17.92-.26 1.9-.38 2.87-.39.97 0 1.95.13 2.87.39 2.2-1.48 3.16-1.17 3.16-1.17.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.42-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+          </svg>
 
         </a>
 
-        <a href="#" class="footer-social" aria-label="X / Twitter">
+        <a href="https://instagram.com" class="footer-social" aria-label="Instagram">
 
-          <i class="fa-brands fa-x-twitter"></i>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.8 2h8.4A5.81 5.81 0 0 1 22 7.8v8.4a5.81 5.81 0 0 1-5.8 5.8H7.8A5.81 5.81 0 0 1 2 16.2V7.8A5.81 5.81 0 0 1 7.8 2Zm0 2A3.81 3.81 0 0 0 4 7.8v8.4A3.81 3.81 0 0 0 7.8 20h8.4a3.81 3.81 0 0 0 3.8-3.8V7.8A3.81 3.81 0 0 0 16.2 4H7.8Zm8.75 1.55a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM12 7.25A4.75 4.75 0 1 1 12 16.75 4.75 4.75 0 0 1 12 7.25Zm0 2A2.75 2.75 0 1 0 12 14.75 2.75 2.75 0 0 0 12 9.25Z"/>
+          </svg>
 
         </a>
 
-        <a href="#" class="footer-social" aria-label="Email">
+        <a href="https://twitter.com" class="footer-social" aria-label="X / Twitter">
 
-          <i class="fa-solid fa-envelope"></i>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13.83 10.47 21.08 2h-1.72l-6.29 7.35L8.04 2H2.25l7.6 11.08L2.25 22h1.72l6.65-7.78L15.93 22h5.82l-7.92-11.53Zm-2.35 2.75-.77-1.1L4.58 3.3h2.64l4.95 7.11.77 1.1 6.43 9.25h-2.64l-5.25-7.54Z"/>
+          </svg>
+
+        </a>
+
+        <a href="mailto:support@creatoros.com" class="footer-social" aria-label="Email">
+
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16a2.5 2.5 0 0 1 2.5 2.5v9A2.5 2.5 0 0 1 20 19H4a2.5 2.5 0 0 1-2.5-2.5v-9A2.5 2.5 0 0 1 4 5Zm0 2c-.09 0-.17.01-.25.04L12 12.4l8.25-5.36A.85.85 0 0 0 20 7H4Zm16.5 2.2-7.95 5.17a1 1 0 0 1-1.1 0L3.5 9.2v7.3c0 .28.22.5.5.5h16a.5.5 0 0 0 .5-.5V9.2Z"/>
+          </svg>
 
         </a>
 
@@ -3108,13 +3133,13 @@ footer span { color: var(--cyan); }
 
       <p class="footer-col-label">Platform</p>
 
-      <a href="#" class="footer-link">→ Dashboard</a>
+      <a href="/dashboard" class="footer-link">→ Dashboard</a>
 
-      <a href="#" class="footer-link">→ Modules</a>
+      <a href="/services" class="footer-link">→ Modules</a>
 
-      <a href="#" class="footer-link">→ Analytics</a>
+      <a href="/dashboard/analytics" class="footer-link">→ Analytics</a>
 
-      <a href="#" class="footer-link">→ Workspace</a>
+      <a href="/dashboard" class="footer-link">→ Workspace</a>
 
     </div>
 
@@ -3124,13 +3149,13 @@ footer span { color: var(--cyan); }
 
       <p class="footer-col-label">Company</p>
 
-      <a href="#" class="footer-link">→ About</a>
+      <a href="/about" class="footer-link">→ About</a>
 
-      <a href="#" class="footer-link">→ Changelog</a>
+      <a href="/changelog" class="footer-link">→ Changelog</a>
 
-      <a href="#" class="footer-link">→ Community</a>
+      <a href="https://discord.com" class="footer-link">→ Community</a>
 
-      <a href="#" class="footer-link">→ Contact</a>
+      <a href="mailto:support@creatoros.com" class="footer-link">→ Contact</a>
 
     </div>
 
@@ -3146,9 +3171,9 @@ footer span { color: var(--cyan); }
 
     <div class="footer-bottom-links">
 
-      <a href="#" class="footer-bottom-link">Privacy</a>
+      <a href="/privacy" class="footer-bottom-link">Privacy</a>
 
-      <a href="#" class="footer-bottom-link">Terms</a>
+      <a href="/terms" class="footer-bottom-link">Terms</a>
 
     </div>
 

@@ -6,18 +6,16 @@
     <%- include('./partials/_seo', {
         title: 'File Upload',
         description: 'Upload and manage files within your CreatorOS workspace.',
-        canonical: 'https://titli-link-shortner.vercel.app/file-upload',
+        canonical: 'https://creatoros.com/file-upload',
         robots: 'noindex,nofollow'
     }) %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%- include('./partials/_brand_head') %>
     <link href="/css/style.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: loaded once from shared partial -->
+    <%- include('./partials/_fonts') %>
 </head>
 <body class="bg-[#06101f] text-white font-[Inter] min-h-screen">
     <div class="mx-auto max-w-2xl px-4 py-12">
@@ -41,12 +39,12 @@
                     <p id="file-name" class="font-medium text-slate-200"></p>
                     <p id="file-size" class="text-sm text-slate-500"></p>
                 </div>
-                <button id="remove-file" class="rounded-lg bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/30 transition-colors">Remove</button>
+                <button type="button" id="remove-file" class="rounded-lg bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/30 transition-colors">Remove</button>
             </div>
         </div>
 
         <!-- Upload Button -->
-        <button id="upload-btn" class="mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 opacity-50 cursor-not-allowed transition-all duration-200" disabled>Select a file to upload</button>
+        <button type="button" id="upload-btn" class="mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 opacity-50 cursor-not-allowed transition-all duration-200" disabled>Select a file to upload</button>
 
         <!-- Progress -->
         <div id="progress-area" class="mt-6 hidden">

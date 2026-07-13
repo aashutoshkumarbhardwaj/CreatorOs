@@ -8,8 +8,11 @@ const {
     handleUpdateQRColors,
     handleGetAnalytics,
 } = require('../controller/url');
-const protect = require('../middleware/auth');
-const { preventContributorWrites } = require('../middleware/auth');
+const {
+    protect,
+    preventContributorWrites,
+} = require('../middleware/auth');
+
 const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
 const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
 
@@ -48,7 +51,7 @@ router.get('/', protect, handleListUserLinks);
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId', handleGetAnalytics);
+router.get('/analytics/:shortId', protect, handleGetAnalytics);
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
 /**
@@ -105,7 +108,7 @@ router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shor
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId/download', handleDownloadQRCode);      
+router.get('/qr/:shortId/download', protect, handleDownloadQRCode);      
 
 /**
  * @swagger
@@ -123,7 +126,7 @@ router.get('/qr/:shortId/download', handleDownloadQRCode);
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId',          handleGetQRCode);       
+router.get('/qr/:shortId', protect, handleGetQRCode);       
 
 /**
  * @swagger
@@ -161,6 +164,6 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrC
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId',   handleGetAnalytics);
+router.get('/analytics/:shortId', protect, handleGetAnalytics);
 
 module.exports = router;

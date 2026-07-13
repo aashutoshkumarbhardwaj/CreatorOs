@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-  <!-- SEO meta tags -->
-  <%- include('./partials/_seo', {
-    title: 'Bio Editor',
-    description: 'Customize your bio page.',
-    canonical: 'https://titli-link-shortner.vercel.app/bio-editor',
-    robots: 'noindex,nofollow'
-  }) %>
-  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="csrf-token" content="<%= csrfToken %>" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <%- include('./partials/_brand_head') %>
+  <title>Bio Editor | CreatorOS</title>
+  <!-- Google Fonts: common fonts via shared partial -->
+  <%- include('./partials/_fonts') %>
+  <!-- Page-specific font: DM Mono (bio editor only) -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -70,6 +65,13 @@
       padding-bottom: 1.25rem;
       border-bottom: 2px solid var(--border);
       margin-bottom: 1.25rem;
+    }
+
+    .brand-logo {
+      display: block;
+      height: 40px;
+      width: auto;
+      max-width: 100%;
     }
 
     .nav-item {
@@ -275,11 +277,11 @@
     }
 
     .link-row-icon {
-      width: 2rem; height: 2rem;
+      width: 1.5rem; height: 1.5rem;
       display: grid; place-items: center;
       border: 1.5px solid var(--border);
       background: var(--surface);
-      font-size: 1rem;
+      font-size: 0.8rem;
       cursor: grab;
     }
 
@@ -450,12 +452,51 @@
 <body>
 <div class="layout">
 
-  <%- include('partials/layout/sidebar', { activeNav: '' }) %>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand"><img class="brand-logo" src="<%= BRAND.logo %>" alt="CreatorOS Logo"></div>
+
+    <a href="/dashboard" class="nav-item">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+    <a href="/vault" class="nav-item">
+      <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      Vault
+    </a>
+    <a href="/analytics" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M9 19V9"/><path d="M14 19V3"/><path d="M19 19v-7"/></svg>
+      Analytics
+    </a>
+    <a href="/services/creator-crm" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      CRM
+    </a>
+    <a href="/bio" class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Smart Bio
+    </a>
+    <a href="/settings" class="nav-item">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </a>
+  </aside>
 
   <!-- MAIN -->
   <div class="main">
 
-    <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <h2>Smart Bio Editor</h2>
+      <div class="share-url">
+        <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
+        <button type="button" class="copy-btn" onclick="copyUrl()">Copy</button>
+      </div>
+      <div class="topbar-actions">
+        <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
+        <button type="button" class="btn-retro primary" onclick="saveBio()">Save Changes</button>
+      </div>
+    </header>
 
     <!-- CONTENT -->
     <div class="content">
@@ -467,7 +508,7 @@
         <div class="panel-box">
           <div class="panel-head">
             <h3>Profile</h3>
-            <button class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" onclick="document.getElementById('avatarInput').click()">Upload Photo</button>
+            <button type="button" class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" onclick="document.getElementById('avatarInput').click()">Upload Photo</button>
             <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)">
           </div>
           <div class="panel-body">
@@ -506,21 +547,21 @@
             <div class="field">
               <label>Quick Add</label>
               <div class="presets">
-                <button class="preset-btn" onclick="addPreset('instagram','📸','Instagram','https://instagram.com/','social')">📸 Instagram</button>
-                <button class="preset-btn" onclick="addPreset('youtube','🎥','YouTube','https://youtube.com/','social')">🎥 YouTube</button>
-                <button class="preset-btn" onclick="addPreset('github','💻','GitHub','https://github.com/','work')">💻 GitHub</button>
-                <button class="preset-btn" onclick="addPreset('linkedin','💼','LinkedIn','https://linkedin.com/in/','work')">💼 LinkedIn</button>
-                <button class="preset-btn" onclick="addPreset('portfolio','🌐','Portfolio','https://','work')">🌐 Portfolio</button>
-                <button class="preset-btn" onclick="addPreset('resume','📄','Resume','https://','work')">📄 Resume</button>
-                <button class="preset-btn" onclick="addPreset('email','📧','Email','mailto:','other')">📧 Email</button>
-                <button class="preset-btn" onclick="addPreset('whatsapp','💬','WhatsApp','https://wa.me/','other')">💬 WhatsApp</button>
+                <button type="button" class="preset-btn" onclick="addPreset('instagram','📸','Instagram','https://instagram.com/','social')">📸 Instagram</button>
+                <button type="button" class="preset-btn" onclick="addPreset('youtube','🎥','YouTube','https://youtube.com/','social')">🎥 YouTube</button>
+                <button type="button" class="preset-btn" onclick="addPreset('github','💻','GitHub','https://github.com/','work')">💻 GitHub</button>
+                <button type="button" class="preset-btn" onclick="addPreset('linkedin','💼','LinkedIn','https://linkedin.com/in/','work')">💼 LinkedIn</button>
+                <button type="button" class="preset-btn" onclick="addPreset('portfolio','🌐','Portfolio','https://','work')">🌐 Portfolio</button>
+                <button type="button" class="preset-btn" onclick="addPreset('resume','📄','Resume','https://','work')">📄 Resume</button>
+                <button type="button" class="preset-btn" onclick="addPreset('email','📧','Email','mailto:','other')">📧 Email</button>
+                <button type="button" class="preset-btn" onclick="addPreset('whatsapp','💬','WhatsApp','https://wa.me/','other')">💬 WhatsApp</button>
               </div>
             </div>
 
             <!-- Links list -->
             <div class="links-list" id="linksList"></div>
 
-            <button class="add-link-btn" onclick="addCustomLink()">
+            <button type="button" class="add-link-btn" onclick="addCustomLink()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Custom Link
             </button>
@@ -534,18 +575,18 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <button class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
-                <button class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
-                <button class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
-                <button class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
+                <button type="button" class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
+                <button type="button" class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
+                <button type="button" class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
+                <button type="button" class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <button class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
-                <button class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
-                <button class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
+                <button type="button" class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
+                <button type="button" class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
+                <button type="button" class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
               </div>
             </div>
           </div>
@@ -581,7 +622,7 @@
 
 <div class="toast" id="toast">✓ Saved!</div>
 
-<script>
+<script nonce="<%= nonce %>">
   let links = [];
   let linkIdCounter = 0;
   let currentTheme = 'light';
@@ -621,7 +662,7 @@
         <input type="text" value="${link.url}"
                onchange="updateLinkField(${link.id},'url',this.value)"
                placeholder="https://..." />
-        <button class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
+        <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
       </div>
     `).join('');
   }
@@ -647,7 +688,7 @@
     const input = document.getElementById('tagInput');
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
-    chip.innerHTML = `${text} <button onclick="this.parentElement.remove()">×</button>`;
+    chip.innerHTML = `${text} <button type="button" onclick="this.parentElement.remove()">×</button>`;
     wrap.insertBefore(chip, input);
   }
 
@@ -700,10 +741,7 @@
 
     fetch('/bio/save', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-csrf-token': document.querySelector('meta[name="csrf-token"]').content 
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
     .then(r => r.json())
@@ -743,6 +781,5 @@
   // Init preview
   updatePreview();
 </script>
-    <%- include('partials/layout/scripts') %>
 </body>
 </html>

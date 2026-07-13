@@ -7,23 +7,15 @@
     <%- include('./partials/_seo', {
         title: 'CreatorOS - All-in-One Creator Platform',
         description: 'CreatorOS — the all-in-one operating system for creators. Bio links, DM automation, CRM, analytics, and AI content suggestions in one dashboard.',
-        canonical: 'https://titli-link-shortner.vercel.app/'}) 
+        canonical: 'https://creatoros.com/'}) 
     %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <%- include('./partials/_brand_head') %>
 
-    
-    <!-- Import Google Fonts: Space Grotesk and Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts: loaded once from shared partial -->
+    <%- include('./partials/_fonts') %>
     <style>
         /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
@@ -70,7 +62,6 @@
             margin: 0;
             padding: 0;
         }
-        * { box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -84,7 +75,6 @@
             color: inherit;
             text-decoration: none;
         }
-        a { color: inherit; }
 
         /* Headings & Typography */
         h1, h2, h3, h4, .brand-text, .title-font {
@@ -104,7 +94,6 @@
         .dashboard-layout.sidebar-collapsed {
             --sidebar-width: 80px;
         }
-        .dashboard-layout.sidebar-collapsed { --sidebar-width: 88px; }
 
         /* ── Sidebar Redesign ── */
         .sidebar {
@@ -182,7 +171,6 @@
             gap: 0.4rem;
             margin-bottom: 2rem;
         }
-        .sidebar-section { display: grid; gap: 0.45rem; }
 
         .sidebar-label {
             padding-left: 0.5rem;
@@ -229,11 +217,6 @@
             flex-shrink: 0;
             stroke: currentColor;
             fill: none;
-        }
-        .nav-link:hover, .service-link:hover {
-            transform: translateX(4px);
-            color: #67e8f9;
-            background: rgba(34, 211, 238, 0.08);
         }
 
         .sidebar-footer {
@@ -303,10 +286,6 @@
         .nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; }
         .service-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .sidebar-footer { margin-top: auto; display: grid; gap: 0.65rem; }
-
-        .dashboard-layout.sidebar-collapsed .brand { justify-content: center; padding-inline: 0; }
-
         .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-mark),
         .dashboard-layout.sidebar-collapsed .sidebar-label,
         .dashboard-layout.sidebar-collapsed .service-name { display: none; }
@@ -323,8 +302,8 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+            animation: fadeIn 0.65s ease 0.1s both;
         }
-        .main { min-width: 0; animation: fadeIn 0.65s ease 0.1s both; }
 
         /* Shared Top Navigation */
         .topbar {
@@ -422,8 +401,6 @@
             background: rgba(34, 211, 238, 0.1);
         }
 
-        .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
-
         .profile-chip {
             display: inline-flex;
             align-items: center;
@@ -439,8 +416,6 @@
             transform: translate(-1px, -1px);
             box-shadow: 3px 3px 0px var(--border);
         }
-
-        .profile-chip:hover { transform: translateY(-2px); background: rgba(34, 211, 238, 0.1); }
 
         .avatar {
             width: 1.6rem;
@@ -492,8 +467,6 @@
         }
         .profile-name { font-weight: 700; }
 
-        .content { padding: 2.2rem 2.4rem 2.8rem; }
-
         .dashboard-head {
             display: flex;
             justify-content: space-between;
@@ -516,7 +489,6 @@
             font-size: 0.95rem;
             color: var(--muted-2);
         }
-        .dashboard-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
 
         .primary-action {
             display: inline-flex;
@@ -551,13 +523,6 @@
             flex-direction: column;
             position: relative;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .stat-card, .panel {
-            border: 1px solid var(--border);
-            border-radius: 0.9rem;
-            background: var(--surface);
-            backdrop-filter: blur(18px);
-            box-shadow: var(--shadow);
         }
 
         .stat-card-retro:hover {
@@ -602,9 +567,6 @@
             line-height: 1;
             margin-bottom: 0.25rem;
         }
-        .stat-card:nth-child(2) { animation-delay: 0.05s; }
-        .stat-card:nth-child(3) { animation-delay: 0.1s; }
-        .stat-card:nth-child(4) { animation-delay: 0.15s; }
 
         .stat-card-retro .subtext {
             font-size: 0.78rem;
@@ -684,15 +646,6 @@
             font-weight: 700;
             color: #111111;
         }
-        .stat-icon.purple  { color: #67e8f9; background: rgba(34, 211, 238, 0.12); }
-        .stat-icon.blue    { color: #38bdf8; background: rgba(56, 189, 248, 0.12); }
-        .stat-icon.green   { color: #86efac; background: rgba(34, 197, 94, 0.12); }
-        .stat-icon.orange  { color: #fcd34d; background: rgba(245, 158, 11, 0.14); }
-
-        .stat-content h3   { margin: 0 0 0.45rem; color: var(--muted); font-size: 0.95rem; font-weight: 600; }
-        .stat-value        { margin: 0; font-size: 1.75rem; font-weight: 800; letter-spacing: 0; }
-        .stat-note         { grid-column: 1 / -1; margin: 0.1rem 0 0; color: var(--muted); font-size: 0.9rem; }
-        .trend             { color: var(--green); font-weight: 700; }
 
         .status-card-retro.pending {
             background-color: var(--accent-yellow);
@@ -701,7 +654,6 @@
         .status-card-retro.accepted {
             background-color: var(--success);
         }
-        .panel { padding: 1.35rem; animation: enterUp 0.62s ease 0.18s both; }
 
         .status-card-retro.expired {
             background-color: var(--accent-red);
@@ -725,15 +677,11 @@
             }
         }
 
-        /* Invite Section */
         .invite-panel p {
             font-size: 0.85rem;
             color: var(--muted);
             line-height: 1.5;
         }
-        .panel h2 { margin: 0; font-size: 1.25rem; letter-spacing: 0; }
-
-        .invite-panel p { margin: 0; color: var(--muted); line-height: 1.7; }
 
         .invite-form {
             display: flex;
@@ -789,11 +737,6 @@
             color: var(--white);
         }
 
-        .invite-form button:hover { transform: translateY(-1px); }
-
-        .message-box { padding: 1rem 1.15rem; border-radius: 0.95rem; margin-top: 1rem; font-size: 0.95rem; }
-        .message-success { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.18); color: #d1fae5; }
-        .message-error   { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.22); color: #fee2e2; }
 
         /* Donut Layout */
         .donut-layout {
@@ -1415,7 +1358,6 @@
             .qr-actions { grid-template-columns: 1fr; }
         }
     </style>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard-layout" id="dashboardLayout">
@@ -1549,7 +1491,7 @@
     </div>
 
     <!-- Scripts -->
-    <script>
+    <script nonce="<%= nonce %>">
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');
         
@@ -1595,7 +1537,7 @@
 
     <!-- QR Code Script (Pulled exactly from old home.ejs) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
+    <script nonce="<%= nonce %>">
         var qrState = {
             url: '<%= locals.shortUrl || "" %>',
             fgColor: '#1a1a1a',
@@ -1709,7 +1651,7 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "CreatorOS - Link Shortener & Creator Platform",
-        "url": "https://titli-link-shortner.vercel.app/",
+        "url": "https://creatoros.com/",
         "description": "All-in-one creator platform with bio links, CRM, analytics, and automation tools.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web"

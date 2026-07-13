@@ -2,6 +2,10 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=CreatorOS&fontSize=72&fontColor=fff&animation=twinkling&fontAlignY=32&desc=The%20Operating%20System%20for%20Creators&descAlignY=56&descSize=20&descColor=ffffff" width="100%"/>
 
+<p align="center">
+  <img src="./public/assets/branding/creatoros-logo.png" alt="CreatorOS Logo" height="72" />
+</p>
+
 <br/>
 
 <p align="center">
@@ -146,13 +150,13 @@ Never stare at a blank screen again.
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | ![Next.js](https://img.shields.io/badge/Next.js-000?logo=nextdotjs&logoColor=white&style=flat-square) ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black&style=flat-square) ![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square) |
+| **Frontend** | ![EJS](https://img.shields.io/badge/EJS-A91E50?logo=ejs&logoColor=white&style=flat-square) ![Vanilla CSS](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white&style=flat-square) |
 | **Backend** | ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square) ![Express](https://img.shields.io/badge/Express-000?logo=express&logoColor=white&style=flat-square) |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white&style=flat-square) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat-square) |
-| **Auth** | ![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white&style=flat-square) ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black&style=flat-square) |
-| **Automation** | ![Instagram](https://img.shields.io/badge/Instagram%20Graph%20API-E4405F?logo=instagram&logoColor=white&style=flat-square) |
-| **AI** | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=flat-square) ![OpenRouter](https://img.shields.io/badge/OpenRouter-FF6B35?style=flat-square) |
-| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white&style=flat-square) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white&style=flat-square) ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white&style=flat-square) |
+| **Database** | ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white&style=flat-square) ![Mongoose](https://img.shields.io/badge/Mongoose-880000?logo=mongoose&logoColor=white&style=flat-square) |
+| **Auth** | ![Passport](https://img.shields.io/badge/Passport-34E27A?logo=passport&logoColor=white&style=flat-square) ![Google Auth](https://img.shields.io/badge/Google_Auth-4285F4?logo=google&logoColor=white&style=flat-square) |
+| **Automation** | ![Instagram](https://img.shields.io/badge/Instagram%20Graph%20API-E4405F?logo=instagram&logoColor=white&style=flat-square) ![BullMQ](https://img.shields.io/badge/BullMQ-FF4081?style=flat-square) |
+| **AI** | ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=flat-square) |
+| **Hosting** | ![Railway](https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=white&style=flat-square) |
 
 </div>
 
@@ -250,10 +254,14 @@ OPENROUTER_API_KEY=sk-or-...
 
 # Base URL where the app is running
 
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
 
 # -------------------------------------------------------
 # Email Configuration
+
+> [!IMPORTANT]
+> Hosted deployments must configure working email delivery for verification and password reset.
+> Set `EMAIL_USER` and `EMAIL_PASSWORD`, plus either `EMAIL_SERVICE` or `EMAIL_HOST`/`EMAIL_PORT`, and keep `APP_URL` pointed at the deployed site so verification links resolve correctly.
 
 # Supported values may include:
 # smtp, gmail, resend, sendgrid, etc.
@@ -292,7 +300,7 @@ JWT_SECRET=your_jwt_secret
 
 # Backend application URL
 
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000 # Replace with your deployed URL in production
 
 # Development server port
 
@@ -350,25 +358,53 @@ Then open:
 http://localhost:3000
 ```
 
+## ❓ FAQ
+
+### Why is CreatorOS running in Mock Database Mode?
+
+CreatorOS automatically starts in mock mode when a valid `MONGODB_URI` is not configured. This allows contributors to explore and test the UI without requiring a database connection.
+
+### Where should environment variables be added?
+
+Create a `.env.local` file in the project root and add the required variables listed in the Environment Setup section.
+
+### How do I create a new feature branch?
+
+Use:
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### What should I do if `npm install` fails?
+
+Ensure you are using a supported Node.js version and remove `node_modules` before reinstalling dependencies.
+
+### How do I start the project locally?
+
+```bash
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
 
 ## 📁 Project Structure
 
 ```
 CreatorOS/
-├── 📂 app/                    # Next.js App Router
-│   ├── 📂 (auth)/             # Auth pages (login, signup)
-│   ├── 📂 (dashboard)/        # Main dashboard routes
-│   │   ├── 📂 bio/            # Smart Bio System
-│   │   ├── 📂 automation/     # DM Automation
-│   │   ├── 📂 crm/            # Creator CRM
-│   │   ├── 📂 analytics/      # Analytics Dashboard
-│   │   └── 📂 content/        # Content OS
-│   └── 📂 api/                # API Routes
-├── 📂 components/             # Reusable UI components
-├── 📂 lib/                    # Utility functions & configs
-├── 📂 hooks/                  # Custom React hooks
-├── 📂 prisma/                 # DB schema & migrations
-└── 📂 public/                 # Static assets
+├── 📂 controller/             # Express route controllers
+├── 📂 model/                  # Mongoose database schemas
+├── 📂 view/                   # EJS frontend templates
+├── 📂 routes/                 # API & web routes
+├── 📂 workers/                # Background job processors (BullMQ)
+├── 📂 utils/                  # Utility functions & helpers
+├── 📂 public/                 # Static assets (CSS, JS, images)
+└── 📂 tests/                  # Test suites
 ```
 
 ---
@@ -501,30 +537,4 @@ Every contribution, no matter how small, helps us build something amazing for cr
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
 
 </div>
-
-## ✨ README Improvement Notes
-
-### 📌 Formatting Enhancements Needed
-- Improve heading hierarchy for better readability
-- Ensure consistent spacing between sections
-- Use proper Markdown formatting for code blocks and lists
-- Align all installation and usage steps properly
-
-### 🚀 Suggested Structure Upgrade
-- Introduction
-- Features
-- Tech Stack
-- Installation
-- Usage
-- Project Structure
-- Contribution Guidelines
-- License
-
-### 🛠️ Documentation Improvements
-- Add badges (optional): build, license, contributors
-- Add screenshots for better UI understanding
-- Standardize code blocks for commands
-
-### 🎯 Goal
-Improve onboarding experience for new contributors and users by making README more structured, readable, and professional
 

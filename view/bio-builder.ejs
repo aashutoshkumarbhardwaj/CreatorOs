@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <%- include('./partials/_brand_head') %>
     <title>Bio Link Builder</title>
 
     <style>
@@ -82,7 +83,7 @@
 
             <div id="bio-links-container"></div>
 
-            <button id="add-bio-link">
+            <button type="button" id="add-bio-link">
                 + Add Link
             </button>
 
@@ -106,7 +107,7 @@
 
 </div>
 
-<script>
+<script nonce="<%= nonce %>">
 
 const titleInput =
     document.getElementById('bio-title');

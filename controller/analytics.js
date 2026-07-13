@@ -2,6 +2,7 @@ const Creator = require("../model/creator");
 const AnalyticsSnapshot = require("../model/analyticsSnapshot");
 const EngagementHistory = require("../model/engagementHistory");
 const asyncHandler = require("../utils/asyncHandler");
+const { fetchInstagramAnalytics } = require("../utils/instagramApi");
 
 // GET /api/analytics/:creatorId/snapshots
 const getSnapshots = asyncHandler(async (req, res) => {
@@ -43,21 +44,17 @@ const triggerRefresh = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Creator not found" });
     }
 
-    // TODO: Replace with real API fetch
-    const mockData = {
-        followers: Math.floor(Math.random() * 10000),
-        following: Math.floor(Math.random() * 1000),
-        totalPosts: Math.floor(Math.random() * 500),
-        totalLikes: Math.floor(Math.random() * 50000),
-        totalComments: Math.floor(Math.random() * 5000),
-        totalViews: Math.floor(Math.random() * 100000),
-        engagementRate: parseFloat((Math.random() * 10).toFixed(2)),
-    };
+    let fetchedData;
+    try {
+        fetchedData = await fetchInstagramAnalytics(creator);
+    } catch (error) {
+        return res.status(502).json({ success: false, message: "Failed to fetch data from external API", error: error.message });
+    }
 
     const snapshot = await AnalyticsSnapshot.create({
         creatorId: creator._id,
         platform: creator.platform,
-        ...mockData,
+        ...fetchedData,
         snapshotDate: new Date(),
     });
 

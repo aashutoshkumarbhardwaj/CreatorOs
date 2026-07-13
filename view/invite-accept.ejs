@@ -6,17 +6,15 @@
   <%- include('./partials/_seo', {
     title: 'Accept Invitation',
     description: 'Accept your invitation and join the CreatorOS workspace.',
-    canonical: 'https://titli-link-shortner.vercel.app/invite-accept',
+    canonical: 'https://creatoros.com/invite-accept',
     robots: 'noindex,nofollow'
   }) %>
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <%- include('./partials/_brand_head') %>
+  <!-- Google Fonts: loaded once from shared partial -->
+  <%- include('./partials/_fonts') %>
   <style>
     body {
       min-height: 100vh;

@@ -52,11 +52,11 @@ body.workspace-page {
     color: inherit;
 }
 
-.workspace-brand h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem;
-    margin: 0;
-    line-height: 1.1;
+.workspace-brand-logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    max-width: 100%;
 }
 
 .workspace-brand span {
@@ -126,6 +126,7 @@ body.workspace-page {
     text-decoration: none;
     box-shadow: 4px 4px 0 var(--ws-border);
     margin-bottom: 0.5rem;
+    cursor: pointer;
 }
 
 .workspace-sidebar-footer a {
@@ -262,6 +263,7 @@ body.workspace-page {
     box-shadow: var(--shadow-retro-btn);
     color: #111;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .profile-chip:hover {
@@ -344,12 +346,24 @@ body.workspace-page {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background-color: var(--ws-teal);
-    border: var(--border-thick);
-    box-shadow: 2px 2px 0 var(--ws-border);
-    color: #111;
-    font-size: 1.1rem;
-    font-weight: 800;
+}
+
+.brand-mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.brand-copy {
+    min-width: 0;
+}
+
+.brand-logo {
+    display: block;
+    height: 42px;
+    width: auto;
+    max-width: 100%;
 }
 
 .brand-text {
@@ -495,7 +509,7 @@ body.workspace-page {
     padding-inline: 0;
 }
 
-.workspace-layout.sidebar-collapsed .brand > div,
+.workspace-layout.sidebar-collapsed .brand-copy,
 .workspace-layout.sidebar-collapsed .sidebar-label,
 .workspace-layout.sidebar-collapsed .service-name,
 .workspace-layout.sidebar-collapsed .upgrade-box,
@@ -580,6 +594,17 @@ body.workspace-page {
     box-shadow: 4px 4px 0 #c0392b;
 }
 
+.menu-btn:disabled,
+.icon-btn:disabled,
+.action-icon-btn:disabled,
+.primary-action-btn:disabled,
+.upgrade-btn:disabled,
+.btn-upgrade:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 @media (max-width: 960px) {
     .workspace-layout {
         grid-template-columns: 1fr;
@@ -620,3 +645,8 @@ body.workspace-page {
         display: none;
     }
 }
+html { scroll-behavior: smooth; }
+*:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; border-radius: 4px; }
+.skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+

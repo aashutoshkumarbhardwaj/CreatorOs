@@ -3,6 +3,8 @@ const cookieParser = require("cookie-parser");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
+const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
+const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -22,6 +24,7 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
+const { BRAND } = require('./utils/brand');
 
 const connectDB = require("./connect");
 const authRoutes = require("./routes/auth");
@@ -32,17 +35,41 @@ const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collab
 
 connectDB();
 require("./workers/analyticsRefreshWorker");
+require("./workers/contentPublishWorker").startContentPublishWorker();
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
+app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
 
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, 'view'));
+app.locals.BRAND = BRAND;
+
+// Generate a per-request nonce for inline scripts (used by CSP below and
+// exposed to views via res.locals.nonce)
+const crypto = require('crypto');
+app.use((req, res, next) => {
+    res.locals.nonce = crypto.randomBytes(16).toString('base64');
+    next();
+});
+
+// Content Security Policy (CSP) header - defense-in-depth against XSS
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        `default-src 'self'; script-src 'self' 'nonce-${res.locals.nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; frame-src 'none';`
+    );
+    next();
+});
 
 const rateLimit = require('express-rate-limit');
 
@@ -76,7 +103,9 @@ const shortid = require('shortid');
 const multer = require('multer');
 const services = require('./services.config');
 const User = require('./model/user');
+const Creator = require('./model/creator');
 const Invite = require('./model/invite');
+const BioProfile = require('./model/bioProfile');
 const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
@@ -107,10 +136,14 @@ app.use('/api/instagram', instagramRoutes);
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
 
-const uploadDir = "/tmp";
+const contentRoutes = require('./routes/content');
+app.use('/api/content', protect, contentRoutes);
+
+const os = require('os');
+const uploadDir = os.tmpdir();
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) { cb(null, "/tmp"); },
+    destination: function (req, file, cb) { cb(null, uploadDir); },
     filename: function (req, file, cb) {
         let sanitizedFilename = path.basename(file.originalname);
         sanitizedFilename = sanitizedFilename.replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
@@ -195,53 +228,94 @@ function buildAccountViewModel(userDoc, fallbackUser) {
             ],
         },
         initials,
+        scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
+        deletionConfirmed: userDoc?.deletionConfirmed || false,
     };
 }
 
-function buildAnalyticsViewModel() {
+async function buildAnalyticsViewModel(creatorId) {
+    const AnalyticsSnapshot = require('./model/analyticsSnapshot');
+    const EngagementHistory = require('./model/engagementHistory');
+    const Post = require('./model/post');
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [latestSnapshot, history, topPostsRaw, postCount] = await Promise.all([
+        AnalyticsSnapshot.findOne({ creatorId }).sort({ createdAt: -1 }).lean(),
+        EngagementHistory.find({ creatorId, date: { $gte: thirtyDaysAgo } })
+            .sort({ date: 1 })
+            .lean(),
+        Post.find({ creatorId }).sort({ views: -1 }).limit(5).lean(),
+        Post.countDocuments({ creatorId }),
+    ]);
+
+    const isEmpty = !latestSnapshot;
+
+    const labels = history.map((h) =>
+        new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    );
+
+    // Reconstruct a followers curve from growth deltas, ending at the latest known total
+    const endFollowers = latestSnapshot?.followers || 0;
+    let running = endFollowers;
+    const followersDesc = [...history].reverse().map((h) => {
+        const val = running;
+        running -= h.followersGrowth || 0;
+        return val;
+    });
+    const followers = followersDesc.reverse();
+
+    const engagement = history.map((h) =>
+        Number((h.engagementRateDelta || 0).toFixed(2))
+    );
+
+    const topPosts = topPostsRaw.map((p) => {
+        const engagementRate = latestSnapshot?.followers
+            ? (((p.likes + p.comments) / latestSnapshot.followers) * 100).toFixed(1) + '%'
+            : '—';
+        return {
+            title: p.caption ? p.caption.slice(0, 60) : `${p.platform} post`,
+            type: p.platform,
+            likes: p.likes,
+            comments: p.comments,
+            views: p.views,
+            engagement: engagementRate,
+            date: p.postedAt
+                ? new Date(p.postedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : '',
+        };
+    });
+
     return {
         isLoading: false,
-        isEmpty: false,
+        isEmpty,
         selectedRange: 'Last 30 days',
-        lastUpdated: '25 May 2026, 5:30 PM',
-        profile: {
-            name: 'Aarav Studio',
-            handle: '@aaravstudio',
-            category: 'Digital creator',
-            bio: 'Short-form creator sharing design systems, creator workflows, and behind-the-scenes builds.',
-            avatarInitials: 'AS',
-            followers: '128.4K',
-            following: '642',
-            totalPosts: '318',
-            growthLabel: '+8.6%',
-        },
+        lastUpdated: latestSnapshot?.createdAt
+            ? new Date(latestSnapshot.createdAt).toLocaleString('en-US', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+              })
+            : '—',
         metrics: [
-            { label: 'Followers', value: '128.4K', change: '+8.6%', tone: 'cyan' },
-            { label: 'Engagement rate', value: '6.82%', change: '+1.2%', tone: 'green' },
-            { label: 'Avg. likes', value: '8.7K', change: '+940', tone: 'blue' },
-            { label: 'Avg. comments', value: '412', change: '+38', tone: 'orange' },
-            { label: 'Posting frequency', value: '5.4/wk', change: 'Consistent', tone: 'violet' },
-            { label: 'Best post', value: '14.9%', change: 'Engagement', tone: 'pink' },
+            { label: 'Followers', value: (latestSnapshot?.followers ?? 0).toLocaleString(), change: '', tone: 'cyan' },
+            { label: 'Engagement rate', value: `${(latestSnapshot?.engagementRate ?? 0).toFixed(2)}%`, change: '', tone: 'green' },
+            { label: 'Total views', value: (latestSnapshot?.totalViews ?? 0).toLocaleString(), change: '', tone: 'blue' },
+            { label: 'Total likes', value: (latestSnapshot?.totalLikes ?? 0).toLocaleString(), change: '', tone: 'orange' },
+            { label: 'Total comments', value: (latestSnapshot?.totalComments ?? 0).toLocaleString(), change: '', tone: 'violet' },
+            { label: 'Total posts', value: postCount.toLocaleString(), change: '', tone: 'pink' },
         ],
         charts: {
-            labels: ['Apr 26', 'May 1', 'May 6', 'May 11', 'May 16', 'May 21', 'May 25'],
-            followers: [113200, 115400, 118900, 120500, 123300, 126100, 128400],
-            engagement: [5.4, 5.9, 6.1, 5.7, 6.4, 6.6, 6.82],
-            posts: ['Launch reel', 'Carousel tips', 'Studio vlog', 'Template drop', 'AMA clip'],
-            postPerformance: [14900, 12100, 9800, 8700, 7600],
+            labels,
+            followers,
+            engagement,
+            posts: topPosts.map((p) => p.title),
+            postPerformance: topPosts.map((p) => p.views),
         },
-        topPosts: [
-            { title: 'How I plan 30 days of content', type: 'Reel', likes: '14.2K', comments: '612', engagement: '14.9%', date: '24 May' },
-            { title: 'Creator OS desk setup walkthrough', type: 'Carousel', likes: '11.8K', comments: '488', engagement: '12.4%', date: '22 May' },
-            { title: '5 hooks that increased watch time', type: 'Reel', likes: '9.6K', comments: '371', engagement: '10.1%', date: '19 May' },
-            { title: 'Behind the scenes: newsletter build', type: 'Post', likes: '7.4K', comments: '284', engagement: '8.7%', date: '16 May' },
-        ],
-        timeline: [
-            { title: 'Top post detected', detail: 'Planning reel crossed 14.9% engagement.', time: 'Today, 4:20 PM' },
-            { title: 'Audience growth spike', detail: 'Followers increased by 2.3K over the last 48 hours.', time: 'Today, 11:10 AM' },
-            { title: 'Weekly consistency check', detail: 'Posting cadence stayed above 5 posts per week.', time: 'Yesterday' },
-            { title: 'Profile snapshot saved', detail: 'Mock analytics snapshot prepared for dashboard UI.', time: '24 May' },
-        ],
+        topPosts,
+        timeline: [],
     };
 }
 
@@ -262,6 +336,17 @@ app.get('/', (req, res) => {
 
 app.get('/services', (req, res) => {
     res.redirect('/');
+});
+
+app.get('/terms', (req, res) => {
+    res.render('terms');
+});
+app.get('/about', (req, res) => {
+    res.render('about');
+});
+
+app.get('/changelog', (req, res) => {
+    res.render('changelog');
 });
 
 // Dashboard
@@ -311,7 +396,7 @@ app.get('/settings', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
+            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription scheduledDeletionAt deletionConfirmed')
             .lean();
 
     res.render('settings', {
@@ -382,41 +467,94 @@ app.get('/bio', protect, asyncHandler(async (req, res) => {
 
 // Save bio data
 app.post('/bio/save', protect, asyncHandler(async (req, res) => {
-    // Wire to BioProfile model later
-    return res.json({ success: true });
+    const BioProfile = require('./model/bioProfile');
+    const userDoc = await User.findById(req.user.id);
+    if (!userDoc) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const userHandle = handle || userDoc.alias;
+    
+    if (!userHandle) {
+         return res.status(400).json({ success: false, message: 'Handle is required' });
+    }
+    
+    if (handle && handle !== userDoc.alias) {
+        userDoc.alias = handle;
+        await userDoc.save();
+    }
+    
+    const updateData = {
+        userId: userDoc._id,
+        handle: userHandle,
+        name: name || userDoc.name,
+        bio: bio || userDoc.bio,
+        tags: tags || [],
+        avatarUrl: avatarUrl || userDoc.avatar,
+        links: links || []
+    };
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { userId: userDoc._id },
+        updateData,
+        { new: true, upsert: true }
+    );
+    
+    return res.json({ success: true, data: bioProfile });
 }));
 
 // Track link click
 app.post('/bio/track/:linkId', asyncHandler(async (req, res) => {
-    // Wire to analytics later
-    return res.json({ tracked: true });
+    const BioProfile = require('./model/bioProfile');
+    const { linkId } = req.params;
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { "links._id": linkId },
+        { $inc: { "stats.clicks": 1 } },
+        { new: true }
+    );
+    
+    if (!bioProfile) {
+        return res.status(404).json({ success: false, message: 'Link not found' });
+    }
+    
+    return res.json({ success: true, tracked: true });
 }));
 
 // Public profile — anyone can visit creatoros.com/@handle
 app.get('/@:handle', asyncHandler(async (req, res) => {
     const handle = req.params.handle;
 
-    // Replace with DB lookup when BioProfile model is ready:
-    // const bioProfile = await BioProfile.findOne({ handle }).lean();
+    const cachedResult = await getProfileFromCache(handle);
+    if (cachedResult) {
+        res.setCacheStatus('HIT');
+        const { profile, links } = cachedResult.data;
+        return res.render('bio-profile', { profile, links });
+    }
+
+    res.setCacheStatus('MISS');
+
+    const bioProfile = await BioProfile.findOne({ handle }).lean();
+
+    if (!bioProfile) {
+        return res.status(404).render('404', { url: req.originalUrl });
+    }
 
     const profile = {
-        name: 'Sudeepti Singh',
+        name: bioProfile.name || handle,
         handle,
-        bio: 'AI/ML Enthusiast | Creator | B.Tech CS @ JUET',
-        tags: ['AI/ML', 'Creator', 'Open Source'],
-        avatarUrl: null,
-        initials: 'SS',
-        stats: { links: 6, views: '1.2K', clicks: '342' },
+        bio: bioProfile.bio || '',
+        tags: bioProfile.tags || [],
+        avatarUrl: bioProfile.avatarUrl || null,
+        initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
+        stats: bioProfile.stats || { links: bioProfile.links?.length || 0, views: 0, clicks: 0 },
     };
 
-    const links = [
-        { id: 1, type: 'instagram', icon: '📸', label: 'Instagram',  url: 'https://instagram.com/', category: 'social' },
-        { id: 2, type: 'youtube',   icon: '🎥', label: 'YouTube',    url: 'https://youtube.com/',   category: 'social' },
-        { id: 3, type: 'github',    icon: '💻', label: 'GitHub',     url: 'https://github.com/',    category: 'work'   },
-        { id: 4, type: 'linkedin',  icon: '💼', label: 'LinkedIn',   url: 'https://linkedin.com/',  category: 'work'   },
-        { id: 5, type: 'portfolio', icon: '🌐', label: 'Portfolio',  url: 'https://portfolio.dev/', category: 'work'   },
-        { id: 6, type: 'email',     icon: '📧', label: 'Contact Me', url: 'mailto:hello@example.com', category: 'other' },
-    ];
+    const links = bioProfile.links || [];
+
+    const cacheData = { profile, links };
+    await setProfileInCache(handle, cacheData);
 
     return res.render('bio-profile', { profile, links });
 }));
@@ -452,16 +590,19 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         return res.redirect('/services/creator-crm');
     }
 
-    if (service.key === 'analytics-dashboard') {
+   if (service.key === 'analytics-dashboard') {
         const userDoc = await User.findById(req.user.id)
             .select('name email')
             .lean();
-
+        const creatorDoc = await Creator.findOne({ userId: req.user.id }).lean();
+        const analytics = creatorDoc
+            ? await buildAnalyticsViewModel(creatorDoc._id)
+            : { isLoading: false, isEmpty: true, metrics: [], charts: { labels: [], followers: [], engagement: [] }, topPosts: [] };
         return res.render('analytics-dashboard', {
             service,
             services,
             user: buildAccountViewModel(userDoc, req.user),
-            analytics: buildAnalyticsViewModel(),
+            analytics,
         });
     }
 
@@ -488,21 +629,8 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 
 const { isValidUrl } = require('./utils/validators');
 
-app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, async (req, res) => {
-    const { redirectUrl } = req.body;
-    if (!redirectUrl || !isValidUrl(redirectUrl)) {
-        return res.render('home', buildShortenerViewModel(req, null, 'Please enter a valid HTTP or HTTPS URL.'));
-    }
-
-    try {
-        const shortId = shortid();
-        await Url.create({ shortId, redirectUrl });
-        return res.render('home', buildShortenerViewModel(req, shortId));
-    } catch (err) {
-        console.error('Error creating short URL:', err);
-        return res.render('home', buildShortenerViewModel(req, null, 'An unexpected error occurred.'));
-    }
-});
+const { handleGenerateShortUrlRender } = require('./controller/url');
+app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
 // ── FILE UPLOAD POST ──
 
@@ -510,12 +638,22 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-    return res.json({
+
+    res.json({
         filename: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
+
+    // Clean up temporary file to prevent DoS via disk exhaustion
+    try {
+        fs.unlink(req.file.path, (err) => {
+            if (err) console.error(`[upload] Failed to delete temp file ${req.file.path}:`, err);
+        });
+    } catch (e) {
+        console.error(`[upload] Error deleting temp file:`, e);
+    }
 });
 
 // ── SHORT URL REDIRECT ──
@@ -528,7 +666,13 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
-                $push: { visitHistory: { timestamp: new Date(), source: 'direct' } },
+                $push: {
+                    visitHistory: {
+                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $sort: { timestamp: -1 },
+                        $slice: 1000,
+                    },
+                },
             },
             { new: true }
         );
@@ -543,7 +687,7 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get('/sitemap.xml', (req, res) => {
-    const baseUrl = 'https://titli-link-shortner.vercel.app';
+    const baseUrl = BRAND.siteUrl;
 
     const urls = [
         '/',
@@ -577,14 +721,27 @@ ${urls.map(url => `
     res.send(xml);
 });
 
+// ── 404 HANDLER ──
+app.use((req, res) => {
+    res.status(404).render('404', {
+        url: req.originalUrl
+    });
+});
+
 // ── ERROR HANDLER — must be last ──
 
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 if (require.main === module) {
-    app.listen(port, () => {
-        console.log(`Server is running on http://localhost:${port}`);
+    app.listen(port, (error) => {
+        if (error) {
+            console.error(`Failed to start server on port ${port}: ${error.message}`);
+            process.exit(1);
+        }
+
+        const url = process.env.APP_URL || `http://localhost:${port}`;
+        console.log(`Server is running on ${url}`);
     });
 }
 

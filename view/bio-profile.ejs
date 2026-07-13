@@ -6,13 +6,17 @@
   <%- include('./partials/_seo', {
     title: profile.name,
     description: profile.bio || (profile.name + '\'s CreatorOS profile'),
-    canonical: 'https://titli-link-shortner.vercel.app/' + profile.username
+    canonical: 'https://creatoros.com/' + profile.username
   }) %>
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <%- include('./partials/_brand_head') %>
   <meta name="description" content="<%= profile.bio %>" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google Fonts: common fonts via shared partial -->
+  <%- include('./partials/_fonts') %>
+  <!-- Page-specific font: DM Mono (bio profile only) -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -482,17 +486,17 @@
 
   <!-- THEME SWITCHER -->
   <div class="theme-switcher">
-    <button class="theme-btn active" onclick="setTheme('light', this)">☀ Light</button>
-    <button class="theme-btn" onclick="setTheme('dark', this)">● Dark</button>
-    <button class="theme-btn" onclick="setTheme('neon', this)">⚡ Neon</button>
-    <button class="theme-btn" onclick="setTheme('gradient', this)">◈ Gradient</button>
+    <button type="button" class="theme-btn active" onclick="setTheme('light', this)">☀ Light</button>
+    <button type="button" class="theme-btn" onclick="setTheme('dark', this)">● Dark</button>
+    <button type="button" class="theme-btn" onclick="setTheme('neon', this)">⚡ Neon</button>
+    <button type="button" class="theme-btn" onclick="setTheme('gradient', this)">◈ Gradient</button>
   </div>
 
   <!-- LAYOUT SWITCHER -->
   <div class="layout-switcher">
-    <button class="layout-btn active" onclick="setLayout('list', this)">≡ List</button>
-    <button class="layout-btn" onclick="setLayout('grid', this)">⊞ Grid</button>
-    <button class="layout-btn" onclick="setLayout('cards', this)">▤ Cards</button>
+    <button type="button" class="layout-btn active" onclick="setLayout('list', this)">≡ List</button>
+    <button type="button" class="layout-btn" onclick="setLayout('grid', this)">⊞ Grid</button>
+    <button type="button" class="layout-btn" onclick="setLayout('cards', this)">▤ Cards</button>
   </div>
 
   <!-- LINKS -->
@@ -557,7 +561,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast">Link opened!</div>
 
-<script>
+<script nonce="<%= nonce %>">
   // Theme
   function setTheme(theme, btn) {
     document.documentElement.setAttribute('data-theme', theme);

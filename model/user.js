@@ -51,10 +51,12 @@ const userSchema = new mongoose.Schema(
         
         alias: {
             type: String,
+            maxlength: 50,
         },
         
         bio: {
             type: String,
+            maxlength: 500,
         },
         
         twoFactorEnabled: {
@@ -105,6 +107,23 @@ const userSchema = new mongoose.Schema(
 
         verificationTokenExpiry: {
             type: Date,
+            index: true,
+        },
+
+        scheduledDeletionAt: {
+            type: Date,
+            index: true,
+        },
+
+        deletionConfirmed: {
+            type: Boolean,
+            default: false,
+        },
+
+        deletionConfirmationToken: {
+            type: String,
+            sparse: true,
+            unique: true,
             index: true,
         },
     },

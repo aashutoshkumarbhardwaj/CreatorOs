@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const connectDB = require("../connect");
 const { wantsHtml } = require("../utils/requestType");
+const { isEmailTransportConfigured } = require("../utils/email");
 
 /**
  * @function protect
@@ -50,8 +51,13 @@ const protect = async (req, res, next) => {
                 return res.redirect("/login");
             }
 
-            if (!user.isVerified) {
-                return res.status(403).redirect("/resend-verification");
+            if (!user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
+                const query = new URLSearchParams({
+                    email: decoded.email,
+                    delivery: isEmailTransportConfigured() ? 'configured' : 'unavailable',
+                });
+
+                return res.status(403).redirect(`/resend-verification?${query.toString()}`);
             }
         }
 
@@ -108,6 +114,9 @@ const preventContributorWrites = (req, res, next) => {
     return next();
 };
 
-module.exports = protect;
-module.exports.requireAdmin = requireAdmin;
-module.exports.preventContributorWrites = preventContributorWrites;
+
+module.exports = {
+    protect,
+    requireAdmin,
+    preventContributorWrites,
+};

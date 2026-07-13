@@ -35,7 +35,13 @@ async function generateAISuggestions(topic) {
       });
       const data = await response.json();
       if (data.choices && data.choices[0]) {
-        return JSON.parse(data.choices[0].message.content);
+        try {
+          let rawContent = data.choices[0].message.content;
+          rawContent = rawContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+          return JSON.parse(rawContent);
+        } catch (parseError) {
+          console.error('JSON Parse Failed, falling back to mock generator:', parseError);
+        }
       }
     } catch (e) {
       console.error('AI Generation Failed, falling back to mock generator:', e);
@@ -72,20 +78,25 @@ async function generateAISuggestions(topic) {
 
 exports.getPage = (req, res) => {
   // We no longer need static categories
-  res.render('suggestions', { categories: [], result: null, selected: null, services });
+  res.render('suggestions', { categories: [], result: null, selected: null, error: null, services });
 };
 
 const { suggestionSchema } = require('../middleware/validators');
 
-exports.getSuggestions = async (req, res) => {
+exports.getSuggestions = asyncHandler(async (req, res, next) => {
   const validationResult = suggestionSchema.safeParse(req.body);
   if (!validationResult.success) {
-    return res.render('suggestions', { categories: [], result: null, selected: null, services });
+    const errorMsg = validationResult.error.errors[0]?.message || 'Invalid input provided.';
+    return res.render('suggestions', { categories: [], result: null, selected: null, error: errorMsg, services });
   }
 
   const { topic } = validationResult.data;
 
-  const result = await generateAISuggestions(topic);
-  
-  res.render('suggestions', { categories: [], result, selected: topic, services });
-};
+  try {
+    const result = await generateAISuggestions(topic);
+    res.render('suggestions', { categories: [], result, selected: topic, error: null, services });
+  } catch (err) {
+    console.error('Error generating suggestions:', err);
+    res.render('suggestions', { categories: [], result: null, selected: topic, error: 'An unexpected error occurred while generating suggestions.', services });
+  }
+});
