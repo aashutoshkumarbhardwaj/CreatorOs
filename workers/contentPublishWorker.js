@@ -33,8 +33,11 @@ function startContentPublishWorker() {
     // Skip scheduling under the Jest test env - node-cron's timer is a live
     // handle that never resolves, which otherwise leaves the test process
     // hanging and forces Jest to kill it ungracefully.
-    if (process.env.NODE_ENV === 'test') return;
+    if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DB === 'true') return;
 
+    // Schedule the job to run every minute.
+    // The `fireOnStart` option is false by default, so it will wait for the
+    // first minute to tick over before its initial run.
     cron.schedule('* * * * *', async () => {
         try {
             const publishedCount = await publishDueContent();

@@ -35,23 +35,6 @@ const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/
  */
 router.get('/', protect, handleListUserLinks);
 
-/**
- * @swagger
- * /analytics/:shortId:
- *   get:
- *     summary: GET request for /analytics/:shortId
- *     description: Retrieves analytics data for a specific shortened URL.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/analytics/:shortId', protect, handleGetAnalytics);
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
 /**

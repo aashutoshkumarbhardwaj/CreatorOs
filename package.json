@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js",
+    "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js",
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
