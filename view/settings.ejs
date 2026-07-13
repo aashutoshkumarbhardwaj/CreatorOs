@@ -131,7 +131,9 @@
                                 <div class="billing-label">ACTIVE PLAN</div>
                                 <div class="plan-name" id="plan-name"><%= user.billing.planName %></div>
                                 <div class="plan-price">$<span id="plan-price"><%= user.billing.priceMonthly %></span><span>/mo</span></div>
-                                <button type="button" class="btn-black" id="manage-subscription-btn">Manage Subscription</button>
+                                <button type="button" class="btn-black" id="manage-subscription-btn">
+                                    <%= user.billing.planName === 'Free' ? 'Upgrade to Pro' : 'Manage Subscription' %>
+                                </button>
                             </div>
                             <div class="billing-card">
                                 <div class="billing-label">NEXT INVOICE</div>

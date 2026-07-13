@@ -361,7 +361,27 @@
     }
 
     const billingModal = document.getElementById('billing-modal');
-    document.getElementById('manage-subscription-btn').addEventListener('click', () => {
+    document.getElementById('manage-subscription-btn').addEventListener('click', async () => {
+        const planName = userData?.subscription?.planName || 'Free';
+        if (planName === 'Free') {
+            try {
+                const btn = document.getElementById('manage-subscription-btn');
+                const origText = btn.textContent;
+                btn.textContent = 'Loading...';
+                const res = await fetch('/api/billing/create-checkout-session', { method: 'POST' });
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    btn.textContent = origText;
+                    showToast('Failed to start checkout.', true);
+                }
+            } catch (err) {
+                showToast(err.message, true);
+            }
+            return;
+        }
+
         billingModal.classList.add('open');
         billingModal.setAttribute('aria-hidden', 'false');
         playSoundCue();

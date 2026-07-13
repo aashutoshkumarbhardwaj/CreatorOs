@@ -77,11 +77,13 @@ const userSchema = new mongoose.Schema(
         },
 
         subscription: {
-            planName: { type: String, default: 'Pro Individual' },
-            priceMonthly: { type: Number, default: 29 },
+            planName: { type: String, default: 'Free' },
+            priceMonthly: { type: Number, default: 0 },
             nextInvoiceDate: { type: Date },
-            cardBrand: { type: String, default: 'VISA' },
-            cardLast4: { type: String, default: '4242' },
+            cardBrand: { type: String },
+            cardLast4: { type: String },
+            stripeCustomerId: { type: String },
+            stripeSubscriptionId: { type: String }
         },
 
         lastLoginAt: {

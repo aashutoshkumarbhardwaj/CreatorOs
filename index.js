@@ -145,6 +145,9 @@ app.use('/api/content', protect, contentRoutes);
 const bioRoutes = require('./routes/bio');
 app.use('/api/bio', bioRoutes);
 
+const billingRoutes = require('./routes/billing');
+app.use('/api/billing', billingRoutes);
+
 const os = require('os');
 const uploadDir = os.tmpdir();
 
