@@ -348,15 +348,17 @@ It returns a normalized profile response with username, name, profile image, bio
 
 ### Run Locally
 
-```bash id="r7w2nk"
+```bash
 npm run dev
 ```
 
 Then open:
 
-```text id="m4p8xc"
+```text
 http://localhost:3000
 ```
+
+> **Expected Result:** If the setup is successful, the CreatorOS homepage should load without configuration errors. If the application starts in **Mock Database Mode**, verify that `MONGODB_URI` is configured correctly in `.env.local`.
 
 ## ❓ FAQ
 
