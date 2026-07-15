@@ -15,7 +15,8 @@ const Url = require('../model/url');
  * @returns {Promise<void>|void}
  */
 async function getDashboardData(userDoc) {
-    let urlsQuery = Url.find({});
+    const userId = userDoc ? userDoc._id : null;
+    let urlsQuery = userId ? Url.find({ userId }) : Url.find({ _id: null });
     let allUrls = await urlsQuery;
 
     // Handle Mongoose Query vs Mock implementation differences

@@ -18,6 +18,11 @@ const urlSchema = new mongoose.Schema({
         type: String,
         default: "Untitled Campaign",
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        index: true,
+    },
     totalClicks: {
         type: Number,
         default: 0,
@@ -53,10 +58,13 @@ const urlSchema = new mongoose.Schema({
     ],
 });
 
-const MongooseUrlModel = mongoose.models.Url || mongoose.model("Url", urlSchema);
 
-// In-Memory Database Fallback Implementation
-const mockUrls = [];
+urlSchema.statics.listForUser = async function (userId, limit = 100) {
+    return this.find({ userId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+};
 
 class MockUrlModel {
     constructor(data) {

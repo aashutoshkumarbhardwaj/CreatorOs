@@ -1,4 +1,7 @@
 const { dmQueue } = require('../services/dmQueueService');
+const asyncHandler = require('../utils/asyncHandler');
+
+const crypto = require('crypto');
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
@@ -21,8 +24,44 @@ const verifyWebhook = (req, res) => {
     return res.status(400).send('Missing hub variables');
 };
 
+const verifyWebhookSignature = (req, res, next) => {
+    const signature = req.headers['x-hub-signature-256'];
+    
+    if (!signature) {
+        console.warn('[Webhook] Missing X-Hub-Signature-256 header');
+        return res.sendStatus(403);
+    }
+    
+    const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
+    
+    if (!APP_SECRET) {
+        console.error('[Webhook] INSTAGRAM_APP_SECRET is not configured');
+        return res.sendStatus(500);
+    }
+    
+    const payload = req.rawBody;
+    
+    if (!payload) {
+        console.error('[Webhook] Raw body is missing. Ensure express.json({verify: ...}) is configured.');
+        return res.sendStatus(500);
+    }
+
+    const expectedSignature = 'sha256=' + crypto.createHmac('sha256', APP_SECRET).update(payload).digest('hex');
+
+    try {
+        if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+            return next();
+        }
+    } catch (e) {
+        // catch error if buffer lengths don't match
+    }
+
+    console.warn('[Webhook] Invalid signature');
+    return res.sendStatus(403);
+};
+
 // Handle incoming webhook events
-const handleWebhook = async (req, res) => {
+const handleWebhook = asyncHandler(async (req, res, next) => {
     const body = req.body;
 
     // Check if it's a page or instagram event
@@ -67,9 +106,10 @@ const handleWebhook = async (req, res) => {
         // Return a '404 Not Found' if event is not from a supported object
         return res.sendStatus(404);
     }
-};
+});
 
 module.exports = {
     verifyWebhook,
+    verifyWebhookSignature,
     handleWebhook
 };

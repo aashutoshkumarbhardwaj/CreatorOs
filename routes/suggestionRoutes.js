@@ -38,6 +38,8 @@ router.get('/', getPage);
  *       500:
  *         description: Internal server error
  */
-router.post('/', generateSuggestionValidator, getSuggestions);
+const { aiGenerationLimiter } = require('../middleware/rateLimiters');
+
+router.post('/', aiGenerationLimiter, generateSuggestionValidator, getSuggestions);
 
 module.exports = router;

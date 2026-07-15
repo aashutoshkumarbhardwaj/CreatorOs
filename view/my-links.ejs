@@ -7,23 +7,15 @@
     <%- include('./partials/_seo', {
         title: 'My Links',
         description: 'Manage your links.',
-        canonical: 'https://titli-link-shortner.vercel.app/my-links',
+        canonical: 'https://creatoros.com/my-links',
         robots: 'noindex,nofollow'
     }) %>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    
-    <!-- Import Google Fonts: Space Grotesk and Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('./partials/_brand_head') %>
+    <!-- Google Fonts: loaded once from shared partial -->
+    <%- include('./partials/_fonts') %>
     <style>
         /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
@@ -1612,7 +1604,6 @@
             .qr-actions { grid-template-columns: 1fr; }
         }
     </style>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="workspace-page links-page" data-user='<%- JSON.stringify({ name: user.name, initials: user.initials, isGuestContributor: isGuestContributor }) %>' data-domain="<%= domain %>">
     <div class="dashboard-layout" id="dashboardLayout">
@@ -1760,7 +1751,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite" style="display:none; position:fixed; bottom:20px; right:20px; background:var(--card-bg); border:var(--border-thick); padding:1rem; box-shadow:var(--shadow-retro); z-index:1000; font-weight:700;"></div>
 
     <script src="/js/pages/my-links.js"></script>
-    <script>
+    <script nonce="<%= nonce %>">
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');
         const themeToggle = document.getElementById('theme-toggle');

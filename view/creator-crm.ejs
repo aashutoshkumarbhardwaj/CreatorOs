@@ -6,17 +6,15 @@
   <%- include('./partials/_seo', {
     title: 'Creator CRM',
     description: 'Manage creator relationships and workflows.',
-    canonical: 'https://titli-link-shortner.vercel.app/creator-crm',
+    canonical: 'https://creatoros.com/creator-crm',
     robots: 'noindex,nofollow'
   }) %>
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <%- include('./partials/_brand_head') %>
+  <!-- Google Fonts: loaded once from shared partial -->
+  <%- include('./partials/_fonts') %>
   <style>
         /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
@@ -1817,7 +1815,7 @@
         <div class="pipeline-col">
           <div class="col-header">
             <span class="col-title">Leads (4)</span>
-            <button class="col-header-action">
+            <button type="button" class="col-header-action">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
             </button>
           </div>
@@ -1860,7 +1858,7 @@
         <div class="pipeline-col">
           <div class="col-header">
             <span class="col-title">Outreach (2)</span>
-            <button class="col-header-action">
+            <button type="button" class="col-header-action">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           </div>
@@ -1879,7 +1877,7 @@
                   <div class="contact-avatar" style="background: linear-gradient(135deg,#6ee7b7,#059669); color:#fff;">ER</div>
                   <span class="contact-name">Elena Ross</span>
                 </div>
-                <button class="deal-icon-btn">
+                <button type="button" class="deal-icon-btn">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </button>
               </div>
@@ -2017,7 +2015,7 @@
                 </div>
               <% } %>
             </div>
-            <button class="add-invoice-btn">+</button>
+            <button type="button" class="add-invoice-btn">+</button>
           </div>
         </div>
 

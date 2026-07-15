@@ -8,8 +8,11 @@ const {
     handleUpdateQRColors,
     handleGetAnalytics,
 } = require('../controller/url');
-const protect = require('../middleware/auth');
-const { preventContributorWrites } = require('../middleware/auth');
+const {
+    protect,
+    preventContributorWrites,
+} = require('../middleware/auth');
+
 const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
 const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
 
@@ -32,23 +35,6 @@ const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/
  */
 router.get('/', protect, handleListUserLinks);
 
-/**
- * @swagger
- * /analytics/:shortId:
- *   get:
- *     summary: GET request for /analytics/:shortId
- *     description: Retrieves analytics data for a specific shortened URL.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/analytics/:shortId', handleGetAnalytics);
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
 /**
@@ -105,7 +91,7 @@ router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shor
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId/download', handleDownloadQRCode);      
+router.get('/qr/:shortId/download', protect, handleDownloadQRCode);      
 
 /**
  * @swagger
@@ -123,7 +109,7 @@ router.get('/qr/:shortId/download', handleDownloadQRCode);
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId',          handleGetQRCode);       
+router.get('/qr/:shortId', protect, handleGetQRCode);       
 
 /**
  * @swagger
@@ -161,6 +147,6 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrC
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId',   handleGetAnalytics);
+router.get('/analytics/:shortId', protect, handleGetAnalytics);
 
 module.exports = router;

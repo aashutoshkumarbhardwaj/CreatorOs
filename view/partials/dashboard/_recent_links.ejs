@@ -24,29 +24,21 @@
         </tr>
       </thead>
       <tbody>
-        <%# TODO: replace with: recentLinks.forEach(link => { %>
-        <tr>
-          <td>https://example.com/awesome-video</td>
-          <td class="short-url">creatoros.link/abc123</td>
-          <td>342</td>
-          <td>24 May 2025</td>
-          <td><%- include('./_link_actions') %></td>
-        </tr>
-        <tr>
-          <td>https://blog.example.com/seo-tips</td>
-          <td class="short-url">creatoros.link/def456</td>
-          <td>178</td>
-          <td>23 May 2025</td>
-          <td><%- include('./_link_actions') %></td>
-        </tr>
-        <tr>
-          <td>https://youtu.be/dQw4w9WgXcQ</td>
-          <td class="short-url">creatoros.link/ghi789</td>
-          <td>98</td>
-          <td>22 May 2025</td>
-          <td><%- include('./_link_actions') %></td>
-        </tr>
-        <%# TODO: }) %>
+        <% if (recentLinks && recentLinks.length > 0) { %>
+          <% recentLinks.forEach(link => { %>
+            <tr>
+              <td><%= link.originalUrl %></td>
+              <td class="short-url">creatoros.link/<%= link.shortUrl %></td>
+              <td><%= link.clicks %></td>
+              <td><%= link.date %></td>
+              <td><%- include('./_link_actions') %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem;">No links generated yet.</td>
+          </tr>
+        <% } %>
       </tbody>
     </table>
   </div>

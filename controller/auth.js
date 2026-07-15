@@ -4,6 +4,17 @@ const crypto = require("crypto");
 const connectDB = require("../connect");
 const asyncHandler = require("../utils/asyncHandler");
 const { wantsHtml } = require("../utils/requestType");
+const {
+    checkIfLoginLocked,
+    recordFailedLoginAttempt,
+    clearLoginAttempts,
+    getRemainingLoginLockoutTime,
+    checkIfResetLocked,
+    recordFailedResetAttempt,
+    clearResetAttempts,
+    getRemainingResetLockoutTime,
+} = require("../utils/loginAttemptManager");
+const { isEmailTransportConfigured } = require("../utils/email");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -11,6 +22,7 @@ const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const GUEST_CONTRIBUTOR_ROLE = "guest_contributor";
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
 const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not be completed.";
+const VERIFICATION_UNAVAILABLE_ERROR = "Email verification is temporarily unavailable because email delivery is not configured. Please try again later or contact support.";
 
 /**
  * @function getUserModel
@@ -117,15 +129,25 @@ function createContributorToken(session) {
 
 /**
  * @function setAuthCookie
- * @description Sets the authentication JWT token as an HTTP-only cookie.
+ * @description Sets the authentication JWT token as an HTTP-only cookie with security hardening.
+ * Ensures the session cookie is protected against:
+ * - XSS attacks (httpOnly prevents JS access via document.cookie)
+ * - Man-in-the-middle attacks (secure flag prevents transmission over HTTP)
+ * - CSRF attacks (sameSite strict prevents cross-origin cookie inclusion)
  * @returns {any}
  */
 function setAuthCookie(res, token) {
+    // Determine if we should enforce HTTPS-only cookies
+    // In production, this is mandatory. In development, allow HTTP for localhost testing.
+    const isProduction = process.env.NODE_ENV === "production";
+    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === "true";
+
     res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.COOKIE_SAME_SITE || "lax",
+        httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
+        secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
+        sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
         maxAge: ONE_WEEK_MS,
+        path: "/", // Explicitly set path for clarity
     });
 }
 
@@ -162,6 +184,14 @@ const signup = asyncHandler(async (req, res, next) => {
     const { sendVerificationEmail } = require("../utils/email");
 
     const { name, email, password } = req.body || {};
+
+    if (!name || !email || !password) {
+        if (wantsHtml(req)) {
+            return res.status(400).render("signup", { error: "Name, email, and password are required" });
+        }
+        return res.status(400).json({ success: false, message: "Name, email, and password are required" });
+    }
+
     const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -187,30 +217,44 @@ const signup = asyncHandler(async (req, res, next) => {
         verificationTokenExpiry,
     });
 
-    // Send verification email
-    try {
-        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
-        const verificationLink = `${baseUrl}/verify-email?token=${verificationToken}`;
+    let verificationDeliveryUnavailable = false;
 
-        await sendVerificationEmail({
-            to: normalizedEmail,
-            verificationLink,
-            userName: name,
-        });
+    // Send verification email when delivery is configured.
+    try {
+        if (isEmailTransportConfigured()) {
+            const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+            const verificationLink = `${baseUrl}/verify-email?token=${verificationToken}`;
+
+            await sendVerificationEmail({
+                to: normalizedEmail,
+                verificationLink,
+                userName: name,
+            });
+        } else {
+            verificationDeliveryUnavailable = true;
+        }
     } catch (emailError) {
         console.error("Failed to send verification email:", emailError);
-        // Don't fail the signup, but let user know to check email or resend
+        verificationDeliveryUnavailable = true;
+        // Don't fail the signup, but let user know verification email could not be delivered.
     }
+
+    const signupSuccessMessage = verificationDeliveryUnavailable
+        ? VERIFICATION_UNAVAILABLE_ERROR
+        : "Sign up successful! Please check your email to verify your account.";
 
     if (wantsHtml(req)) {
         return res.render("signup", { 
             error: null, 
-            success: "Sign up successful! Please check your email to verify your account." 
+            success: signupSuccessMessage,
+            verificationDeliveryUnavailable,
+            verificationEmail: normalizedEmail,
         });
     }
     return res.status(201).json({ 
         success: true, 
-        message: "Sign up successful! Please check your email to verify your account.",
+        message: signupSuccessMessage,
+        verificationDeliveryUnavailable,
         data: { id: user._id, email: user.email } 
     });
 });
@@ -219,27 +263,68 @@ const login = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
 
     const { email, password } = req.body || {};
+    const allowUnverifiedLogin = req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true";
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
-    
-    // Allow login with any credentials: find user by email, or get the first user, or create a mock user
-    let user = null;
-    if (normalizedEmail) {
-        user = await User.findOne({ email: normalizedEmail });
+
+    if (!normalizedEmail || !password) {
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
-    if (!user) {
-        user = await User.findOne({});
+
+    const isLocked = await checkIfLoginLocked(normalizedEmail);
+    if (isLocked) {
+        const remainingTime = await getRemainingLoginLockoutTime(normalizedEmail);
+        const lockoutMessage = `Account locked due to too many failed login attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) return res.status(429).render("login", { error: lockoutMessage });
+        return res.status(429).json({ success: false, message: lockoutMessage });
     }
+
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-        user = await User.create({
-            name: "Test User",
-            email: normalizedEmail || "test@local.com",
-            password: await bcrypt.hash("Password123!", 10),
-            role: "creator",
-            isVerified: true
+        await recordFailedLoginAttempt(normalizedEmail);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        await recordFailedLoginAttempt(normalizedEmail);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
+    if (user.authProvider !== "google" && !user.isVerified) {
+        const verificationDeliveryUnavailable = !isEmailTransportConfigured();
+
+        if (verificationDeliveryUnavailable && allowUnverifiedLogin) {
+            await clearLoginAttempts(normalizedEmail);
+
+            user.lastLoginAt = new Date();
+            await user.save();
+
+            const token = createToken(user);
+            setAuthCookie(res, token);
+
+            if (wantsHtml(req)) return res.redirect("/dashboard?login=unverified");
+            return res.status(200).json({ success: true, token, user: serializeUser(user) });
+        }
+
+        if (wantsHtml(req)) {
+            return res.redirect(`/resend-verification?email=${encodeURIComponent(normalizedEmail)}${verificationDeliveryUnavailable ? "&delivery=unavailable" : ""}`);
+        }
+
+        return res.status(403).json({
+            success: false,
+            message: verificationDeliveryUnavailable
+                ? VERIFICATION_UNAVAILABLE_ERROR
+                : "Your account is not verified yet. Please check your email or request a new verification link.",
+            unverifiedEmail: normalizedEmail,
+            verificationDeliveryUnavailable,
         });
     }
 
-    user.isVerified = true;
+    await clearLoginAttempts(normalizedEmail);
+
     user.lastLoginAt = new Date();
     await user.save();
 
@@ -258,7 +343,7 @@ const login = asyncHandler(async (req, res, next) => {
  * @param {Function} next - Express next middleware function
  * @returns {Promise<void>|void}
  */
-const handleGoogleCallback = async (req, res) => {
+const handleGoogleCallback = asyncHandler(async (req, res, next) => {
     try {
         if (!req.user) {
             return redirectWithLoginError(res, GOOGLE_AUTH_CANCELLED_ERROR);
@@ -272,7 +357,7 @@ const handleGoogleCallback = async (req, res) => {
         console.error("Google login error:", error);
         return redirectWithLoginError(res, "Google sign-in failed. Please try again.");
     }
-};
+});
 
 const loginAsContributor = asyncHandler(async (req, res, next) => {
     await connectDB();
@@ -357,7 +442,8 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
                 error: "Verification link has expired. Please request a new one.",
                 success: null,
                 expiredToken: true,
-                userEmail: user.email
+                userEmail: user.email,
+                verificationDeliveryUnavailable: !isEmailTransportConfigured(),
             });
         }
         return res.status(410).json({ 
@@ -425,7 +511,9 @@ const resendVerificationEmail = asyncHandler(async (req, res, next) => {
         if (wantsHtml(req)) {
             return res.render("resend-verification", { 
                 success: "Your email is already verified. You can log in now.",
-                error: null
+                error: null,
+                prefilledEmail: normalizedEmail,
+                verificationDeliveryUnavailable: false,
             });
         }
         return res.status(200).json({ 
@@ -434,9 +522,28 @@ const resendVerificationEmail = asyncHandler(async (req, res, next) => {
         });
     }
 
+    if (!isEmailTransportConfigured()) {
+        if (wantsHtml(req)) {
+            return res.status(503).render("resend-verification", {
+                error: VERIFICATION_UNAVAILABLE_ERROR,
+                success: null,
+                prefilledEmail: normalizedEmail,
+                verificationDeliveryUnavailable: true,
+            });
+        }
+
+        return res.status(503).json({
+            success: false,
+            message: VERIFICATION_UNAVAILABLE_ERROR,
+            verificationDeliveryUnavailable: true,
+        });
+    }
+
     // Generate new verification token
     const verificationToken = generateVerificationToken();
     const verificationTokenExpiry = getVerificationTokenExpiry();
+    const previousVerificationToken = user.verificationToken;
+    const previousVerificationTokenExpiry = user.verificationTokenExpiry;
 
     user.verificationToken = verificationToken;
     user.verificationTokenExpiry = verificationTokenExpiry;
@@ -454,28 +561,145 @@ const resendVerificationEmail = asyncHandler(async (req, res, next) => {
         });
     } catch (emailError) {
         console.error("Failed to send verification email:", emailError);
+        user.verificationToken = previousVerificationToken;
+        user.verificationTokenExpiry = previousVerificationTokenExpiry;
+        await user.save();
         if (wantsHtml(req)) {
             return res.status(500).render("resend-verification", { 
-                error: "Failed to send verification email. Please try again later.",
-                success: null
+                error: VERIFICATION_UNAVAILABLE_ERROR,
+                success: null,
+                prefilledEmail: normalizedEmail,
+                verificationDeliveryUnavailable: true,
             });
         }
         return res.status(500).json({ 
             success: false, 
-            message: "Failed to send verification email. Please try again later." 
+            message: VERIFICATION_UNAVAILABLE_ERROR,
+            verificationDeliveryUnavailable: true,
         });
     }
 
     if (wantsHtml(req)) {
         return res.render("resend-verification", { 
             success: "Verification email sent! Please check your inbox.",
-            error: null
+            error: null,
+            prefilledEmail: normalizedEmail,
+            verificationDeliveryUnavailable: false,
         });
     }
     return res.status(200).json({ 
         success: true, 
-        message: "Verification email sent successfully!" 
+        message: "Verification email sent successfully!",
+        verificationDeliveryUnavailable: false,
     });
+});
+
+/**
+ * @function requestPasswordReset
+ * @description Generates a secure password reset token and sends it via email.
+ * Token expires after 15 minutes and can only be used once.
+ */
+const requestPasswordReset = asyncHandler(async (req, res) => {
+    const User = await getUserModel();
+    const PasswordResetToken = require('../model/passwordResetToken');
+    const { email } = req.body || {};
+
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const isLocked = await checkIfResetLocked(normalizedEmail);
+    if (isLocked) {
+        const remainingTime = await getRemainingResetLockoutTime(normalizedEmail);
+        const lockoutMessage = `Too many password reset attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        return res.status(429).json({ success: false, message: lockoutMessage });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+        await recordFailedResetAttempt(normalizedEmail);
+        return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+    }
+
+    // Create password reset token (15 minute validity)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await PasswordResetToken.create({
+        userId: user._id,
+        token: resetToken,
+        expiresAt,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+    });
+
+    // Send reset link via email
+    try {
+        const { sendPasswordResetEmail } = require('../utils/email');
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+        const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
+        await sendPasswordResetEmail({
+            to: user.email,
+            resetLink,
+            userName: user.name,
+        });
+    } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        return res.json({ success: true, message: 'If email exists, reset link has been sent. If you do not receive an email, please contact support or try again later.' });
+    }
+
+    return res.json({ success: true, message: 'If email exists, reset link has been sent. Please check your email inbox (and spam folder).' });
+});
+
+/**
+ * @function resetPassword
+ * @description Validates password reset token and updates user password.
+ * Marks token as used to prevent replay attacks.
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+    const User = await getUserModel();
+    const PasswordResetToken = require('../model/passwordResetToken');
+    const { token, newPassword } = req.body || {};
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Token and password are required' });
+    }
+
+    // Atomically claim the token: find a valid unused token and mark it used in one operation
+    const resetTokenDoc = await PasswordResetToken.findOneAndUpdate(
+        { token, used: false, expiresAt: { $gt: new Date() } },
+        { $set: { used: true, usedAt: new Date() } },
+        { new: true }
+    );
+    if (!resetTokenDoc) {
+        // Check if token exists at all to give a more specific error
+        const existingToken = await PasswordResetToken.findOne({ token });
+        if (!existingToken) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+        }
+        if (existingToken.used) {
+            return res.status(400).json({ success: false, message: 'This reset token has already been used' });
+        }
+        return res.status(400).json({ success: false, message: 'Reset token has expired' });
+    }
+
+    // Update user password
+    const user = await User.findById(resetTokenDoc.userId);
+    if (!user) {
+        return res.status(400).json({ success: false, message: 'User not found' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    await clearResetAttempts(user.email);
+
+    return res.json({ success: true, message: 'Password reset successfully. Please log in with your new password.' });
 });
 
 module.exports = {
@@ -485,4 +709,6 @@ module.exports = {
     loginAsContributor,
     verifyEmail,
     resendVerificationEmail,
+    requestPasswordReset,
+    resetPassword,
 };
