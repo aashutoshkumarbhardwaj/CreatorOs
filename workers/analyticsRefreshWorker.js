@@ -23,7 +23,7 @@ let analyticsQueue = createFallbackQueue();
 let analyticsWorker = null;
 
 if (!REDIS_URI) {
-    console.warn("📦 Analytics refresh worker disabled because REDIS_URI is not set.");
+    console.warn("📦 Analytics refresh worker disabled because REDIS_URI/REDIS_URL is not set. BullMQ queues cannot use Upstash REST credentials.");
 } else {
     const redisConnection = new IORedis(REDIS_URI, {
         maxRetriesPerRequest: null,

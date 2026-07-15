@@ -252,11 +252,65 @@
         }
 
         .form-container p {
-            color: var(--gray);
-            font-size: 1.125rem;
-            margin-bottom: 2.5rem;
-            font-weight: 500;
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
         }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1rem;
+            background: var(--white);
+            border: 2px solid var(--black);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--black);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            gap: 12px;
+            box-shadow: 4px 4px 0 var(--black);
+            margin-bottom: 1rem;
+        }
+        
+        .social-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--black);
+        }
+        
+        .social-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        .social-icon { width: 18px; height: 18px; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 2rem 0;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--black);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.75rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--black);
+        }
+
+        .divider:not(:empty)::before { margin-right: 1rem; }
+        .divider:not(:empty)::after { margin-left: 1rem; }
 
         .form-group {
             margin-bottom: 1.5rem;
@@ -487,6 +541,18 @@
                             <%= error %>
                         </div>
                     <% } %>
+
+                    <a class="social-btn" href="/auth/google">
+                        <svg class="social-icon" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.3.5 24 .5 14.8.5 6.9 5.8 3.1 13.5l7.7 6C12.6 13.6 17.8 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 2.9-2.2 5.4-4.8 7.1l7.4 5.7c4.3-4 7.3-9.9 7.3-16.8z"/>
+                            <path fill="#FBBC05" d="M10.8 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.7-6C1.5 16.7.6 20.2.6 24s.9 7.3 2.5 10.5l7.7-6z"/>
+                            <path fill="#34A853" d="M24 47.5c6.3 0 11.6-2.1 15.4-5.7L32 36.1c-2.1 1.4-4.7 2.2-8 2.2-6.2 0-11.4-4.1-13.2-9.8l-7.7 6C6.9 42.2 14.8 47.5 24 47.5z"/>
+                        </svg>
+                        Sign in with Google
+                    </a>
+
+                    <div class="divider">OR EMAIL</div>
 
                     <form action="/signup" method="POST">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

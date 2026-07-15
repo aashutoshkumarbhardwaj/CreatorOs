@@ -1,16 +1,10 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
-const Redis = require('ioredis');
+const { createRedisClient } = require('../utils/redisClient');
 
-const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
-const redis = REDIS_URI
-    ? new Redis(REDIS_URI, {
-        connectTimeout: 5000,
-        lazyConnect: true,
-    })
-    : null;
+const redis = createRedisClient();
 const memoryStore = new Map();
 
-if (redis) {
+if (redis?.on) {
     redis.on('error', (error) => {
         console.warn(`[InstagramProfile] Redis error: ${error.message}`);
     });

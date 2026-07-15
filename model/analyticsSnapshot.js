@@ -31,6 +31,8 @@ const analyticsSnapshotSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+analyticsSnapshotSchema.index({ creatorId: 1, createdAt: -1 });
+
 const AnalyticsSnapshotModel =
     mongoose.models.AnalyticsSnapshot ||
     mongoose.model("AnalyticsSnapshot", analyticsSnapshotSchema);
