@@ -47,6 +47,11 @@ const urlShortenerApiLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
+    store: process.env.MONGODB_URI ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 60 * 60 * 1000,
+    }) : undefined,
     handler: (req, res) => {
         const message = 'Too many accounts created from this IP, please try again later.';
         if (wantsHtml(req)) {
