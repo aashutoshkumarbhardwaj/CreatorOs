@@ -40,6 +40,9 @@ const scheduledContentSchema = new mongoose.Schema(
         publishedAt: {
             type: Date,
         },
+        publishedBy: {
+            type: String,
+        },
     },
     { timestamps: true }
 );

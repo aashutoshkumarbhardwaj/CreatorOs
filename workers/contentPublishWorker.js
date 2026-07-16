@@ -1,32 +1,36 @@
 const cron = require('node-cron');
 const ScheduledContent = require('../model/scheduledContent');
 
-// Runs every minute and publishes any content whose scheduledAt (stored in
-// UTC) has passed. Comparing against `new Date()` (also UTC internally)
-// means DST changes in the creator's local timezone can't cause an
-// off-by-one-hour publish - the timezone field on the document is display
-// metadata only, never used for the due-date comparison.
-//
-// NOTE: this only flips status to "published". There's no subscriber/
-// notification system in this codebase yet (no subscriber model, no email
-// dispatch for content updates), so the "notify subscribers" step from the
-// issue's proposed solution isn't included - wiring it in would mean
-// inventing a whole notification feature that's out of scope here.
+const INSTANCE_ID = process.env.INSTANCE_ID || `web-${process.pid}`;
+
 async function publishDueContent() {
     const now = new Date();
+    let publishedCount = 0;
 
-    const dueContent = await ScheduledContent.find({
-        status: 'scheduled',
-        scheduledAt: { $lte: now },
-    });
+    // Use atomic findOneAndUpdate to prevent race conditions in multi-instance deployments
+    while (true) {
+        const result = await ScheduledContent.findOneAndUpdate(
+            {
+                status: 'scheduled',
+                scheduledAt: { $lte: now },
+            },
+            {
+                $set: {
+                    status: 'published',
+                    publishedAt: now,
+                    publishedBy: INSTANCE_ID,
+                },
+            },
+            {
+                new: true,
+            }
+        );
 
-    for (const item of dueContent) {
-        item.status = 'published';
-        item.publishedAt = now;
-        await item.save();
+        if (!result) break;
+        publishedCount++;
     }
 
-    return dueContent.length;
+    return publishedCount;
 }
 
 function startContentPublishWorker() {
