@@ -525,9 +525,45 @@ app.post('/bio/save', protect, asyncHandler(async (req, res) => {
 }));
 
 // Track link click
-app.post('/bio/track/:linkId', asyncHandler(async (req, res) => {
+const clickTrackerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // 50 requests per window per IP
+    message: { success: false, message: 'Too many requests' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// IP-based deduplication map: linkId -> Map<ip, timestamp>
+const clickCooldowns = new Map();
+const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+
+app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
     const { linkId } = req.params;
+    const clientIp = req.ip || req.connection.remoteAddress;
+
+    // IP-based deduplication with cooldown
+    if (!clickCooldowns.has(linkId)) {
+        clickCooldowns.set(linkId, new Map());
+    }
+    const linkCooldowns = clickCooldowns.get(linkId);
+    const lastClick = linkCooldowns.get(clientIp);
+
+    if (lastClick && (Date.now() - lastClick) < CLICK_COOLDOWN_MS) {
+        return res.json({ success: true, tracked: false, reason: 'cooldown' });
+    }
+
+    linkCooldowns.set(clientIp, Date.now());
+
+    // Periodically clean up old cooldown entries to prevent memory leak
+    if (linkCooldowns.size > 10000) {
+        const now = Date.now();
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+    }
     
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
