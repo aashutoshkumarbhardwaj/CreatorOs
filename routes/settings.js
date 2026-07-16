@@ -1,16 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const User = require('../model/user');
-const Url = require('../model/url');
-const Invite = require('../model/invite');
-const Creator = require('../model/creator');
-const AnalyticsSnapshot = require('../model/analyticsSnapshot');
-const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
-const { sendDeletionConfirmationEmail, isEmailTransportConfigured } = require('../utils/email');
 const { validate, updateProfileSchema } = require('../middleware/validators');
 
 const asyncHandler = fn => (req, res, next) =>
@@ -191,6 +184,38 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
     await user.save();
 
     const days = daysSince(user.passwordChangedAt);
+
+    // Invalidate the old session by clearing the current cookie
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' || process.env.COOKIE_SECURE_DEV === 'true',
+        sameSite: 'strict',
+        path: '/',
+    });
+
+    // Issue a new token so the user stays logged in after password change
+    const newToken = jwt.sign(
+        {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role || 'creator',
+            passwordChangedAt: Math.floor(user.passwordChangedAt.getTime() / 1000),
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === 'true';
+    res.cookie('token', newToken, {
+        httpOnly: true,
+        secure: isSecureEnvironment,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+    });
+
     res.json({
         message: 'Password updated successfully',
         passwordChangedAt: user.passwordChangedAt,

@@ -87,6 +87,9 @@ function serializeUser(user) {
         name: user.name,
         email: user.email,
         role: user.role || "creator",
+        passwordChangedAt: user.passwordChangedAt
+            ? Math.floor(user.passwordChangedAt.getTime() / 1000)
+            : undefined,
     };
 }
 

@@ -338,7 +338,21 @@ router.post("/resend-verification", emailVerificationLimiter, resendVerification
  *       500:
  *         description: Internal server error
  */
-router.get("/logout", (req, res) => {
+router.get("/logout", async (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        try {
+            const jwt = require("jsonwebtoken");
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            if (decoded.role === 'guest_contributor') {
+                await connectDB();
+                const ContributorSession = require("../model/contributorSession");
+                await ContributorSession.deleteOne({ contributorId: decoded.id });
+            }
+        } catch (e) {
+            // Token may already be invalid, that's fine
+        }
+    }
     res.clearCookie("token");
     res.redirect("/login");
 });
