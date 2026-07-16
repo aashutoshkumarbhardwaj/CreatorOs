@@ -119,6 +119,9 @@ app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
+app.get('/confirm-deletion', (req, res) => {
+    res.render('confirm-deletion');
+});
 app.get('/services/bio-builder', (req, res) => {
     res.render('bio-builder');
 });
