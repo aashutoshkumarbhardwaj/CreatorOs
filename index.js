@@ -56,12 +56,7 @@ app.use(express.json({
         req.rawBody = buf;
     }
 }));
-app.use((req, res, next) => {
-    if (req.body) mongoSanitize.sanitize(req.body, { replaceWith: '_' });
-    if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: '_' });
-    if (req.query) mongoSanitize.sanitize(req.query, { replaceWith: '_' });
-    next();
-});
+app.use(mongoSanitize({ replaceWith: '_' }));
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
