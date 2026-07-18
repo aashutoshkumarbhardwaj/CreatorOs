@@ -33,7 +33,6 @@
     "nanoid": "^3.3.8",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.8",
-    "openai": "^4.52.7",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "puppeteer": "^25.0.4",
