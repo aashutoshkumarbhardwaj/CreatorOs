@@ -137,37 +137,39 @@ app.get('/services/bio-builder', (req, res) => {
 });
 
 
+// Billing & Domain Routes
 const billingRoute = require('./routes/billing');
-app.use('/api/billing', billingRoute);
 const domainRoute = require('./routes/domain');
-app.use('/api/domain', domainRoute);
+const sponsorRoute = require('./routes/sponsor');
+const settingsRoutes = require('./routes/settings');
+const contentRoutes = require('./routes/content');
 
 const Url = require('./model/url');
 
+// API Routes
+app.use('/api/billing', billingRoute);
+app.use('/api/domain', domainRoute);
+app.use('/api/sponsors', sponsorRoute);
+app.use('/api/settings', protect, settingsRoutes);
+app.use('/api/content', protect, contentRoutes);
+
 app.use('/api/urls', urlRoutes);
 app.use('/api/ai', aiRoute);
-const billingRoute = require('./routes/billing');
-app.use('/api/billing', billingRoute);
+app.use('/api/analytics', protect, analyticsRoutes);
+app.use('/api/instagram', instagramRoutes);
+
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
 
-app.use("/api/analytics", protect, analyticsRoutes);
-app.use('/api/instagram', instagramRoutes);
-
-const settingsRoutes = require('./routes/settings');
-app.use('/api/settings', protect, settingsRoutes);
-
-const billingRoute = require('./routes/billing');
-app.use('/api/billing', billingRoute);
-const domainRoute = require('./routes/domain');
-app.use('/api/domain', domainRoute);
-const sponsorRoute = require('./routes/sponsor');
-app.use('/api/sponsors', sponsorRoute);
-
-const contentRoutes = require('./routes/content');
-app.use('/api/content', protect, contentRoutes);
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css',
+  })
+);
 
 const os = require('os');
 const uploadDir = os.tmpdir();
