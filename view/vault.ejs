@@ -13,7 +13,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <%- include('./partials/_brand_head') %>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Google Fonts: loaded once from shared partial -->
+  <%- include('./partials/_fonts') %>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -513,7 +514,7 @@
   <%- include('partials/layout/sidebar', { activeNav: 'vault' }) %>
 
   <!-- MAIN -->
-  <div class="main">
+  <main class="main" id="main-content" tabindex="-1">
 
     <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
@@ -527,15 +528,15 @@
           <h1 class="page-title">File Upload Vault</h1>
         </div>
         <div class="view-controls">
-          <button class="view-btn active" id="gridBtn" onclick="setView('grid')">
+          <button type="button" class="view-btn active" id="gridBtn" onclick="setView('grid')">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             Grid
           </button>
-          <button class="view-btn" id="listBtn" onclick="setView('list')">
+          <button type="button" class="view-btn" id="listBtn" onclick="setView('list')">
             <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             List
           </button>
-          <button class="filter-btn">
+          <button type="button" class="filter-btn">
             <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filters
           </button>
@@ -550,7 +551,7 @@
         </div>
         <h3>Drop your files here</h3>
         <p>Upload assets up to 500MB each. Support for JPG,<br>PNG, MP4, PDF, and ZIP archives.</p>
-        <button class="browse-btn" onclick="document.getElementById('fileInput').click()">Browse Local Files</button>
+        <button type="button" class="browse-btn" onclick="document.getElementById('fileInput').click()">Browse Local Files</button>
       </div>
 
       <!-- FILES GRID -->
@@ -567,8 +568,8 @@
             <div class="file-meta">2.4 MB · Updated 2h ago</div>
           </div>
           <div class="file-actions">
-            <button class="file-action-btn" onclick="copyLink('Hero_Concept')">Copy Link</button>
-            <button class="file-action-btn">Download</button>
+            <button type="button" class="file-action-btn" onclick="copyLink('Hero_Concept')">Copy Link</button>
+            <button type="button" class="file-action-btn">Download</button>
           </div>
         </div>
 
@@ -583,8 +584,8 @@
             <div class="file-meta">128.5 MB · Updated 5h ago</div>
           </div>
           <div class="file-actions">
-            <button class="file-action-btn" onclick="copyLink('Promo_Final')">Copy Link</button>
-            <button class="file-action-btn">Download</button>
+            <button type="button" class="file-action-btn" onclick="copyLink('Promo_Final')">Copy Link</button>
+            <button type="button" class="file-action-btn">Download</button>
           </div>
         </div>
 
@@ -599,8 +600,8 @@
             <div class="file-meta">12.2 MB · Updated yesterday</div>
           </div>
           <div class="file-actions">
-            <button class="file-action-btn" onclick="copyLink('Brand_Guidelines')">Copy Link</button>
-            <button class="file-action-btn">Download</button>
+            <button type="button" class="file-action-btn" onclick="copyLink('Brand_Guidelines')">Copy Link</button>
+            <button type="button" class="file-action-btn">Download</button>
           </div>
         </div>
 
@@ -615,15 +616,15 @@
             <div class="file-meta">4.8 MB · Updated 1w ago</div>
           </div>
           <div class="file-actions">
-            <button class="file-action-btn" onclick="copyLink('Studio_Interior')">Copy Link</button>
-            <button class="file-action-btn">Download</button>
+            <button type="button" class="file-action-btn" onclick="copyLink('Studio_Interior')">Copy Link</button>
+            <button type="button" class="file-action-btn">Download</button>
           </div>
         </div>
 
       </div><!-- /files-grid -->
 
     </section>
-  </div>
+  </main>
 </div>
 
 <!-- TOAST -->

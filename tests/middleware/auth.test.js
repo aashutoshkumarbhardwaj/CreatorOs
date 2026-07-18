@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
-const protect = require("../../middleware/auth");
-const { requireAdmin, preventContributorWrites } = require("../../middleware/auth");
+const { protect, requireAdmin, preventContributorWrites } = require("../../middleware/auth");
 const User = require("../../model/user");
 const ContributorSession = require("../../model/contributorSession");
 const { wantsHtml } = require("../../utils/requestType");

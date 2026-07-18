@@ -31,7 +31,10 @@ const analyticsSnapshotSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+
 // Compound index for optimal querying in /api/analytics
+
+
 analyticsSnapshotSchema.index({ creatorId: 1, createdAt: -1 });
 
 const AnalyticsSnapshotModel =

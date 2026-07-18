@@ -1,3 +1,27 @@
+<style>
+    .skip-link {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1000;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--border, #111);
+        background: var(--card-bg, #fff);
+        color: var(--text, #111);
+        font-weight: 700;
+        text-decoration: none;
+        transform: translateY(-180%);
+        transition: transform 0.2s ease;
+        box-shadow: 2px 2px 0 var(--border, #111);
+    }
+
+    .skip-link:focus {
+        transform: translateY(0);
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+    }
+</style>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
     <a class="brand" href="/dashboard" aria-label="CreatorOS">
         <span class="brand-mark" style="background:none;border:none;box-shadow:none;">

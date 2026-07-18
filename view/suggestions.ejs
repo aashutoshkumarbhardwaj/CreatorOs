@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Caption & Hashtag Generator | CreatorOS</title>
   <%- include('./partials/_brand_head') %>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google Fonts: common fonts via shared partial -->
+  <%- include('./partials/_fonts') %>
+  <!-- Page-specific font: DM Mono (suggestions only) -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -567,7 +570,7 @@
     <div class="upgrade-box">
       <div class="upgrade-box-title">Upgrade Plan</div>
       <div class="upgrade-box-sub">Get advanced AI & unlimited generations.</div>
-      <button class="upgrade-box-btn">Upgrade</button>
+      <button type="button" class="upgrade-box-btn">Upgrade</button>
     </div>
 
     <a href="/support" class="sidebar-footer-link">
@@ -587,11 +590,11 @@
       <input class="search-input" type="text" placeholder="Search tools or projects..." />
     </div>
     <div class="topbar-right">
-      <button class="new-project-btn">New Project</button>
-      <button class="icon-btn">
+      <button type="button" class="new-project-btn">New Project</button>
+      <button type="button" class="icon-btn">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </button>
-      <button class="icon-btn">
+      <button type="button" class="icon-btn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
       <div class="avatar-btn"><%= typeof user !== 'undefined' ? user.initials : 'CR' %></div>
@@ -661,7 +664,7 @@
         </div>
 
         <!-- Generate -->
-        <button class="generate-btn" id="generateBtn" onclick="generateCaptions()">
+        <button type="button" class="generate-btn" id="generateBtn" onclick="generateCaptions()">
           <div class="spinner"></div>
           <span class="btn-text">✦ Generate Captions</span>
         </button>
@@ -684,10 +687,10 @@
         <div class="output-header">
           <span class="output-title">Generated Captions</span>
           <div class="output-actions">
-            <button class="output-action-btn" title="Filter" onclick="showToast('Filter coming soon')">
+            <button type="button" class="output-action-btn" title="Filter" onclick="showToast('Filter coming soon')">
               <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             </button>
-            <button class="output-action-btn" title="Regenerate" onclick="generateCaptions()">
+            <button type="button" class="output-action-btn" title="Regenerate" onclick="generateCaptions()">
               <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
             </button>
           </div>
@@ -741,7 +744,7 @@
               </div>
             </div>
           </div>
-          <button class="see-more-btn" onclick="showToast('Loading more trends...')">See more trends</button>
+          <button type="button" class="see-more-btn" onclick="showToast('Loading more trends...')">See more trends</button>
         </div>
 
         <!-- Recommended Audio -->
@@ -756,7 +759,7 @@
                 <div class="audio-name">Lofi M...</div>
                 <div class="audio-sub">High Growth Track</div>
               </div>
-              <button class="audio-add" onclick="showToast('Added to project!')">+</button>
+              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
             </div>
             <div class="audio-row">
               <div class="audio-play">
@@ -766,7 +769,7 @@
                 <div class="audio-name">Tech R...</div>
                 <div class="audio-sub">Trending Globally</div>
               </div>
-              <button class="audio-add" onclick="showToast('Added to project!')">+</button>
+              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
             </div>
             <div class="audio-row">
               <div class="audio-play teal">
@@ -776,7 +779,7 @@
                 <div class="audio-name">Hyper...</div>
                 <div class="audio-sub">8.2k usages today</div>
               </div>
-              <button class="audio-add" onclick="showToast('Added to project!')">+</button>
+              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
             </div>
           </div>
         </div>
@@ -951,11 +954,11 @@
           ${c.tags.map(t => `<span class="caption-tag" onclick="copyText('${t}')">${t}</span>`).join('')}
         </div>
         <div class="caption-actions">
-          <button class="caption-btn" onclick="copyCaption(${i})">
+          <button type="button" class="caption-btn" onclick="copyCaption(${i})">
             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             COPY
           </button>
-          <button class="caption-btn" onclick="showToast('Edit mode coming soon!')">
+          <button type="button" class="caption-btn" onclick="showToast('Edit mode coming soon!')">
             <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             EDIT
           </button>

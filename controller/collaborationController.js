@@ -172,38 +172,40 @@ const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
 
     const { inviteToken } = result.data;
 
-    const invite = await Invite.findOne({ token: inviteToken.trim() });
+    // Atomically claim the invite: find a pending invite and mark it accepted in one operation
+    const invite = await Invite.findOneAndUpdate(
+      {
+        token: inviteToken.trim(),
+        status: 'pending',
+        $or: [
+          { expiresAt: { $exists: false } },
+          { expiresAt: null },
+          { expiresAt: { $gt: new Date() } },
+        ],
+      },
+      { $set: { status: 'accepted', acceptedAt: new Date() } },
+      { new: true }
+    );
 
     if (!invite) {
-      return renderDashboard(req, res, { inviteAcceptError: 'No invitation found for that token.' });
-    }
-   if (
-       invite.status === "expired" ||
-       (invite.expiresAt && invite.expiresAt < new Date())
-   ) {
-       return renderDashboard(req, res, {
-           inviteAcceptError: "This invitation has expired.",
-       })
-   };
-
-    if (invite.status === 'accepted') {
+      const existingInvite = await Invite.findOne({ token: inviteToken.trim() });
+      if (!existingInvite) {
+        return renderDashboard(req, res, { inviteAcceptError: 'No invitation found for that token.' });
+      }
+      if (
+        existingInvite.status === "expired" ||
+        (existingInvite.expiresAt && existingInvite.expiresAt < new Date())
+      ) {
+        return renderDashboard(req, res, { inviteAcceptError: "This invitation has expired." });
+      }
       return renderDashboard(req, res, { inviteAcceptMessage: 'This invitation has already been accepted.' });
     }
 
-    invite.status = 'accepted';
-    invite.acceptedAt = new Date();
-    await invite.save();
-
-    const inviter = await User.findById(invite.inviter);
-    if (inviter) {
-      if (!inviter.collaborators) inviter.collaborators = [];
-
-      const isAlreadyCollaborator = inviter.collaborators.some(id => id.toString() === req.user.id.toString());
-      if (!isAlreadyCollaborator) {
-        inviter.collaborators.push(req.user.id);
-        await inviter.save();
-      }
-    }
+    // Use $addToSet to prevent duplicate collaborator entries
+    await User.findByIdAndUpdate(
+      invite.inviter,
+      { $addToSet: { collaborators: req.user.id } }
+    );
 
     return renderDashboard(req, res, {
       inviteAcceptMessage: `Invitation for ${invite.email} was accepted successfully! You are now a collaborator.`,
