@@ -66,4 +66,107 @@ urlSchema.statics.listForUser = async function (userId, limit = 100) {
         .lean();
 };
 
-module.exports = mongoose.models.Url || mongoose.model("Url", urlSchema);
+class MockUrlModel {
+    constructor(data) {
+        this.shortId = data.shortId;
+        this.redirectUrl = data.redirectUrl;
+        this.campaignName = data.campaignName || "Untitled Campaign";
+        this.totalClicks = data.totalClicks || 0;
+        this.qrFgColor = data.qrFgColor || "#1a1a1a";
+        this.qrBgColor = data.qrBgColor || "#ffffff";
+        this.qrGenerated = data.qrGenerated || false;
+        this.createdAt = data.createdAt || new Date();
+        this.visitHistory = data.visitHistory || [];
+    }
+
+    async save() {
+        const existing = mockUrls.find((u) => u.shortId === this.shortId);
+        if (existing) {
+            Object.assign(existing, this);
+        } else {
+            mockUrls.push(this);
+        }
+        return this;
+    }
+
+    static async create(data) {
+        const url = new MockUrlModel(data);
+        await url.save();
+        return url;
+    }
+
+    static async findOne(query) {
+        const found = mockUrls.find((u) => u.shortId === query.shortId);
+        return found ? new MockUrlModel(found) : null;
+    }
+
+    static async findOneAndUpdate(query, update, opts = {}) {
+        const found = mockUrls.find((u) => u.shortId === query.shortId);
+        if (!found) {
+            return opts.upsert 
+                ? MockUrlModel.create({ ...query, ...update.$set }) 
+                : null;
+        }
+
+        if (update.$set) Object.assign(found, update.$set);
+        if (update.$push) {
+            const [key, val] = Object.entries(update.$push)[0];
+            if (!found[key]) found[key] = [];
+            found[key].push(val);
+        }
+        if (update.$inc) {
+            const [key, val] = Object.entries(update.$inc)[0];
+            found[key] = (found[key] || 0) + val;
+        }
+        return new MockUrlModel(found);
+    }
+
+    static async find(query = {}) {
+        let results = mockUrls.filter((u) =>
+            Object.entries(query).every(([k, v]) => u[k] === v)
+        );
+        return {
+            sort: () => results.map((u) => new MockUrlModel(u))
+        };
+    }
+
+    static async findByIdAndDelete(id) {
+        const idx = mockUrls.findIndex((u) => u._id === id || u.shortId === id);
+        if (idx === -1) return null;
+        return mockUrls.splice(idx, 1)[0];
+    }
+
+    static async deleteMany(query = {}) {
+        const keys = Object.keys(query);
+        let count = 0;
+        for (let i = mockUrls.length - 1; i >= 0; i--) {
+            const item = mockUrls[i];
+            if (keys.every(k => item[k]?.toString() === query[k]?.toString())) {
+                mockUrls.splice(i, 1);
+                count++;
+            }
+        }
+        return { deletedCount: count };
+    }
+}
+
+function getActiveUrlModel() {
+    return process.env.USE_MOCK_DB === "true"
+        ? MockUrlModel
+        : MongooseUrlModel;
+}
+
+function UrlModel(data) {
+    const ActiveUrlModel = getActiveUrlModel();
+    return new ActiveUrlModel(data);
+}
+
+UrlModel.findOne = (...args) => getActiveUrlModel().findOne(...args);
+UrlModel.create = (...args) => getActiveUrlModel().create(...args);
+UrlModel.findById = (...args) => getActiveUrlModel().findById(...args);
+UrlModel.findOneAndUpdate = (...args) => getActiveUrlModel().findOneAndUpdate(...args);
+UrlModel.find = (...args) => getActiveUrlModel().find(...args);
+UrlModel.findByIdAndDelete = (...args) => getActiveUrlModel().findByIdAndDelete(...args);
+UrlModel.deleteMany = (...args) => getActiveUrlModel().deleteMany(...args);
+
+module.exports = UrlModel;

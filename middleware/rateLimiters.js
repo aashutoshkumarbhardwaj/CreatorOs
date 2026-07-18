@@ -68,6 +68,15 @@ const emailVerificationLimiter = rateLimit({
     }
 });
 
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // Allow max 3 forgot password attempts per 15 mins
+    handler: (req, res) => {
+        const message = 'Too many password reset requests. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
 const MongoStore = require('rate-limit-mongo');
 
 function keyByUserOrIp(req) {
@@ -117,5 +126,6 @@ module.exports = {
     signupLimiter,
     emailVerificationLimiter,
     aiGenerationLimiter,
-    instagramProfileLimiter
+    instagramProfileLimiter,
+    forgotPasswordLimiter
 };

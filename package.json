@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js",
+    "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js",
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
@@ -23,6 +23,7 @@
     "dotenv": "^17.4.2",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.2",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
