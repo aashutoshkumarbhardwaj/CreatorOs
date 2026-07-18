@@ -34,7 +34,6 @@ const connectDB = require("./connect");
 
 // --- Route Imports ---
 const urlRoutes = require("./routes/url");
-const userRoute = require("./routes/user");
 const analyticsRoutes = require("./routes/analytics");
 const collaborationRoutes = require('./routes/collaboration');
 const aiRoute = require("./routes/ai");
