@@ -6,8 +6,8 @@ if (process.env.OPENAI_API_KEY) {
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-// POST /api/ai/suggest
-const generateSuggestion = asyncHandler(async (req, res) => {
+// POST /api/ai/generate
+const handleAiRequest = asyncHandler(async (req, res) => {
     const { prompt } = req.body;
     
     if (!prompt) {
@@ -39,5 +39,5 @@ const generateSuggestion = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-    generateSuggestion
+    handleAiRequest
 };
