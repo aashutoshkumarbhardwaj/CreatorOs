@@ -10,8 +10,7 @@
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
-    "test": "jest",
-    "worker": "node worker.js"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +24,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-mongo-sanitize": "^2.2.0",
-    "express-rate-limit": "^8.6.0",
+    "express-rate-limit": "^8.5.2",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.0",
@@ -33,7 +32,6 @@
     "nanoid": "^3.3.8",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.8",
-    "openai": "^6.46.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "puppeteer": "^25.0.4",
@@ -41,7 +39,6 @@
     "qrcode-svg": "^1.1.0",
     "rate-limit-mongo": "^2.3.2",
     "shortid": "^2.2.17",
-    "stripe": "^22.3.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.0"
