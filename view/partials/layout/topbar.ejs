@@ -1,26 +1,26 @@
 <header class="topbar">
     <button class="menu-btn" type="button" aria-label="Toggle sidebar" id="sidebarToggle">
-        <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
     </button>
 
     <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
         <input type="text" id="search-links-input" class="search-input" placeholder="<%= typeof searchPlaceholder !== 'undefined' ? searchPlaceholder : 'Search shortened links...' %>" />
     </div>
 
     <div class="topbar-actions">
         <button id="theme-toggle" class="action-icon-btn" type="button" aria-label="Toggle Theme">
-            <svg class="icon-light" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto;"><path d="M7.5 1.5V2.5M7.5 12.5V13.5M1.5 7.5H2.5M12.5 7.5H13.5M3.257 3.257L3.964 3.964M11.035 11.035L11.742 11.742M3.257 11.742L3.964 11.035M11.035 3.964L11.742 3.257" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><circle cx="7.5" cy="7.5" r="2.75" stroke="currentColor" stroke-width="1.5"/></svg>
-            <svg class="icon-dark" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto; display:none;"><path d="M1.66 7.452C1.66 10.67 4.268 13.278 7.485 13.278C10.02 13.278 12.18 11.65 12.987 9.388C12.103 10.199 10.899 10.706 9.57 10.706C6.884 10.706 4.706 8.528 4.706 5.842C4.706 4.542 5.193 3.364 5.976 2.493C3.541 3.195 1.66 5.128 1.66 7.453Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <svg class="icon-light" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto;" aria-hidden="true"><path d="M7.5 1.5V2.5M7.5 12.5V13.5M1.5 7.5H2.5M12.5 7.5H13.5M3.257 3.257L3.964 3.964M11.035 11.035L11.742 11.742M3.257 11.742L3.964 11.035M11.035 3.964L11.742 3.257" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><circle cx="7.5" cy="7.5" r="2.75" stroke="currentColor" stroke-width="1.5"/></svg>
+            <svg class="icon-dark" width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:auto; display:none;" aria-hidden="true"><path d="M1.66 7.452C1.66 10.67 4.268 13.278 7.485 13.278C10.02 13.278 12.18 11.65 12.987 9.388C12.103 10.199 10.899 10.706 9.57 10.706C6.884 10.706 4.706 8.528 4.706 5.842C4.706 4.542 5.193 3.364 5.976 2.493C3.541 3.195 1.66 5.128 1.66 7.453Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
         </button>
-        <button class="action-icon-btn" type="button"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+        <button class="action-icon-btn" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
         <a class="profile-chip" href="/profile">
             <span class="avatar"><%= typeof user !== 'undefined' ? user.initials : 'U' %></span>
             <span class="profile-name"><%= typeof user !== 'undefined' ? user.name : 'User' %></span>
         </a>
         <% if (typeof hideCta === 'undefined' || !hideCta) { %>
         <a class="primary-action-btn" href="<%= typeof ctaLink !== 'undefined' ? ctaLink : '/services/url-shortener' %>">
-            <svg viewBox="0 0 24 24" style="width:1.25rem; height:1.25rem; stroke:currentColor; stroke-width:2.5; fill:none;"><path d="M12 5v14M5 12h14"></path></svg>
+            <svg viewBox="0 0 24 24" style="width:1.25rem; height:1.25rem; stroke:currentColor; stroke-width:2.5; fill:none;" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
             <%= typeof ctaText !== 'undefined' ? ctaText : 'Create Link' %>
         </a>
         <% } %>

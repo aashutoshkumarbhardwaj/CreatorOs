@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Account Deletion - CreatorOS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { max-width: 480px; padding: 40px; background: #1e293b; border-radius: 12px; text-align: center; }
+        h1 { color: #dc2626; margin-bottom: 16px; font-size: 24px; }
+        p { color: #94a3b8; margin-bottom: 24px; line-height: 1.6; }
+        .btn { display: inline-block; padding: 14px 24px; background: #dc2626; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 16px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-cancel { background: #475569; margin-left: 12px; }
+        .success { color: #22c55e; }
+        .error { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Confirm Account Deletion</h1>
+        <div id="message">
+            <p>Click the button below to confirm the deletion of your account. This action cannot be undone.</p>
+            <button class="btn" id="confirmBtn" onclick="confirmDeletion()">Confirm Deletion</button>
+            <a href="/settings" class="btn btn-cancel">Cancel</a>
+        </div>
+    </div>
+    <script nonce="<%= typeof nonce !== 'undefined' ? nonce : '' %>">
+        const token = new URLSearchParams(window.location.search).get('token');
+        
+        async function confirmDeletion() {
+            if (!token) {
+                document.getElementById('message').innerHTML = '<p class="error">Invalid confirmation token.</p>';
+                return;
+            }
+            
+            document.getElementById('confirmBtn').disabled = true;
+            document.getElementById('confirmBtn').textContent = 'Processing...';
+            
+            try {
+                const response = await fetch('/api/settings/account/confirm-deletion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCsrfToken()
+                    },
+                    body: JSON.stringify({ token }),
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('message').innerHTML = '<p class="success">Account deletion confirmed. Your account will be deleted on the scheduled date.</p><a href="/settings" class="btn">Back to Settings</a>';
+                } else {
+                    document.getElementById('message').innerHTML = `<p class="error">${data.error || 'Failed to confirm deletion.'}</p><a href="/settings" class="btn">Back to Settings</a>`;
+                }
+            } catch (err) {
+                document.getElementById('message').innerHTML = '<p class="error">An error occurred. Please try again.</p><a href="/settings" class="btn">Back to Settings</a>';
+            }
+        }
+        
+        function getCsrfToken() {
+            const match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+        
+        if (!token) {
+            document.getElementById('message').innerHTML = '<p class="error">Invalid confirmation token. Please request deletion again.</p><a href="/settings" class="btn">Back to Settings</a>';
+        }
+    </script>
+</body>
+</html>

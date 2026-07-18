@@ -1,5 +1,10 @@
-require("dotenv").config({ path: ".env.local" });
+const dotenv = require("dotenv");
+dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+    dotenv.config({ path: ".env.local", override: true });
+}
 const cookieParser = require("cookie-parser");
+const mongoSanitize = require("express-mongo-sanitize");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
@@ -36,11 +41,6 @@ const authRoutes = require("./routes/auth");
 const collaborationRoutes = require('./routes/collaboration');
 const analyticsRoutes = require("./routes/analytics");
 const instagramRoutes = require('./routes/instagram');
-const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
-
-connectDB();
-require("./workers/analyticsRefreshWorker");
-require("./workers/contentPublishWorker").startContentPublishWorker();
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cacheHeadersMiddleware);
@@ -51,6 +51,12 @@ app.use(express.json({
         req.rawBody = buf;
     }
 }));
+app.use((req, res, next) => {
+    if (req.body) mongoSanitize.sanitize(req.body, { replaceWith: '_' });
+    if (req.params) mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+    if (req.query) mongoSanitize.sanitize(req.query, { replaceWith: '_' });
+    next();
+});
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
@@ -99,7 +105,7 @@ const urlShortenerLimiter = rateLimit({
 
 app.use("/", authRoutes);
 
-const protect = require("./middleware/auth");
+const { protect } = require("./middleware/auth");
 const { preventContributorWrites } = require("./middleware/auth");
 
 const fs = require('fs');
@@ -115,6 +121,7 @@ const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
 
+const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
@@ -122,25 +129,42 @@ app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
+app.get('/confirm-deletion', (req, res) => {
+    res.render('confirm-deletion');
+});
 app.get('/services/bio-builder', (req, res) => {
     res.render('bio-builder');
 });
 
 
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
+const domainRoute = require('./routes/domain');
+app.use('/api/domain', domainRoute);
+
 const Url = require('./model/url');
 
 app.use('/api/urls', urlRoutes);
 app.use('/api/ai', aiRoute);
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
 
 app.use("/api/analytics", protect, analyticsRoutes);
-app.use('/api/instagram', protect, instagramRoutes);
+app.use('/api/instagram', instagramRoutes);
 
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
+
+const billingRoute = require('./routes/billing');
+app.use('/api/billing', billingRoute);
+const domainRoute = require('./routes/domain');
+app.use('/api/domain', domainRoute);
+const sponsorRoute = require('./routes/sponsor');
+app.use('/api/sponsors', sponsorRoute);
 
 const contentRoutes = require('./routes/content');
 app.use('/api/content', protect, contentRoutes);
@@ -156,7 +180,25 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + sanitizedFilename);
     }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+const fileFilter = (req, file, cb) => {
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !ALLOWED_EXTENSIONS.includes(fileExtension)) {
+        return cb(new Error('Only image files (JPEG, PNG, WebP, GIF) are allowed.'), false);
+    }
+
+    cb(null, true);
+};
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -234,6 +276,8 @@ function buildAccountViewModel(userDoc, fallbackUser) {
             ],
         },
         initials,
+        scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
+        deletionConfirmed: userDoc?.deletionConfirmed || false,
     };
 }
 
@@ -400,7 +444,7 @@ app.get('/settings', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
+            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription scheduledDeletionAt deletionConfirmed')
             .lean();
 
     res.render('settings', {
@@ -509,9 +553,45 @@ app.post('/bio/save', protect, asyncHandler(async (req, res) => {
 }));
 
 // Track link click
-app.post('/bio/track/:linkId', asyncHandler(async (req, res) => {
+const clickTrackerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // 50 requests per window per IP
+    message: { success: false, message: 'Too many requests' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// IP-based deduplication map: linkId -> Map<ip, timestamp>
+const clickCooldowns = new Map();
+const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+
+app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
     const { linkId } = req.params;
+    const clientIp = req.ip || req.connection.remoteAddress;
+
+    // IP-based deduplication with cooldown
+    if (!clickCooldowns.has(linkId)) {
+        clickCooldowns.set(linkId, new Map());
+    }
+    const linkCooldowns = clickCooldowns.get(linkId);
+    const lastClick = linkCooldowns.get(clientIp);
+
+    if (lastClick && (Date.now() - lastClick) < CLICK_COOLDOWN_MS) {
+        return res.json({ success: true, tracked: false, reason: 'cooldown' });
+    }
+
+    linkCooldowns.set(clientIp, Date.now());
+
+    // Periodically clean up old cooldown entries to prevent memory leak
+    if (linkCooldowns.size > 10000) {
+        const now = Date.now();
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+    }
     
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
@@ -664,15 +744,23 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
+    const x = req.query.x ? parseFloat(req.query.x) : null;
+    const y = req.query.y ? parseFloat(req.query.y) : null;
 
     try {
+        const visitData = { timestamp: new Date(), source: 'direct' };
+        if (x !== null && y !== null) {
+            visitData.x = x;
+            visitData.y = y;
+        }
+        
         const entry = await Url.findOneAndUpdate(
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
                 $push: {
                     visitHistory: {
-                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $each: [visitData],
                         $sort: { timestamp: -1 },
                         $slice: 1000,
                     },
@@ -737,16 +825,27 @@ app.use((req, res) => {
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
-if (require.main === module) {
-    app.listen(port, (error) => {
-        if (error) {
-            console.error(`Failed to start server on port ${port}: ${error.message}`);
-            process.exit(1);
-        }
+async function startServer() {
+    try {
+        // Start the HTTP server immediately
+        const server = app.listen(port, () => {
+            const url = process.env.APP_URL || `http://localhost:${port}`;
+            console.log(`🚀 Server is running on ${url}`);
+        });
 
-        const url = process.env.APP_URL || `http://localhost:${port}`;
-        console.log(`Server is running on ${url}`);
-    });
+        // Connect to the database in the background
+        await connectDB();
+        console.log('✅ Database connected successfully.');
+
+        // Initialize background workers after the database is ready
+        require("./workers/analyticsRefreshWorker");
+        require("./workers/contentPublishWorker").startContentPublishWorker();
+    } catch (error) {
+        console.error('❌ Failed to start the application:', error);
+        process.exit(1);
+    }
 }
+
+startServer();
 
 module.exports = app;

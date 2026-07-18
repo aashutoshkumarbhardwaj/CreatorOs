@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <%- include('./partials/_brand_head') %>
   <title>Bio Editor | CreatorOS</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google Fonts: common fonts via shared partial -->
+  <%- include('./partials/_fonts') %>
+  <!-- Page-specific font: DM Mono (bio editor only) -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -487,11 +490,11 @@
       <h2>Smart Bio Editor</h2>
       <div class="share-url">
         <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
-        <button class="copy-btn" onclick="copyUrl()">Copy</button>
+        <button type="button" class="copy-btn" onclick="copyUrl()">Copy</button>
       </div>
       <div class="topbar-actions">
         <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
-        <button class="btn-retro primary" onclick="saveBio()">Save Changes</button>
+        <button type="button" class="btn-retro primary" onclick="saveBio()">Save Changes</button>
       </div>
     </header>
 
@@ -505,7 +508,7 @@
         <div class="panel-box">
           <div class="panel-head">
             <h3>Profile</h3>
-            <button class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" onclick="document.getElementById('avatarInput').click()">Upload Photo</button>
+            <button type="button" class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" onclick="document.getElementById('avatarInput').click()">Upload Photo</button>
             <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)">
           </div>
           <div class="panel-body">
@@ -544,21 +547,21 @@
             <div class="field">
               <label>Quick Add</label>
               <div class="presets">
-                <button class="preset-btn" onclick="addPreset('instagram','📸','Instagram','https://instagram.com/','social')">📸 Instagram</button>
-                <button class="preset-btn" onclick="addPreset('youtube','🎥','YouTube','https://youtube.com/','social')">🎥 YouTube</button>
-                <button class="preset-btn" onclick="addPreset('github','💻','GitHub','https://github.com/','work')">💻 GitHub</button>
-                <button class="preset-btn" onclick="addPreset('linkedin','💼','LinkedIn','https://linkedin.com/in/','work')">💼 LinkedIn</button>
-                <button class="preset-btn" onclick="addPreset('portfolio','🌐','Portfolio','https://','work')">🌐 Portfolio</button>
-                <button class="preset-btn" onclick="addPreset('resume','📄','Resume','https://','work')">📄 Resume</button>
-                <button class="preset-btn" onclick="addPreset('email','📧','Email','mailto:','other')">📧 Email</button>
-                <button class="preset-btn" onclick="addPreset('whatsapp','💬','WhatsApp','https://wa.me/','other')">💬 WhatsApp</button>
+                <button type="button" class="preset-btn" onclick="addPreset('instagram','📸','Instagram','https://instagram.com/','social')">📸 Instagram</button>
+                <button type="button" class="preset-btn" onclick="addPreset('youtube','🎥','YouTube','https://youtube.com/','social')">🎥 YouTube</button>
+                <button type="button" class="preset-btn" onclick="addPreset('github','💻','GitHub','https://github.com/','work')">💻 GitHub</button>
+                <button type="button" class="preset-btn" onclick="addPreset('linkedin','💼','LinkedIn','https://linkedin.com/in/','work')">💼 LinkedIn</button>
+                <button type="button" class="preset-btn" onclick="addPreset('portfolio','🌐','Portfolio','https://','work')">🌐 Portfolio</button>
+                <button type="button" class="preset-btn" onclick="addPreset('resume','📄','Resume','https://','work')">📄 Resume</button>
+                <button type="button" class="preset-btn" onclick="addPreset('email','📧','Email','mailto:','other')">📧 Email</button>
+                <button type="button" class="preset-btn" onclick="addPreset('whatsapp','💬','WhatsApp','https://wa.me/','other')">💬 WhatsApp</button>
               </div>
             </div>
 
             <!-- Links list -->
             <div class="links-list" id="linksList"></div>
 
-            <button class="add-link-btn" onclick="addCustomLink()">
+            <button type="button" class="add-link-btn" onclick="addCustomLink()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Custom Link
             </button>
@@ -572,18 +575,18 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <button class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
-                <button class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
-                <button class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
-                <button class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
+                <button type="button" class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
+                <button type="button" class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
+                <button type="button" class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
+                <button type="button" class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <button class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
-                <button class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
-                <button class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
+                <button type="button" class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
+                <button type="button" class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
+                <button type="button" class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
               </div>
             </div>
           </div>
@@ -659,7 +662,7 @@
         <input type="text" value="${link.url}"
                onchange="updateLinkField(${link.id},'url',this.value)"
                placeholder="https://..." />
-        <button class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
+        <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
       </div>
     `).join('');
   }
@@ -685,7 +688,7 @@
     const input = document.getElementById('tagInput');
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
-    chip.innerHTML = `${text} <button onclick="this.parentElement.remove()">×</button>`;
+    chip.innerHTML = `${text} <button type="button" onclick="this.parentElement.remove()">×</button>`;
     wrap.insertBefore(chip, input);
   }
 

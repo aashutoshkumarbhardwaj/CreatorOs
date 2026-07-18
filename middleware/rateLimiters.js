@@ -47,6 +47,11 @@ const urlShortenerApiLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
+    store: process.env.MONGODB_URI ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 60 * 60 * 1000,
+    }) : undefined,
     handler: (req, res) => {
         const message = 'Too many accounts created from this IP, please try again later.';
         if (wantsHtml(req)) {
@@ -64,6 +69,15 @@ const emailVerificationLimiter = rateLimit({
         if (wantsHtml(req)) {
             return res.status(429).render('resend-verification', { error: message, success: null });
         }
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // Allow max 3 forgot password attempts per 15 mins
+    handler: (req, res) => {
+        const message = 'Too many password reset requests. Please try again later.';
         return res.status(429).json({ success: false, message, error: message });
     }
 });
@@ -117,5 +131,6 @@ module.exports = {
     signupLimiter,
     emailVerificationLimiter,
     aiGenerationLimiter,
-    instagramProfileLimiter
+    instagramProfileLimiter,
+    forgotPasswordLimiter
 };

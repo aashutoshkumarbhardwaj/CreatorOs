@@ -4,7 +4,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
-const { signupLimiter, emailVerificationLimiter } = require("../middleware/rateLimiters");
+const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -158,7 +158,7 @@ router.post("/signup", signupLimiter, signupValidator, signup);
  *       500:
  *         description: Internal server error
  */
-router.post("/login", loginValidator, login);
+router.post("/login", loginLimiter, loginValidator, login);
 
 /**
  * @swagger
@@ -176,7 +176,7 @@ router.post("/login", loginValidator, login);
  *       500:
  *         description: Internal server error
  */
-router.post("/login/contributor", loginValidator, loginAsContributor);
+router.post("/login/contributor", loginLimiter, loginValidator, loginAsContributor);
 
 /**
  * @swagger
@@ -194,7 +194,7 @@ router.post("/login/contributor", loginValidator, loginAsContributor);
  *       500:
  *         description: Internal server error
  */
-router.post("/api/auth/contributor-login", loginValidator, loginAsContributor);
+router.post("/api/auth/contributor-login", loginLimiter, loginValidator, loginAsContributor);
 
 
 /**
@@ -271,28 +271,7 @@ router.get("/auth/google/callback", (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.get("/verify-email", (req, res) => {
-    res.render("verify-email", { error: null, success: null, expiredToken: false });
-});
-
-
-/**
- * @swagger
- * /verify-email:
- *   post:
- *     summary: POST request for /verify-email
- *     description: Processes an email verification token to activate a user account.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.post("/verify-email", emailVerificationLimiter, verifyEmail);
+router.get("/verify-email", emailVerificationLimiter, verifyEmail);
 
 
 /**
@@ -359,7 +338,21 @@ router.post("/resend-verification", emailVerificationLimiter, resendVerification
  *       500:
  *         description: Internal server error
  */
-router.get("/logout", (req, res) => {
+router.get("/logout", async (req, res) => {
+    const token = req.cookies.token;
+    if (token) {
+        try {
+            const jwt = require("jsonwebtoken");
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            if (decoded.role === 'guest_contributor') {
+                await connectDB();
+                const ContributorSession = require("../model/contributorSession");
+                await ContributorSession.deleteOne({ contributorId: decoded.id });
+            }
+        } catch (e) {
+            // Token may already be invalid, that's fine
+        }
+    }
     res.clearCookie("token");
     res.redirect("/login");
 });
@@ -385,7 +378,35 @@ router.get("/logout", (req, res) => {
  *       400:
  *         description: Invalid request
  */
-router.post("/forgot-password", requestPasswordReset);
+router.post("/forgot-password", forgotPasswordLimiter, requestPasswordReset);
+
+/**
+ * @swagger
+ * /reset-password:
+ *   get:
+ *     summary: GET request for /reset-password
+ *     description: Renders the password reset page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ */
+router.get("/reset-password", (req, res) => {
+    res.render("reset-password", { token: req.query.token, error: null });
+});
+
+/**
+ * @swagger
+ * /reset-password:
+ *   get:
+ *     summary: GET request for /reset-password
+ *     description: Renders the password reset page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ */
+router.get("/reset-password", (req, res) => {
+    res.render("reset-password", { token: req.query.token, error: null });
+});
 
 /**
  * @swagger

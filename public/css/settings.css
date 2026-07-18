@@ -930,3 +930,124 @@ body.appearance-dark .setting-info p {
         padding: 2rem 1.25rem 3rem;
     }
 }
+
+.deletion-modal {
+    max-width: 480px;
+}
+
+.deletion-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.deletion-modal-header h3 {
+    margin: 0;
+    color: #dc2626;
+}
+
+.deletion-modal-body {
+    margin-top: 1rem;
+}
+
+.deletion-warning {
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.deletion-info-box {
+    background: var(--settings-muted-surface);
+    border: 2px solid var(--settings-border);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.deletion-info-box h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    color: var(--settings-text);
+}
+
+.deletion-info-box p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--settings-muted);
+}
+
+.deletion-info-box ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--settings-muted);
+}
+
+.deletion-info-box li {
+    margin-bottom: 0.25rem;
+}
+
+.deletion-status {
+    background: #fef2f2;
+    border: 2px solid #dc2626;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.deletion-status-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #991b1b;
+    font-size: 0.9rem;
+}
+
+.deletion-status-info svg {
+    flex-shrink: 0;
+}
+
+.btn-cancel-deletion {
+    background: #fff;
+    color: #dc2626;
+    border: 2px solid #dc2626;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-cancel-deletion:hover {
+    background: #fef2f2;
+}
+
+.deletion-modal .btn-danger {
+    background: #dc2626;
+    color: #fff;
+    border: 2px solid var(--settings-border);
+    padding: 0.8rem 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--settings-shadow);
+}
+
+.deletion-modal .btn-danger:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+}
+
+body.appearance-dark .deletion-status {
+    background: #3b1f1f;
+    border-color: #dc2626;
+}
+
+body.appearance-dark .deletion-status-info {
+    color: #fca5a5;
+}
+
+body.appearance-dark .deletion-info-box {
+    background: var(--settings-muted-surface);
+}
