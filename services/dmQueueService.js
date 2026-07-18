@@ -1,7 +1,11 @@
 const { Queue, Worker } = require('bullmq');
 const IORedis = require('ioredis');
 
-const REDIS_URI = process.env.REDIS_URI;
+// BullMQ requires a standard Redis connection string (socket protocol).
+const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
+
+// Upstash REST credentials for other Redis clients (e.g., caching, rate-limiting).
+const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
 
 function createFallbackQueue() {
     return {
@@ -21,11 +25,17 @@ function createFallbackQueue() {
 let dmQueue = createFallbackQueue();
 let dmWorker = null;
 
+// Initialize BullMQ worker and queue if a standard Redis URI is provided.
 if (REDIS_URI) {
     const connection = new IORedis(REDIS_URI, {
         maxRetriesPerRequest: null,
         connectTimeout: 5000,
         lazyConnect: true,
+    });
+
+    // Add listeners for Redis connection events to improve observability.
+    connection.on('error', (err) => {
+        console.error('❌ Redis Connection Error:', err.message);
     });
 
     // Create the Queue only when Redis is explicitly configured.
@@ -61,7 +71,7 @@ if (REDIS_URI) {
 
     // Event Listeners for logging
     dmWorker.on('completed', (job) => {
-        // console.log(`Job with id ${job.id} has been completed`);
+        console.log(`[Worker] Job ${job.id} for sender ${job.data.senderId} completed.`);
     });
 
     dmWorker.on('failed', (job, err) => {
@@ -74,7 +84,11 @@ if (REDIS_URI) {
 
     console.log('📦 DM Automation Queue initialized');
 } else {
-    console.warn('📦 DM Automation Queue disabled because REDIS_URI is not set.');
+    console.warn('📦 BullMQ DM Automation Queue disabled: REDIS_URI/REDIS_URL is not set.');
+}
+
+if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
+    console.log('📦 Upstash Redis REST client configured.');
 }
 
 // Optional: you can define a dummy function for actually sending a DM
@@ -82,11 +96,5 @@ async function sendInstagramDM(recipientId, text) {
     // In reality, this would make an Axios/Fetch call to the Graph API
     // e.g. await axios.post(`https://graph.facebook.com/v19.0/me/messages`, ...)
     console.log(`[Instagram API] Sending DM to ${recipientId}: "${text}"`);
-    
-    
-    return true;
+    return Promise.resolve(); // Simulate a successful API call
 }
-
-module.exports = {
-    dmQueue,
-};

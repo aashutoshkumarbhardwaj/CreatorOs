@@ -1,20 +1,11 @@
-const IORedis = require('ioredis');
+const { createRedisClient } = require('./redisClient');
 
-const REDIS_URI = process.env.REDIS_URI;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCKOUT_DURATION = 15 * 60; // 15 minutes in seconds
 const MAX_RESET_ATTEMPTS = 3;
 const RESET_LOCKOUT_DURATION = 60 * 60; // 1 hour in seconds
 
-let redisClient = null;
-
-if (REDIS_URI) {
-    redisClient = new IORedis(REDIS_URI, {
-        maxRetriesPerRequest: null,
-        connectTimeout: 5000,
-        lazyConnect: true,
-    });
-}
+const redisClient = createRedisClient();
 
 function getLoginAttemptKey(identifier) {
     return `login_attempts:${identifier.toLowerCase()}`;

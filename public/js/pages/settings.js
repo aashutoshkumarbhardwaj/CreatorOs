@@ -286,14 +286,109 @@
     // Account deletion
     document.getElementById('deactivate-btn').addEventListener('click', async () => {
         if (isGuest) return showToast('Contributors cannot delete accounts', true);
-        if (!confirm('Are you sure you want to deactivate your instance? This is permanent.')) return;
+        showDeletionModal();
+    });
+
+    function showDeletionModal() {
+        const deletionModal = document.getElementById('deletion-modal');
+        deletionModal.classList.add('open');
+        deletionModal.setAttribute('aria-hidden', 'false');
+        playSoundCue();
+    }
+
+    function hideDeletionModal() {
+        const deletionModal = document.getElementById('deletion-modal');
+        deletionModal.classList.remove('open');
+        deletionModal.setAttribute('aria-hidden', 'true');
+        document.getElementById('deletion-password').value = '';
+    }
+
+    const deletionModal = document.getElementById('deletion-modal');
+    document.getElementById('deletion-modal-close').addEventListener('click', hideDeletionModal);
+    deletionModal.addEventListener('click', (e) => {
+        if (e.target === deletionModal) hideDeletionModal();
+    });
+
+    document.getElementById('confirm-deletion-btn').addEventListener('click', async () => {
+        const password = document.getElementById('deletion-password').value;
+        if (!password) {
+            return showToast('Please enter your password', true);
+        }
+
+        const confirmText = document.getElementById('deletion-confirm-text').value;
+        if (confirmText !== 'DELETE') {
+            return showToast('Please type DELETE to confirm', true);
+        }
+
         try {
-            await apiRequest('/api/settings/account', { method: 'DELETE' });
-            window.location.href = '/login';
+            const result = await apiRequest('/api/settings/account/request-deletion', {
+                method: 'POST',
+                body: JSON.stringify({ password }),
+            });
+            hideDeletionModal();
+            showToast(result.message);
+            updateDeletionStatusUI(result.scheduledDeletionAt, result.daysUntilDeletion);
         } catch (err) {
             showToast(err.message, true);
         }
     });
+
+    document.getElementById('cancel-deletion-btn').addEventListener('click', async () => {
+        try {
+            await apiRequest('/api/settings/account/cancel-deletion', { method: 'POST' });
+            showToast('Account deletion cancelled');
+            updateDeletionStatusUI(null, 0);
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
+
+    function updateDeletionStatusUI(scheduledDate, daysRemaining) {
+        const dangerZone = document.querySelector('.danger-zone');
+        const deactivateBtn = document.getElementById('deactivate-btn');
+        const existingStatus = document.getElementById('deletion-status');
+        
+        if (existingStatus) existingStatus.remove();
+        
+        if (scheduledDate) {
+            const statusHtml = `
+                <div id="deletion-status" class="deletion-status">
+                    <div class="deletion-status-info">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11zM7.25 4.5a.75.75 0 011.5 0v3.5a.75.75 0 01-1.5 0v-3.5zM8 9.75a.75.75 0 100 1.5.75.75 0 000-1.5z"/>
+                        </svg>
+                        <span>Account deletion scheduled for <strong>${new Date(scheduledDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong> (${daysRemaining} day(s) remaining)</span>
+                    </div>
+                    <button type="button" class="btn-secondary btn-cancel-deletion" id="cancel-deletion-inline">Cancel Deletion</button>
+                </div>
+            `;
+            dangerZone.insertAdjacentHTML('afterend', statusHtml);
+            deactivateBtn.disabled = true;
+            deactivateBtn.style.opacity = '0.5';
+            
+            document.getElementById('cancel-deletion-inline').addEventListener('click', async () => {
+                try {
+                    await apiRequest('/api/settings/account/cancel-deletion', { method: 'POST' });
+                    showToast('Account deletion cancelled');
+                    updateDeletionStatusUI(null, 0);
+                } catch (err) {
+                    showToast(err.message, true);
+                }
+            });
+        } else {
+            deactivateBtn.disabled = false;
+            deactivateBtn.style.opacity = '1';
+        }
+    }
+
+    function checkDeletionStatus() {
+        const scheduledDate = userData.scheduledDeletionAt;
+        if (scheduledDate) {
+            const daysRemaining = Math.ceil((new Date(scheduledDate) - new Date()) / (1000 * 60 * 60 * 24));
+            updateDeletionStatusUI(scheduledDate, daysRemaining);
+        }
+    }
+    checkDeletionStatus();
 
     // Preferences radios
     document.querySelectorAll('#appearance-group .radio-btn').forEach((btn) => {
@@ -428,4 +523,15 @@
     applyPreferences();
     initTopbar();
     refreshBilling();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const message = urlParams.get('message');
+    if (message === 'deletion_confirmed') {
+        showToast('Account deletion confirmed. Your account will be deleted in 30 days.');
+        checkDeletionStatus();
+    } else if (message === 'deletion_already_confirmed') {
+        showToast('Account deletion was already confirmed.');
+    }
+
+    window.history.replaceState({}, document.title, window.location.pathname);
 })();

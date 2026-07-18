@@ -1,0 +1,22 @@
+<%#
+  Shared Google Fonts partial — loaded once from the base layout.
+  Consolidates all common font families used across CreatorOS pages
+  into a single optimised request to reduce duplicate network calls
+  and render-blocking overhead.
+
+  Fonts included:
+    • Inter          — primary UI / body font (wght 300–800)
+    • Space Grotesk  — headings & display text  (wght 300–800)
+    • Playfair Display — accent / editorial      (wght 700)
+
+  Page-specific fonts (login, signup, services-hub, bio-editor …)
+  should continue to be loaded inside their own templates.
+%>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<%# Single combined request — browsers de-duplicate identical URLs, so
+    one consolidated link is always better than several separate ones. %>
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap"
+  rel="stylesheet"
+>

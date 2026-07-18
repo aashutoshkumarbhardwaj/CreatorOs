@@ -13,7 +13,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <%- include('./partials/_brand_head') %>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Google Fonts: loaded once from shared partial -->
+  <%- include('./partials/_fonts') %>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -529,7 +531,7 @@
   <%- include('partials/layout/sidebar', { activeNav: 'analytics' }) %>
 
   <!-- MAIN -->
-  <div class="main">
+  <main class="main" id="main-content" tabindex="-1">
 
     <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
@@ -571,9 +573,9 @@
               <p>Daily user interaction across all modules</p>
             </div>
             <div class="period-tabs">
-              <button class="period-tab active" onclick="setPeriod(this,'7d')">7D</button>
-              <button class="period-tab" onclick="setPeriod(this,'30d')">30D</button>
-              <button class="period-tab" onclick="setPeriod(this,'90d')">90D</button>
+              <button type="button" class="period-tab active" onclick="setPeriod(this,'7d')">7D</button>
+              <button type="button" class="period-tab" onclick="setPeriod(this,'30d')">30D</button>
+              <button type="button" class="period-tab" onclick="setPeriod(this,'90d')">90D</button>
             </div>
           </div>
           <div class="chart-wrap">
@@ -605,7 +607,7 @@
             <div class="module-bar-bg"><div class="module-bar" style="width:38%"></div></div>
           </div>
 
-          <button class="view-full-btn">View Full Report</button>
+          <button type="button" class="view-full-btn">View Full Report</button>
         </div>
       </div>
 
@@ -681,7 +683,7 @@
       </div>
 
     </section>
-  </div>
+  </main>
 </div>
 
 <script nonce="<%= nonce %>">

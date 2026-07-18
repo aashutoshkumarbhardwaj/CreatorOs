@@ -668,19 +668,21 @@ const resetPassword = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'Token and password are required' });
     }
 
-    // Find reset token
-    const resetTokenDoc = await PasswordResetToken.findOne({ token });
+    // Atomically claim the token: find a valid unused token and mark it used in one operation
+    const resetTokenDoc = await PasswordResetToken.findOneAndUpdate(
+        { token, used: false, expiresAt: { $gt: new Date() } },
+        { $set: { used: true, usedAt: new Date() } },
+        { new: true }
+    );
     if (!resetTokenDoc) {
-        return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
-    }
-
-    // Check if token is already used
-    if (resetTokenDoc.used) {
-        return res.status(400).json({ success: false, message: 'This reset token has already been used' });
-    }
-
-    // Check if token has expired
-    if (resetTokenDoc.expiresAt < new Date()) {
+        // Check if token exists at all to give a more specific error
+        const existingToken = await PasswordResetToken.findOne({ token });
+        if (!existingToken) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+        }
+        if (existingToken.used) {
+            return res.status(400).json({ success: false, message: 'This reset token has already been used' });
+        }
         return res.status(400).json({ success: false, message: 'Reset token has expired' });
     }
 
@@ -694,11 +696,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     user.password = hashedPassword;
     user.passwordChangedAt = new Date();
     await user.save();
-
-    // Mark token as used (single-use enforcement)
-    resetTokenDoc.used = true;
-    resetTokenDoc.usedAt = new Date();
-    await resetTokenDoc.save();
 
     await clearResetAttempts(user.email);
 

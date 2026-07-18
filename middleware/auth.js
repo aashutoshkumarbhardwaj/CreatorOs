@@ -114,6 +114,9 @@ const preventContributorWrites = (req, res, next) => {
     return next();
 };
 
-module.exports = protect;
-module.exports.requireAdmin = requireAdmin;
-module.exports.preventContributorWrites = preventContributorWrites;
+
+module.exports = {
+    protect,
+    requireAdmin,
+    preventContributorWrites,
+};

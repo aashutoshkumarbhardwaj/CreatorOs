@@ -1,17 +1,8 @@
-const IORedis = require('ioredis');
+const { createRedisClient } = require('./redisClient');
 
-const REDIS_URI = process.env.REDIS_URI;
 const PROFILE_TTL = 5 * 60; // 5 minutes in seconds
 
-let redisClient = null;
-
-if (REDIS_URI) {
-    redisClient = new IORedis(REDIS_URI, {
-        maxRetriesPerRequest: null,
-        connectTimeout: 5000,
-        lazyConnect: true,
-    });
-}
+const redisClient = createRedisClient();
 
 function getProfileCacheKey(identifier) {
     return `profile:${identifier.toLowerCase()}`;
