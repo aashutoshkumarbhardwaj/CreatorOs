@@ -68,7 +68,7 @@ function serializeLink(entry, hostBase) {
  * @param {Function} next - Express next middleware function
  * @returns {Promise<void>|void}
  */
-async function handleGenerateShortUrl(req, res) {
+async function handleGenerateShortURL(req, res) {
     // The Zod schema accepts either `redirectUrl` or `url` as an alias;
     // normalize here so the rest of the function only deals with one field.
     const { redirectUrl: redirectUrlField, url, title, customSlug, tag } = req.body;
@@ -409,7 +409,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
 
 module.exports = {
     handleRenderDashboard,
-    handleGenerateShortUrl,
+    handleGenerateShortURL,
     handleGenerateShortUrlRender,
     handleGetQRCode,
     handleDownloadQRCode,

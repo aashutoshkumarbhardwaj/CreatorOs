@@ -1,6 +1,7 @@
 const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 const { wantsHtml } = require('../utils/requestType');
 const { buildShortenerViewModel } = require('../utils/viewModels');
+const MongoStore = require('rate-limit-mongo');
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -82,7 +83,7 @@ const forgotPasswordLimiter = rateLimit({
     }
 });
 
-const MongoStore = require('rate-limit-mongo');
+
 
 function keyByUserOrIp(req) {
     return req.user?.id ? `user:${req.user.id}` : ipKeyGenerator(req.ip);
