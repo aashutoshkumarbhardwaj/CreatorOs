@@ -29,18 +29,24 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
-const urlRoute = require("./routes/url");
-const userRoute = require("./routes/user");
-const analyticsRoute = require("./routes/analytics");
-const collaborationRoute = require("./routes/collaboration");
-const aiRoute = require("./routes/ai");
 const { BRAND } = require('./utils/brand');
-
 const connectDB = require("./connect");
-const authRoutes = require("./routes/auth");
-const collaborationRoutes = require('./routes/collaboration');
+
+// --- Route Imports ---
+const urlRoutes = require("./routes/url");
+const userRoute = require("./routes/user");
 const analyticsRoutes = require("./routes/analytics");
+const collaborationRoutes = require('./routes/collaboration');
+const aiRoute = require("./routes/ai");
+const authRoutes = require("./routes/auth");
 const instagramRoutes = require('./routes/instagram');
+const billingRoute = require('./routes/billing');
+const domainRoute = require('./routes/domain');
+const sponsorRoute = require('./routes/sponsor');
+const settingsRoutes = require('./routes/settings');
+const contentRoutes = require('./routes/content');
+const suggestionRoutes = require('./routes/suggestionRoutes');
+
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cacheHeadersMiddleware);
@@ -117,34 +123,20 @@ const User = require('./model/user');
 const Creator = require('./model/creator');
 const Invite = require('./model/invite');
 const BioProfile = require('./model/bioProfile');
+const Url = require('./model/url');
 const port = process.env.PORT || 3000;
-const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
 
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
-const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
-app.get('/confirm-deletion', (req, res) => {
-    res.render('confirm-deletion');
-});
-app.get('/services/bio-builder', (req, res) => {
-    res.render('bio-builder');
-});
 
 
 // Billing & Domain Routes
-const billingRoute = require('./routes/billing');
-const domainRoute = require('./routes/domain');
-const sponsorRoute = require('./routes/sponsor');
-const settingsRoutes = require('./routes/settings');
-const contentRoutes = require('./routes/content');
-
-const Url = require('./model/url');
 
 // API Routes
 app.use('/api/billing', billingRoute);
@@ -153,7 +145,7 @@ app.use('/api/sponsors', sponsorRoute);
 app.use('/api/settings', protect, settingsRoutes);
 app.use('/api/content', protect, contentRoutes);
 
-app.use('/api/urls', urlRoutes);
+app.use('/api/urls', protect, urlRoutes);
 app.use('/api/ai', aiRoute);
 app.use('/api/analytics', protect, analyticsRoutes);
 app.use('/api/instagram', instagramRoutes);
@@ -393,6 +385,13 @@ app.get('/terms', (req, res) => {
 });
 app.get('/about', (req, res) => {
     res.render('about');
+});
+
+app.get('/confirm-deletion', (req, res) => {
+    res.render('confirm-deletion');
+});
+app.get('/services/bio-builder', (req, res) => {
+    res.render('bio-builder');
 });
 
 app.get('/changelog', (req, res) => {
