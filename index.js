@@ -1,5 +1,10 @@
-require("dotenv").config({ path: ".env.local" });
+const dotenv = require("dotenv");
+dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+    dotenv.config({ path: ".env.local", override: true });
+}
 const cookieParser = require("cookie-parser");
+const mongoSanitize = require("express-mongo-sanitize");
 const express = require('express');
 const passport = require("passport");
 const path = require('path');
@@ -31,11 +36,6 @@ const authRoutes = require("./routes/auth");
 const collaborationRoutes = require('./routes/collaboration');
 const analyticsRoutes = require("./routes/analytics");
 const instagramRoutes = require('./routes/instagram');
-const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
-
-connectDB();
-require("./workers/analyticsRefreshWorker");
-require("./workers/contentPublishWorker").startContentPublishWorker();
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cacheHeadersMiddleware);
@@ -46,6 +46,7 @@ app.use(express.json({
         req.rawBody = buf;
     }
 }));
+app.use(mongoSanitize());
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
@@ -94,7 +95,7 @@ const urlShortenerLimiter = rateLimit({
 
 app.use("/", authRoutes);
 
-const protect = require("./middleware/auth");
+const { protect } = require("./middleware/auth");
 const { preventContributorWrites } = require("./middleware/auth");
 
 const fs = require('fs');
@@ -110,6 +111,7 @@ const port = process.env.PORT || 3000;
 const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
 
+const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
@@ -136,7 +138,7 @@ const swaggerSpec = require('./utils/swaggerOptions');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
 
 app.use("/api/analytics", protect, analyticsRoutes);
-app.use('/api/instagram', protect, instagramRoutes);
+app.use('/api/instagram', instagramRoutes);
 
 const settingsRoutes = require('./routes/settings');
 app.use('/api/settings', protect, settingsRoutes);
@@ -155,7 +157,25 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + sanitizedFilename);
     }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+const fileFilter = (req, file, cb) => {
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !ALLOWED_EXTENSIONS.includes(fileExtension)) {
+        return cb(new Error('Only image files (JPEG, PNG, WebP, GIF) are allowed.'), false);
+    }
+
+    cb(null, true);
+};
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: fileFilter
+});
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -233,6 +253,8 @@ function buildAccountViewModel(userDoc, fallbackUser) {
             ],
         },
         initials,
+        scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
+        deletionConfirmed: userDoc?.deletionConfirmed || false,
     };
 }
 
@@ -399,7 +421,7 @@ app.get('/settings', protect, asyncHandler(async (req, res) => {
     const userDoc = isGuestContributor(req.user)
         ? null
         : await User.findById(req.user.id)
-            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription')
+            .select('name email alias bio twoFactorEnabled preferences passwordChangedAt updatedAt subscription scheduledDeletionAt deletionConfirmed')
             .lean();
 
     res.render('settings', {
@@ -736,16 +758,27 @@ app.use((req, res) => {
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
-if (require.main === module) {
-    app.listen(port, (error) => {
-        if (error) {
-            console.error(`Failed to start server on port ${port}: ${error.message}`);
-            process.exit(1);
-        }
+async function startServer() {
+    try {
+        // Start the HTTP server immediately
+        const server = app.listen(port, () => {
+            const url = process.env.APP_URL || `http://localhost:${port}`;
+            console.log(`🚀 Server is running on ${url}`);
+        });
 
-        const url = process.env.APP_URL || `http://localhost:${port}`;
-        console.log(`Server is running on ${url}`);
-    });
+        // Connect to the database in the background
+        await connectDB();
+        console.log('✅ Database connected successfully.');
+
+        // Initialize background workers after the database is ready
+        require("./workers/analyticsRefreshWorker");
+        require("./workers/contentPublishWorker").startContentPublishWorker();
+    } catch (error) {
+        console.error('❌ Failed to start the application:', error);
+        process.exit(1);
+    }
 }
+
+startServer();
 
 module.exports = app;

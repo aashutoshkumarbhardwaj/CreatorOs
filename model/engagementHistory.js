@@ -25,6 +25,8 @@ const engagementHistorySchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+engagementHistorySchema.index({ creatorId: 1, createdAt: -1 });
+
 const EngagementHistoryModel =
     mongoose.models.EngagementHistory ||
     mongoose.model("EngagementHistory", engagementHistorySchema);

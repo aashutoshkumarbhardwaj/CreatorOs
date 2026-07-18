@@ -13,11 +13,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <%- include('./partials/_brand_head') %>
-  
-  <!-- Import Clash Display/Space Grotesk & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Google Fonts: loaded once from shared partial -->
+  <%- include('./partials/_fonts') %>
   
   <style>
     /* ── Retro SaaS Neo-Brutalist Color Palette ── */
@@ -1775,7 +1772,7 @@
     <%- include('partials/layout/sidebar', { activeNav: 'dm-automation' }) %>
 
     <!-- Main Panel -->
-    <main class="main">
+    <main class="main" id="main-content" tabindex="-1">
       
       <!-- Top Navigation -->
       <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
@@ -2668,10 +2665,10 @@
           <div class="workflow-card-top">
             <span class="status-badge ${statusBadgeClass}">${statusText}</span>
             <div class="card-actions-wrapper">
-              <button class="card-action-icon" onclick="openCreateView('${trigger.id}')" title="Edit automation" aria-label="Edit">
+              <button type="button" class="card-action-icon" onclick="openCreateView('${trigger.id}')" title="Edit automation" aria-label="Edit">
                 <svg viewBox="0 0 24 24" style="width:0.95rem; height:0.95rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button class="card-action-icon" onclick="deleteTrigger('${trigger.id}')" title="Delete automation" aria-label="Delete">
+              <button type="button" class="card-action-icon" onclick="deleteTrigger('${trigger.id}')" title="Delete automation" aria-label="Delete">
                 <svg viewBox="0 0 24 24" style="width:0.95rem; height:0.95rem;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </div>

@@ -8,8 +8,11 @@ const {
     handleUpdateQRColors,
     handleGetAnalytics,
 } = require('../controller/url');
-const protect = require('../middleware/auth');
-const { preventContributorWrites } = require('../middleware/auth');
+const {
+    protect,
+    preventContributorWrites,
+} = require('../middleware/auth');
+
 const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
 const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
 
@@ -32,23 +35,6 @@ const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/
  */
 router.get('/', protect, handleListUserLinks);
 
-/**
- * @swagger
- * /analytics/:shortId:
- *   get:
- *     summary: GET request for /analytics/:shortId
- *     description: Retrieves analytics data for a specific shortened URL.
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.get('/analytics/:shortId', protect, handleGetAnalytics);
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
 /**

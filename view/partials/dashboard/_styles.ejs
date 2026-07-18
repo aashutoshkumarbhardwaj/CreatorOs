@@ -37,6 +37,28 @@
 
   a { color: inherit; }
 
+  .skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    color: #042f3e;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    text-decoration: none;
+    font-weight: 800;
+    transform: translateY(-180%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 16px 34px rgba(34,211,238,0.2);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+    outline: 2px solid #67e8f9;
+    outline-offset: 2px;
+  }
+
   /* ── Layout ── */
   .dashboard-layout {
     min-height: 100vh;
