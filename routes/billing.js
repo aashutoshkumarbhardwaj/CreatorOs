@@ -1,6 +1,6 @@
 const express = require("express");
 const { createCheckoutSession, handleWebhook } = require("../controller/billing");
-const { restrictToLoggedinUserOnly } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/checkout", restrictToLoggedinUserOnly, createCheckoutSession);
+router.post("/checkout", protect, createCheckoutSession);
 
 /**
  * @swagger

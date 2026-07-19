@@ -1,10 +1,10 @@
 const express = require("express");
 const { getSponsors, createSponsor, updateSponsor, deleteSponsor } = require("../controller/sponsor");
-const { restrictToLoggedinUserOnly } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.use(restrictToLoggedinUserOnly);
+router.use(protect);
 
 /**
  * @swagger

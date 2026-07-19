@@ -1,44 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-
-    <!-- SEO meta tags -->
-    <%- include('./partials/_seo', {
-        title: 'Settings',
-        description: 'Manage account settings.',
-        canonical: 'https://creatoros.com/settings',
-        robots: 'noindex,nofollow'
-    }) %>
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<%= csrfToken %>">
-    <%- include('./partials/_brand_head') %>
-    <!-- Google Fonts: loaded once from shared partial -->
-    <%- include('./partials/_fonts') %>
-    <link rel="stylesheet" href="/css/workspace-shell.css">
-    <link rel="stylesheet" href="/css/settings.css">
-</head>
-<body class="settings-page density-<%= user.preferences.interfaceDensity %> appearance-<%= user.preferences.appearanceMode %><%= user.preferences.motionEffects ? '' : ' no-motion' %>"
-    data-user='<%- JSON.stringify({
-        name: user.name,
-        alias: user.alias,
-        bio: user.bio,
-        initials: user.initials,
-        twoFactorEnabled: user.twoFactorEnabled,
-        preferences: user.preferences,
-        passwordAgeDays: user.passwordAgeDays,
-        billing: user.billing,
-        isGuestContributor: isGuestContributor,
-        scheduledDeletionAt: user.scheduledDeletionAt,
-        deletionConfirmed: user.deletionConfirmed
-    }) %>'>
-
-    <div class="workspace-layout settings-layout" id="dashboardLayout">
-        <%- include('partials/layout/sidebar', { activeNav: 'settings' }) %>
-
-        <main class="workspace-main settings-main" id="main-content" tabindex="-1">
-            <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
+<%- include('partials/layout/header', { 
+    activeNav: 'settings', 
+    title: 'Settings',
+    bodyClass: 'settings-page density-' + user.preferences.interfaceDensity + ' appearance-' + user.preferences.appearanceMode + (user.preferences.motionEffects ? '' : ' no-motion'),
+    bodyAttributes: "data-user='" + JSON.stringify({ name: user.name, alias: user.alias, bio: user.bio, initials: user.initials, twoFactorEnabled: user.twoFactorEnabled, preferences: user.preferences, passwordAgeDays: user.passwordAgeDays, billing: user.billing, isGuestContributor: isGuestContributor, scheduledDeletionAt: user.scheduledDeletionAt, deletionConfirmed: user.deletionConfirmed }) + "'",
+    layoutClass: 'settings-layout',
+    mainClass: 'workspace-main settings-main',
+    extraHead: '<link rel="stylesheet" href="/css/workspace-shell.css"><link rel="stylesheet" href="/css/settings.css">' 
+}) %>
 
             <div class="settings-content">
                 <% if (isGuestContributor) { %>
@@ -209,8 +177,6 @@
                 </div>
                 </div>
             </div>
-        </main>
-    </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -278,5 +244,4 @@
     </div>
 
     <script src="/js/pages/settings.js"></script>
-</body>
-</html>
+<%- include('partials/layout/footer') %>

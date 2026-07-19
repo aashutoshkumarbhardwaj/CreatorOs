@@ -1,7 +1,7 @@
 const express = require("express");
 const dns = require("dns").promises;
 const User = require("../model/user");
-const { restrictToLoggedinUserOnly } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
@@ -29,7 +29,7 @@ const router = express.Router();
  *       400:
  *         description: Domain verification failed
  */
-router.post("/verify", restrictToLoggedinUserOnly, asyncHandler(async (req, res) => {
+router.post("/verify", protect, asyncHandler(async (req, res) => {
     const { domain } = req.body;
     
     if (!domain) {

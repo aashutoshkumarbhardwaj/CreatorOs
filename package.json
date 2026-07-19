@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev": "node index.js",
     "start": "node index.js",
     "build": "node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js",
     "seed:test-user": "node scripts/seedTestUser.js",
