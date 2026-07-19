@@ -16,6 +16,8 @@
 
     <!-- Google Fonts: loaded once from shared partial -->
     <%- include('./partials/_fonts') %>
+    <!-- Shared dashboard layout CSS (sidebar, topbar, layout grid) -->
+    <link href="/css/dashboard-layout.css" rel="stylesheet">
     <style>
         /* ── Retro SaaS Neo-Brutalist Color Palette ── */
         :root {
@@ -1362,7 +1364,7 @@
 <body>
     <div class="dashboard-layout" id="dashboardLayout">
         
-        <%- include('partials/layout/sidebar', { activeNav: 'home' }) %>
+        <%- include('partials/layout/sidebar', { activeNav: 'url-shortener' }) %>
 
         <!-- Main Workspace Panel -->
         <main class="main" id="main-content" tabindex="-1">
