@@ -3,6 +3,13 @@ const { wantsHtml } = require('../utils/requestType');
 const { buildShortenerViewModel } = require('../utils/viewModels');
 const MongoStore = require('rate-limit-mongo');
 
+function shouldUseMongoStore() {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) return false;
+    if (uri.includes("<user_name>") || uri.includes("<password>") || uri.includes("7udof89w.mongodb.net")) return false;
+    return process.env.USE_MOCK_DB !== 'true';
+}
+
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 15,
@@ -49,7 +56,7 @@ const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
     keyGenerator: (req) => ipKeyGenerator(req.ip),
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 60 * 60 * 1000,
     }) : undefined,
@@ -93,7 +100,7 @@ const aiGenerationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 requests per 15 minutes
     keyGenerator: keyByUserOrIp,
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 15 * 60 * 1000,
     }) : undefined,
@@ -109,7 +116,7 @@ const instagramProfileLimiter = rateLimit({
     windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
     max: 1,
     keyGenerator: keyByUserOrIp,
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
     }) : undefined,

@@ -6,6 +6,8 @@ if (process.env.NODE_ENV !== "production") {
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
 const passport = require("passport");
 const path = require('path');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
@@ -32,6 +34,16 @@ const app = express();
 const { BRAND } = require('./utils/brand');
 const connectDB = require("./connect");
 
+// Vercel Serverless specific: ensure DB connects on every request
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
 // --- Route Imports ---
 const urlRoutes = require("./routes/url");
 const analyticsRoutes = require("./routes/analytics");
@@ -48,6 +60,11 @@ const suggestionRoutes = require('./routes/suggestionRoutes');
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
+app.use(helmet({
+    contentSecurityPolicy: false, // Disabling CSP by default so we don't break existing inline scripts/styles without testing
+    crossOriginEmbedderPolicy: false
+}));
+app.use(cors());
 app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -834,6 +851,8 @@ async function startServer() {
     }
 }
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
 
 module.exports = app;

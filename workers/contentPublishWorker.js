@@ -34,10 +34,9 @@ async function publishDueContent() {
 }
 
 function startContentPublishWorker() {
-    // Skip scheduling under the Jest test env - node-cron's timer is a live
-    // handle that never resolves, which otherwise leaves the test process
-    // hanging and forces Jest to kill it ungracefully.
-    if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DB === 'true') return;
+    // Skip scheduling under the Jest test env, local mock DB, or Vercel serverless.
+    // In Vercel, cron jobs must be triggered via Vercel Cron (HTTP endpoint).
+    if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DB === 'true' || process.env.VERCEL === '1') return;
 
     // Schedule the job to run every minute.
     // The `fireOnStart` option is false by default, so it will wait for the
