@@ -1,14 +1,22 @@
+console.log('Loading line: 1');
 const dotenv = require("dotenv");
 dotenv.config();
 if (process.env.NODE_ENV !== "production") {
     dotenv.config({ path: ".env.local", override: true });
 }
+console.log('Loading line: 6');
 const cookieParser = require("cookie-parser");
+console.log('Loading line: 7');
 const mongoSanitize = require("express-mongo-sanitize");
+console.log('Loading line: 8');
 const express = require('express');
+console.log('Loading line: 9');
 const passport = require("passport");
+console.log('Loading line: 10');
 const path = require('path');
+console.log('Loading line: 11');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
+console.log('Loading line: 12');
 const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
 
 // Validate required environment variables
@@ -29,23 +37,38 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
+console.log('Loading line: 32');
 const { BRAND } = require('./utils/brand');
+console.log('Loading line: 33');
 const connectDB = require("./connect");
 
 // --- Route Imports ---
+console.log('Loading line: 36');
 const urlRoutes = require("./routes/url");
+console.log('Loading line: 37');
 const analyticsRoutes = require("./routes/analytics");
+console.log('Loading line: 38');
 const collaborationRoutes = require('./routes/collaboration');
+console.log('Loading line: 39');
 const aiRoute = require("./routes/ai");
+console.log('Loading line: 40');
 const authRoutes = require("./routes/auth");
+console.log('Loading line: 41');
 const instagramRoutes = require('./routes/instagram');
+console.log('Loading line: 42');
 const billingRoute = require('./routes/billing');
+console.log('Loading line: 43');
 const domainRoute = require('./routes/domain');
+console.log('Loading line: 44');
 const sponsorRoute = require('./routes/sponsor');
+console.log('Loading line: 45');
 const settingsRoutes = require('./routes/settings');
+console.log('Loading line: 46');
 const contentRoutes = require('./routes/content');
+console.log('Loading line: 47');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 
+console.log('Loading line: 49');
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(cacheHeadersMiddleware);
@@ -67,6 +90,7 @@ app.locals.BRAND = BRAND;
 
 // Generate a per-request nonce for inline scripts (used by CSP below and
 // exposed to views via res.locals.nonce)
+console.log('Loading line: 70');
 const crypto = require('crypto');
 app.use((req, res, next) => {
     res.locals.nonce = crypto.randomBytes(16).toString('base64');
@@ -82,6 +106,7 @@ app.use((req, res, next) => {
     next();
 });
 
+console.log('Loading line: 85');
 const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
@@ -105,23 +130,37 @@ const urlShortenerLimiter = rateLimit({
 
 app.use("/", authRoutes);
 
+console.log('Loading line: 108');
 const { protect } = require("./middleware/auth");
+console.log('Loading line: 109');
 const { preventContributorWrites } = require("./middleware/auth");
 
+console.log('Loading line: 111');
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
+console.log('Loading line: 113');
 const shortid = require('shortid');
+console.log('Loading line: 114');
 const multer = require('multer');
+console.log('Loading line: 115');
 const services = require('./services.config');
+console.log('Loading line: 116');
 const User = require('./model/user');
+console.log('Loading line: 117');
 const Creator = require('./model/creator');
+console.log('Loading line: 118');
 const Invite = require('./model/invite');
+console.log('Loading line: 119');
 const BioProfile = require('./model/bioProfile');
+console.log('Loading line: 120');
 const Url = require('./model/url');
 const port = process.env.PORT || 3000;
+console.log('Loading line: 122');
 const asyncHandler = require('./utils/asyncHandler');
 
+console.log('Loading line: 124');
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
+console.log('Loading line: 125');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
@@ -145,7 +184,9 @@ app.use('/api/analytics', protect, analyticsRoutes);
 app.use('/api/instagram', instagramRoutes);
 
 // API Documentation
+console.log('Loading line: 148');
 const swaggerUi = require('swagger-ui-express');
+console.log('Loading line: 149');
 const swaggerSpec = require('./utils/swaggerOptions');
 
 app.use(
@@ -157,6 +198,7 @@ app.use(
   })
 );
 
+console.log('Loading line: 160');
 const os = require('os');
 const uploadDir = os.tmpdir();
 
@@ -468,7 +510,14 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    return res.redirect('/services/analytics-dashboard');
+    const userDoc = await User.findById(req.user.id)
+        .select('name email')
+        .lean();
+
+    return res.render('analytics', {
+        services,
+        user: buildAccountViewModel(userDoc, req.user),
+    });
 }));
 
 // Vault redirect to new File Upload page
@@ -699,8 +748,10 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 
 // ── URL SHORTENER POST ──
 
+console.log('Loading line: 709');
 const { isValidUrl } = require('./utils/validators');
 
+console.log('Loading line: 711');
 const { handleGenerateShortUrlRender } = require('./controller/url');
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
@@ -810,6 +861,7 @@ app.use((req, res) => {
 
 // ── ERROR HANDLER — must be last ──
 
+console.log('Loading line: 820');
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
@@ -837,3 +889,4 @@ async function startServer() {
 startServer();
 
 module.exports = app;
+

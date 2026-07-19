@@ -1,5 +1,5 @@
 # Use the official Node.js active LTS image
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (including devDependencies to compile tailwind css)
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .

@@ -20,6 +20,12 @@
         outline: 2px solid currentColor;
         outline-offset: 2px;
     }
+
+    /* Hide the standalone icon when the sidebar is expanded (the full logo already includes it) */
+    .dashboard-layout:not(.sidebar-collapsed) .brand-mark {
+        display: none !important;
+    }
+
 </style>
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
@@ -37,20 +43,20 @@
     <nav class="sidebar-section">
         <p class="sidebar-label">Workspace</p>
         <a class="nav-link <%= typeof activeNav !== 'undefined' && activeNav === 'dashboard' ? 'active' : '' %>" href="/dashboard">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             <span class="nav-text">Dashboard</span>
         </a>
-        <a class="nav-link <%= typeof activeNav !== 'undefined' && activeNav === 'my-links' ? 'active' : '' %>" href="/services/url-shortener">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
+        <a class="nav-link <%= typeof activeNav !== 'undefined' && activeNav === 'my-links' ? 'active' : '' %>" href="/my-links">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"></path><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"></path></svg>
             <span class="nav-text">My Links</span>
         </a>
         <a class="nav-link <%= typeof activeNav !== 'undefined' && activeNav === 'analytics' ? 'active' : '' %>" href="/services/analytics-dashboard">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"></path><path d="M9 19V9"></path><path d="M14 19V3"></path><path d="M19 19v-7"></path></svg>
             <span class="nav-text">Analytics</span>
         </a>
        
         <a class="nav-link <%= typeof activeNav !== 'undefined' && activeNav === 'settings' ? 'active' : '' %>" href="/settings">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 20.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9H21a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15Z"></path></svg>
             <span class="nav-text">Settings</span>
         </a>
     </nav>
@@ -58,20 +64,54 @@
     <!-- Services section -->
     <nav class="sidebar-section" aria-label="Services">
         <p class="sidebar-label">Services</p>
-        <% if (typeof services !== 'undefined' && services && services.length) { %>
-            <% services.forEach((service) => { %>
-                <a class="service-link <%= typeof activeNav !== 'undefined' && activeNav === service.route ? 'active' : '' %> <%= service.status %>" href="<%= service.route %>" title="<%= service.name %>">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <% if (service.svgPath) { %>
-                            <%- service.svgPath %>
-                        <% } else { %>
-                            <path d="M12 3v18"></path><path d="M3 12h18"></path>
-                        <% } %>
-                    </svg>
-                    <span class="service-name"><%= service.name %></span>
-                </a>
-            <% }) %>
-        <% } %>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'url-shortener' || activeNav === '/services/url-shortener') ? 'active' : '' %> available" href="/services/url-shortener" title="Titli 🦋 - URL Shortener">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"/>
+            </svg>
+            <span class="service-name">Titli 🦋 - URL Shortener</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'file-upload' || activeNav === '/services/file-upload') ? 'active' : '' %> available" href="/services/file-upload" title="📁 File Upload">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+            <span class="service-name">📁 File Upload</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'smart-bio' || activeNav === '/services/smart-bio') ? 'active' : '' %> available" href="/services/smart-bio" title="🔗 Smart Bio System">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="service-name">🔗 Smart Bio System</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'analytics-dashboard' || activeNav === '/services/analytics-dashboard') ? 'active' : '' %> available" href="/services/analytics-dashboard" title="📊 Analytics Dashboard">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span class="service-name">📊 Analytics Dashboard</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'dm-automation' || activeNav === '/services/dm-automation') ? 'active' : '' %> available" href="/services/dm-automation" title="🤖 DM Automation">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="service-name">🤖 DM Automation</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'creator-crm' || activeNav === '/services/creator-crm') ? 'active' : '' %> available" href="/services/creator-crm" title="🤝 Creator CRM">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span class="service-name">🤝 Creator CRM</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'content-os' || activeNav === '/services/content-os') ? 'active' : '' %> coming_soon" href="/services/content-os" title="🧠 Content OS">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+            </svg>
+            <span class="service-name">🧠 Content OS</span>
+        </a>
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'suggestion-tool' || activeNav === '/services/suggestion-tool') ? 'active' : '' %> available" href="/services/suggestion-tool" title="🎨 Caption & Hashtag Tool">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span class="service-name">🎨 Caption & Hashtag Tool</span>
+        </a>
     </nav>
 
     <div class="sidebar-footer" style="margin-top: auto;">

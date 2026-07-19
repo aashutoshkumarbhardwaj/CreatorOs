@@ -224,19 +224,13 @@ body.settings-page .brand-text {
 }
 
 body.settings-page .brand-version,
-body.settings-page .sidebar-label,
 body.settings-page .search-icon {
     color: var(--settings-muted);
     stroke: var(--settings-muted);
 }
 
-body.settings-page .nav-link,
-body.settings-page .service-link {
-    color: var(--settings-muted);
-}
+/* sidebar nav-link / service-link colours intentionally removed — inherits from dashboard-layout.css for consistency */
 
-body.settings-page .nav-link:hover,
-body.settings-page .service-link:hover,
 body.settings-page .action-icon-btn:hover,
 body.settings-page .menu-btn:hover,
 body.settings-page .icon-btn:hover,
@@ -245,8 +239,6 @@ body.settings-page .profile-chip:hover {
     background-color: rgba(26, 188, 156, 0.16);
 }
 
-body.settings-page .nav-link.active,
-body.settings-page .service-link.active,
 body.settings-page .primary-action-btn,
 body.settings-page .avatar,
 body.settings-page .brand-mark {

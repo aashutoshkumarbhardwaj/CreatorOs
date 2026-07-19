@@ -27,7 +27,7 @@ router.get('/profile', protect, instagramProfileLimiter, getInstagramProfile);
 
 const DmTrigger = require('../model/dmTrigger');
 const asyncHandler = require('../utils/asyncHandler');
-const protect = require('../middleware/auth');
+
 
 router.get('/triggers', protect, asyncHandler(async (req, res) => {
     const triggers = await DmTrigger.find({ creatorId: req.user._id });

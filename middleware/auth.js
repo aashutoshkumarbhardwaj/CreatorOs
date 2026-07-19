@@ -66,7 +66,8 @@ const protect = async (req, res, next) => {
                 }
             }
 
-            if (!user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
+            const isProduction = process.env.NODE_ENV === "production";
+            if (isProduction && !user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
                 const query = new URLSearchParams({
                     email: decoded.email,
                     delivery: isEmailTransportConfigured() ? 'configured' : 'unavailable',
