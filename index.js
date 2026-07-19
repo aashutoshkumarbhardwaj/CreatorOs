@@ -468,14 +468,7 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
-
-    return res.render('analytics', {
-        services,
-        user: buildAccountViewModel(userDoc, req.user),
-    });
+    return res.redirect('/services/analytics-dashboard');
 }));
 
 // Vault redirect to new File Upload page

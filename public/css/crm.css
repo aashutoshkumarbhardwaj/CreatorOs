@@ -466,7 +466,11 @@
         }
         .profile-name { font-weight: 700; }
 
-        .content { padding: 2.2rem 2.4rem 2.8rem; }
+        .content { 
+            padding: 2.2rem 2.4rem 2.8rem; 
+            overflow: hidden;
+            max-width: 100%;
+        }
 
         .dashboard-head {
             display: flex;
@@ -1366,8 +1370,9 @@
       grid-template-columns: 1fr 1fr 1fr;
       gap: 1rem;
       border-bottom: 1px solid var(--border);
-      padding: 1 rem;
+      padding: 1rem;
       min-height: 480px;
+      min-width: 900px;
     }
 
     .pipeline-col {
@@ -1388,7 +1393,7 @@
       border: 3px solid #1a1a1a; 
        box-shadow: 3px 3px 0px #1a1a1a; 
        gap :1rem;
-       padding:1 rem;
+       padding: 1rem;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .col-title {
@@ -1606,6 +1611,7 @@
   width: 100%;
   border-collapse: collapse;
   border: none;        /* remove the black border you added */
+  min-width: 700px;
 }
 
 .contacts-table th {
@@ -1766,6 +1772,7 @@
   
 
     @media (max-width: 1000px) {
+      .pipeline { grid-template-columns: 1fr; }
       .bottom-strip { grid-template-columns: 1fr; }
       .contacts-panel { border-right: none; border-bottom: 2px solid #1a1a1a; }
     }
