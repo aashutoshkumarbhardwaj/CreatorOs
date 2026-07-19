@@ -1,13 +1,13 @@
 module.exports = [
-    {
-        key: 'url-shortener',
-        name: 'Titli 🦋 - URL Shortener',
-        description: 'Create compact short links and redirect users reliably.',
-        route: '/services/url-shortener',
-        status: 'available',
-        // Link / chain icon
-        svgPath: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"/>',
-    },
+    // {
+    //     key: 'url-shortener',
+    //     name: 'Titli 🦋 - URL Shortener',
+    //     description: 'Create compact short links and redirect users reliably.',
+    //     route: '/services/url-shortener',
+    //     status: 'available',
+    //     // Link / chain icon
+    //     svgPath: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"/>',
+    // },
     {
         key: 'file-upload',
         name: '📁 File Upload',
@@ -26,15 +26,15 @@ module.exports = [
         // User / profile card icon
         svgPath: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
     },
-    {
-        key: 'analytics-dashboard',
-        name: '📊 Analytics Dashboard',
-        description: 'Track performance and engagement across your creator services.',
-        route: '/services/analytics-dashboard',
-        status: 'available',
-        // Bar chart icon
-        svgPath: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-    },
+    // {
+    //     key: 'analytics-dashboard',
+    //     name: '📊 Analytics Dashboard',
+    //     description: 'Track performance and engagement across your creator services.',
+    //     route: '/services/analytics-dashboard',
+    //     status: 'available',
+    //     // Bar chart icon
+    //     svgPath: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    // },
     {
         key: 'dm-automation',
         name: '🤖 DM Automation',
