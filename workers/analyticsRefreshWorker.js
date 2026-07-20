@@ -24,6 +24,8 @@ let analyticsWorker = null;
 
 if (!REDIS_URI) {
     console.warn("📦 Analytics refresh worker disabled because REDIS_URI/REDIS_URL is not set. BullMQ queues cannot use Upstash REST credentials.");
+} else if (process.env.VERCEL === '1') {
+    console.warn("📦 Analytics refresh worker disabled on Vercel to prevent hanging Redis connections. Use Vercel Cron instead.");
 } else {
     const redisConnection = new IORedis(REDIS_URI, {
         maxRetriesPerRequest: null,

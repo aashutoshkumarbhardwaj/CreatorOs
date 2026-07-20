@@ -38,7 +38,6 @@
     "openai": "^4.52.7",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "puppeteer": "^25.0.4",
     "qrcode": "^1.5.4",
     "qrcode-svg": "^1.1.0",
     "rate-limit-mongo": "^2.3.2",
