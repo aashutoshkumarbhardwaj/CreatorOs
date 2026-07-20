@@ -76,11 +76,17 @@ const userSchema = new mongoose.Schema(
         },
 
         subscription: {
+            status: { type: String, enum: ['inactive', 'active', 'canceled'], default: 'inactive' },
             planName: { type: String, default: 'Pro Individual' },
             priceMonthly: { type: Number, default: 29 },
             nextInvoiceDate: { type: Date },
             cardBrand: { type: String, default: 'VISA' },
             cardLast4: { type: String, default: '4242' },
+            stripeCustomerId: { type: String },
+            stripeSubscriptionId: { type: String },
+            priceId: { type: String },
+            currentPeriodEnd: { type: Date },
+            cancelAtPeriodEnd: { type: Boolean, default: false },
         },
 
         lastLoginAt: {

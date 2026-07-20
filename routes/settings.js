@@ -28,6 +28,7 @@ function buildBillingPayload(user) {
         })();
 
     return {
+        status: sub.status || 'inactive',
         planName: sub.planName || 'Pro Individual',
         priceMonthly: sub.priceMonthly ?? 29,
         nextInvoiceDate: nextInvoice.toISOString(),
@@ -39,6 +40,7 @@ function buildBillingPayload(user) {
         estimatedTotal: `$${(sub.priceMonthly ?? 29).toFixed(2)} USD`,
         cardBrand: sub.cardBrand || 'VISA',
         cardLast4: sub.cardLast4 || '4242',
+        cancelAtPeriodEnd: sub.cancelAtPeriodEnd ?? false,
         invoices: defaultInvoices(),
     };
 }
