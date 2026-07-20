@@ -8,7 +8,6 @@ let contributorLoading = false;
 googleLogin?.addEventListener('click', function () {
 this.setAttribute('aria-busy', 'true');
 
-```
 const span = this.querySelector('span');
 
 if (span) {
@@ -16,14 +15,12 @@ if (span) {
 }
 
 this.disabled = true;
-```
 
 });
 
 emailForm?.addEventListener('submit', function () {
 if (emailLoading) return false;
 
-```
 emailLoading = true;
 
 const submitButton = this.querySelector('button[type="submit"]');
@@ -37,14 +34,12 @@ if (submitButton) {
     submitButton.textContent =
         submitButton.dataset.loadingText || 'Signing in...';
 }
-```
 
 });
 
 contributorForm?.addEventListener('submit', async function (event) {
 event.preventDefault();
 
-```
 if (contributorLoading) return;
 
 contributorLoading = true;
@@ -91,7 +86,6 @@ try {
 } finally {
     contributorLoading = false;
 }
-```
 
 });
 

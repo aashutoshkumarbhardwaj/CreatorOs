@@ -1,4 +1,4 @@
-(function () {
+(async function () {
     const body = document.body;
     const userData = JSON.parse(body.getAttribute('data-user') || '{}');
     const isGuest = !!userData.isGuestContributor;
@@ -190,16 +190,15 @@
     try {
         const data = await apiRequest('/url');
 
-        try {
-            const payload = await apiRequest('/api/urls', {
-                method: 'POST',
-                body: JSON.stringify({
-                    redirectUrl: document.getElementById('redirect-url').value.trim(),
-                    title: document.getElementById('link-title').value.trim() || undefined,
-                    customSlug: document.getElementById('custom-slug').value.trim() || undefined,
-                    tag: document.getElementById('link-tag').value,
-                }),
-            });
+        const payload = await apiRequest('/api/urls', {
+            method: 'POST',
+            body: JSON.stringify({
+                redirectUrl: document.getElementById('redirect-url').value.trim(),
+                title: document.getElementById('link-title').value.trim() || undefined,
+                customSlug: document.getElementById('custom-slug').value.trim() || undefined,
+                tag: document.getElementById('link-tag').value,
+            }),
+        });
 
         updateStats(
             data.stats || {
@@ -227,7 +226,6 @@
 
         showToast(err.message, true);
     }
-}
 
     document.getElementById('copy-result-btn').addEventListener('click', () => {
         if (lastCreatedUrl) copyText(lastCreatedUrl, 'Short link copied!');
@@ -274,15 +272,4 @@ if (emptyCTA) {
     });
 }
     loadLinks();
-    const emptyCTA = document.getElementById('empty-state-cta');
-
-if (emptyCTA) {
-    emptyCTA.addEventListener('click', () => {
-        document.getElementById('shorten-section')
-            ?.scrollIntoView({ behavior: 'smooth' });
-
-        document.getElementById('redirect-url')
-            ?.focus();
-    });
-}
 })();
