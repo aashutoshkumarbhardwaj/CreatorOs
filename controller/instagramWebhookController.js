@@ -5,8 +5,12 @@ const crypto = require('crypto');
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
-    // You should store your Verify Token in an environment variable
-    const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN || 'creatoros-verify-token';
+    const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
+
+    if (!VERIFY_TOKEN) {
+        console.error('[Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not configured');
+        return res.sendStatus(500);
+    }
 
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
