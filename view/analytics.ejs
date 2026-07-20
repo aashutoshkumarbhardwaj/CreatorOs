@@ -531,7 +531,7 @@
   <%- include('partials/layout/sidebar', { activeNav: 'analytics' }) %>
 
   <!-- MAIN -->
-  <div class="main">
+  <main class="main" id="main-content" tabindex="-1">
 
     <%- include('partials/layout/topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>
 
@@ -683,7 +683,7 @@
       </div>
 
     </section>
-  </div>
+  </main>
 </div>
 
 <script nonce="<%= nonce %>">

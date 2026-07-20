@@ -51,7 +51,23 @@ const protect = async (req, res, next) => {
                 return res.redirect("/login");
             }
 
-            if (!user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
+            // Check if password was changed after token was issued
+            if (user.passwordChangedAt && decoded.iat) {
+                const passwordChangedAt = Math.floor(
+                    new Date(user.passwordChangedAt).getTime() / 1000
+                );
+                if (passwordChangedAt > decoded.iat) {
+                    if (wantsHtml(req)) return res.redirect("/login");
+                    return res.status(401).json({
+                        success: false,
+                        message: "Password recently changed. Please log in again.",
+                        error: "Password recently changed. Please log in again.",
+                    });
+                }
+            }
+
+            const isProduction = process.env.NODE_ENV === "production";
+            if (isProduction && !user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
                 const query = new URLSearchParams({
                     email: decoded.email,
                     delivery: isEmailTransportConfigured() ? 'configured' : 'unavailable',

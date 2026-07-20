@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../_seo', {
+        title: typeof title !== 'undefined' ? title : 'Dashboard',
+        description: 'CreatorOS dashboard.',
+        canonical: 'https://creatoros.com/dashboard',
+        robots: 'noindex, nofollow'
+    }) %>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <%- include('../_brand_head') %>
+    <%- include('../_fonts') %>
+    <link href="/css/dashboard-layout.css" rel="stylesheet">
+    <% if (typeof extraHead !== 'undefined') { %>
+        <%- extraHead %>
+    <% } %>
+</head>
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" <%- typeof bodyAttributes !== 'undefined' ? bodyAttributes : '' %>>
+    <div class="dashboard-layout <%= typeof layoutClass !== 'undefined' ? layoutClass : '' %>">
+        <%- include('./sidebar', { activeNav: typeof activeNav !== 'undefined' ? activeNav : 'dashboard' }) %>
+        <main class="<%= typeof mainClass !== 'undefined' ? mainClass : 'main' %>" id="main-content" tabindex="-1">
+            <%- include('./topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>

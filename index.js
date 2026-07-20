@@ -6,6 +6,8 @@ if (process.env.NODE_ENV !== "production") {
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
 const passport = require("passport");
 const path = require('path');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
@@ -30,14 +32,39 @@ if (missingVars.length > 0) {
 
 const app = express();
 const { BRAND } = require('./utils/brand');
-
 const connectDB = require("./connect");
-const authRoutes = require("./routes/auth");
-const collaborationRoutes = require('./routes/collaboration');
+
+// Vercel Serverless specific: ensure DB connects on every request
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
+// --- Route Imports ---
+const urlRoutes = require("./routes/url");
 const analyticsRoutes = require("./routes/analytics");
+const collaborationRoutes = require('./routes/collaboration');
+const aiRoute = require("./routes/ai");
+const authRoutes = require("./routes/auth");
 const instagramRoutes = require('./routes/instagram');
+const billingRoute = require('./routes/billing');
+const domainRoute = require('./routes/domain');
+const sponsorRoute = require('./routes/sponsor');
+const settingsRoutes = require('./routes/settings');
+const contentRoutes = require('./routes/content');
+const suggestionRoutes = require('./routes/suggestionRoutes');
+
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
+app.use(helmet({
+    contentSecurityPolicy: false, // Disabling CSP by default so we don't break existing inline scripts/styles without testing
+    crossOriginEmbedderPolicy: false
+}));
+app.use(cors());
 app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -46,7 +73,26 @@ app.use(express.json({
         req.rawBody = buf;
     }
 }));
-app.use(mongoSanitize());
+// Fix for Vercel Serverless: req.query is a getter, so direct assignment throws TypeError.
+app.use((req, res, next) => {
+    ['body', 'params', 'headers', 'query'].forEach(key => {
+        if (req[key]) {
+            const sanitized = mongoSanitize.sanitize(req[key], { replaceWith: '_' });
+            try {
+                req[key] = sanitized;
+            } catch (e) {
+                // If assignment fails (e.g., getter-only on Vercel), use Object.defineProperty
+                Object.defineProperty(req, key, {
+                    value: sanitized,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                });
+            }
+        }
+    });
+    next();
+});
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
@@ -107,39 +153,45 @@ const User = require('./model/user');
 const Creator = require('./model/creator');
 const Invite = require('./model/invite');
 const BioProfile = require('./model/bioProfile');
+const Url = require('./model/url');
 const port = process.env.PORT || 3000;
-const urlRoutes = require('./routes/url');
 const asyncHandler = require('./utils/asyncHandler');
 
 const { acceptInvite, acceptInviteFromDashboard } = require('./controller/collaborationController');
-const suggestionRoutes = require('./routes/suggestionRoutes');
 const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
-app.get('/services/bio-builder', (req, res) => {
-    res.render('bio-builder');
-});
 
 
-const Url = require('./model/url');
+// Billing & Domain Routes
 
-app.use('/api/urls', urlRoutes);
+// API Routes
+app.use('/api/billing', billingRoute);
+app.use('/api/domain', domainRoute);
+app.use('/api/sponsors', sponsorRoute);
+app.use('/api/settings', protect, settingsRoutes);
+app.use('/api/content', protect, contentRoutes);
+
+app.use('/api/urls', protect, urlRoutes);
+app.use('/api/ai', aiRoute);
+app.use('/api/analytics', protect, analyticsRoutes);
+app.use('/api/instagram', instagramRoutes);
+
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css' }));
 
-app.use("/api/analytics", protect, analyticsRoutes);
-app.use('/api/instagram', instagramRoutes);
-
-const settingsRoutes = require('./routes/settings');
-app.use('/api/settings', protect, settingsRoutes);
-
-const contentRoutes = require('./routes/content');
-app.use('/api/content', protect, contentRoutes);
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css',
+  })
+);
 
 const os = require('os');
 const uploadDir = os.tmpdir();
@@ -365,6 +417,13 @@ app.get('/about', (req, res) => {
     res.render('about');
 });
 
+app.get('/confirm-deletion', (req, res) => {
+    res.render('confirm-deletion');
+});
+app.get('/services/bio-builder', (req, res) => {
+    res.render('bio-builder');
+});
+
 app.get('/changelog', (req, res) => {
     res.render('changelog');
 });
@@ -445,14 +504,7 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
-
-    return res.render('analytics', {
-        services,
-        user: buildAccountViewModel(userDoc, req.user),
-    });
+    return res.redirect('/services/analytics-dashboard');
 }));
 
 // Vault redirect to new File Upload page
@@ -721,15 +773,23 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
+    const x = req.query.x ? parseFloat(req.query.x) : null;
+    const y = req.query.y ? parseFloat(req.query.y) : null;
 
     try {
+        const visitData = { timestamp: new Date(), source: 'direct' };
+        if (x !== null && y !== null) {
+            visitData.x = x;
+            visitData.y = y;
+        }
+        
         const entry = await Url.findOneAndUpdate(
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
                 $push: {
                     visitHistory: {
-                        $each: [{ timestamp: new Date(), source: 'direct' }],
+                        $each: [visitData],
                         $sort: { timestamp: -1 },
                         $slice: 1000,
                     },
@@ -815,6 +875,8 @@ async function startServer() {
     }
 }
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
 
 module.exports = app;

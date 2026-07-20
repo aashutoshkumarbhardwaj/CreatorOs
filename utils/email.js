@@ -237,6 +237,10 @@ async function sendDeletionConfirmationEmail({ to, confirmLink, userName, schedu
   const replyTo = EMAIL_REPLY_TO || from;
   const subject = 'Confirm Your CreatorOS Account Deletion';
 
+  // Extract token from the confirmLink for use in the confirmation page
+  const tokenMatch = confirmLink.match(/token=([^&]+)/);
+  const token = tokenMatch ? tokenMatch[1] : '';
+
   const html = `
     <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
       <h2 style="color: #dc2626;">Account Deletion Request</h2>

@@ -41,8 +41,11 @@ if (REDIS_URI) {
     // Create the Queue only when Redis is explicitly configured.
     dmQueue = new Queue('dm-automation-queue', { connection });
 
-    // Create the Worker only when Redis is available.
-    dmWorker = new Worker('dm-automation-queue', async (job) => {
+    // Create the Worker only when Redis is available and not on Vercel.
+    if (process.env.VERCEL === '1') {
+        console.warn("📦 DM Worker disabled on Vercel to prevent hanging Redis connections. Use Vercel Cron/Webhooks instead.");
+    } else {
+        dmWorker = new Worker('dm-automation-queue', async (job) => {
         const { senderId, message, triggerKeyword } = job.data;
         
         console.log(`[Worker] Processing job ${job.id} for sender ${senderId}`);
@@ -81,6 +84,7 @@ if (REDIS_URI) {
             console.error(`🚨 ALARM: Job ${job.id} completely failed after ${job.attemptsMade} attempts.`);
         }
     });
+    }
 
     console.log('📦 DM Automation Queue initialized');
 } else {

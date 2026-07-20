@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-    handleGenerateShortUrl,
+    handleGenerateShortURL,
     handleListUserLinks,
     handleGetQRCode,
     handleDownloadQRCode,
@@ -53,25 +53,7 @@ router.get('/', protect, handleListUserLinks);
  *       500:
  *         description: Internal server error
  */
-router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortUrl);
-
-/**
- * @swagger
- * /:
- *   post:
- *     summary: POST request for /
- *     description: Automatically generated swagger documentation for /
- *     responses:
- *       200:
- *         description: Successful response
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       500:
- *         description: Internal server error
- */
-router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortUrl);
+router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortURL);
 
 // ── QR Code Endpoints ───────────────────────────────────────────────────────
 

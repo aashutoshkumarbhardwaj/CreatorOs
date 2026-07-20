@@ -1,16 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const User = require('../model/user');
-const Url = require('../model/url');
-const Invite = require('../model/invite');
-const Creator = require('../model/creator');
-const AnalyticsSnapshot = require('../model/analyticsSnapshot');
-const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
-const { sendDeletionConfirmationEmail, isEmailTransportConfigured } = require('../utils/email');
 const { validate, updateProfileSchema } = require('../middleware/validators');
 
 const asyncHandler = fn => (req, res, next) =>
@@ -191,6 +184,38 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
     await user.save();
 
     const days = daysSince(user.passwordChangedAt);
+
+    // Invalidate the old session by clearing the current cookie
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' || process.env.COOKIE_SECURE_DEV === 'true',
+        sameSite: 'strict',
+        path: '/',
+    });
+
+    // Issue a new token so the user stays logged in after password change
+    const newToken = jwt.sign(
+        {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role || 'creator',
+            passwordChangedAt: Math.floor(user.passwordChangedAt.getTime() / 1000),
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === 'true';
+    res.cookie('token', newToken, {
+        httpOnly: true,
+        secure: isSecureEnvironment,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+    });
+
     res.json({
         message: 'Password updated successfully',
         passwordChangedAt: user.passwordChangedAt,
@@ -254,7 +279,7 @@ router.post('/account/request-deletion', preventContributorWrites, asyncHandler(
     if (isEmailTransportConfigured()) {
         try {
             const appUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-            const confirmLink = `${appUrl}/api/settings/account/confirm-deletion?token=${confirmationToken}`;
+            const confirmLink = `${appUrl}/confirm-deletion?token=${confirmationToken}`;
             
             await sendDeletionConfirmationEmail({
                 to: user.email,
@@ -279,46 +304,61 @@ router.post('/account/request-deletion', preventContributorWrites, asyncHandler(
     });
 }));
 
-// GET /api/settings/account/confirm-deletion
+// POST /api/settings/account/confirm-deletion
 
 /**
  * @swagger
  * /account/confirm-deletion:
- *   get:
- *     summary: GET request for /account/confirm-deletion
- *     description: Confirms account deletion via token from email.
+ *   post:
+ *     summary: POST request for /account/confirm-deletion
+ *     description: Confirms account deletion via token. Requires authentication to verify the requesting user is the account owner.
  *     responses:
  *       200:
  *         description: Account deletion confirmed
  *       400:
- *         description: Invalid token
+ *         description: Invalid token or expired
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: User not found
  */
-router.get('/account/confirm-deletion', asyncHandler(async (req, res) => {
-    const { token } = req.query;
+router.post('/account/confirm-deletion', preventContributorWrites, asyncHandler(async (req, res) => {
+    const { token } = req.body;
     
     if (!token) {
         return res.status(400).json({ error: 'Invalid confirmation token' });
     }
     
-    const user = await User.findOne({ deletionConfirmationToken: token });
+    // Verify the authenticated user is the account owner
+    const user = await User.findById(req.user.id);
     if (!user) {
-        return res.status(404).json({ error: 'Invalid or expired confirmation token' });
+        return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (user.deletionConfirmationToken !== token) {
+        return res.status(400).json({ error: 'Invalid confirmation token' });
     }
     
     if (!user.scheduledDeletionAt) {
         return res.status(400).json({ error: 'No deletion scheduled for this account' });
     }
     
+    // Check token expiration (24 hours)
+    const tokenAge = Date.now() - new Date(user.scheduledDeletionAt).getTime() + (30 * 24 * 60 * 60 * 1000);
+    const MAX_TOKEN_AGE = 24 * 60 * 60 * 1000; // 24 hours from request time
+    const deletionRequestTime = new Date(user.updatedAt).getTime();
+    if (Date.now() - deletionRequestTime > MAX_TOKEN_AGE) {
+        return res.status(400).json({ error: 'Confirmation token has expired. Please request deletion again.' });
+    }
+    
     if (user.deletionConfirmed) {
-        return res.redirect('/settings?message=deletion_already_confirmed');
+        return res.json({ message: 'Deletion already confirmed' });
     }
     
     user.deletionConfirmed = true;
     await user.save();
     
-    res.redirect('/settings?message=deletion_confirmed');
+    res.json({ message: 'Account deletion confirmed' });
 }));
 
 // POST /api/settings/account/cancel-deletion

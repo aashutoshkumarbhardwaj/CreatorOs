@@ -1,23 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<%- include('partials/layout/header', {
+    activeNav: 'file-upload',
+    title: 'File Upload',
+    extraHead: '<link rel="stylesheet" href="/css/file-upload.css">\n    <link href="/css/style.css" rel="stylesheet">'
+}) %>
 
-    <!-- SEO meta tags -->
-    <%- include('./partials/_seo', {
-        title: 'File Upload',
-        description: 'Upload and manage files within your CreatorOS workspace.',
-        canonical: 'https://creatoros.com/file-upload',
-        robots: 'noindex,nofollow'
-    }) %>
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <%- include('./partials/_brand_head') %>
-    <link href="/css/style.css" rel="stylesheet">
-    <!-- Google Fonts: loaded once from shared partial -->
-    <%- include('./partials/_fonts') %>
-</head>
-<body class="bg-[#06101f] text-white font-[Inter] min-h-screen">
+<div class="bg-[#06101f] text-white font-[Inter] min-h-screen w-full">
     <div class="mx-auto max-w-2xl px-4 py-12">
         <a href="/" class="mb-6 inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">&larr; Back to services</a>
         <h1 class="text-3xl font-bold mb-2">File Upload</h1>
@@ -62,5 +49,6 @@
     </div>
 
     <script src="/js/pages/file-upload.js"></script>
-</body>
-</html>
+</div>
+
+<%- include('partials/layout/footer') %>

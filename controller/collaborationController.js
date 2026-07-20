@@ -172,11 +172,17 @@ const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
 
     const { inviteToken } = result.data;
 
+    const userDoc = await User.findById(req.user.id).select('email').lean();
+    if (!userDoc) {
+      return renderDashboard(req, res, { inviteAcceptError: 'User not found.' });
+    }
+
     // Atomically claim the invite: find a pending invite and mark it accepted in one operation
     const invite = await Invite.findOneAndUpdate(
       {
         token: inviteToken.trim(),
         status: 'pending',
+        email: userDoc.email.trim().toLowerCase(), // Security fix: Verify email matches!
         $or: [
           { expiresAt: { $exists: false } },
           { expiresAt: null },

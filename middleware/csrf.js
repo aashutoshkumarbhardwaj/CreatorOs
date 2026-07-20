@@ -1,6 +1,27 @@
 const crypto = require('crypto');
 
 /**
+ * Performs a constant-time comparison of two strings to prevent timing attacks.
+ * @param {string} a - First string
+ * @param {string} b - Second string
+ * @returns {boolean} Whether the strings are equal
+ */
+function timingSafeEqual(a, b) {
+    if (!a || !b) return false;
+
+    const bufA = Buffer.from(a, 'utf8');
+    const bufB = Buffer.from(b, 'utf8');
+
+    if (bufA.length !== bufB.length) {
+        // Still do a constant-time comparison to avoid leaking the length difference
+        crypto.timingSafeEqual(Buffer.alloc(bufA.length), bufB);
+        return false;
+    }
+
+    return crypto.timingSafeEqual(bufA, bufB);
+}
+
+/**
  * Middleware to generate a CSRF token and set it as a secure HttpOnly cookie.
  * Protects against Cross-Site Request Forgery by requiring token validation on state changes.
  * It also exposes the token to views via res.locals.csrfToken.
@@ -49,8 +70,8 @@ function verifyCsrf(req, res, next) {
         req.headers['x-csrf-token'] ||
         req.headers['x-xsrf-token'];
 
-    // Validate token presence and match
-    if (!cookieToken || !requestToken || cookieToken !== requestToken) {
+    // Validate token presence and match using constant-time comparison
+    if (!cookieToken || !requestToken || !timingSafeEqual(cookieToken, requestToken)) {
         const errorMsg = 'Invalid CSRF token. Request blocked.';
 
         // Return appropriate response format based on request type

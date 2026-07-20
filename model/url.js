@@ -54,10 +54,11 @@ const urlSchema = new mongoose.Schema({
                 enum: ["qr", "direct", "unknown"],
                 default: "unknown",
             },
+            x: { type: Number },
+            y: { type: Number },
         },
     ],
 });
-
 
 urlSchema.statics.listForUser = async function (userId, limit = 100) {
     return this.find({ userId })
@@ -65,6 +66,9 @@ urlSchema.statics.listForUser = async function (userId, limit = 100) {
         .limit(limit)
         .lean();
 };
+
+const MongooseUrlModel = mongoose.models.Url || mongoose.model("Url", urlSchema);
+const mockUrls = [];
 
 class MockUrlModel {
     constructor(data) {
@@ -148,6 +152,14 @@ class MockUrlModel {
         }
         return { deletedCount: count };
     }
+
+    static async listForUser(userId, limit = 100) {
+        let results = mockUrls.filter(u => u.userId?.toString() === userId?.toString());
+        return results
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, limit)
+            .map((u) => new MockUrlModel(u));
+    }
 }
 
 function getActiveUrlModel() {
@@ -168,5 +180,6 @@ UrlModel.findOneAndUpdate = (...args) => getActiveUrlModel().findOneAndUpdate(..
 UrlModel.find = (...args) => getActiveUrlModel().find(...args);
 UrlModel.findByIdAndDelete = (...args) => getActiveUrlModel().findByIdAndDelete(...args);
 UrlModel.deleteMany = (...args) => getActiveUrlModel().deleteMany(...args);
+UrlModel.listForUser = (...args) => getActiveUrlModel().listForUser(...args);
 
 module.exports = UrlModel;
