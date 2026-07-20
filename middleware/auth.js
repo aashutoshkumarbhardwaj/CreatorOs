@@ -99,7 +99,7 @@ const protect = async (req, res, next) => {
  * @returns {Promise<void>|void}
  */
 const requireAdmin = (req, res, next) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({
             success: false,
             message: "Admin access required",
@@ -119,7 +119,7 @@ const requireAdmin = (req, res, next) => {
  * @returns {Promise<void>|void}
  */
 const preventContributorWrites = (req, res, next) => {
-    if (req.user.role === "contributor" || req.user.role === "guest_contributor") {
+    if (req.user?.role === "contributor" || req.user?.role === "guest_contributor") {
         return res.status(403).json({
             success: false,
             message: "Contributor accounts do not have permission to modify data.",
