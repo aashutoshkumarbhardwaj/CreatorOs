@@ -8,11 +8,13 @@ const RESET_LOCKOUT_DURATION = 60 * 60; // 1 hour in seconds
 const redisClient = createRedisClient();
 
 function getLoginAttemptKey(identifier) {
-    return `login_attempts:${identifier.toLowerCase()}`;
+    const safeId = (identifier || '').toString().toLowerCase();
+    return `login_attempts:${safeId}`;
 }
 
 function getResetAttemptKey(identifier) {
-    return `reset_attempts:${identifier.toLowerCase()}`;
+    const safeId = (identifier || '').toString().toLowerCase();
+    return `reset_attempts:${safeId}`;
 }
 
 async function getFailedLoginAttempts(identifier) {

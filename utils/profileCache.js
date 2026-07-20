@@ -5,7 +5,8 @@ const PROFILE_TTL = 5 * 60; // 5 minutes in seconds
 const redisClient = createRedisClient();
 
 function getProfileCacheKey(identifier) {
-    return `profile:${identifier.toLowerCase()}`;
+    const safeId = (identifier || '').toString().toLowerCase();
+    return `profile:${safeId}`;
 }
 
 async function getProfileFromCache(identifier) {
