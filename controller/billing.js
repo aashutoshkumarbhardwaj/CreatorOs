@@ -18,7 +18,8 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
 
     const user = req.user;
     
-    try {
+        const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+        const userIdStr = (user?.id || user?._id)?.toString();
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             line_items: [
@@ -28,10 +29,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
                 },
             ],
             mode: "subscription",
-            success_url: `${process.env.BASE_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.BASE_URL}/dashboard?checkout=cancelled`,
-            customer_email: user.email,
-            client_reference_id: user._id.toString(),
+            success_url: `${baseUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/dashboard?checkout=cancelled`,
+            customer_email: user?.email,
+            client_reference_id: userIdStr,
         });
 
         res.json({ success: true, url: session.url });
