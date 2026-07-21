@@ -221,25 +221,28 @@ const login = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body || {};
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
     
-    // Allow login with any credentials: find user by email, or get the first user, or create a mock user
+    // Authenticate user by email with password verification
     let user = null;
     if (normalizedEmail) {
-        user = await User.findOne({ email: normalizedEmail });
+        user = await User.findOne({ email: normalizedEmail }).select('+password');
     }
     if (!user) {
-        user = await User.findOne({});
-    }
-    if (!user) {
-        user = await User.create({
-            name: "Test User",
-            email: normalizedEmail || "test@local.com",
-            password: await bcrypt.hash("Password123!", 10),
-            role: "creator",
-            isVerified: true
-        });
+        if (wantsHtml(req)) {
+            req.flash('error', 'Invalid email or password');
+            return res.redirect('/login');
+        }
+        return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    user.isVerified = true;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+        if (wantsHtml(req)) {
+            req.flash('error', 'Invalid email or password');
+            return res.redirect('/login');
+        }
+        return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
     user.lastLoginAt = new Date();
     await user.save();
 
