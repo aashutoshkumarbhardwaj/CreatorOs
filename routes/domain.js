@@ -44,8 +44,8 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
         // Or if in mock mode, just accept it
         const isVerified = records.includes("cname.creatoros.com") || process.env.NODE_ENV !== "production";
 
-        if (isVerified) {
-            await User.findByIdAndUpdate(req.user._id, { customDomain: domain, domainVerified: true });
+            const userId = req.user.id || req.user._id;
+            await User.findByIdAndUpdate(userId, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully" });
         } else {
             return res.status(400).json({ success: false, message: "Domain DNS records are not pointing correctly" });
@@ -53,7 +53,8 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
     } catch (error) {
         // If dns lookup fails in dev, mock success to allow progression
         if (process.env.NODE_ENV !== "production") {
-            await User.findByIdAndUpdate(req.user._id, { customDomain: domain, domainVerified: true });
+            const userId = req.user.id || req.user._id;
+            await User.findByIdAndUpdate(userId, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully (mock)" });
         }
         return res.status(400).json({ success: false, message: "Failed to resolve domain" });
