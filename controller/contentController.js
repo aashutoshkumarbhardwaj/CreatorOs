@@ -2,6 +2,16 @@ const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
 
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_LIST_LIMIT = 100;
+const VALID_STATUSES = new Set(['scheduled', 'published', 'cancelled']);
+
+function parseListLimit(value) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIST_LIMIT;
+    return Math.min(parsed, MAX_LIST_LIMIT);
+}
+
 /**
  * @function scheduleContent
  * @description Creates a piece of content scheduled to auto-publish at a future UTC time.
@@ -53,11 +63,57 @@ const scheduleContent = asyncHandler(async (req, res) => {
  * @returns {Promise<void>}
  */
 const listScheduledContent = asyncHandler(async (req, res) => {
-    const items = await ScheduledContent.find({ userId: req.user.id })
-        .sort({ scheduledAt: -1 })
+    const limit = parseListLimit(req.query?.limit);
+    const { status, cursor } = req.query || {};
+
+    if (status && !VALID_STATUSES.has(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status filter' });
+    }
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+        return res.status(400).json({ success: false, message: 'Invalid cursor' });
+    }
+
+    let cursorItem = null;
+    if (cursor) {
+        cursorItem = await ScheduledContent.findOne({ _id: cursor, userId: req.user.id })
+            .select('scheduledAt')
+            .lean();
+
+        if (!cursorItem) {
+            return res.status(400).json({ success: false, message: 'Invalid cursor' });
+        }
+    }
+
+    const query = {
+        userId: req.user.id,
+        ...(status && { status }),
+        ...(cursorItem && {
+            $or: [
+                { scheduledAt: { $lt: cursorItem.scheduledAt } },
+                { scheduledAt: cursorItem.scheduledAt, _id: { $lt: cursor } },
+            ],
+        }),
+    };
+
+    const results = await ScheduledContent.find(query)
+        .sort({ scheduledAt: -1, _id: -1 })
+        .limit(limit + 1)
         .lean();
 
-    return res.json({ success: true, items });
+    const hasMore = results.length > limit;
+    const items = hasMore ? results.slice(0, limit) : results;
+    const nextCursor = hasMore ? items[items.length - 1]?._id?.toString() || null : null;
+
+    return res.json({
+        success: true,
+        items,
+        pagination: {
+            limit,
+            hasMore,
+            nextCursor,
+        },
+    });
 });
 
 /**
