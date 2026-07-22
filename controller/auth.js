@@ -19,6 +19,7 @@ const { isEmailTransportConfigured } = require("../utils/email");
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MIN_PASSWORD_LENGTH = 8;
 const GUEST_CONTRIBUTOR_ROLE = "guest_contributor";
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
 const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not be completed.";
@@ -671,6 +672,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     if (!token || !newPassword) {
         return res.status(400).json({ success: false, message: 'Token and password are required' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({
+            success: false,
+            message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+        });
     }
 
     // Atomically claim the token: find a valid unused token and mark it used in one operation
