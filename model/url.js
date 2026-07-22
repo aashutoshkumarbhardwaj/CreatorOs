@@ -72,8 +72,10 @@ const mockUrls = [];
 
 class MockUrlModel {
     constructor(data) {
+        this._id = data._id || new mongoose.Types.ObjectId();
         this.shortId = data.shortId;
         this.redirectUrl = data.redirectUrl;
+        this.userId = data.userId;
         this.campaignName = data.campaignName || "Untitled Campaign";
         this.totalClicks = data.totalClicks || 0;
         this.qrFgColor = data.qrFgColor || "#1a1a1a";
@@ -125,13 +127,11 @@ class MockUrlModel {
         return new MockUrlModel(found);
     }
 
-    static async find(query = {}) {
-        let results = mockUrls.filter((u) =>
-            Object.entries(query).every(([k, v]) => u[k] === v)
+    static find(query = {}) {
+        const results = mockUrls.filter((u) =>
+            Object.entries(query).every(([k, v]) => u[k]?.toString?.() === v?.toString?.())
         );
-        return {
-            sort: () => results.map((u) => new MockUrlModel(u))
-        };
+        return createMockUrlQuery(results);
     }
 
     static async findByIdAndDelete(id) {
@@ -160,6 +160,40 @@ class MockUrlModel {
             .slice(0, limit)
             .map((u) => new MockUrlModel(u));
     }
+}
+
+function createMockUrlQuery(results) {
+    let currentResults = [...results];
+
+    const query = {
+        sort(sortSpec = {}) {
+            const [[field, direction] = []] = Object.entries(sortSpec);
+            if (field) {
+                currentResults = [...currentResults].sort((a, b) => {
+                    const left = a[field];
+                    const right = b[field];
+                    if (left === right) return 0;
+                    return left > right ? direction : -direction;
+                });
+            }
+            return query;
+        },
+        limit(count) {
+            currentResults = currentResults.slice(0, count);
+            return query;
+        },
+        lean() {
+            return Promise.resolve(currentResults.map((u) => ({ ...new MockUrlModel(u) })));
+        },
+        then(resolve, reject) {
+            return Promise.resolve(currentResults.map((u) => new MockUrlModel(u))).then(resolve, reject);
+        },
+        catch(reject) {
+            return Promise.resolve(currentResults.map((u) => new MockUrlModel(u))).catch(reject);
+        },
+    };
+
+    return query;
 }
 
 function getActiveUrlModel() {
