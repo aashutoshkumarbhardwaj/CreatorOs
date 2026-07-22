@@ -60,9 +60,26 @@ const urlSchema = new mongoose.Schema({
     ],
 });
 
-urlSchema.statics.listForUser = async function (userId, limit = 100) {
-    return this.find({ userId })
-        .sort({ createdAt: -1 })
+urlSchema.statics.listForUser = async function (userId, options = {}) {
+    const limit = typeof options === "number" ? options : options.limit || 100;
+    const cursor = typeof options === "object" ? options.cursor : null;
+    const query = { userId };
+
+    if (cursor) {
+        const cursorLink = await this.findOne({ _id: cursor, userId })
+            .select("createdAt")
+            .lean();
+
+        if (!cursorLink) return [];
+
+        query.$or = [
+            { createdAt: { $lt: cursorLink.createdAt } },
+            { createdAt: cursorLink.createdAt, _id: { $lt: cursor } },
+        ];
+    }
+
+    return this.find(query)
+        .sort({ createdAt: -1, _id: -1 })
         .limit(limit)
         .lean();
 };
@@ -72,6 +89,7 @@ const mockUrls = [];
 
 class MockUrlModel {
     constructor(data) {
+        this._id = data._id || new mongoose.Types.ObjectId();
         this.shortId = data.shortId;
         this.redirectUrl = data.redirectUrl;
         this.campaignName = data.campaignName || "Untitled Campaign";
@@ -153,10 +171,23 @@ class MockUrlModel {
         return { deletedCount: count };
     }
 
-    static async listForUser(userId, limit = 100) {
+    static async listForUser(userId, options = {}) {
+        const limit = typeof options === "number" ? options : options.limit || 100;
+        const cursor = typeof options === "object" ? options.cursor : null;
         let results = mockUrls.filter(u => u.userId?.toString() === userId?.toString());
+        if (cursor) {
+            const cursorIndex = results.findIndex(u => u._id?.toString() === cursor?.toString() || u.shortId === cursor);
+            if (cursorIndex === -1) return [];
+            const cursorItem = results[cursorIndex];
+            results = results.filter((u) => {
+                const createdDiff = new Date(u.createdAt) - new Date(cursorItem.createdAt);
+                if (createdDiff < 0) return true;
+                if (createdDiff > 0) return false;
+                return (u._id?.toString() || u.shortId) < (cursorItem._id?.toString() || cursorItem.shortId);
+            });
+        }
         return results
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt) || String(b._id || b.shortId).localeCompare(String(a._id || a.shortId)))
             .slice(0, limit)
             .map((u) => new MockUrlModel(u));
     }

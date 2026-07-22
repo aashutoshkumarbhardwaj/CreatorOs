@@ -5,6 +5,15 @@ const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
 
+const DEFAULT_LINK_LIST_LIMIT = 20;
+const MAX_LINK_LIST_LIMIT = 100;
+
+function parseListLimit(value) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LINK_LIST_LIMIT;
+    return Math.min(parsed, MAX_LINK_LIST_LIMIT);
+}
+
 /**
  * @function deriveTitle
  * @description Extracts or derives a meaningful title from a given URL.
@@ -142,10 +151,14 @@ async function handleGenerateShortURL(req, res) {
 async function handleListUserLinks(req, res) {
     const hostBase = `${req.protocol}://${req.get('host')}`;
     const userId = req.user?.id;
+    const limit = parseListLimit(req.query?.limit);
+    const cursor = req.query?.cursor || null;
 
-    const entries = await Url.listForUser(userId, 100);
+    const entries = await Url.listForUser(userId, { limit: limit + 1, cursor });
+    const hasMore = entries.length > limit;
+    const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
-    const links = entries.map((entry) => serializeLink(entry, hostBase));
+    const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
     const totalClicks = links.reduce((sum, link) => sum + link.totalClicks, 0);
     const topLink = links.reduce(
         (best, link) => (link.totalClicks > (best?.totalClicks || 0) ? link : best),
@@ -162,6 +175,11 @@ async function handleListUserLinks(req, res) {
             topLinkClicks: topLink?.clicksLabel || '0',
         },
         domain: hostBase.replace(/^https?:\/\//, ''),
+        pagination: {
+            limit,
+            hasMore,
+            nextCursor: hasMore ? pageEntries[pageEntries.length - 1]?._id?.toString?.() || null : null,
+        },
     });
 }
 
