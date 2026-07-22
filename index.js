@@ -736,6 +736,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 // ── URL SHORTENER POST ──
 
 const { isValidUrl } = require('./utils/validators');
+const { parseVisitCoordinates } = require('./utils/visitTelemetry');
 
 const { handleGenerateShortUrlRender } = require('./controller/url');
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
@@ -768,14 +769,13 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
-    const x = req.query.x ? parseFloat(req.query.x) : null;
-    const y = req.query.y ? parseFloat(req.query.y) : null;
+    const coordinates = parseVisitCoordinates(req.query);
 
     try {
         const visitData = { timestamp: new Date(), source: 'direct' };
-        if (x !== null && y !== null) {
-            visitData.x = x;
-            visitData.y = y;
+        if (coordinates) {
+            visitData.x = coordinates.x;
+            visitData.y = coordinates.y;
         }
         
         const entry = await Url.findOneAndUpdate(
