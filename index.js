@@ -58,6 +58,7 @@ const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 
+
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
 app.use(helmet({
@@ -501,7 +502,12 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
         domain: req.get('host'),
     });
 }));
-
+app.get("/inbox", protect, asyncHandler(async (req, res) => {
+    res.render("inbox", {
+        services,
+        user: req.user
+    });
+}));
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
     return res.redirect('/services/analytics-dashboard');
