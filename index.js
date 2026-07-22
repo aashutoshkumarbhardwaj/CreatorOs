@@ -540,12 +540,18 @@ app.get('/bio', protect, asyncHandler(async (req, res) => {
 // Save bio data
 app.post('/bio/save', protect, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
+    const { validateBioProfileInput } = require('./utils/bioProfileValidation');
     const userDoc = await User.findById(req.user.id);
     if (!userDoc) {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const validation = validateBioProfileInput(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    const { handle, name, bio, tags, avatarUrl, links } = validation.data;
     const userHandle = handle || userDoc.alias;
     
     if (!userHandle) {
