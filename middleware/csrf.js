@@ -13,8 +13,8 @@ function timingSafeEqual(a, b) {
     const bufB = Buffer.from(b, 'utf8');
 
     if (bufA.length !== bufB.length) {
-        // Still do a constant-time comparison to avoid leaking the length difference
-        crypto.timingSafeEqual(Buffer.alloc(bufA.length), bufB);
+        // Perform a constant-time comparison on equal-length dummy buffers to prevent timing side-channels
+        crypto.timingSafeEqual(bufB, bufB);
         return false;
     }
 
