@@ -28,19 +28,40 @@ router.get('/profile', protect, instagramProfileLimiter, getInstagramProfile);
 const DmTrigger = require('../model/dmTrigger');
 const asyncHandler = require('../utils/asyncHandler');
 
+function getAuthenticatedUserId(req) {
+    return req.user?.id || req.user?._id;
+}
+
+function requireAuthenticatedUserId(req, res) {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+        res.status(401).json({ success: false, message: 'Authentication required' });
+        return null;
+    }
+    return userId;
+}
 
 router.get('/triggers', protect, asyncHandler(async (req, res) => {
-    const triggers = await DmTrigger.find({ creatorId: req.user._id });
+    const userId = requireAuthenticatedUserId(req, res);
+    if (!userId) return;
+
+    const triggers = await DmTrigger.find({ creatorId: userId });
     res.json({ success: true, data: triggers });
 }));
 
 router.post('/triggers', protect, asyncHandler(async (req, res) => {
-    const trigger = await DmTrigger.create({ ...req.body, creatorId: req.user._id });
+    const userId = requireAuthenticatedUserId(req, res);
+    if (!userId) return;
+
+    const trigger = await DmTrigger.create({ ...req.body, creatorId: userId });
     res.status(201).json({ success: true, data: trigger });
 }));
 
 router.delete('/triggers/:id', protect, asyncHandler(async (req, res) => {
-    const trigger = await DmTrigger.findOneAndDelete({ _id: req.params.id, creatorId: req.user._id });
+    const userId = requireAuthenticatedUserId(req, res);
+    if (!userId) return;
+
+    const trigger = await DmTrigger.findOneAndDelete({ _id: req.params.id, creatorId: userId });
     if (!trigger) return res.status(404).json({ success: false, message: 'Trigger not found' });
     res.json({ success: true, message: 'Trigger deleted' });
 }));
