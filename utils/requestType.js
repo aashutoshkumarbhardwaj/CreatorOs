@@ -4,6 +4,7 @@
  * @returns {any}
  */
 function wantsHtml(req) {
+    if (!req || typeof req.accepts !== 'function') return false;
     return req.accepts('html') !== false;
 }
 
