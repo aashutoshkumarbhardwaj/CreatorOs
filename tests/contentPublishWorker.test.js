@@ -62,4 +62,42 @@ describe('Content Publish Worker', () => {
         expect((await ScheduledContent.findById(alreadyPublished._id)).status).toBe('published');
         expect((await ScheduledContent.findById(cancelled._id)).status).toBe('cancelled');
     });
+
+    it('respects the configured batch size for large due backlogs', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const dueItems = await ScheduledContent.insertMany([
+            {
+                userId,
+                caption: 'Backlog item 1',
+                timezone: 'UTC',
+                scheduledAt: new Date(Date.now() - 3 * 60 * 1000),
+                status: 'scheduled',
+            },
+            {
+                userId,
+                caption: 'Backlog item 2',
+                timezone: 'UTC',
+                scheduledAt: new Date(Date.now() - 2 * 60 * 1000),
+                status: 'scheduled',
+            },
+            {
+                userId,
+                caption: 'Backlog item 3',
+                timezone: 'UTC',
+                scheduledAt: new Date(Date.now() - 60 * 1000),
+                status: 'scheduled',
+            },
+        ]);
+
+        const publishedCount = await publishDueContent({ batchSize: 2 });
+
+        expect(publishedCount).toBe(2);
+
+        const refreshed = await ScheduledContent.find({
+            _id: { $in: dueItems.map((item) => item._id) },
+        }).sort({ scheduledAt: 1 });
+
+        expect(refreshed.filter((item) => item.status === 'published')).toHaveLength(2);
+        expect(refreshed.filter((item) => item.status === 'scheduled')).toHaveLength(1);
+    });
 });

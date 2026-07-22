@@ -2,13 +2,20 @@ const cron = require('node-cron');
 const ScheduledContent = require('../model/scheduledContent');
 
 const INSTANCE_ID = process.env.INSTANCE_ID || `web-${process.pid}`;
+const DEFAULT_PUBLISH_BATCH_SIZE = 100;
 
-async function publishDueContent() {
+function getPublishBatchSize() {
+    const parsed = Number.parseInt(process.env.CONTENT_PUBLISH_BATCH_SIZE, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_PUBLISH_BATCH_SIZE;
+}
+
+async function publishDueContent(options = {}) {
     const now = new Date();
+    const batchSize = options.batchSize || getPublishBatchSize();
     let publishedCount = 0;
 
     // Use atomic findOneAndUpdate to prevent race conditions in multi-instance deployments
-    while (true) {
+    while (publishedCount < batchSize) {
         const result = await ScheduledContent.findOneAndUpdate(
             {
                 status: 'scheduled',
@@ -23,6 +30,7 @@ async function publishDueContent() {
             },
             {
                 new: true,
+                sort: { scheduledAt: 1, _id: 1 },
             }
         );
 
@@ -41,7 +49,15 @@ function startContentPublishWorker() {
     // Schedule the job to run every minute.
     // The `fireOnStart` option is false by default, so it will wait for the
     // first minute to tick over before its initial run.
+    let isPublishing = false;
+
     cron.schedule('* * * * *', async () => {
+        if (isPublishing) {
+            console.warn('[ContentPublishWorker] Previous publish run is still active; skipping this tick.');
+            return;
+        }
+
+        isPublishing = true;
         try {
             const publishedCount = await publishDueContent();
             if (publishedCount > 0) {
@@ -49,8 +65,10 @@ function startContentPublishWorker() {
             }
         } catch (error) {
             console.error('[ContentPublishWorker] Failed to publish due content:', error.message);
+        } finally {
+            isPublishing = false;
         }
     });
 }
 
-module.exports = { startContentPublishWorker, publishDueContent };
+module.exports = { startContentPublishWorker, publishDueContent, getPublishBatchSize, DEFAULT_PUBLISH_BATCH_SIZE };
