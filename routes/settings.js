@@ -160,7 +160,11 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
  *         description: Internal server error
  */
 router.put('/security/password', preventContributorWrites, asyncHandler(async (req, res) => {
-    const { oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body || {};
+    
+    if (!oldPassword || typeof oldPassword !== 'string') {
+        return res.status(400).json({ error: 'Old password is required' });
+    }
     
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
