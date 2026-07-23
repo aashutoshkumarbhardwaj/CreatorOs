@@ -1,6 +1,24 @@
 const asyncHandler = require("../utils/asyncHandler");
 const Sponsor = require("../model/sponsor");
 
+const SPONSOR_UPDATE_FIELDS = [
+    "companyName",
+    "contactName",
+    "contactEmail",
+    "status",
+    "value",
+    "notes",
+];
+
+function buildSponsorUpdate(body = {}) {
+    return SPONSOR_UPDATE_FIELDS.reduce((update, field) => {
+        if (body[field] !== undefined) {
+            update[field] = body[field];
+        }
+        return update;
+    }, {});
+}
+
 const getSponsors = asyncHandler(async (req, res) => {
     const sponsors = await Sponsor.find({ creatorId: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, data: sponsors });
@@ -12,9 +30,15 @@ const createSponsor = asyncHandler(async (req, res) => {
 });
 
 const updateSponsor = asyncHandler(async (req, res) => {
+    const update = buildSponsorUpdate(req.body);
+
+    if (Object.keys(update).length === 0) {
+        return res.status(400).json({ success: false, message: "No valid sponsor fields provided" });
+    }
+
     const sponsor = await Sponsor.findOneAndUpdate(
         { _id: req.params.id, creatorId: req.user._id },
-        req.body,
+        { $set: update },
         { new: true, runValidators: true }
     );
     if (!sponsor) return res.status(404).json({ success: false, message: "Sponsor not found" });
@@ -31,5 +55,6 @@ module.exports = {
     getSponsors,
     createSponsor,
     updateSponsor,
-    deleteSponsor
+    deleteSponsor,
+    buildSponsorUpdate
 };
