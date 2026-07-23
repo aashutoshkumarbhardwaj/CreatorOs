@@ -48,7 +48,12 @@ const protect = async (req, res, next) => {
             const user = await User.findOne({ email: decoded.email });
 
             if (!user) {
-                return res.redirect("/login");
+                if (wantsHtml(req)) return res.redirect("/login");
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid session",
+                    error: "Invalid session",
+                });
             }
 
             // Check if password was changed after token was issued
