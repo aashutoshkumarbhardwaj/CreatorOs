@@ -1,17 +1,5 @@
 const nodemailer = require('nodemailer');
 
-const {
-  EMAIL_SERVICE,
-  EMAIL_HOST,
-  EMAIL_PORT,
-  EMAIL_SECURE,
-  EMAIL_USER,
-  EMAIL_PASSWORD,
-  EMAIL_FROM_NAME,
-  EMAIL_FROM,
-  EMAIL_REPLY_TO,
-} = process.env;
-
 function escapeHtml(str) {
   if (!str) return '';
   return str
@@ -22,12 +10,47 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function getEmailConfig() {
+  const {
+    EMAIL_SERVICE,
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_SECURE,
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+    EMAIL_FROM_NAME,
+    EMAIL_FROM,
+    EMAIL_REPLY_TO,
+  } = process.env;
+
+  return {
+    EMAIL_SERVICE,
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_SECURE,
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+    EMAIL_FROM_NAME,
+    EMAIL_FROM,
+    EMAIL_REPLY_TO,
+  };
+}
+
 /**
  * @function createTransporter
  * @description Creates a nodemailer transporter object for sending emails.
  * @returns {any}
  */
 function createTransporter() {
+  const {
+    EMAIL_SERVICE,
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_SECURE,
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+  } = getEmailConfig();
+
   if (!EMAIL_USER || !EMAIL_PASSWORD) {
     throw new Error('Email transport is not configured. Set EMAIL_USER and EMAIL_PASSWORD.');
   }
@@ -88,6 +111,7 @@ function isEmailTransportConfigured() {
  */
 async function sendInvitationEmail({ to, inviterName, projectName, inviteUrl, personalMessage }) {
   const transporter = createTransporter();
+  const { EMAIL_USER, EMAIL_FROM_NAME, EMAIL_FROM, EMAIL_REPLY_TO } = getEmailConfig();
   const from = EMAIL_FROM || EMAIL_USER;
   const fromName = EMAIL_FROM_NAME || 'CreatorOS';
   const replyTo = EMAIL_REPLY_TO || from;
@@ -141,6 +165,7 @@ If the link does not work, paste it into your browser.`;
  */
 async function sendVerificationEmail({ to, verificationLink, userName }) {
   const transporter = createTransporter();
+  const { EMAIL_USER, EMAIL_FROM_NAME, EMAIL_FROM, EMAIL_REPLY_TO } = getEmailConfig();
   const from = EMAIL_FROM || EMAIL_USER;
   const fromName = EMAIL_FROM_NAME || 'CreatorOS';
   const replyTo = EMAIL_REPLY_TO || from;
@@ -186,6 +211,7 @@ CreatorOS Team`;
 
 async function sendPasswordResetEmail({ to, resetLink, userName }) {
   const transporter = createTransporter();
+  const { EMAIL_USER, EMAIL_FROM_NAME, EMAIL_FROM, EMAIL_REPLY_TO } = getEmailConfig();
   const from = EMAIL_FROM || EMAIL_USER;
   const fromName = EMAIL_FROM_NAME || 'CreatorOS';
   const replyTo = EMAIL_REPLY_TO || from;
@@ -232,6 +258,7 @@ CreatorOS Team`;
 
 async function sendDeletionConfirmationEmail({ to, confirmLink, userName, scheduledDate }) {
   const transporter = createTransporter();
+  const { EMAIL_USER, EMAIL_FROM_NAME, EMAIL_FROM, EMAIL_REPLY_TO } = getEmailConfig();
   const from = EMAIL_FROM || EMAIL_USER;
   const fromName = EMAIL_FROM_NAME || 'CreatorOS';
   const replyTo = EMAIL_REPLY_TO || from;
@@ -286,4 +313,5 @@ module.exports = {
   sendPasswordResetEmail,
   sendDeletionConfirmationEmail,
   isEmailTransportConfigured,
+  createTransporter,
 };
