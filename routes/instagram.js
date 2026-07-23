@@ -6,6 +6,7 @@ const router = express.Router();
 
 const { protect } = require('../middleware/auth');
 const { instagramProfileLimiter } = require('../middleware/rateLimiters');
+const { dmTriggerValidator } = require('../middleware/validators');
 
 /**
  * @swagger
@@ -34,7 +35,7 @@ router.get('/triggers', protect, asyncHandler(async (req, res) => {
     res.json({ success: true, data: triggers });
 }));
 
-router.post('/triggers', protect, asyncHandler(async (req, res) => {
+router.post('/triggers', protect, dmTriggerValidator, asyncHandler(async (req, res) => {
     const trigger = await DmTrigger.create({ ...req.body, creatorId: req.user._id });
     res.status(201).json({ success: true, data: trigger });
 }));

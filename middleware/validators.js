@@ -53,6 +53,19 @@ const suggestionSchema = z.object({
   topic: z.string().min(1, 'Topic is required'),
 });
 
+const dmTriggerSchema = z.object({
+  keyword: z.string().trim().min(1, 'Keyword is required').max(80, 'Keyword must be at most 80 characters').transform(value => value.toLowerCase()),
+  responseUrl: z.string().trim().url('Response URL must be valid').refine((value) => {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, 'Response URL must use HTTP or HTTPS'),
+  isActive: z.boolean().optional(),
+});
+
 const updateProfileSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters').optional(),
   alias: z.string().min(1, 'Alias is required').max(50, 'Alias must be at most 50 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Alias can only contain letters, numbers, hyphens and underscores').optional(),
@@ -94,6 +107,7 @@ module.exports = {
     urlShortenSchema,
     urlQRColorsSchema,
     suggestionSchema,
+    dmTriggerSchema,
     updateProfileSchema,
     objectIdParamSchema,
     shortIdParamSchema,
@@ -106,5 +120,6 @@ module.exports = {
     shortenUrlValidator: validate(urlShortenSchema, 'body'),
     updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),
     inviteCollaboratorValidator: validate(collaborationInviteSchema, 'body'),
-    generateSuggestionValidator: validate(suggestionSchema, 'body')
+    generateSuggestionValidator: validate(suggestionSchema, 'body'),
+    dmTriggerValidator: validate(dmTriggerSchema, 'body')
 };
