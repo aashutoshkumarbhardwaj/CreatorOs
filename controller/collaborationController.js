@@ -204,6 +204,11 @@ const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
       ) {
         return renderDashboard(req, res, { inviteAcceptError: "This invitation has expired." });
       }
+      if (existingInvite.email?.trim().toLowerCase() !== userDoc.email.trim().toLowerCase()) {
+        return renderDashboard(req, res, {
+          inviteAcceptError: 'This invitation was sent to a different email address.',
+        });
+      }
       return renderDashboard(req, res, { inviteAcceptMessage: 'This invitation has already been accepted.' });
     }
 
