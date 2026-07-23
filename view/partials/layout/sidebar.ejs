@@ -212,7 +212,7 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
             <span class="service-name">🎟️ Event & Booking Pages</span>
         </a>
-        <a class="service-link coming_soon" href="#" title="📱 QR Code Generator">
+        <a class="service-link <%= typeof activeNav !== 'undefined' && (activeNav === 'qr-code-generator' || activeNav === '/services/qr-code-generator') ? 'active' : '' %> available" href="/services/qr-code-generator" title="📱 QR Code Generator">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span class="service-name">📱 QR Code Generator</span>
         </a>

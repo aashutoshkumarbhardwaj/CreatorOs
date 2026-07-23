@@ -4,10 +4,11 @@ const { buildShortenerViewModel } = require('../utils/viewModels');
 const MongoStore = require('rate-limit-mongo');
 
 function shouldUseMongoStore() {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) return false;
-    if (uri.includes("<user_name>") || uri.includes("<password>") || uri.includes("7udof89w.mongodb.net")) return false;
-    return process.env.USE_MOCK_DB !== 'true';
+    return false;
+    // const uri = process.env.MONGODB_URI;
+    // if (!uri) return false;
+    // if (uri.includes("<user_name>") || uri.includes("<password>") || uri.includes("7udof89w.mongodb.net")) return false;
+    // return process.env.USE_MOCK_DB !== 'true';
 }
 
 const loginLimiter = rateLimit({

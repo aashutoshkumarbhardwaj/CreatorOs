@@ -1,0 +1,171 @@
+<%- include('partials/layout/header', {
+    activeNav: 'qr-code-generator',
+    title: 'QR Code Generator',
+    extraHead: `
+        <link rel="stylesheet" href="/css/qr-code-generator.css">
+        <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.js" defer></script>
+        <script src="/js/pages/qr-generator.js" defer></script>
+    `
+}) %>
+
+<section class="qr-page" data-csrf="<%= csrfToken %>" data-qr-codes="<%- encodeURIComponent(JSON.stringify(qrCodes || [])) %>">
+    <div class="qr-page-header dashboard-head">
+        <div>
+            <h1>QR Code Generator</h1>
+            <p class="page-subtitle">Create dynamic QR codes, export print-ready assets, and watch scan telemetry from one workspace.</p>
+        </div>
+    </div>
+
+    <div class="qr-workbench">
+        <form class="qr-panel qr-config" id="qrCreateForm">
+            <div class="panel-kicker">
+                <span>Configuration Engine</span>
+                <span>Step 01/03</span>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">
+                    <span class="step-badge">1</span>
+                    <h2>Link & Identity</h2>
+                </div>
+                <p class="field-label">Content type</p>
+                <div class="mode-switch" role="radiogroup" aria-label="QR content type">
+                    <button type="button" class="mode-btn active" data-mode="url" aria-pressed="true">URL</button>
+                    <button type="button" class="mode-btn" data-mode="text" aria-pressed="false">Text</button>
+                </div>
+
+                <div class="content-field" data-content-panel="url">
+                    <label for="qrTargetUrl">Target destination URL</label>
+                    <input id="qrTargetUrl" name="targetUrl" type="url" value="https://your-link.com" placeholder="https://your-link.com" required>
+                </div>
+
+                <div class="content-field is-hidden" data-content-panel="text">
+                    <label for="qrTextContent">Text content</label>
+                    <textarea id="qrTextContent" rows="4" maxlength="2000" placeholder="Add plain text, instructions, coupon codes, Wi-Fi details, or event copy."></textarea>
+                </div>
+
+                <label for="qrLabel">Label</label>
+                <input id="qrLabel" name="label" type="text" maxlength="120" placeholder="Launch poster, booth card, product insert">
+
+                <label for="qrCampaignName">Campaign</label>
+                <input id="qrCampaignName" name="campaignName" type="text" maxlength="120" placeholder="Summer drop, live event, sponsor activation">
+
+                <label class="toggle-row" for="qrDynamic">
+                    <span>
+                        <strong>Enable Titli Shortlink</strong>
+                        <small>Auto-generate a trackable short URL for analytics.</small>
+                    </span>
+                    <input id="qrDynamic" name="isDynamic" type="checkbox" checked>
+                </label>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">
+                    <span class="step-badge">2</span>
+                    <h2>Aesthetics</h2>
+                </div>
+                <div class="color-grid">
+                    <label for="qrForeground">Foreground
+                        <span class="color-input">
+                            <input id="qrForeground" type="color" value="#000000">
+                            <input id="qrForegroundText" type="text" value="#000000" maxlength="7">
+                        </span>
+                    </label>
+                    <label for="qrBackground">Background
+                        <span class="color-input">
+                            <input id="qrBackground" type="color" value="#FFFFFF">
+                            <input id="qrBackgroundText" type="text" value="#FFFFFF" maxlength="7">
+                        </span>
+                    </label>
+                </div>
+
+                <label for="qrLogoUrl">Logo URL</label>
+                <input id="qrLogoUrl" type="url" placeholder="https://example.com/logo.png">
+
+                <p class="field-label">Pattern presets</p>
+                <div class="preset-grid" role="radiogroup" aria-label="Pattern presets">
+                    <% ['A','B','C','D','E'].forEach((preset) => { %>
+                        <button type="button" class="preset-btn <%= preset === 'A' ? 'active' : '' %>" data-preset="<%= preset %>" aria-pressed="<%= preset === 'A' ? 'true' : 'false' %>"><%= preset %></button>
+                    <% }) %>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">
+                    <span class="step-badge">3</span>
+                    <h2>Batch Generation</h2>
+                </div>
+                <label for="qrBatchUrls">URLs</label>
+                <textarea id="qrBatchUrls" rows="5" placeholder="https://example.com/a&#10;https://example.com/b"></textarea>
+                <button type="button" class="secondary-action" id="qrBatchBtn">Generate Batch ZIP</button>
+                <p class="form-note" id="qrBatchStatus"></p>
+            </div>
+        </form>
+
+        <aside class="qr-side">
+            <div class="qr-panel preview-panel">
+                <div class="panel-kicker live"><span>Live Preview</span></div>
+                <div class="preview-stage mobile-preview">
+                    <div class="phone-shell" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="preview-card">
+                        <div id="qrPreview" class="qr-preview-box" aria-label="QR preview"></div>
+                    </div>
+                </div>
+                <p class="scan-caption">Scan to test in real time</p>
+            </div>
+
+            <div class="qr-panel export-panel">
+                <p class="eyebrow">Export & Deployment</p>
+                <div class="export-actions">
+                    <button type="button" class="secondary-action" id="downloadSvgBtn" disabled>SVG</button>
+                    <button type="button" class="secondary-action" id="downloadPngBtn" disabled>PNG</button>
+                    <button type="button" class="secondary-action" id="downloadPdfBtn" disabled>PDF</button>
+                </div>
+                <button type="button" class="primary-action" id="saveQrBtn">Save & Publish</button>
+                <p class="form-note" id="qrSaveStatus"></p>
+            </div>
+        </aside>
+    </div>
+
+    <section class="telemetry-panel">
+        <div>
+            <p class="eyebrow">Global Telemetry</p>
+            <h2>Real-time data stream from active QR nodes</h2>
+        </div>
+        <div class="telemetry-stats">
+            <div><span>Total scans (24h)</span><strong id="telemetryScans24h"><%= telemetry.scans24h %></strong></div>
+            <div><span>Conversion rate</span><strong id="telemetryConversionRate"><%= telemetry.conversionRateLabel %></strong></div>
+            <div><span>Active links</span><strong id="telemetryActiveLinks"><%= telemetry.activeLinks %></strong></div>
+        </div>
+        <div class="scan-feed" id="telemetryScanFeed">
+            <p>Live scan feed</p>
+            <% if (telemetry.recentScans && telemetry.recentScans.length) { %>
+                <% telemetry.recentScans.slice(0, 8).forEach((scan) => { %>
+                    <div class="scan-row">
+                        <span><%= scan.linkId %></span>
+                        <span><%= scan.location %></span>
+                        <time datetime="<%= scan.timestamp %>"><%= new Date(scan.timestamp).toLocaleString() %></time>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="scan-row empty"><span>No scans yet</span><span>Unknown</span><span>Waiting</span></div>
+            <% } %>
+        </div>
+    </section>
+
+    <section class="qr-panel library-panel">
+        <div class="library-head">
+            <div>
+                <p class="eyebrow">Management Storage</p>
+                <h2>Your QR Library</h2>
+            </div>
+            <span id="libraryCount"><%= (qrCodes || []).length %> saved</span>
+        </div>
+        <div class="library-list" id="qrLibrary"></div>
+    </section>
+</section>
+
+<%- include('partials/layout/footer') %>
