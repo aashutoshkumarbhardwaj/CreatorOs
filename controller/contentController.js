@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
+const { isValidUrl } = require('../utils/validators');
 
 /**
  * @function scheduleContent
@@ -33,10 +34,15 @@ const scheduleContent = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'scheduledAt must be in the future' });
     }
 
+    const normalizedMediaUrl = typeof mediaUrl === 'string' ? mediaUrl.trim() : mediaUrl;
+    if (normalizedMediaUrl && (typeof normalizedMediaUrl !== 'string' || !isValidUrl(normalizedMediaUrl))) {
+        return res.status(400).json({ success: false, message: 'mediaUrl must be a valid HTTP or HTTPS URL' });
+    }
+
     const content = await ScheduledContent.create({
         userId: req.user.id,
         caption: caption.trim(),
-        mediaUrl: mediaUrl || undefined,
+        mediaUrl: normalizedMediaUrl || undefined,
         timezone: timezone || 'UTC',
         scheduledAt: scheduledDate,
         status: 'scheduled',
