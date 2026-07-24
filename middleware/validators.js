@@ -59,6 +59,14 @@ const updateProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be at most 500 characters').optional(),
 });
 
+const preferencesSchema = z.object({
+  appearanceMode: z.enum(['light', 'dark', 'system']).optional(),
+  interfaceDensity: z.enum(['compact', 'tactile']).optional(),
+  motionEffects: z.boolean().optional(),
+  soundCues: z.boolean().optional(),
+  autoSaveLinks: z.boolean().optional(),
+}).strict();
+
 const objectIdParamSchema = z.object({
   creatorId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid creatorId'),
 });
@@ -95,6 +103,7 @@ module.exports = {
     urlQRColorsSchema,
     suggestionSchema,
     updateProfileSchema,
+    preferencesSchema,
     objectIdParamSchema,
     shortIdParamSchema,
     validate,

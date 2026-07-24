@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../model/user');
 const { preventContributorWrites } = require('../middleware/auth');
-const { validate, updateProfileSchema } = require('../middleware/validators');
+const { validate, updateProfileSchema, preferencesSchema } = require('../middleware/validators');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -496,7 +496,7 @@ router.delete('/account', preventContributorWrites, asyncHandler(async (req, res
  *       500:
  *         description: Internal server error
  */
-router.put('/preferences', asyncHandler(async (req, res) => {
+router.put('/preferences', validate(preferencesSchema, 'body'), asyncHandler(async (req, res) => {
     // Note: Not using preventContributorWrites here so contributors can still save personal UI preferences
     const preferences = req.body;
     
