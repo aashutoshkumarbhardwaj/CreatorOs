@@ -297,9 +297,7 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
-    const isProduction = process.env.NODE_ENV === "production";
-
-    if (isProduction && user.authProvider !== "google" && !user.isVerified) {
+    if (user.authProvider !== "google" && !user.isVerified) {
         const verificationDeliveryUnavailable = !isEmailTransportConfigured();
 
         if (verificationDeliveryUnavailable && allowUnverifiedLogin) {
