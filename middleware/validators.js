@@ -13,6 +13,8 @@ const loginSchema = z.object({
   allowUnverifiedLogin: z.string().optional(),
 });
 
+const contributorLoginSchema = z.object({}).passthrough();
+
 const resendVerificationSchema = z.object({
   email: z.string().email('Invalid email format'),
 });
@@ -88,6 +90,7 @@ function validate(schema, source = 'body', viewName, buildLocals = () => ({})) {
 module.exports = { 
     signupSchema, 
     loginSchema, 
+    contributorLoginSchema,
     resendVerificationSchema,
     collaborationInviteSchema,
     collaborationAcceptSchema,
@@ -102,6 +105,7 @@ module.exports = {
     loginValidator: validate(loginSchema, 'body', 'login', () => ({
         googleAuthConfigured: Boolean(process.env.GOOGLE_CLIENT_ID)
     })),
+    contributorLoginValidator: validate(contributorLoginSchema, 'body'),
     resendVerificationValidator: validate(resendVerificationSchema, 'body', 'resend-verification'),
     shortenUrlValidator: validate(urlShortenSchema, 'body'),
     updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),
