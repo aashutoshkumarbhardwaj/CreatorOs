@@ -600,6 +600,26 @@ const clickTrackerLimiter = rateLimit({
 // IP-based deduplication map: linkId -> Map<ip, timestamp>
 const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
+
+// Periodic sweep: removes stale IP entries per link, and removes the
+// outer linkId key entirely once its inner map is empty. This prevents
+// unbounded growth from deleted links (orphaned linkId keys) and from
+// low-traffic links that never hit a per-request cleanup threshold.
+const clickCooldownsSweepInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [linkId, linkCooldowns] of clickCooldowns) {
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+        if (linkCooldowns.size === 0) {
+            clickCooldowns.delete(linkId);
+        }
+    }
+}, CLEANUP_INTERVAL_MS);
+clickCooldownsSweepInterval.unref();
 
 app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
@@ -619,16 +639,6 @@ app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res
 
     linkCooldowns.set(clientIp, Date.now());
 
-    // Periodically clean up old cooldown entries to prevent memory leak
-    if (linkCooldowns.size > 10000) {
-        const now = Date.now();
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-    }
-    
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
         { $inc: { "stats.clicks": 1 } },
