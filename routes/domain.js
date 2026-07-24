@@ -3,6 +3,7 @@ const dns = require("dns").promises;
 const User = require("../model/user");
 const { protect } = require("../middleware/auth");
 const asyncHandler = require("../utils/asyncHandler");
+const { normalizeCustomDomain } = require("../utils/customDomain");
 
 const router = express.Router();
 
@@ -30,10 +31,10 @@ const router = express.Router();
  *         description: Domain verification failed
  */
 router.post("/verify", protect, asyncHandler(async (req, res) => {
-    const { domain } = req.body;
+    const domain = normalizeCustomDomain(req.body?.domain);
     
     if (!domain) {
-        return res.status(400).json({ success: false, message: "Domain is required" });
+        return res.status(400).json({ success: false, message: "A valid domain is required" });
     }
 
     try {
@@ -45,7 +46,7 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
         const isVerified = records.includes("cname.creatoros.com") || process.env.NODE_ENV !== "production";
 
         if (isVerified) {
-            await User.findByIdAndUpdate(req.user._id, { customDomain: domain, domainVerified: true });
+            await User.findByIdAndUpdate(req.user.id || req.user._id, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully" });
         } else {
             return res.status(400).json({ success: false, message: "Domain DNS records are not pointing correctly" });
@@ -53,7 +54,7 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
     } catch (error) {
         // If dns lookup fails in dev, mock success to allow progression
         if (process.env.NODE_ENV !== "production") {
-            await User.findByIdAndUpdate(req.user._id, { customDomain: domain, domainVerified: true });
+            await User.findByIdAndUpdate(req.user.id || req.user._id, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully (mock)" });
         }
         return res.status(400).json({ success: false, message: "Failed to resolve domain" });
