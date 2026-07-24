@@ -59,6 +59,10 @@ const updateProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be at most 500 characters').optional(),
 });
 
+const twoFactorSchema = z.object({
+  enabled: z.boolean({ invalid_type_error: 'enabled must be a boolean' }),
+}).strict();
+
 const objectIdParamSchema = z.object({
   creatorId: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid creatorId'),
 });
@@ -95,6 +99,7 @@ module.exports = {
     urlQRColorsSchema,
     suggestionSchema,
     updateProfileSchema,
+    twoFactorSchema,
     objectIdParamSchema,
     shortIdParamSchema,
     validate,

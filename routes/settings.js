@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../model/user');
 const { preventContributorWrites } = require('../middleware/auth');
-const { validate, updateProfileSchema } = require('../middleware/validators');
+const { validate, updateProfileSchema, twoFactorSchema } = require('../middleware/validators');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -131,13 +131,13 @@ router.get('/billing', asyncHandler(async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, res) => {
+router.put('/security/2fa', preventContributorWrites, validate(twoFactorSchema, 'body'), asyncHandler(async (req, res) => {
     const { enabled } = req.body;
     
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
-    user.twoFactorEnabled = !!enabled;
+    user.twoFactorEnabled = enabled;
     await user.save();
     
     res.json({ message: '2FA settings updated successfully', twoFactorEnabled: user.twoFactorEnabled });
