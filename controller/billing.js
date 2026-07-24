@@ -17,6 +17,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     }
 
     const resolvedPriceId = priceId || process.env.STRIPE_PRO_PRICE_ID;
+    if (priceId && priceId !== process.env.STRIPE_PRO_PRICE_ID) {
+        return res.status(400).json({ success: false, message: "Invalid billing plan selected" });
+    }
+
     if (!resolvedPriceId || !process.env.BASE_URL) {
         console.error("Stripe checkout misconfigured: missing STRIPE_PRO_PRICE_ID or BASE_URL");
         return res.status(500).json({ success: false, message: "Billing is not configured correctly" });
