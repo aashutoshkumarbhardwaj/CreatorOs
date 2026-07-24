@@ -52,6 +52,7 @@ const aiRoute = require("./routes/ai");
 const authRoutes = require("./routes/auth");
 const instagramRoutes = require('./routes/instagram');
 const billingRoute = require('./routes/billing');
+const { handleWebhook: handleBillingWebhook } = require('./controller/billing');
 const domainRoute = require('./routes/domain');
 const sponsorRoute = require('./routes/sponsor');
 const settingsRoutes = require('./routes/settings');
@@ -68,6 +69,7 @@ app.use(helmet({
 app.use(cors());
 app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), handleBillingWebhook);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({
     verify: (req, res, buf) => {
