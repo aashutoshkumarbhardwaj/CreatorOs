@@ -1,6 +1,7 @@
 const { nanoid } = require('nanoid');
 const shortid = require('shortid');
 const QRCode = require('qrcode');
+const mongoose = require('mongoose');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
@@ -210,6 +211,19 @@ const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Prevent loading entire collection into memory on large datasets
     const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+        return res.status(400).render("home", {
+            urls: [],
+            nextCursor: null,
+            hasMore: false,
+            id: null,
+            shortUrl: null,
+            qrCode: null,
+            campaignName: "",
+            error: "Invalid pagination cursor"
+        });
+    }
 
     const userId = req.user?.id || null;
     const query = cursor ? { _id: { $lt: cursor }, userId } : { userId };
