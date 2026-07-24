@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
-const { ZipArchive } = require('archiver');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const QrCode = require('../model/qrCode');
 const User = require('../model/user');
@@ -415,7 +414,10 @@ const batchCreateQrCodes = asyncHandler(async (req, res) => {
         res.setHeader('X-QR-Failed', encodeURIComponent(JSON.stringify(failed.slice(0, 20))));
     }
 
-    const archive = new ZipArchive({ zlib: { level: 9 } });
+    const { default: archiver, ZipArchive } = await import('archiver');
+    const archive = typeof archiver === 'function'
+        ? archiver('zip', { zlib: { level: 9 } })
+        : new ZipArchive({ zlib: { level: 9 } });
     archive.on('warning', (err) => {
         if (err.code === 'ENOENT') return;
         throw err;
