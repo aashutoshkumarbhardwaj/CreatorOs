@@ -20,6 +20,7 @@ const scheduledContentSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
+            maxlength: 2200,
         },
         mediaUrl: {
             type: String,

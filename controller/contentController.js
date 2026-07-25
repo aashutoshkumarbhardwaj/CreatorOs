@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
 
+const MAX_SCHEDULED_CAPTION_LENGTH = 2200;
+
 /**
  * @function scheduleContent
  * @description Creates a piece of content scheduled to auto-publish at a future UTC time.
@@ -12,8 +14,17 @@ const ScheduledContent = require('../model/scheduledContent');
 const scheduleContent = asyncHandler(async (req, res) => {
     const { caption, mediaUrl, scheduledAt, timezone } = req.body || {};
 
-    if (!caption || typeof caption !== 'string' || !caption.trim()) {
+    const normalizedCaption = typeof caption === 'string' ? caption.trim() : '';
+
+    if (!normalizedCaption) {
         return res.status(400).json({ success: false, message: 'Caption is required' });
+    }
+
+    if (normalizedCaption.length > MAX_SCHEDULED_CAPTION_LENGTH) {
+        return res.status(400).json({
+            success: false,
+            message: `Caption must be ${MAX_SCHEDULED_CAPTION_LENGTH} characters or fewer`,
+        });
     }
 
     if (!scheduledAt) {
@@ -35,7 +46,7 @@ const scheduleContent = asyncHandler(async (req, res) => {
 
     const content = await ScheduledContent.create({
         userId: req.user.id,
-        caption: caption.trim(),
+        caption: normalizedCaption,
         mediaUrl: mediaUrl || undefined,
         timezone: timezone || 'UTC',
         scheduledAt: scheduledDate,
@@ -88,4 +99,4 @@ const cancelScheduledContent = asyncHandler(async (req, res) => {
     return res.json({ success: true, content });
 });
 
-module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent };
+module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent, MAX_SCHEDULED_CAPTION_LENGTH };
