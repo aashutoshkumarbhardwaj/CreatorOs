@@ -180,6 +180,11 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
         return res.status(400).json({ error: 'New password must be at least 8 characters.' });
     }
 
+    const isReusedPassword = await bcrypt.compare(newPassword, user.password);
+    if (isReusedPassword) {
+        return res.status(400).json({ error: 'New password must be different from the current password.' });
+    }
+
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     user.passwordChangedAt = new Date();
