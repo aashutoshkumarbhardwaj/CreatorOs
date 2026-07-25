@@ -2,6 +2,16 @@ const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
 
+function isValidTimeZone(timezone) {
+    if (typeof timezone !== 'string' || !timezone.trim()) return false;
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 /**
  * @function scheduleContent
  * @description Creates a piece of content scheduled to auto-publish at a future UTC time.
@@ -33,11 +43,16 @@ const scheduleContent = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'scheduledAt must be in the future' });
     }
 
+    const normalizedTimezone = timezone || 'UTC';
+    if (!isValidTimeZone(normalizedTimezone)) {
+        return res.status(400).json({ success: false, message: 'timezone must be a valid IANA timezone' });
+    }
+
     const content = await ScheduledContent.create({
         userId: req.user.id,
         caption: caption.trim(),
         mediaUrl: mediaUrl || undefined,
-        timezone: timezone || 'UTC',
+        timezone: normalizedTimezone,
         scheduledAt: scheduledDate,
         status: 'scheduled',
     });
@@ -88,4 +103,4 @@ const cancelScheduledContent = asyncHandler(async (req, res) => {
     return res.json({ success: true, content });
 });
 
-module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent };
+module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent, isValidTimeZone };
