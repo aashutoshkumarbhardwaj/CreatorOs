@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 // We mock OpenAI by default unless OPENAI_API_KEY is present
 let openai;
 const { OpenAI } = require("openai");
+const MAX_AI_PROMPT_LENGTH = 500;
 
 if (process.env.OPENAI_API_KEY) {
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -12,16 +13,21 @@ if (process.env.OPENAI_API_KEY) {
 // POST /api/ai/generate
 const handleAiRequest = asyncHandler(async (req, res) => {
     const { prompt } = req.body;
+    const normalizedPrompt = typeof prompt === "string" ? prompt.trim() : "";
     
-    if (!prompt) {
+    if (!normalizedPrompt) {
         return res.status(400).json({ success: false, message: "Prompt is required" });
+    }
+
+    if (normalizedPrompt.length > MAX_AI_PROMPT_LENGTH) {
+        return res.status(400).json({ success: false, message: `Prompt must be ${MAX_AI_PROMPT_LENGTH} characters or fewer` });
     }
 
     if (openai) { // Real API call
         try {
             const response = await openai.chat.completions.create({
                 model: "gpt-3.5-turbo",
-                messages: [{ role: "user", content: `Generate content suggestions for a creator based on: ${prompt}` }],
+                messages: [{ role: "user", content: `Generate content suggestions for a creator based on: ${normalizedPrompt}` }],
                 max_tokens: 150
             });
             return res.json({ success: true, data: response.choices[0].message.content });
@@ -35,10 +41,10 @@ const handleAiRequest = asyncHandler(async (req, res) => {
         } else {
             console.log("[AI Controller] OpenAI key not found. Returning mock data.");
             const mockSuggestions = [
-                `Top 5 ways to leverage ${prompt} for audience growth.`,
-                `Behind the scenes: How I use ${prompt} every day.`,
-                `The ultimate guide to ${prompt} in 2026.`,
-                `Why ${prompt} is changing the creator economy.`
+                `Top 5 ways to leverage ${normalizedPrompt} for audience growth.`,
+                `Behind the scenes: How I use ${normalizedPrompt} every day.`,
+                `The ultimate guide to ${normalizedPrompt} in 2026.`,
+                `Why ${normalizedPrompt} is changing the creator economy.`
             ];
             return res.json({ success: true, data: mockSuggestions.join("\n") });
         }
@@ -46,5 +52,6 @@ const handleAiRequest = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-    handleAiRequest
+    handleAiRequest,
+    MAX_AI_PROMPT_LENGTH
 };
