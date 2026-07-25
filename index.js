@@ -119,15 +119,6 @@ app.use((req, res, next) => {
     next();
 });
 
-const rateLimit = require('express-rate-limit');
-
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
-    message: 'Too many login attempts, please try again later.'
-});
-app.post('/login', loginLimiter);
-
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
@@ -144,6 +135,7 @@ app.use("/", authRoutes);
 
 const { protect } = require("./middleware/auth");
 const { preventContributorWrites } = require("./middleware/auth");
+const rateLimit = require('express-rate-limit');
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
