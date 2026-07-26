@@ -78,10 +78,12 @@ if (REDIS_URI) {
     });
 
     dmWorker.on('failed', (job, err) => {
-        console.error(`❌ Job with id ${job.id} has failed with ${err.message}`);
+        const jobId = job?.id || 'unknown';
+        const errorMsg = err?.message || 'unknown error';
+        console.error(`❌ Job with id ${jobId} has failed with ${errorMsg}`);
         // If we've exhausted all retries, we could log this to the DB to show on the CRM dashboard
-        if (job.attemptsMade >= job.opts.attempts) {
-            console.error(`🚨 ALARM: Job ${job.id} completely failed after ${job.attemptsMade} attempts.`);
+        if (job?.attemptsMade && job?.opts?.attempts && job.attemptsMade >= job.opts.attempts) {
+            console.error(`🚨 ALARM: Job ${jobId} completely failed after ${job.attemptsMade} attempts.`);
         }
     });
     }
