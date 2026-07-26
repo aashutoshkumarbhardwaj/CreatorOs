@@ -11,9 +11,27 @@
     const resultBanner = document.getElementById('result-banner');
     const resultText = document.getElementById('result-text');
 
-    let allLinks = [];
-    let sortMode = 'date';
-    let lastCreatedUrl = '';
+    // Initialize Zustag store
+    const useStore = window.zustag.createStore((set, get) => ({
+        allLinks: [],
+        sortMode: 'date',
+        lastCreatedUrl: '',
+    }));
+
+    // Subscribe to store changes to trigger UI updates
+    useStore.subscribe((state, prevState) => {
+        if (state.allLinks !== prevState.allLinks || state.sortMode !== prevState.sortMode) {
+            renderLinks();
+        }
+        if (state.lastCreatedUrl !== prevState.lastCreatedUrl) {
+            if (state.lastCreatedUrl) {
+                resultText.textContent = state.lastCreatedUrl;
+                resultBanner.style.display = 'flex';
+            } else {
+                resultBanner.style.display = 'none';
+            }
+        }
+    });
 
     function showToast(message, isError) {
         toastEl.textContent = message;
@@ -45,6 +63,7 @@
 
     function filterAndSortLinks() {
         const query = searchInput.value.trim().toLowerCase();
+        const { allLinks, sortMode } = useStore.getState();
         let links = [...allLinks];
 
         if (query) {
@@ -66,14 +85,14 @@
         return links;
     }
 
-   function renderLinks() {
-    const skeleton = document.getElementById('links-skeleton');
+    function renderLinks() {
+        const skeleton = document.getElementById('links-skeleton');
 
-    if (skeleton) {
-        skeleton.style.display = 'none';
-    }
+        if (skeleton) {
+            skeleton.style.display = 'none';
+        }
 
-    const links = filterAndSortLinks();
+        const links = filterAndSortLinks();
         feedEl.querySelectorAll('.link-card').forEach((el) => el.remove());
 
         if (links.length === 0) {
@@ -174,12 +193,11 @@
     async function loadLinks() {
         try {
             const data = await apiRequest('/api/urls');
-            allLinks = data.links || [];
+            useStore.setState({ allLinks: data.links || [] });
             updateStats(data.stats || { totalLinks: 0, totalClicksLabel: '0', topLinkTitle: '—' });
             if (data.domain) {
                 document.getElementById('domain-label').textContent = data.domain + '/';
             }
-            renderLinks();
         } catch (err) {
             showToast(err.message, true);
         }
@@ -188,7 +206,48 @@
     emptyEl.style.display = 'none';
     loadLinks();
 
+    // Form Submit Handler utilizing the store
+    if (shortenForm) {
+        shortenForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const redirectUrl = document.getElementById('redirect-url').value.trim();
+            const customSlug = document.getElementById('custom-slug').value.trim();
+            const linkTitle = document.getElementById('link-title').value.trim();
+            const linkTag = document.getElementById('link-tag').value;
+
+            try {
+                const data = await apiRequest('/api/urls', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        redirectUrl,
+                        customSlug: customSlug || undefined,
+                        title: linkTitle || undefined,
+                        tag: linkTag
+                    })
+                });
+
+                // Prepend new link to state & store short URL
+                const { allLinks } = useStore.getState();
+                useStore.setState({
+                    allLinks: [data.link, ...allLinks],
+                    lastCreatedUrl: data.link.shortUrl
+                });
+
+                // Clear input fields
+                document.getElementById('redirect-url').value = '';
+                document.getElementById('custom-slug').value = '';
+                document.getElementById('link-title').value = '';
+                document.getElementById('link-tag').value = 'active';
+
+                showToast('Short link created successfully!');
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+    }
+
     document.getElementById('copy-result-btn').addEventListener('click', () => {
+        const { lastCreatedUrl } = useStore.getState();
         if (lastCreatedUrl) copyText(lastCreatedUrl, 'Short link copied!');
     });
 
@@ -199,17 +258,15 @@
     searchInput.addEventListener('input', renderLinks);
 
     document.getElementById('sort-date').addEventListener('click', () => {
-        sortMode = 'date';
+        useStore.setState({ sortMode: 'date' });
         document.getElementById('sort-date').classList.add('active');
         document.getElementById('sort-clicks').classList.remove('active');
-        renderLinks();
     });
 
     document.getElementById('sort-clicks').addEventListener('click', () => {
-        sortMode = 'clicks';
+        useStore.setState({ sortMode: 'clicks' });
         document.getElementById('sort-clicks').classList.add('active');
         document.getElementById('sort-date').classList.remove('active');
-        renderLinks();
     });
 
     document.getElementById('scroll-shorten-btn').addEventListener('click', () => {
@@ -223,13 +280,13 @@
 
     const emptyCTA = document.getElementById('empty-state-cta');
 
-if (emptyCTA) {
-    emptyCTA.addEventListener('click', () => {
-        document.getElementById('shorten-section')
-            ?.scrollIntoView({ behavior: 'smooth' });
+    if (emptyCTA) {
+        emptyCTA.addEventListener('click', () => {
+            document.getElementById('shorten-section')
+                ?.scrollIntoView({ behavior: 'smooth' });
 
-        document.getElementById('redirect-url')
-            ?.focus();
-    });
-}
+            document.getElementById('redirect-url')
+                ?.focus();
+        });
+    }
 })();
