@@ -603,6 +603,21 @@ const clickTrackerLimiter = rateLimit({
 const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
 
+// Periodic cleanup every 5 minutes to prevent unbounded memory growth
+setInterval(() => {
+    const now = Date.now();
+    for (const [linkId, linkCooldowns] of clickCooldowns) {
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+        if (linkCooldowns.size === 0) {
+            clickCooldowns.delete(linkId);
+        }
+    }
+}, 5 * 60 * 1000);
+
 app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
     const { linkId } = req.params;
@@ -620,16 +635,6 @@ app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res
     }
 
     linkCooldowns.set(clientIp, Date.now());
-
-    // Periodically clean up old cooldown entries to prevent memory leak
-    if (linkCooldowns.size > 10000) {
-        const now = Date.now();
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-    }
     
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
