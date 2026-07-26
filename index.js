@@ -17,6 +17,8 @@ const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache
 const requiredEnvVars = [
     { name: 'MONGODB_URI', description: 'MongoDB connection string' },
     { name: 'JWT_SECRET', description: 'Secret key for JWT token signing' },
+    { name: 'INSTAGRAM_WEBHOOK_VERIFY_TOKEN', description: 'Instagram webhook verification token' },
+    { name: 'INSTAGRAM_APP_SECRET', description: 'Instagram app secret for webhook signature verification' },
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v.name]);
