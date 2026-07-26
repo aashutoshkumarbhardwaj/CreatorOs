@@ -397,20 +397,6 @@ router.get("/reset-password", (req, res) => {
 /**
  * @swagger
  * /reset-password:
- *   get:
- *     summary: GET request for /reset-password
- *     description: Renders the password reset page.
- *     responses:
- *       200:
- *         description: Successful response
- */
-router.get("/reset-password", (req, res) => {
-    res.render("reset-password", { token: req.query.token, error: null });
-});
-
-/**
- * @swagger
- * /reset-password:
  *   post:
  *     summary: Reset password with token
  *     description: Validates reset token and updates user password. Token can only be used once.
