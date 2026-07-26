@@ -196,6 +196,7 @@ const signup = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ success: false, message: "Name, email, and password are required" });
     }
 
+    const normalizedName = name.trim();
     const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -212,7 +213,7 @@ const signup = asyncHandler(async (req, res, next) => {
     const verificationTokenExpiry = getVerificationTokenExpiry();
 
     const user = await User.create({
-        name,
+        name: normalizedName,
         email: normalizedEmail,
         password: hashedPassword,
         authProvider: "local",
@@ -232,7 +233,7 @@ const signup = asyncHandler(async (req, res, next) => {
             await sendVerificationEmail({
                 to: normalizedEmail,
                 verificationLink,
-                userName: name,
+                userName: normalizedName,
             });
         } else {
             verificationDeliveryUnavailable = true;
