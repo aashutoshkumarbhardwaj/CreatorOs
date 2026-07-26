@@ -50,7 +50,7 @@ const urlQRColorsSchema = z.object({
 });
 
 const suggestionSchema = z.object({
-  topic: z.string().min(1, 'Topic is required'),
+  topic: z.string().trim().min(1, 'Topic is required'),
 });
 
 const updateProfileSchema = z.object({
