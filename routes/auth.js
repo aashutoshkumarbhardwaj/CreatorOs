@@ -4,7 +4,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
-const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter } = require("../middleware/rateLimiters");
+const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -431,6 +431,6 @@ router.get("/reset-password", (req, res) => {
  *       400:
  *         description: Invalid, expired, or already used token
  */
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
 
 module.exports = router;

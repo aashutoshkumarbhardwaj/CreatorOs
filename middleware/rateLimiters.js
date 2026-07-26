@@ -90,6 +90,15 @@ const forgotPasswordLimiter = rateLimit({
     }
 });
 
+const resetPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        const message = 'Too many password reset attempts. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
 
 
 function keyByUserOrIp(req) {
@@ -140,5 +149,6 @@ module.exports = {
     emailVerificationLimiter,
     aiGenerationLimiter,
     instagramProfileLimiter,
-    forgotPasswordLimiter
+    forgotPasswordLimiter,
+    resetPasswordLimiter
 };
