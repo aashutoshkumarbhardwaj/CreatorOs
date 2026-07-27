@@ -18,6 +18,7 @@ const { isEmailTransportConfigured } = require("../utils/email");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const MIN_PASSWORD_LENGTH = 8;
 const GUEST_CONTRIBUTOR_ROLE = "guest_contributor";
@@ -99,14 +100,14 @@ function serializeUser(user) {
  * @description Creates a JWT token for standard user authentication.
  * @returns {any}
  */
-function createToken(user) {
+function createToken(user, { remember = false } = {}) {
     const tokenUser = serializeUser(user);
 
     return jwt.sign(
         tokenUser,
         process.env.JWT_SECRET,
         {
-            expiresIn: "7d",
+            expiresIn: remember ? "30d" : "7d",
         }
     );
 }
@@ -140,7 +141,7 @@ function createContributorToken(session) {
  * - CSRF attacks (sameSite strict prevents cross-origin cookie inclusion)
  * @returns {any}
  */
-function setAuthCookie(res, token) {
+function setAuthCookie(res, token, { remember = false } = {}) {
     // Determine if we should enforce HTTPS-only cookies
     // In production, this is mandatory. In development, allow HTTP for localhost testing.
     const isProduction = process.env.NODE_ENV === "production";
@@ -150,7 +151,7 @@ function setAuthCookie(res, token) {
         httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
         secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
         sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
-        maxAge: ONE_WEEK_MS,
+        maxAge: remember ? THIRTY_DAYS_MS : ONE_WEEK_MS,
         path: "/", // Explicitly set path for clarity
     });
 }
@@ -267,7 +268,8 @@ const signup = asyncHandler(async (req, res, next) => {
 const login = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
 
-    const { email, password } = req.body || {};
+    const { email, password, remember: rememberVal } = req.body || {};
+    const remember = rememberVal === "on" || rememberVal === "true" || rememberVal === "1" || rememberVal === true || rememberVal === 1;
     const allowUnverifiedLogin = req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true";
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
 
@@ -309,8 +311,8 @@ const login = asyncHandler(async (req, res, next) => {
             user.lastLoginAt = new Date();
             await user.save();
 
-            const token = createToken(user);
-            setAuthCookie(res, token);
+            const token = createToken(user, { remember });
+            setAuthCookie(res, token, { remember });
 
             if (wantsHtml(req)) return res.redirect("/dashboard?login=unverified");
             return res.status(200).json({ success: true, token, user: serializeUser(user) });
@@ -335,8 +337,8 @@ const login = asyncHandler(async (req, res, next) => {
     user.lastLoginAt = new Date();
     await user.save();
 
-    const token = createToken(user);
-    setAuthCookie(res, token);
+    const token = createToken(user, { remember });
+    setAuthCookie(res, token, { remember });
 
     if (wantsHtml(req)) return res.redirect("/dashboard");
     return res.status(200).json({ success: true, token, user: serializeUser(user) });

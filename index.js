@@ -137,8 +137,7 @@ const urlShortenerLimiter = rateLimit({
 
 app.use("/", authRoutes);
 
-const { protect } = require("./middleware/auth");
-const { preventContributorWrites } = require("./middleware/auth");
+const { protect, preventContributorWrites, redirectIfAuthenticated } = require("./middleware/auth");
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -399,7 +398,7 @@ function buildEmptyInviteSummary() {
 // ── ROUTES ───────────────────────────────────────────────────────────────────
 
 // Home / services hub
-app.get('/', (req, res) => {
+app.get('/', redirectIfAuthenticated, (req, res) => {
     res.render('services-hub', { services });
 });
 
