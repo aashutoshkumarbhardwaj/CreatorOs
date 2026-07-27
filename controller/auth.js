@@ -284,8 +284,11 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
+    const DUMMY_HASH = "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUU";
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+        await bcrypt.compare(password, DUMMY_HASH);
         await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
