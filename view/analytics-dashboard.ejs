@@ -13,6 +13,16 @@
                         <h1>Analytics Overview</h1>
                         <p>Track your audience growth and content performance.</p>
                     </div>
+                    <% if (typeof creatorId !== 'undefined' && creatorId) { %>
+                    <div style="display:flex; gap:0.5rem;">
+                        <a href="/api/analytics/<%= creatorId %>/export?format=csv" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.5rem 1rem; font-family:'Space Grotesk', monospace; font-size:0.85rem; text-decoration:none; color:var(--black); display:inline-flex; align-items:center; gap:0.35rem;">
+                            Export CSV
+                        </a>
+                        <a href="/api/analytics/<%= creatorId %>/export?format=pdf" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.5rem 1rem; font-family:'Space Grotesk', monospace; font-size:0.85rem; text-decoration:none; color:var(--black); display:inline-flex; align-items:center; gap:0.35rem;">
+                            Export PDF
+                        </a>
+                    </div>
+                    <% } %>
                 </div>
 
                 <!-- Stats Grid -->

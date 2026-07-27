@@ -6,6 +6,7 @@ const {
     getLatestSnapshot,
     triggerRefresh,
     getEngagementHistory,
+    exportAnalytics,
 } = require("../controller/analytics");
 const { validate, objectIdParamSchema } = require("../middleware/validators");
 
@@ -20,6 +21,7 @@ const refreshLimiter = rateLimit({
 router.get("/:creatorId/snapshots", validateCreatorId, getSnapshots);
 router.get("/:creatorId/snapshots/latest", validateCreatorId, getLatestSnapshot);
 router.get("/:creatorId/engagement-history", validateCreatorId, getEngagementHistory);
+router.get("/:creatorId/export", validateCreatorId, exportAnalytics);
 router.post("/:creatorId/refresh", validateCreatorId, refreshLimiter, triggerRefresh);
 
 module.exports = router;

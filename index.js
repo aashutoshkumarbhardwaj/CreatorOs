@@ -724,6 +724,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
             services,
             user: buildAccountViewModel(userDoc, req.user),
             analytics,
+            creatorId: creatorDoc ? creatorDoc._id.toString() : null,
         });
     }
 
