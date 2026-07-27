@@ -10,6 +10,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const passport = require("passport");
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
 const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
 
@@ -138,7 +139,6 @@ app.use("/", authRoutes);
 
 const { protect } = require("./middleware/auth");
 const { preventContributorWrites } = require("./middleware/auth");
-const rateLimit = require('express-rate-limit');
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
