@@ -6,7 +6,9 @@ const fetchInstagramAnalytics = async (creator) => {
     try {
         const platformId = creator.platformId || 'me';
         // Using global fetch (available in Node 18+)
-        const response = await fetch(`https://graph.instagram.com/${platformId}?fields=followers_count,follows_count,media_count,id,username&access_token=${creator.accessToken}`);
+        const response = await fetch(`https://graph.instagram.com/${platformId}?fields=followers_count,follows_count,media_count,id,username`, {
+            headers: { Authorization: `Bearer ${creator.accessToken}` }
+        });
         
         if (!response.ok) {
             const errBody = await response.text();
