@@ -10,6 +10,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const passport = require("passport");
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
 const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
 
@@ -59,6 +60,7 @@ const sponsorRoute = require('./routes/sponsor');
 const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const qrCodeRoutes = require('./routes/qrCode');
 
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
@@ -137,7 +139,6 @@ app.use("/", authRoutes);
 
 const { protect } = require("./middleware/auth");
 const { preventContributorWrites } = require("./middleware/auth");
-const rateLimit = require('express-rate-limit');
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -157,6 +158,7 @@ const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
+app.use('/services/qr-code-generator', qrCodeRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
 
@@ -750,6 +752,7 @@ const { isValidUrl } = require('./utils/validators');
 const { parseVisitCoordinates } = require('./utils/visitTelemetry');
 
 const { handleGenerateShortUrlRender } = require('./controller/url');
+const { handleQrRedirect } = require('./controller/qrCodeController');
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
 // ── FILE UPLOAD POST ──
@@ -811,6 +814,8 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
         return res.status(500).send('Server error');
     }
 }));
+
+app.get('/q/:shortId', handleQrRedirect);
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get('/sitemap.xml', (req, res) => {

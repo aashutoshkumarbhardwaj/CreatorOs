@@ -44,6 +44,7 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
         // Or if in mock mode, just accept it
         const isVerified = records.includes("cname.creatoros.com") || process.env.NODE_ENV !== "production";
 
+        if (isVerified) {
             const userId = req.user.id || req.user._id;
             await User.findByIdAndUpdate(userId, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully" });
