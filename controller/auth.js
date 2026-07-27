@@ -149,7 +149,7 @@ function setAuthCookie(res, token) {
     res.cookie("token", token, {
         httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
         secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
-        sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
+        sameSite: "lax", // Lax allows top-level OAuth callback navigation to attach session cookie
         maxAge: ONE_WEEK_MS,
         path: "/", // Explicitly set path for clarity
     });
@@ -615,6 +615,12 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     const { email } = req.body || {};
 
     if (!email) {
+        if (wantsHtml(req)) {
+            return res.status(400).render('forgot-password', {
+                error: 'Email address is required',
+                success: null,
+            });
+        }
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
@@ -624,13 +630,28 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     if (isLocked) {
         const remainingTime = await getRemainingResetLockoutTime(normalizedEmail);
         const lockoutMessage = `Too many password reset attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) {
+            return res.status(429).render('forgot-password', {
+                error: lockoutMessage,
+                success: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
         await recordFailedResetAttempt(normalizedEmail);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+        const genericMessage = 'If that email address is in our system, you will receive a password reset link shortly.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: genericMessage,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: genericMessage });
     }
 
     // Create password reset token (15 minute validity)
@@ -646,6 +667,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     });
 
     // Send reset link via email
+    const successMsg = 'Password reset link sent! Please check your email inbox (and spam folder).';
     try {
         const { sendPasswordResetEmail } = require('../utils/email');
         const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
@@ -658,10 +680,25 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         });
     } catch (emailError) {
         console.error('Failed to send password reset email:', emailError);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent. If you do not receive an email, please contact support or try again later.' });
+        const fallbackMsg = 'If email exists, reset link has been generated. If you do not receive an email, please contact support or try again later.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: fallbackMsg,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: fallbackMsg });
     }
 
-    return res.json({ success: true, message: 'If email exists, reset link has been sent. Please check your email inbox (and spam folder).' });
+    if (wantsHtml(req)) {
+        return res.render('forgot-password', {
+            success: successMsg,
+            error: null,
+            prefilledEmail: normalizedEmail,
+        });
+    }
+    return res.json({ success: true, message: successMsg });
 });
 
 /**

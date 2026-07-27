@@ -360,6 +360,24 @@ router.get("/logout", async (req, res) => {
 /**
  * @swagger
  * /forgot-password:
+ *   get:
+ *     summary: GET request for /forgot-password
+ *     description: Renders the forgot password page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ */
+router.get("/forgot-password", (req, res) => {
+    res.render("forgot-password", {
+        error: null,
+        success: null,
+        prefilledEmail: req.query.email || null,
+    });
+});
+
+/**
+ * @swagger
+ * /forgot-password:
  *   post:
  *     summary: Request password reset
  *     description: Generates and sends a password reset token to the user's email.

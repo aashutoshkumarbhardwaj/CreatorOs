@@ -118,4 +118,22 @@ describe('Bulletproof Auth & Security Tests (#597)', () => {
             }
         });
     });
+
+    describe('Forgot Password Flow', () => {
+        it('should render the forgot password page on GET /forgot-password', async () => {
+            const res = await request(app).get('/forgot-password');
+            expect(res.statusCode).toBe(200);
+            expect(res.text).toContain('Forgot Password');
+        });
+
+        it('should handle POST /forgot-password with valid email', async () => {
+            const res = await request(app)
+                .post('/forgot-password')
+                .set('Cookie', [csrfCookie])
+                .set(csrfHeader)
+                .send({ email: 'valid@example.com' });
+
+            expect([200, 429]).toContain(res.statusCode);
+        });
+    });
 });
