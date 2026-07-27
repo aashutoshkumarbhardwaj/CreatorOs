@@ -90,4 +90,13 @@ const triggerRefresh = asyncHandler(async (req, res) => {
     res.json({ success: true, message: "Refresh successful", data: snapshot });
 });
 
-module.exports = { getSnapshots, getLatestSnapshot, triggerRefresh, getEngagementHistory };
+// GET /api/analytics/creators
+const getCreatorsByUser = asyncHandler(async (req, res) => {
+    const creators = await Creator.find({ userId: req.user.id })
+        .select('_id username platform profileUrl avatar')
+        .lean();
+
+    res.json({ success: true, data: creators });
+});
+
+module.exports = { getSnapshots, getLatestSnapshot, triggerRefresh, getEngagementHistory, getCreatorsByUser };

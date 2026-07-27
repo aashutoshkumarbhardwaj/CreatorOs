@@ -715,7 +715,13 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         const userDoc = await User.findById(req.user.id)
             .select('name email')
             .lean();
-        const creatorDoc = await Creator.findOne({ userId: req.user.id }).lean();
+        const allCreators = await Creator.find({ userId: req.user.id })
+            .select('_id username platform profileUrl avatar')
+            .lean();
+        const selectedCreatorId = req.query.creatorId || (allCreators[0] && allCreators[0]._id.toString());
+        const creatorDoc = selectedCreatorId
+            ? await Creator.findById(selectedCreatorId).lean()
+            : null;
         const analytics = creatorDoc
             ? await buildAnalyticsViewModel(creatorDoc._id)
             : { isLoading: false, isEmpty: true, metrics: [], charts: { labels: [], followers: [], engagement: [] }, topPosts: [] };
@@ -724,6 +730,8 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
             services,
             user: buildAccountViewModel(userDoc, req.user),
             analytics,
+            creators: allCreators,
+            selectedCreatorId: selectedCreatorId || null,
         });
     }
 
