@@ -28,6 +28,7 @@ jest.mock("../../middleware/rateLimiters", () => ({
   signupLimiter: (req, res, next) => next(),
   emailVerificationLimiter: (req, res, next) => next(),
   forgotPasswordLimiter: (req, res, next) => next(),
+  resetPasswordLimiter: (req, res, next) => next(),
 }));
 
 jest.mock("../../connect", () => jest.fn());

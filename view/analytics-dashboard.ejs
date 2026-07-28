@@ -8,7 +8,7 @@
 
             <section class="content">
                 <!-- Dashboard Head -->
-                <div class="dashboard-head">
+                <div class="dashboard-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
                         <h1>Analytics Overview</h1>
                         <p>Track your audience growth and content performance.</p>
@@ -24,29 +24,22 @@
                         </select>
                     </div>
                     <% } %>
+                    <div>
+                        <button id="refreshStatsBtn" class="btn-retro" style="background:var(--accent-yellow); border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); cursor:pointer; font-weight:700; padding:0.5rem 1rem;">🔄 Refresh Stats</button>
+                    </div>
                 </div>
 
-                <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <% analytics.metrics.forEach((metric, index) => { %>
-                        <article class="stat-card-retro <%= index === 0 ? 'accent-blue' : '' %>">
-                            <span class="label"><%= metric.label %></span>
-                            <span class="card-id">METRIC_0<%= index + 1 %></span>
-                            <span class="value"><%= metric.value %></span>
-                            <span class="subtext"><span class="trend"><%= metric.change %></span></span>
-                        </article>
-                    <% }) %>
-                </div>
+
 
                 <div class="analytics-grid" style="margin-top: 1.5rem;">
                     <!-- Analytics Graph -->
                     <section class="panel-retro">
                         <div class="panel-retro-title-row">
                             <h2>Audience Growth</h2>
-                            <select class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.25rem; font-family:'Space Grotesk', monospace;">
-                                <option>Last 7 Days</option>
-                                <option>Last 30 Days</option>
-                                <option>Last 90 Days</option>
+                            <select id="timeRangeSelect" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.25rem; font-family:'Space Grotesk', monospace;">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 90 Days</option>
                             </select>
                         </div>
                         <div class="chart-wrap" style="height:320px; position:relative;">
@@ -84,16 +77,22 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% analytics.topPosts.forEach(post => { %>
+                                    <% if (analytics.topPosts && analytics.topPosts.length > 0) { %>
+                                        <% analytics.topPosts.forEach(post => { %>
+                                            <tr>
+                                                <td style="font-weight: 700;"><%= post.title %></td>
+                                                <td><span class="badge-retro" style="background:var(--accent-yellow);"><%= post.type %></span></td>
+                                                <td><%= post.date %></td>
+                                                <td><%= post.likes %></td>
+                                                <td><%= post.comments %></td>
+                                                <td class="short-url"><%= post.engagement %></td>
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
                                         <tr>
-                                            <td style="font-weight: 700;"><%= post.title %></td>
-                                            <td><span class="badge-retro" style="background:var(--accent-yellow);"><%= post.type %></span></td>
-                                            <td><%= post.date %></td>
-                                            <td><%= post.likes %></td>
-                                            <td><%= post.comments %></td>
-                                            <td class="short-url"><%= post.engagement %></td>
+                                            <td colspan="6" style="text-align:center; padding: 2rem; color: var(--muted);">No recent content to display. Click Refresh Stats to fetch latest posts.</td>
                                         </tr>
-                                    <% }) %>
+                                    <% } %>
                                 </tbody>
                             </table>
                         </div>
@@ -249,9 +248,67 @@
                 chart.update();
             });
         });
-</script>
 
-    
+        // Interactive time range filter
+        const timeSelect = document.getElementById('timeRangeSelect');
+        if (timeSelect && window.followersChart && window.engagementChart) {
+            const fullLabels = <%- JSON.stringify(analytics.charts.labels || []) %>;
+            const fullFollowers = <%- JSON.stringify(analytics.charts.followers || []) %>;
+            const fullEngagement = <%- JSON.stringify(analytics.charts.engagement || []) %>;
 
+            timeSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                let sliceCount = 30;
+                if (val === '7') sliceCount = 7;
+                else if (val === '90') sliceCount = 90;
+                else sliceCount = 30;
+
+                const slicedLabels = fullLabels.slice(-sliceCount);
+                const slicedFollowers = fullFollowers.slice(-sliceCount);
+                const slicedEngagement = fullEngagement.slice(-sliceCount);
+
+                window.followersChart.data.labels = slicedLabels;
+                window.followersChart.data.datasets[0].data = slicedFollowers;
+                window.followersChart.update();
+
+                window.engagementChart.data.labels = slicedLabels;
+                window.engagementChart.data.datasets[0].data = slicedEngagement;
+                window.engagementChart.update();
+            });
+        }
+
+        // Refresh stats button with toast notification
+        const refreshBtn = document.getElementById('refreshStatsBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '⌛ Refreshing...';
+                try {
+                    await new Promise(r => setTimeout(r, 600));
+                    showAnalyticsToast('Analytics refreshed successfully! 📈');
+                    setTimeout(() => window.location.reload(), 1000);
+                } catch (err) {
+                    showAnalyticsToast('Failed to refresh analytics.', true);
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '🔄 Refresh Stats';
+                }
+            });
+        }
+
+        function showAnalyticsToast(msg, isErr = false) {
+            let t = document.getElementById('analytics-toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'analytics-toast';
+                t.style.cssText = 'position:fixed; bottom:24px; right:24px; padding:12px 20px; border:2px solid #111; box-shadow:4px 4px 0 #111; z-index:9999; font-family:"Space Grotesk",monospace; font-weight:700; transition:all 0.3s ease;';
+                document.body.appendChild(t);
+            }
+            t.style.background = isErr ? '#E13B3B' : '#2BB673';
+            t.style.color = isErr ? '#fff' : '#111';
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+    </script>
 
 <%- include('partials/layout/footer') %>
