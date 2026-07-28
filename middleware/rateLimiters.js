@@ -55,6 +55,8 @@ const urlShortenerApiLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
+    standardHeaders: true,
+    legacyHeaders: true,
     keyGenerator: (req) => ipKeyGenerator(req.ip),
     store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,

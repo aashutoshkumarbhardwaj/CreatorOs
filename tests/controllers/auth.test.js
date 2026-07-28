@@ -57,6 +57,40 @@ describe('Auth Controller Endpoints', () => {
         }
     });
 
+    it('should issue a 30-day token and cookie when remember is checked, and 7-day when not checked', async () => {
+        const jwt = require('jsonwebtoken');
+
+        // Test without remember (default 7 days)
+        const resDefault = await request(app)
+            .post('/login')
+            .set('Cookie', [csrfCookie])
+            .set(csrfHeader)
+            .send({ email: 'test@local.com', password: 'Password123!' });
+
+        expect([200, 302]).toContain(resDefault.statusCode);
+        const setCookieDefault = resDefault.headers['set-cookie'] || [];
+        const tokenCookieDefault = setCookieDefault.find(c => c.startsWith('token='));
+        expect(tokenCookieDefault).toBeDefined();
+        expect(tokenCookieDefault).toContain('Max-Age=604800'); // 7 days in seconds
+
+        // Test with remember checked (30 days)
+        const resRemember = await request(app)
+            .post('/login')
+            .set('Cookie', [csrfCookie])
+            .set(csrfHeader)
+            .send({ email: 'test@local.com', password: 'Password123!', remember: 'on' });
+
+        expect([200, 302]).toContain(resRemember.statusCode);
+        const setCookieRemember = resRemember.headers['set-cookie'] || [];
+        const tokenCookieRemember = setCookieRemember.find(c => c.startsWith('token='));
+        expect(tokenCookieRemember).toBeDefined();
+        expect(tokenCookieRemember).toContain('Max-Age=2592000'); // 30 days in seconds
+
+        const tokenVal = tokenCookieRemember.split(';')[0].split('=')[1];
+        const decoded = jwt.decode(tokenVal);
+        expect(decoded.exp - decoded.iat).toBe(2592000);
+    });
+
     it('should redirect unverified users to resend verification when email verification is configured', async () => {
         const originalEnv = {
             NODE_ENV: process.env.NODE_ENV,
@@ -170,8 +204,35 @@ describe('Auth Controller Endpoints', () => {
         expect(res.text).toMatch(/email verification is temporarily unavailable/i);
     });
 
-    it('should get the login page', async () => {
+    it('should get the login page when unauthenticated', async () => {
         const res = await request(app).get('/login');
         expect(res.statusCode).toEqual(200);
+    });
+
+    it('should redirect authenticated users from / and /login to /dashboard', async () => {
+        const jwt = require('jsonwebtoken');
+        const token = jwt.sign(
+            { id: '123', email: 'test@local.com', role: 'user' },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Unauthenticated should get 200 on /
+        const resUnauth = await request(app).get('/');
+        expect(resUnauth.statusCode).toBe(200);
+
+        // Authenticated should be redirected from / to /dashboard
+        const resAuthHome = await request(app)
+            .get('/')
+            .set('Cookie', [`token=${token}`]);
+        expect(resAuthHome.statusCode).toBe(302);
+        expect(resAuthHome.headers.location).toBe('/dashboard');
+
+        // Authenticated should be redirected from /login to /dashboard
+        const resAuthLogin = await request(app)
+            .get('/login')
+            .set('Cookie', [`token=${token}`]);
+        expect(resAuthLogin.statusCode).toBe(302);
+        expect(resAuthLogin.headers.location).toBe('/dashboard');
     });
 });

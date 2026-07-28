@@ -4,6 +4,10 @@
  * @returns {any}
  */
 function wantsHtml(req) {
+    const acceptHeader = req.get('Accept') || '';
+    if (acceptHeader.includes('application/json') || req.xhr) {
+        return false;
+    }
     return req.accepts('html') !== false;
 }
 

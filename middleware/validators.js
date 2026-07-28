@@ -11,6 +11,7 @@ const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
   allowUnverifiedLogin: z.string().optional(),
+  remember: z.union([z.boolean(), z.string(), z.number()]).optional(),
 });
 
 const resendVerificationSchema = z.object({
