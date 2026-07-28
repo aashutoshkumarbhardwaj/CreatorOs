@@ -7,6 +7,7 @@ const {
     handleDownloadQRCode,
     handleUpdateQRColors,
     handleGetAnalytics,
+    handleDeleteShortURL,
 } = require('../controller/url');
 const {
     protect,
@@ -54,6 +55,12 @@ router.get('/', protect, handleListUserLinks);
  *         description: Internal server error
  */
 router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortURL);
+
+// POST /api/urls — alias so the My Links front-end (which POSTs to /api/urls) also works
+router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortURL);
+
+// DELETE /api/urls/:shortId — delete a short link
+router.delete('/:shortId', protect, preventContributorWrites, handleDeleteShortURL);
 
 // ── QR Code Endpoints ───────────────────────────────────────────────────────
 
