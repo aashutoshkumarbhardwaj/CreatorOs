@@ -5,8 +5,12 @@ const crypto = require('crypto');
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
-    // You should store your Verify Token in an environment variable
-    const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN || 'creatoros-verify-token';
+    const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
+
+    if (!VERIFY_TOKEN) {
+        console.error('[Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not configured');
+        return res.sendStatus(500);
+    }
 
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
@@ -62,7 +66,7 @@ const verifyWebhookSignature = (req, res, next) => {
 
 // Handle incoming webhook events
 const handleWebhook = asyncHandler(async (req, res, next) => {
-    const body = req.body;
+    const body = req.body || {};
 
     // Check if it's a page or instagram event
     if (body.object === 'instagram') {
@@ -70,10 +74,10 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
             for (const entry of body.entry) {
                 if (entry.messaging && entry.messaging.length > 0) {
                     for (const webhookEvent of entry.messaging) {
-                        const senderId = webhookEvent.sender.id;
-                        const message = webhookEvent.message;
+                        const senderId = webhookEvent?.sender?.id;
+                        const message = webhookEvent?.message;
 
-                        if (message && message.text) {
+                        if (senderId && message && message.text) {
                             console.log(`[Webhook] Received message from ${senderId}: ${message.text}`);
                             
                             // Enqueue the message for asynchronous processing instead of synchronous execution

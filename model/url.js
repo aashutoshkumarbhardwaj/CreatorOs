@@ -84,11 +84,24 @@ urlSchema.statics.listForUser = async function (userId, options = {}) {
         .lean();
 };
 
+urlSchema.statics.getStatsForUser = async function (userId) {
+    const totalLinks = await this.countDocuments({ userId });
+    const allLinks = await this.find({ userId }).select("totalClicks title redirectUrl").lean();
+    const totalClicks = allLinks.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
+    const topLink = allLinks.reduce((best, u) => ((u.totalClicks || 0) > (best?.totalClicks || 0) ? u : best), null);
+    return {
+        totalLinks,
+        totalClicks,
+        topLink
+    };
+};
+
 const MongooseUrlModel = mongoose.models.Url || mongoose.model("Url", urlSchema);
 const mockUrls = [];
 
 class MockUrlModel {
     constructor(data) {
+        Object.assign(this, data);
         this._id = data._id || new mongoose.Types.ObjectId();
         this.shortId = data.shortId;
         this.redirectUrl = data.redirectUrl;
@@ -118,7 +131,7 @@ class MockUrlModel {
     }
 
     static async findOne(query) {
-        const found = mockUrls.find((u) => u.shortId === query.shortId);
+        const found = mockUrls.find((u) => u.shortId === query.shortId || u._id?.toString() === query._id?.toString());
         return found ? new MockUrlModel(found) : null;
     }
 
@@ -132,30 +145,57 @@ class MockUrlModel {
 
         if (update.$set) Object.assign(found, update.$set);
         if (update.$push) {
-            const [key, val] = Object.entries(update.$push)[0];
-            if (!found[key]) found[key] = [];
-            found[key].push(val);
+            for (const [key, val] of Object.entries(update.$push)) {
+                if (!found[key]) found[key] = [];
+                if (val && val.$each && Array.isArray(val.$each)) {
+                    found[key].push(...val.$each);
+                } else {
+                    found[key].push(val);
+                }
+            }
         }
         if (update.$inc) {
-            const [key, val] = Object.entries(update.$inc)[0];
-            found[key] = (found[key] || 0) + val;
+            for (const [key, val] of Object.entries(update.$inc)) {
+                found[key] = (found[key] || 0) + val;
+            }
         }
         return new MockUrlModel(found);
     }
 
     static async find(query = {}) {
+        const keys = Object.keys(query);
         let results = mockUrls.filter((u) =>
-            Object.entries(query).every(([k, v]) => u[k] === v)
+            keys.every((k) => u[k]?.toString() === query[k]?.toString())
         );
-        return {
-            sort: () => results.map((u) => new MockUrlModel(u))
+        const wrapped = {
+            sort: () => wrapped,
+            select: () => wrapped,
+            limit: (n) => { results = results.slice(0, n); return wrapped; },
+            lean: async () => results.map((u) => new MockUrlModel(u)),
+            then: (resolve, reject) => resolve(results.map((u) => new MockUrlModel(u)))
         };
+        return wrapped;
     }
 
     static async findByIdAndDelete(id) {
         const idx = mockUrls.findIndex((u) => u._id === id || u.shortId === id);
         if (idx === -1) return null;
         return mockUrls.splice(idx, 1)[0];
+    }
+
+    static async findOneAndDelete(query = {}) {
+        const idx = mockUrls.findIndex((u) => {
+            if (query.shortId && u.shortId !== query.shortId) return false;
+            if (query._id && u._id !== query._id) return false;
+            return true;
+        });
+        if (idx === -1) return null;
+        return mockUrls.splice(idx, 1)[0];
+    }
+
+    static async deleteOne(query = {}) {
+        const deleted = await MockUrlModel.findOneAndDelete(query);
+        return { deletedCount: deleted ? 1 : 0 };
     }
 
     static async deleteMany(query = {}) {
@@ -174,7 +214,7 @@ class MockUrlModel {
     static async listForUser(userId, options = {}) {
         const limit = typeof options === "number" ? options : options.limit || 100;
         const cursor = typeof options === "object" ? options.cursor : null;
-        let results = mockUrls.filter(u => u.userId?.toString() === userId?.toString());
+        let results = mockUrls.filter(u => (u.userId?.toString() || null) === (userId?.toString() || null));
         if (cursor) {
             const cursorIndex = results.findIndex(u => u._id?.toString() === cursor?.toString() || u.shortId === cursor);
             if (cursorIndex === -1) return [];
@@ -190,6 +230,46 @@ class MockUrlModel {
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt) || String(b._id || b.shortId).localeCompare(String(a._id || a.shortId)))
             .slice(0, limit)
             .map((u) => new MockUrlModel(u));
+    }
+
+    static async countDocuments(query = {}) {
+        if (query.userId !== undefined) {
+            return mockUrls.filter((u) => u.userId === query.userId).length;
+        }
+        const keys = Object.keys(query);
+        return mockUrls.filter((u) =>
+            keys.every((k) => u[k]?.toString() === query[k]?.toString())
+        ).length;
+    }
+
+    static async aggregate(pipeline) {
+        const matchStage = pipeline.find((s) => s.$match);
+        const groupStage = pipeline.find((s) => s.$group);
+        let items = [...mockUrls];
+        if (matchStage) {
+            const keys = Object.keys(matchStage.$match);
+            items = items.filter((u) =>
+                keys.every((k) => (u[k]?.toString() || null) === (matchStage.$match[k]?.toString() || null))
+            );
+        }
+        if (groupStage) {
+            const totalClicks = items.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
+            const topClicks = items.reduce((max, u) => Math.max(max, u.totalClicks || 0), 0);
+            return [{ _id: groupStage.$group._id, totalClicks, topClicks }];
+        }
+        return items;
+    }
+
+    static async getStatsForUser(userId) {
+        const userLinks = mockUrls.filter((u) => u.userId?.toString() === userId?.toString() || (!u.userId && !userId));
+        const totalLinks = userLinks.length;
+        const totalClicks = userLinks.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
+        const topLink = userLinks.reduce((best, u) => ((u.totalClicks || 0) > (best?.totalClicks || 0) ? u : best), null);
+        return {
+            totalLinks,
+            totalClicks,
+            topLink
+        };
     }
 }
 
@@ -210,7 +290,12 @@ UrlModel.findById = (...args) => getActiveUrlModel().findById(...args);
 UrlModel.findOneAndUpdate = (...args) => getActiveUrlModel().findOneAndUpdate(...args);
 UrlModel.find = (...args) => getActiveUrlModel().find(...args);
 UrlModel.findByIdAndDelete = (...args) => getActiveUrlModel().findByIdAndDelete(...args);
+UrlModel.findOneAndDelete = (...args) => getActiveUrlModel().findOneAndDelete && getActiveUrlModel().findOneAndDelete(...args);
+UrlModel.deleteOne = (...args) => getActiveUrlModel().deleteOne && getActiveUrlModel().deleteOne(...args);
 UrlModel.deleteMany = (...args) => getActiveUrlModel().deleteMany(...args);
 UrlModel.listForUser = (...args) => getActiveUrlModel().listForUser(...args);
+UrlModel.countDocuments = (...args) => getActiveUrlModel().countDocuments(...args);
+UrlModel.aggregate = (...args) => getActiveUrlModel().aggregate(...args);
+UrlModel.getStatsForUser = (...args) => getActiveUrlModel().getStatsForUser(...args);
 
 module.exports = UrlModel;
