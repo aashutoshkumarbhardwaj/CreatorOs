@@ -301,8 +301,9 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     const isProduction = process.env.NODE_ENV === "production";
+    const isTest = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined || process.env.USE_MOCK_DB === "true";
 
-    if (isProduction && user.authProvider !== "google" && !user.isVerified) {
+    if ((isProduction || isTest) && user.authProvider !== "google" && !user.isVerified) {
         const verificationDeliveryUnavailable = !isEmailTransportConfigured();
 
         if (verificationDeliveryUnavailable && allowUnverifiedLogin) {
