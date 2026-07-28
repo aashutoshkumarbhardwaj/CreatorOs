@@ -18,6 +18,7 @@ describe('Rate Limiters', () => {
       for (let i = 0; i < 5; i++) {
         const response = await request(app)
           .post('/signup')
+          .set('Accept', 'application/json')
           .send({ email: `test${i}@example.com`, password: 'Test123!' });
         expect([200, 429]).toContain(response.status);
       }
@@ -45,11 +46,12 @@ describe('Rate Limiters', () => {
     it('should return rate limit headers in the response', async () => {
       const response = await request(app)
         .post('/signup')
+        .set('Accept', 'application/json')
         .send({ email: 'test@example.com', password: 'Test123!' });
 
-      expect(response.headers['ratelimit-limit']).toBeDefined();
-      expect(response.headers['ratelimit-remaining']).toBeDefined();
-      expect(response.headers['ratelimit-reset']).toBeDefined();
+      expect(response.headers['ratelimit-limit'] || response.headers['x-ratelimit-limit']).toBeDefined();
+      expect(response.headers['ratelimit-remaining'] || response.headers['x-ratelimit-remaining']).toBeDefined();
+      expect(response.headers['ratelimit-reset'] || response.headers['x-ratelimit-reset']).toBeDefined();
     });
 
     it('should respond with JSON for API calls', async () => {

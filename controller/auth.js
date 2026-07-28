@@ -195,7 +195,7 @@ function renderLoginError(req, res) {
 
 const signup = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
-    const { sendVerificationEmail } = require("../utils/email");
+    const { sendVerificationEmail, sendDuplicateRegistrationEmail } = require("../utils/email");
 
     const { name, email, password } = req.body || {};
 
@@ -212,10 +212,61 @@ const signup = asyncHandler(async (req, res, next) => {
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
-        if (wantsHtml(req)) {
-            return res.status(409).render("signup", { error: "User already exists" });
+        let verificationDeliveryUnavailable = false;
+
+        if (isEmailTransportConfigured()) {
+            const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+            let resetLink = null;
+            if (existingUser.authProvider === "local") {
+                try {
+                    const PasswordResetToken = require("../model/passwordResetToken");
+                    const resetToken = crypto.randomBytes(32).toString("hex");
+                    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+                    await PasswordResetToken.create({
+                        userId: existingUser._id,
+                        token: resetToken,
+                        expiresAt,
+                        ipAddress: req.ip,
+                        userAgent: req.get("user-agent"),
+                    });
+                    resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+                } catch (err) {
+                    console.error("Failed to generate password reset token for duplicate registration notice:", err);
+                    resetLink = `${baseUrl}/forgot-password`;
+                }
+            }
+
+            sendDuplicateRegistrationEmail({
+                to: existingUser.email,
+                userName: existingUser.name,
+                resetLink,
+                authProvider: existingUser.authProvider,
+            }).catch((emailError) => {
+                console.error("Failed to send duplicate registration notice email:", emailError);
+            });
+        } else {
+            verificationDeliveryUnavailable = true;
         }
-        return res.status(409).json({ success: false, message: "User already exists" });
+
+        const signupSuccessMessage = verificationDeliveryUnavailable
+            ? VERIFICATION_UNAVAILABLE_ERROR
+            : "Sign up successful! Please check your email to verify your account.";
+
+        if (wantsHtml(req)) {
+            return res.render("signup", { 
+                error: null, 
+                success: signupSuccessMessage,
+                verificationDeliveryUnavailable,
+                verificationEmail: normalizedEmail,
+            });
+        }
+        return res.status(201).json({ 
+            success: true, 
+            message: signupSuccessMessage,
+            verificationDeliveryUnavailable,
+            data: { id: existingUser._id, email: existingUser.email } 
+        });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

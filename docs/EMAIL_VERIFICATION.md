@@ -163,8 +163,7 @@ Creates a new unverified user account and sends verification email.
 ```
 
 **Status Codes:**
-- `201`: User created successfully
-- `409`: Email already registered
+- `201`: Signup request processed successfully (returned for both new accounts and existing emails to prevent user enumeration)
 - `400`: Validation error
 
 ---
@@ -298,7 +297,7 @@ Clicks "Sign up"
 Server validates input
      ↓
 Email already exists?
-├─ YES → Error: "User already exists"
+├─ YES → Send async duplicate signup alert email & return uniform 201/200 success response
 └─ NO → Continue
      ↓
 Hash password
@@ -657,14 +656,13 @@ const tokenLength = 32; // bytes
 - [ ] Verify email account isn't rate-limited
 - [ ] Check spam/junk folder
 
-#### 2. "Email already exists" on first signup
+#### 2. Duplicate registration attempt behavior
 
-**Symptoms:** Fresh email address returns duplicate error
+**Symptoms:** Signup returns success message but no verification email arrives (an alert email arrives instead)
 
 **Solutions:**
-- [ ] Check if email already in database
+- [ ] Check if email already exists in database; to prevent enumeration, duplicate registration attempts return uniform success responses and trigger a background alert email to the owner
 - [ ] Verify email normalization (lowercase)
-- [ ] Check for duplicate indexes
 - [ ] Clear mock database if using mock mode
 
 #### 3. Verification token always expires

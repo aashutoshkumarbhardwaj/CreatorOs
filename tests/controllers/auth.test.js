@@ -44,6 +44,79 @@ describe('Auth Controller Endpoints', () => {
         expect(res.statusCode).toEqual(400);
     });
 
+    it('should successfully sign up a new user with uniform success response', async () => {
+        const res = await request(app)
+            .post('/signup')
+            .set('Cookie', [csrfCookie])
+            .set(csrfHeader)
+            .set('Accept', 'application/json')
+            .send({ name: 'New User', email: 'newuser@local.com', password: 'Password123!' });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toBeDefined();
+        expect(res.body.data.email).toBe('newuser@local.com');
+
+        const createdUser = await User.findOne({ email: 'newuser@local.com' });
+        expect(createdUser).not.toBeNull();
+        expect(createdUser.name).toBe('New User');
+    });
+
+    it('should return uniform success response (201) when signing up with an existing email to prevent user enumeration', async () => {
+        const preCount = await User.countDocuments({ email: 'test@local.com' });
+        expect(preCount).toBe(1);
+
+        const res = await request(app)
+            .post('/signup')
+            .set('Cookie', [csrfCookie])
+            .set(csrfHeader)
+            .set('Accept', 'application/json')
+            .send({ name: 'Attempter Name', email: 'test@local.com', password: 'NewPassword123!' });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toBeDefined();
+        expect(res.body.data.email).toBe('test@local.com');
+
+        const postCount = await User.countDocuments({ email: 'test@local.com' });
+        expect(postCount).toBe(1);
+
+        const existingUser = await User.findOne({ email: 'test@local.com' });
+        expect(existingUser.name).toBe('Verified User'); // Ensure user was not overwritten
+    });
+
+    it('should handle duplicate email signup smoothly when email delivery is configured', async () => {
+        const originalEmailEnv = {
+            EMAIL_USER: process.env.EMAIL_USER,
+            EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
+            EMAIL_SERVICE: process.env.EMAIL_SERVICE,
+            EMAIL_HOST: process.env.EMAIL_HOST,
+        };
+
+        process.env.EMAIL_USER = 'tester@example.com';
+        process.env.EMAIL_PASSWORD = 'password';
+        process.env.EMAIL_SERVICE = 'smtp';
+        delete process.env.EMAIL_HOST;
+
+        try {
+            const res = await request(app)
+                .post('/signup')
+                .set('Cookie', [csrfCookie])
+                .set(csrfHeader)
+                .set('Accept', 'application/json')
+                .send({ name: 'Attempter', email: 'test@local.com', password: 'Password123!' });
+
+            expect(res.statusCode).toEqual(201);
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.email).toBe('test@local.com');
+        } finally {
+            process.env.EMAIL_USER = originalEmailEnv.EMAIL_USER;
+            process.env.EMAIL_PASSWORD = originalEmailEnv.EMAIL_PASSWORD;
+            process.env.EMAIL_SERVICE = originalEmailEnv.EMAIL_SERVICE;
+            process.env.EMAIL_HOST = originalEmailEnv.EMAIL_HOST;
+        }
+    });
+
     it('should successfully log in a mock user', async () => {
         const res = await request(app)
             .post('/login')
@@ -98,12 +171,14 @@ describe('Auth Controller Endpoints', () => {
             EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
             EMAIL_SERVICE: process.env.EMAIL_SERVICE,
             EMAIL_HOST: process.env.EMAIL_HOST,
+            NODE_ENV: process.env.NODE_ENV,
         };
 
         process.env.NODE_ENV = 'production';
         process.env.EMAIL_USER = 'tester@example.com';
         process.env.EMAIL_PASSWORD = 'password';
         process.env.EMAIL_SERVICE = 'smtp';
+        process.env.NODE_ENV = 'production';
         delete process.env.EMAIL_HOST;
 
         try {
@@ -131,6 +206,7 @@ describe('Auth Controller Endpoints', () => {
             EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
             EMAIL_SERVICE: process.env.EMAIL_SERVICE,
             EMAIL_HOST: process.env.EMAIL_HOST,
+            NODE_ENV: process.env.NODE_ENV,
         };
 
         process.env.NODE_ENV = 'production';
@@ -138,6 +214,7 @@ describe('Auth Controller Endpoints', () => {
         delete process.env.EMAIL_PASSWORD;
         delete process.env.EMAIL_SERVICE;
         delete process.env.EMAIL_HOST;
+        process.env.NODE_ENV = 'production';
 
         try {
             const res = await request(app)

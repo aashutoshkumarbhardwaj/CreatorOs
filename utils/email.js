@@ -307,11 +307,73 @@ CreatorOS Team`;
   });
 }
 
+/**
+ * @function sendDuplicateRegistrationEmail
+ * @description Sends an alert notification to existing user when a duplicate registration attempt occurs.
+ * @param {Object} options - Email parameters including to, userName, resetLink, resetInstructions, authProvider
+ * @returns {Promise<any>}
+ */
+async function sendDuplicateRegistrationEmail({ to, userName, resetLink, resetInstructions, authProvider }) {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+  const fromName = process.env.EMAIL_FROM_NAME || 'CreatorOS';
+  const replyTo = process.env.EMAIL_REPLY_TO || from;
+  const escapedUserName = escapeHtml(userName);
+  const subject = 'Security Notice: Registration Attempt for Your Account';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+      <h2 style="color: #0f172a;">Registration Attempt for Your Account</h2>
+      <p>Hi ${escapedUserName || 'there'},</p>
+      <p>Someone recently attempted to create a CreatorOS account using this email address. Since an account with this email address already exists, no new account was created.</p>
+      ${authProvider === 'google' ? '<p>Your account currently uses Google Sign-In for authentication. If this was you, please sign in using Google.</p>' : ''}
+      ${resetLink ? `
+      <p>If you attempted to sign up because you forgot your password, you can reset your existing password by clicking the button below:</p>
+      <p style="text-align:center; margin: 32px 0;">
+        <a href="${resetLink}" style="display:inline-block; padding:14px 24px; background:#22d3ee; color:#0f172a; text-decoration:none; border-radius:999px; font-weight:700;">Reset Password</a>
+      </p>
+      <p style="color:#666; font-size:14px;">This reset link will expire in 15 minutes. If you did not make this registration attempt, your account is secure and you can safely ignore this email.</p>
+      <p style="color:#666; font-size:14px;">If the button does not work, paste this URL into your browser:</p>
+      <p style="color:#2563eb; word-break:break-all;"><a href="${resetLink}" style="color:#2563eb;">${resetLink}</a></p>
+      ` : ''}
+      ${!resetLink && resetInstructions ? `<p>${escapeHtml(resetInstructions)}</p>` : ''}
+      <p>If you did not initiate this request, no further action is needed and your account remains secure.</p>
+      <p>Best regards,<br />CreatorOS Team</p>
+    </div>
+  `;
+
+  const text = `Registration Attempt for Your Account
+
+Hi ${escapedUserName || 'there'},
+
+Someone recently attempted to create a CreatorOS account using this email address. Since an account with this email address already exists, no new account was created.
+
+${authProvider === 'google' ? 'Your account currently uses Google Sign-In for authentication. If this was you, please sign in using Google.\n\n' : ''}${resetLink ? `If you attempted to sign up because you forgot your password, you can reset your existing password by clicking the link below:
+
+${resetLink}
+
+This reset link will expire in 15 minutes. If you did not make this registration attempt, your account is secure and you can safely ignore this email.\n\n` : ''}${!resetLink && resetInstructions ? `${resetInstructions}\n\n` : ''}If you did not initiate this request, no further action is needed and your account remains secure.
+
+Best regards,
+CreatorOS Team`;
+
+  return transporter.sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    replyTo,
+    subject,
+    text,
+    html,
+  });
+}
+
 module.exports = {
   sendInvitationEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendDeletionConfirmationEmail,
+  sendDuplicateRegistrationEmail,
   isEmailTransportConfigured,
   createTransporter,
 };
+

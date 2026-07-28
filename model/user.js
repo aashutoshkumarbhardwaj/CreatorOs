@@ -209,6 +209,14 @@ class MockUserModel {
         return mockUsers.find((user) => matchesQuery(user, query)) || null;
     }
 
+    static async find(query = {}) {
+        return mockUsers.filter((user) => matchesQuery(user, query));
+    }
+
+    static async countDocuments(query = {}) {
+        return mockUsers.filter((user) => matchesQuery(user, query)).length;
+    }
+
     static findById(id) {
         const getUser = () => mockUsers.find((user) => normalizeId(user._id) === normalizeId(id)) || null;
         const query = {

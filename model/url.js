@@ -103,6 +103,7 @@ class MockUrlModel {
     constructor(data) {
         Object.assign(this, data);
         this._id = data._id || new mongoose.Types.ObjectId();
+        this.userId = data.userId;
         this.shortId = data.shortId;
         this.redirectUrl = data.redirectUrl;
         this.campaignName = data.campaignName || "Untitled Campaign";
@@ -166,7 +167,7 @@ class MockUrlModel {
     static async find(query = {}) {
         const keys = Object.keys(query);
         let results = mockUrls.filter((u) =>
-            keys.every((k) => u[k]?.toString() === query[k]?.toString())
+            Object.entries(query).every(([k, v]) => u[k]?.toString() === v?.toString() || u[k] === v)
         );
         const wrapped = {
             sort: () => wrapped,
