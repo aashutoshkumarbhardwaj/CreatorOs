@@ -2,9 +2,17 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 const User = require('../model/user');
+const Url = require('../model/url');
+const Invite = require('../model/invite');
+const Creator = require('../model/creator');
+const AnalyticsSnapshot = require('../model/analyticsSnapshot');
+const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
 const { validate, updateProfileSchema } = require('../middleware/validators');
+const { isEmailTransportConfigured, sendDeletionConfirmationEmail } = require('../utils/email');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
