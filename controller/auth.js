@@ -633,6 +633,11 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         return res.json({ success: true, message: 'If email exists, reset link has been sent' });
     }
 
+    await PasswordResetToken.updateMany(
+        { userId: user._id, used: false },
+        { $set: { used: true, usedAt: new Date() } }
+    );
+
     // Create password reset token (15 minute validity)
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
