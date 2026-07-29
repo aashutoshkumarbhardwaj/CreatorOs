@@ -54,11 +54,21 @@ function generateCsrf(req, res, next) {
  * Validates that the request includes a valid CSRF token matching the one in the secure cookie.
  * Blocks requests with missing or mismatched tokens with a 403 Forbidden response.
  */
+const CSRF_EXEMPT_PATHS = new Set([
+    '/api/instagram/webhook',
+    '/api/billing/webhook',
+]);
+
 function verifyCsrf(req, res, next) {
     const safeMethods = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
 
     // Skip verification for safe HTTP methods
     if (safeMethods.includes(req.method)) {
+        return next();
+    }
+
+    // Exempt external webhook endpoints that cannot include CSRF tokens
+    if (CSRF_EXEMPT_PATHS.has(req.path)) {
         return next();
     }
 
