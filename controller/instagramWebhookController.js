@@ -3,6 +3,28 @@ const asyncHandler = require('../utils/asyncHandler');
 
 const crypto = require('crypto');
 
+// In-memory deduplication set for processed webhook event IDs
+// TTL: 5 minutes to prevent unbounded memory growth
+const processedEvents = new Map();
+const EVENT_TTL_MS = 5 * 60 * 1000;
+
+// Periodic cleanup of expired event IDs
+setInterval(() => {
+    const now = Date.now();
+    for (const [eventId, timestamp] of processedEvents) {
+        if (now - timestamp > EVENT_TTL_MS) {
+            processedEvents.delete(eventId);
+        }
+    }
+}, 60 * 1000);
+
+function isEventAlreadyProcessed(eventId) {
+    if (!eventId) return false;
+    if (processedEvents.has(eventId)) return true;
+    processedEvents.set(eventId, Date.now());
+    return false;
+}
+
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
     const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
@@ -68,6 +90,9 @@ const verifyWebhookSignature = (req, res, next) => {
 const handleWebhook = asyncHandler(async (req, res, next) => {
     const body = req.body || {};
 
+    // Check for duplicate event using X-Event-ID header or payload-level deduplication
+    const headerEventId = req.headers['x-event-id'];
+    
     // Check if it's a page or instagram event
     if (body.object === 'instagram') {
         if (body.entry && body.entry.length > 0) {
@@ -76,8 +101,20 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
                     for (const webhookEvent of entry.messaging) {
                         const senderId = webhookEvent?.sender?.id;
                         const message = webhookEvent?.message;
+                        const timestamp = webhookEvent?.timestamp;
 
                         if (senderId && message && message.text) {
+                            // Build a unique event ID from sender + message + timestamp for deduplication
+                            const eventId = headerEventId || crypto
+                                .createHash('sha256')
+                                .update(`${senderId}:${message.mid || message.text}:${timestamp || Date.now()}`)
+                                .digest('hex');
+
+                            if (isEventAlreadyProcessed(eventId)) {
+                                console.log(`[Webhook] Duplicate event ${eventId}, skipping`);
+                                continue;
+                            }
+
                             console.log(`[Webhook] Received message from ${senderId}: ${message.text}`);
                             
                             // Enqueue the message for asynchronous processing instead of synchronous execution
@@ -86,13 +123,15 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
                                 await dmQueue.add('process-dm', {
                                     senderId: senderId,
                                     message: message.text,
-                                    triggerKeyword: message.text.toLowerCase()
+                                    triggerKeyword: message.text.toLowerCase(),
+                                    eventId: eventId,
                                 }, {
                                     attempts: 5,
                                     backoff: {
                                         type: 'exponential',
                                         delay: 2000
-                                    }
+                                    },
+                                    jobId: eventId,
                                 });
                             } catch (error) {
                                 console.warn(`[Webhook] DM queue unavailable, skipping async processing: ${error.message}`);
