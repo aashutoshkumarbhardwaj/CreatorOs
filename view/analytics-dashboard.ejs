@@ -13,6 +13,17 @@
                         <h1>Analytics Overview</h1>
                         <p>Track your audience growth and content performance.</p>
                     </div>
+                    <% if (typeof creators !== 'undefined' && creators.length > 1) { %>
+                    <div>
+                        <select id="accountSelector" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.5rem; font-family:'Space Grotesk', monospace; font-size:0.9rem;">
+                            <% creators.forEach(creator => { %>
+                                <option value="<%= creator._id %>" <%= creator._id.toString() === selectedCreatorId ? 'selected' : '' %>>
+                                    <%= creator.username %> (<%= creator.platform %>)
+                                </option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <% } %>
                     <div>
                         <button id="refreshStatsBtn" class="btn-retro" style="background:var(--accent-yellow); border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); cursor:pointer; font-weight:700; padding:0.5rem 1rem;">🔄 Refresh Stats</button>
                     </div>
@@ -204,6 +215,17 @@
                         y: { grid: { color: chartGrid, drawBorder: false } }
                     }
                 }
+            });
+        }
+    </script>
+    <script>
+        const accountSelector = document.getElementById('accountSelector');
+        if (accountSelector) {
+            accountSelector.addEventListener('change', function() {
+                const creatorId = this.value;
+                const url = new URL(window.location);
+                url.searchParams.set('creatorId', creatorId);
+                window.location.href = url.toString();
             });
         }
     </script>

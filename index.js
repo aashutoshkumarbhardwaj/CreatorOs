@@ -727,12 +727,18 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         const userDoc = await User.findById(req.user.id)
             .select('name email')
             .lean();
+        const allCreators = await Creator.find({ userId: req.user.id })
+            .select('_id username platform profileUrl avatar')
+            .lean();
+        const selectedCreatorId = req.query.creatorId || (allCreators[0] && allCreators[0]._id.toString());
         const analytics = await buildAnalyticsViewModel(req.user.id, req.query.link);
         return res.render('analytics-dashboard', {
             service,
             services,
             user: buildAccountViewModel(userDoc, req.user),
             analytics,
+            creators: allCreators,
+            selectedCreatorId: selectedCreatorId || null,
         });
     }
 
