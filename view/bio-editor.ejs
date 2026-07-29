@@ -177,7 +177,7 @@
     const list = document.getElementById('linksList');
     document.getElementById('linkCount').textContent = `${links.length} link${links.length !== 1 ? 's' : ''}`;
     list.innerHTML = links.map(link => `
-      <div class="link-row" id="link-row-${link.id}">
+      <div class="link-row" id="link-row-${link.id}" draggable="true" data-id="${link.id}">
         <div class="link-row-icon">${link.icon}</div>
         <input type="text" value="${link.label}"
                onchange="updateLinkField(${link.id},'label',this.value)"
@@ -188,6 +188,72 @@
         <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
       </div>
     `).join('');
+    attachDragHandlers();
+  }
+
+  let draggedId = null;
+
+  function attachDragHandlers() {
+    const rows = document.querySelectorAll('.link-row');
+    rows.forEach(row => {
+      row.addEventListener('dragstart', handleDragStart);
+      row.addEventListener('dragover', handleDragOver);
+      row.addEventListener('dragleave', handleDragLeave);
+      row.addEventListener('drop', handleDrop);
+      row.addEventListener('dragend', handleDragEnd);
+    });
+  }
+
+  function handleDragStart(e) {
+    draggedId = Number(this.dataset.id);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (Number(this.dataset.id) === draggedId) return;
+    const rect = this.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    this.classList.remove('drag-over-top', 'drag-over-bottom');
+    if (e.clientY < midpoint) {
+      this.classList.add('drag-over-top');
+    } else {
+      this.classList.add('drag-over-bottom');
+    }
+  }
+
+  function handleDragLeave() {
+    this.classList.remove('drag-over-top', 'drag-over-bottom');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    const targetId = Number(this.dataset.id);
+    this.classList.remove('drag-over-top', 'drag-over-bottom');
+    if (draggedId === null || targetId === draggedId) return;
+
+    const fromIndex = links.findIndex(l => l.id === draggedId);
+    const toIndex = links.findIndex(l => l.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const rect = this.getBoundingClientRect();
+    const insertAfter = e.clientY > rect.top + rect.height / 2;
+
+    const [moved] = links.splice(fromIndex, 1);
+    let newIndex = links.findIndex(l => l.id === targetId);
+    if (insertAfter) newIndex += 1;
+    links.splice(newIndex, 0, moved);
+
+    renderLinks();
+    updatePreview();
+  }
+
+  function handleDragEnd() {
+    document.querySelectorAll('.link-row').forEach(row => {
+      row.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom');
+    });
+    draggedId = null;
   }
 
   function updateLinkField(id, field, value) {
