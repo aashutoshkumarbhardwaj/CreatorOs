@@ -5,6 +5,7 @@ const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, re
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
 const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
+const { redirectIfAuthenticated } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -88,7 +89,7 @@ if (googleAuthConfigured) {
  *       500:
  *         description: Internal server error
  */
-router.get("/signup", (req, res) => {
+router.get("/signup", redirectIfAuthenticated, (req, res) => {
     res.render("signup", { error: null });
 });
 
@@ -109,7 +110,7 @@ router.get("/signup", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get("/login", (req, res) => {
+router.get("/login", redirectIfAuthenticated, (req, res) => {
     const errorMessages = {
         google_cancelled: "Google sign-in was cancelled.",
         google_failed: "Google sign-in failed. Please try again.",
@@ -390,8 +391,41 @@ router.post("/forgot-password", forgotPasswordLimiter, requestPasswordReset);
  *       200:
  *         description: Successful response
  */
-router.get("/reset-password", (req, res) => {
-    res.render("reset-password", { token: req.query.token, error: null });
+router.get("/reset-password", async (req, res) => {
+    const token = req.query.token;
+
+    if (!token) {
+        return res.render("reset-password", {
+            token: null,
+            error: "No reset token provided.",
+            formHidden: true,
+        });
+    }
+
+    try {
+        await connectDB();
+        const User = require("../model/user");
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.render("reset-password", {
+                token: null,
+                error: "This reset link is invalid, expired, or has already been used. Please request a new one.",
+                formHidden: true,
+            });
+        }
+
+        res.render("reset-password", { token, error: null, formHidden: false });
+    } catch (err) {
+        res.render("reset-password", {
+            token: null,
+            error: "Something went wrong. Please try again later.",
+            formHidden: true,
+        });
+    }
 });
 
 /**

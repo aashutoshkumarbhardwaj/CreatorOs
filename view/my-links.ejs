@@ -2,7 +2,7 @@
     activeNav: 'my-links', 
     title: 'My Links', 
     bodyClass: 'workspace-page links-page', 
-    bodyAttributes: "data-user='" + JSON.stringify({ name: typeof user !== 'undefined' ? user.name : 'User', initials: typeof user !== 'undefined' ? user.initials : 'U', isGuestContributor: typeof isGuestContributor !== 'undefined' ? isGuestContributor : false }) + "' data-domain='" + (typeof domain !== 'undefined' ? domain : 'creatoros.com') + "'",
+    bodyAttributes: "data-user='" + JSON.stringify({ name: typeof user !== 'undefined' ? user.name : 'User', initials: typeof user !== 'undefined' ? user.initials : 'U', isGuestContributor: typeof isGuestContributor !== 'undefined' ? isGuestContributor : false }) + "' data-domain='" + (typeof domain !== 'undefined' ? domain : 'creatoros.com') + "' data-csrf='" + (typeof csrfToken !== 'undefined' ? csrfToken : '') + "'",
     extraHead: '<link rel="stylesheet" href="/css/my-links.css">'
 }) %>
             <section class="content">
@@ -84,6 +84,9 @@
                                 </div>
                             </div>
                             
+                            <div style="margin-bottom: 1rem;">
+                                <input type="text" id="link-search" placeholder="Search shortlinks by title, tag, or URL..." style="width: 100%; border: 2px solid var(--border); padding: 0.6rem 0.8rem; font-size: 0.9rem; background: var(--card-bg); color: var(--text); outline: none; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.05);" />
+                            </div>
                             <div id="links-feed" style="display:flex; flex-direction:column; gap:1rem;">
                               <div class="empty-state" id="empty-state">
                                     <h4 style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; margin-bottom:0.5rem;">No links yet</h4>
@@ -156,13 +159,6 @@
             themeToggle.addEventListener('click', () => {
                 document.body.classList.toggle('dark-mode');
             });
-        }
-        
-        // Setup Search functionality
-        const searchInput = document.getElementById('search-links-input');
-        const oldSearch = document.getElementById('link-search'); // used by my-links.js
-        if(searchInput) {
-            searchInput.id = 'link-search'; // give it the ID expected by the JS
         }
     </script>
 <%- include('partials/layout/footer') %>
