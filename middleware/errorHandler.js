@@ -40,6 +40,18 @@ function sanitizeClientErrorMessage(message) {
 function errorHandler(err, req, res, next) {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Handle crypto timing-safe-equal length mismatch as a clean 403
+  if (err.code === 'ERR_CRYPTO_TIMINGSAFEEQUAL_LENGTH') {
+    if (wantsHtml(req)) {
+      return res.status(403).render('error', { error: 'Invalid CSRF token. Request blocked.' });
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Invalid CSRF token. Request blocked.',
+      error: 'CSRF token mismatch',
+    });
+  }
+
   console.error('[ERROR]', {
     status: err.status || 500,
     message: err.message,
