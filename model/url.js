@@ -106,6 +106,7 @@ class MockUrlModel {
         this.shortId = data.shortId;
         this.redirectUrl = data.redirectUrl;
         this.campaignName = data.campaignName || "Untitled Campaign";
+        this.userId = data.userId;
         this.totalClicks = data.totalClicks || 0;
         this.qrFgColor = data.qrFgColor || "#1a1a1a";
         this.qrBgColor = data.qrBgColor || "#ffffff";
