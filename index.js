@@ -12,7 +12,7 @@ const passport = require("passport");
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
-const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
+const { getProfileFromCache, setProfileInCache, invalidateProfileCache } = require('./utils/profileCache');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -572,6 +572,8 @@ app.post('/bio/save', protect, asyncHandler(async (req, res) => {
         updateData,
         { new: true, upsert: true }
     );
+    
+    await invalidateProfileCache(userHandle);
     
     return res.json({ success: true, data: bioProfile });
 }));
