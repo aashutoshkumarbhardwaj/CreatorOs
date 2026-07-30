@@ -592,11 +592,7 @@ const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
 
-// Periodic sweep: removes stale IP entries per link, and removes the
-// outer linkId key entirely once its inner map is empty. This prevents
-// unbounded growth from deleted links (orphaned linkId keys) and from
-// low-traffic links that never hit a per-request cleanup threshold.
-const clickCooldownsSweepInterval = setInterval(() => {
+async function sweepClickCooldowns() {
     const now = Date.now();
     for (const [linkId, linkCooldowns] of clickCooldowns) {
         for (const [ip, timestamp] of linkCooldowns) {
@@ -608,6 +604,14 @@ const clickCooldownsSweepInterval = setInterval(() => {
             clickCooldowns.delete(linkId);
         }
     }
+}
+
+// Periodic sweep: removes stale IP entries per link, and removes the
+// outer linkId key entirely once its inner map is empty. This prevents
+// unbounded growth from deleted links (orphaned linkId keys) and from
+// low-traffic links that never hit a per-request cleanup threshold.
+const clickCooldownsSweepInterval = setInterval(() => {
+    sweepClickCooldowns().catch(err => console.error('[clickCooldowns] Sweep error:', err));
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
