@@ -19,30 +19,30 @@ const dropZone = document.getElementById('drop-zone');
         dropZone.addEventListener('dragover', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.add('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.remove('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--accent-yellow)';
+            dropZone.style.borderColor = 'var(--text)';
         });
 
         dropZone.addEventListener('dragenter', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.add('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.remove('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--accent-yellow)';
+            dropZone.style.borderColor = 'var(--text)';
         });
 
         dropZone.addEventListener('dragleave', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.remove('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.add('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--bg-secondary)';
+            dropZone.style.borderColor = 'var(--border)';
         });
 
         // Firefox fix: preventDefault is REQUIRED on drop
         dropZone.addEventListener('drop', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.remove('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.add('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--bg-secondary)';
+            dropZone.style.borderColor = 'var(--border)';
 
             var files = e.dataTransfer.files;
             if (files.length > 0) {
@@ -72,9 +72,15 @@ const dropZone = document.getElementById('drop-zone');
             selectedFile = file;
             fileName.textContent = file.name;
             fileSize.textContent = formatSize(file.size);
-            fileInfo.classList.remove('hidden');
+            fileInfo.style.display = 'flex';
             uploadBtn.disabled = false;
-            uploadBtn.className = 'mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 cursor-pointer hover:brightness-110 transition-all duration-200';
+            uploadBtn.className = 'primary-action-btn';
+            uploadBtn.style.width = '100%';
+            uploadBtn.style.justifyContent = 'center';
+            uploadBtn.style.fontSize = '1.1rem';
+            uploadBtn.style.padding = '1rem';
+            uploadBtn.style.opacity = '1';
+            uploadBtn.style.cursor = 'pointer';
             uploadBtn.textContent = 'Upload ' + file.name;
             dropText.textContent = 'File selected';
             dropSub.textContent = 'click to choose a different file';
@@ -83,16 +89,22 @@ const dropZone = document.getElementById('drop-zone');
 
         function clearSelection() {
             selectedFile = null;
-            fileInfo.classList.add('hidden');
+            fileInfo.style.display = 'none';
             uploadBtn.disabled = true;
-            uploadBtn.className = 'mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 opacity-50 cursor-not-allowed transition-all duration-200';
+            uploadBtn.className = 'primary-action-btn';
+            uploadBtn.style.width = '100%';
+            uploadBtn.style.justifyContent = 'center';
+            uploadBtn.style.fontSize = '1.1rem';
+            uploadBtn.style.padding = '1rem';
+            uploadBtn.style.opacity = '0.5';
+            uploadBtn.style.cursor = 'not-allowed';
             uploadBtn.textContent = 'Select a file to upload';
             fileInput.value = '';
             dropText.textContent = 'Drag & drop a file here';
             dropSub.textContent = 'or click to browse files';
             uploadIcon.textContent = '📁';
-            progressArea.classList.add('hidden');
-            statusEl.classList.add('hidden');
+            progressArea.style.display = 'none';
+            statusEl.style.display = 'none';
         }
 
         function uploadFile(file) {
@@ -102,7 +114,7 @@ const dropZone = document.getElementById('drop-zone');
             var xhr = new XMLHttpRequest();
 
             xhr.upload.onprogress = function(e) {
-                progressArea.classList.remove('hidden');
+                progressArea.style.display = 'block';
                 if (e.lengthComputable) {
                     var pct = Math.round((e.loaded / e.total) * 100);
                     progressBar.style.width = pct + '%';
@@ -117,13 +129,13 @@ const dropZone = document.getElementById('drop-zone');
 
                 if (xhr.status >= 200 && xhr.status < 300) {
                     var data = JSON.parse(xhr.responseText);
-                    statusEl.className = 'mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300';
+                    statusEl.className = 'message-box message-success';
                     statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size);
-                    statusEl.classList.remove('hidden');
+                    statusEl.style.display = 'block';
                 } else {
-                    statusEl.className = 'mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300';
+                    statusEl.className = 'message-box message-error';
                     statusEl.textContent = 'Upload failed. Please try again.';
-                    statusEl.classList.remove('hidden');
+                    statusEl.style.display = 'block';
                 }
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload another file';
@@ -131,9 +143,9 @@ const dropZone = document.getElementById('drop-zone');
 
             xhr.onerror = function() {
                 progressLabel.textContent = 'Error';
-                statusEl.className = 'mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300';
+                statusEl.className = 'message-box message-error';
                 statusEl.textContent = 'Network error. Please check your connection.';
-                statusEl.classList.remove('hidden');
+                statusEl.style.display = 'block';
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Try Again';
             };
