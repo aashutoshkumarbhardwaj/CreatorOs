@@ -46,7 +46,12 @@ describe('requestPasswordReset token revocation', () => {
         const req = {
             body: { email: ' Creator@Example.com ' },
             protocol: 'https',
-            get: jest.fn((header) => header === 'host' ? 'app.test' : 'jest'),
+            get: jest.fn((header) => {
+                const h = (header || '').toLowerCase();
+                if (h === 'accept') return 'application/json';
+                return header === 'host' ? 'app.test' : 'jest';
+            }),
+            accepts: jest.fn().mockReturnValue(false),
             ip: '127.0.0.1',
         };
         const res = {

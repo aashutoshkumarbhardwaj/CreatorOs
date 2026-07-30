@@ -474,34 +474,45 @@
         }
 
         .password-wrapper input {
-            padding-right: 3rem !important;
+            padding-right: 3.25rem !important;
         }
 
-        .password-toggle-btn {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--black);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
-            z-index: 10;
-            transition: transform 0.1s ease;
+        button.password-toggle-btn {
+            position: absolute !important;
+            right: 12px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            color: var(--black) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 4px !important;
+            margin: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: auto !important;
+            z-index: 10 !important;
+            transition: transform 0.15s ease !important;
         }
 
-        .password-toggle-btn:hover {
-            transform: scale(1.1);
+        button.password-toggle-btn:hover {
+            transform: translateY(-50%) scale(1.15) !important;
+            box-shadow: none !important;
+            background: transparent !important;
         }
 
-        .password-toggle-btn:active {
-            transform: scale(0.9);
+        button.password-toggle-btn:active {
+            transform: translateY(-50%) scale(0.9) !important;
+            box-shadow: none !important;
         }
 
-        .password-toggle-btn:focus {
-            outline: 2px solid var(--teal);
+        button.password-toggle-btn:focus {
+            outline: 2px solid var(--teal) !important;
+            border-radius: 4px;
         }
     </style>
 </head>

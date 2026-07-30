@@ -124,7 +124,6 @@ app.use((req, res, next) => {
     );
     next();
 });
-
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
