@@ -55,6 +55,7 @@ const aiRoute = require("./routes/ai");
 const authRoutes = require("./routes/auth");
 const instagramRoutes = require('./routes/instagram');
 const billingRoute = require('./routes/billing');
+const { handleWebhook: handleBillingWebhook } = require('./controller/billing');
 const domainRoute = require('./routes/domain');
 const sponsorRoute = require('./routes/sponsor');
 const settingsRoutes = require('./routes/settings');
@@ -72,6 +73,7 @@ app.use(helmet({
 app.use(cors());
 app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), handleBillingWebhook);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({
     verify: (req, res, buf) => {
@@ -121,6 +123,7 @@ app.use((req, res, next) => {
         `default-src 'self'; script-src 'self' 'nonce-${res.locals.nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; frame-src 'none';`
     );
     next();
+});
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
@@ -584,6 +587,26 @@ const clickTrackerLimiter = rateLimit({
 // IP-based deduplication map: linkId -> Map<ip, timestamp>
 const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
+
+// Periodic sweep: removes stale IP entries per link, and removes the
+// outer linkId key entirely once its inner map is empty. This prevents
+// unbounded growth from deleted links (orphaned linkId keys) and from
+// low-traffic links that never hit a per-request cleanup threshold.
+const clickCooldownsSweepInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [linkId, linkCooldowns] of clickCooldowns) {
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+        if (linkCooldowns.size === 0) {
+            clickCooldowns.delete(linkId);
+        }
+    }
+}, CLEANUP_INTERVAL_MS);
+clickCooldownsSweepInterval.unref();
 
 // Periodic cleanup every 5 minutes to prevent unbounded memory growth
 setInterval(() => {
@@ -617,7 +640,7 @@ app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res
     }
 
     linkCooldowns.set(clientIp, Date.now());
-    
+
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
         { $inc: { "stats.clicks": 1 } },
@@ -703,12 +726,18 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         const userDoc = await User.findById(req.user.id)
             .select('name email')
             .lean();
+        const allCreators = await Creator.find({ userId: req.user.id })
+            .select('_id username platform profileUrl avatar')
+            .lean();
+        const selectedCreatorId = req.query.creatorId || (allCreators[0] && allCreators[0]._id.toString());
         const analytics = await buildAnalyticsViewModel(req.user.id, req.query.link);
         return res.render('analytics-dashboard', {
             service,
             services,
             user: buildAccountViewModel(userDoc, req.user),
             analytics,
+            creators: allCreators,
+            selectedCreatorId: selectedCreatorId || null,
         });
     }
 

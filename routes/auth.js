@@ -423,12 +423,26 @@ router.get("/reset-password", async (req, res) => {
     try {
         await connectDB();
         const User = require("../model/user");
-        const user = await User.findOne({
-            resetPasswordToken: token,
-            resetPasswordExpires: { $gt: Date.now() },
+        const PasswordResetToken = require("../model/passwordResetToken");
+
+        let tokenValid = false;
+        const resetTokenDoc = await PasswordResetToken.findOne({
+            token,
+            used: false,
+            expiresAt: { $gt: new Date() },
         });
 
-        if (!user) {
+        if (resetTokenDoc) {
+            tokenValid = true;
+        } else {
+            const user = await User.findOne({
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: Date.now() },
+            });
+            if (user) tokenValid = true;
+        }
+
+        if (!tokenValid) {
             return res.render("reset-password", {
                 token: null,
                 error: "This reset link is invalid, expired, or has already been used. Please request a new one.",

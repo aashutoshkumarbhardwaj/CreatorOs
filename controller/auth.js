@@ -26,6 +26,15 @@ const GENERIC_LOGIN_ERROR = "Invalid email or password";
 const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not be completed.";
 const VERIFICATION_UNAVAILABLE_ERROR = "Email verification is temporarily unavailable because email delivery is not configured. Please try again later or contact support.";
 
+async function releaseClaimedResetToken(PasswordResetToken, resetTokenDoc) {
+    if (!resetTokenDoc?._id) return;
+
+    await PasswordResetToken.updateOne(
+        { _id: resetTokenDoc._id, used: true },
+        { $set: { used: false }, $unset: { usedAt: "" } }
+    );
+}
+
 /**
  * @function getUserModel
  * @description Retrieves the User model instance.
@@ -657,6 +666,11 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         return res.json({ success: true, message: genericMessage });
     }
 
+    await PasswordResetToken.updateMany(
+        { userId: user._id, used: false },
+        { $set: { used: true, usedAt: new Date() } }
+    );
+
     // Create password reset token (15 minute validity)
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -746,13 +760,19 @@ const resetPassword = asyncHandler(async (req, res) => {
     // Update user password
     const user = await User.findById(resetTokenDoc.userId);
     if (!user) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
         return res.status(400).json({ success: false, message: 'User not found' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.passwordChangedAt = new Date();
-    await user.save();
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.passwordChangedAt = new Date();
+        await user.save();
+    } catch (error) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
+        throw error;
+    }
 
     await clearResetAttempts(user.email);
 
