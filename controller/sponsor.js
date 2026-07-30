@@ -22,11 +22,23 @@ const getSponsors = asyncHandler(async (req, res) => {
     res.json({ success: true, data: sponsors });
 });
 
+const ALLOWED_SPONSOR_FIELDS = ['companyName', 'contactName', 'contactEmail', 'status', 'value', 'notes'];
+
+function pickSponsorFields(body) {
+    const picked = {};
+    for (const field of ALLOWED_SPONSOR_FIELDS) {
+        if (body[field] !== undefined) {
+            picked[field] = body[field];
+        }
+    }
+    return picked;
+}
+
 const createSponsor = asyncHandler(async (req, res) => {
     const userId = requireAuthenticatedUserId(req, res);
     if (!userId) return;
 
-    const sponsor = await Sponsor.create({ ...req.body, creatorId: userId });
+    const sponsor = await Sponsor.create({ ...pickSponsorFields(req.body), creatorId: userId });
     res.status(201).json({ success: true, data: sponsor });
 });
 
@@ -36,7 +48,7 @@ const updateSponsor = asyncHandler(async (req, res) => {
 
     const sponsor = await Sponsor.findOneAndUpdate(
         { _id: req.params.id, creatorId: userId },
-        req.body,
+        { $set: pickSponsorFields(req.body) },
         { new: true, runValidators: true }
     );
     if (!sponsor) return res.status(404).json({ success: false, message: "Sponsor not found" });
