@@ -60,12 +60,32 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   }
 
   const { email, projectName, message } = result.data;
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedProjectName = projectName?.trim() || 'CreatorOS Collaboration';
+
+  const existingPendingInvite = await Invite.findOne({
+    inviter: req.user.id,
+    email: normalizedEmail,
+    projectName: normalizedProjectName,
+    status: 'pending',
+  });
+
+  if (existingPendingInvite) {
+    const userDoc = await User.findById(req.user.id).select('name email').lean();
+    const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
+    return res.status(409).render('creator-crm', {
+      user: buildAccountViewModel(userDoc, req.user),
+      invites,
+      success: null,
+      error: `An invite is already pending for ${normalizedEmail}.`,
+    });
+  }
 
   const token = crypto.randomBytes(22).toString('hex');
   const invite = await Invite.create({
     inviter: req.user.id,
-    email: email.trim().toLowerCase(),
-    projectName: projectName?.trim() || 'CreatorOS Collaboration',
+    email: normalizedEmail,
+    projectName: normalizedProjectName,
     message: message?.trim(),
     token,
   });
