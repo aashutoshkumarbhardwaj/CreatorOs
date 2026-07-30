@@ -611,21 +611,6 @@ const clickCooldownsSweepInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
-// Periodic cleanup every 5 minutes to prevent unbounded memory growth
-setInterval(() => {
-    const now = Date.now();
-    for (const [linkId, linkCooldowns] of clickCooldowns) {
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-        if (linkCooldowns.size === 0) {
-            clickCooldowns.delete(linkId);
-        }
-    }
-}, 5 * 60 * 1000);
-
 app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
     const { linkId } = req.params;
