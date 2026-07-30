@@ -62,7 +62,7 @@ const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const qrCodeRoutes = require('./routes/qrCode');
-
+const smartNotificationRoutes = require('./routes/smartNotificationRoutes');
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
@@ -159,6 +159,7 @@ const { getDashboardData } = require('./utils/dashboardHelper');
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.use('/services/qr-code-generator', qrCodeRoutes);
+app.use('/', smartNotificationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
 
