@@ -348,6 +348,16 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
         }
     });
 
+    const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
+    userUrls.forEach(url => {
+        (url.visitHistory || []).forEach(v => {
+            if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
+            if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
+            if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
+            if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
+        });
+    });
+
     const linkPosts = (userUrls || []).map((u) => ({
         title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
         type: u.tag ? u.tag.toUpperCase() : 'LINK',
@@ -377,6 +387,8 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
             postPerformance: linkPosts.map((p) => p.views),
         },
         topPosts: linkPosts,
+        breakdown,
+        totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
     };
 }
 
@@ -767,6 +779,7 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 
 const { isValidUrl } = require('./utils/validators');
 const { parseVisitCoordinates } = require('./utils/visitTelemetry');
+const { parseVisitMeta } = require('./utils/deviceParser');
 
 const { handleGenerateShortUrlRender } = require('./controller/url');
 const { handleQrRedirect } = require('./controller/qrCodeController');
@@ -808,6 +821,7 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             visitData.x = coordinates.x;
             visitData.y = coordinates.y;
         }
+        Object.assign(visitData, parseVisitMeta(req));
         
         const entry = await Url.findOneAndUpdate(
             { shortId },
@@ -830,6 +844,27 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
     }
+}));
+
+app.get('/api/analytics/live-count', protect, asyncHandler(async (req, res) => {
+    const urls = await Url.find({ userId: req.user.id }).select('totalClicks').lean();
+    const total = urls.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
+    res.json({ totalClicks: total });
+}));
+
+app.get('/api/analytics/export', protect, asyncHandler(async (req, res) => {
+    const urls = await Url.find({ userId: req.user.id }).lean();
+    const rows = [['shortId', 'redirectUrl', 'totalClicks', 'timestamp', 'device', 'browser', 'referrer', 'country']];
+    urls.forEach(u => {
+        (u.visitHistory || []).forEach(v => {
+            rows.push([u.shortId, u.redirectUrl, u.totalClicks || 0,
+                new Date(v.timestamp).toISOString(), v.device || '', v.browser || '', v.referrer || '', v.country || '']);
+        });
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="analytics-export.csv"');
+    res.send(csv);
 }));
 
 app.get('/q/:shortId', handleQrRedirect);
