@@ -810,6 +810,40 @@ app.delete('/services/file-upload/delete/:filename', protect, preventContributor
     });
 }));
 
+// ── FILE RENAME ──
+
+app.patch('/services/file-upload/rename/:filename', protect, preventContributorWrites, asyncHandler(async (req, res) => {
+    const oldName = path.basename(req.params.filename);
+    const newBaseNameRaw = req.body.newName;
+
+    if (!newBaseNameRaw || typeof newBaseNameRaw !== 'string') {
+        return res.status(400).json({ success: false, message: 'newName is required' });
+    }
+
+    let newBaseName = path.basename(newBaseNameRaw).replace(/[/\\?%*:|"<>]/g, '-').replace(/^\.+/, '');
+    if (!newBaseName) {
+        return res.status(400).json({ success: false, message: 'Invalid new name' });
+    }
+
+    const oldPath = path.join(uploadDir, oldName);
+    const newPath = path.join(uploadDir, Date.now() + '-' + newBaseName);
+
+    if (!oldPath.startsWith(path.resolve(uploadDir)) || !newPath.startsWith(path.resolve(uploadDir))) {
+        return res.status(400).json({ success: false, message: 'Invalid filename' });
+    }
+
+    fs.rename(oldPath, newPath, (err) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                return res.status(404).json({ success: false, message: 'File not found' });
+            }
+            console.error('[rename] Failed to rename file:', err);
+            return res.status(500).json({ success: false, message: 'Rename failed' });
+        }
+        return res.json({ success: true, oldName, newName: path.basename(newPath) });
+    });
+}));
+
 // ── SHORT URL REDIRECT ──
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
