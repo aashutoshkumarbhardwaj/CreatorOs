@@ -18,11 +18,22 @@ const { isEmailTransportConfigured } = require("../utils/email");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MIN_PASSWORD_LENGTH = 8;
 const GUEST_CONTRIBUTOR_ROLE = "guest_contributor";
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
 const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not be completed.";
 const VERIFICATION_UNAVAILABLE_ERROR = "Email verification is temporarily unavailable because email delivery is not configured. Please try again later or contact support.";
+
+async function releaseClaimedResetToken(PasswordResetToken, resetTokenDoc) {
+    if (!resetTokenDoc?._id) return;
+
+    await PasswordResetToken.updateOne(
+        { _id: resetTokenDoc._id, used: true },
+        { $set: { used: false }, $unset: { usedAt: "" } }
+    );
+}
 
 /**
  * @function getUserModel
@@ -98,14 +109,14 @@ function serializeUser(user) {
  * @description Creates a JWT token for standard user authentication.
  * @returns {any}
  */
-function createToken(user) {
+function createToken(user, { remember = false } = {}) {
     const tokenUser = serializeUser(user);
 
     return jwt.sign(
         tokenUser,
         process.env.JWT_SECRET,
         {
-            expiresIn: "7d",
+            expiresIn: remember ? "30d" : "7d",
         }
     );
 }
@@ -139,7 +150,7 @@ function createContributorToken(session) {
  * - CSRF attacks (sameSite strict prevents cross-origin cookie inclusion)
  * @returns {any}
  */
-function setAuthCookie(res, token) {
+function setAuthCookie(res, token, { remember = false } = {}) {
     // Determine if we should enforce HTTPS-only cookies
     // In production, this is mandatory. In development, allow HTTP for localhost testing.
     const isProduction = process.env.NODE_ENV === "production";
@@ -148,8 +159,8 @@ function setAuthCookie(res, token) {
     res.cookie("token", token, {
         httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
         secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
-        sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
-        maxAge: ONE_WEEK_MS,
+        sameSite: "lax", // Lax allows top-level OAuth callback navigation to attach session cookie
+        maxAge: remember ? THIRTY_DAYS_MS : ONE_WEEK_MS,
         path: "/", // Explicitly set path for clarity
     });
 }
@@ -195,6 +206,7 @@ const signup = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ success: false, message: "Name, email, and password are required" });
     }
 
+    const normalizedName = name.trim();
     const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -211,7 +223,7 @@ const signup = asyncHandler(async (req, res, next) => {
     const verificationTokenExpiry = getVerificationTokenExpiry();
 
     const user = await User.create({
-        name,
+        name: normalizedName,
         email: normalizedEmail,
         password: hashedPassword,
         authProvider: "local",
@@ -231,7 +243,7 @@ const signup = asyncHandler(async (req, res, next) => {
             await sendVerificationEmail({
                 to: normalizedEmail,
                 verificationLink,
-                userName: name,
+                userName: normalizedName,
             });
         } else {
             verificationDeliveryUnavailable = true;
@@ -265,7 +277,8 @@ const signup = asyncHandler(async (req, res, next) => {
 const login = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
 
-    const { email, password } = req.body || {};
+    const { email, password, remember: rememberVal } = req.body || {};
+    const remember = rememberVal === "on" || rememberVal === "true" || rememberVal === "1" || rememberVal === true || rememberVal === 1;
     const allowUnverifiedLogin = req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true";
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
 
@@ -282,8 +295,11 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
+    const DUMMY_HASH = "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUU";
+
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+        await bcrypt.compare(password, DUMMY_HASH);
         await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
@@ -297,8 +313,9 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     const isProduction = process.env.NODE_ENV === "production";
+    const isTest = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined || process.env.USE_MOCK_DB === "true";
 
-    if (isProduction && user.authProvider !== "google" && !user.isVerified) {
+    if ((isProduction || isTest) && user.authProvider !== "google" && !user.isVerified) {
         const verificationDeliveryUnavailable = !isEmailTransportConfigured();
 
         if (verificationDeliveryUnavailable && allowUnverifiedLogin) {
@@ -307,8 +324,8 @@ const login = asyncHandler(async (req, res, next) => {
             user.lastLoginAt = new Date();
             await user.save();
 
-            const token = createToken(user);
-            setAuthCookie(res, token);
+            const token = createToken(user, { remember });
+            setAuthCookie(res, token, { remember });
 
             if (wantsHtml(req)) return res.redirect("/dashboard?login=unverified");
             return res.status(200).json({ success: true, token, user: serializeUser(user) });
@@ -333,8 +350,8 @@ const login = asyncHandler(async (req, res, next) => {
     user.lastLoginAt = new Date();
     await user.save();
 
-    const token = createToken(user);
-    setAuthCookie(res, token);
+    const token = createToken(user, { remember });
+    setAuthCookie(res, token, { remember });
 
     if (wantsHtml(req)) return res.redirect("/dashboard");
     return res.status(200).json({ success: true, token, user: serializeUser(user) });
@@ -610,6 +627,12 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     const { email } = req.body || {};
 
     if (!email) {
+        if (wantsHtml(req)) {
+            return res.status(400).render('forgot-password', {
+                error: 'Email address is required',
+                success: null,
+            });
+        }
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
@@ -619,14 +642,34 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     if (isLocked) {
         const remainingTime = await getRemainingResetLockoutTime(normalizedEmail);
         const lockoutMessage = `Too many password reset attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) {
+            return res.status(429).render('forgot-password', {
+                error: lockoutMessage,
+                success: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
         await recordFailedResetAttempt(normalizedEmail);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+        const genericMessage = 'If that email address is in our system, you will receive a password reset link shortly.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: genericMessage,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: genericMessage });
     }
+
+    await PasswordResetToken.updateMany(
+        { userId: user._id, used: false },
+        { $set: { used: true, usedAt: new Date() } }
+    );
 
     // Create password reset token (15 minute validity)
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -641,6 +684,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     });
 
     // Send reset link via email
+    const successMsg = 'Password reset link sent! Please check your email inbox (and spam folder).';
     try {
         const { sendPasswordResetEmail } = require('../utils/email');
         const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
@@ -653,10 +697,25 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         });
     } catch (emailError) {
         console.error('Failed to send password reset email:', emailError);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent. If you do not receive an email, please contact support or try again later.' });
+        const fallbackMsg = 'If email exists, reset link has been generated. If you do not receive an email, please contact support or try again later.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: fallbackMsg,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: fallbackMsg });
     }
 
-    return res.json({ success: true, message: 'If email exists, reset link has been sent. Please check your email inbox (and spam folder).' });
+    if (wantsHtml(req)) {
+        return res.render('forgot-password', {
+            success: successMsg,
+            error: null,
+            prefilledEmail: normalizedEmail,
+        });
+    }
+    return res.json({ success: true, message: successMsg });
 });
 
 /**
@@ -671,6 +730,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     if (!token || !newPassword) {
         return res.status(400).json({ success: false, message: 'Token and password are required' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({
+            success: false,
+            message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+        });
     }
 
     // Atomically claim the token: find a valid unused token and mark it used in one operation
@@ -694,13 +760,19 @@ const resetPassword = asyncHandler(async (req, res) => {
     // Update user password
     const user = await User.findById(resetTokenDoc.userId);
     if (!user) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
         return res.status(400).json({ success: false, message: 'User not found' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.passwordChangedAt = new Date();
-    await user.save();
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.passwordChangedAt = new Date();
+        await user.save();
+    } catch (error) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
+        throw error;
+    }
 
     await clearResetAttempts(user.email);
 

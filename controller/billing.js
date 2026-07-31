@@ -17,6 +17,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
     }
 
     const resolvedPriceId = priceId || process.env.STRIPE_PRO_PRICE_ID;
+    if (priceId && priceId !== process.env.STRIPE_PRO_PRICE_ID) {
+        return res.status(400).json({ success: false, message: "Invalid billing plan selected" });
+    }
+
     if (!resolvedPriceId || !process.env.BASE_URL) {
         console.error("Stripe checkout misconfigured: missing STRIPE_PRO_PRICE_ID or BASE_URL");
         return res.status(500).json({ success: false, message: "Billing is not configured correctly" });
@@ -50,15 +54,22 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
 // POST /api/billing/webhook
 const handleWebhook = asyncHandler(async (req, res) => {
     const sig = req.headers["stripe-signature"];
-    let event = req.body;
 
-    if (process.env.STRIPE_WEBHOOK_SECRET) {
-        try {
-            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-        } catch (err) {
-            console.error("Webhook Error:", err.message);
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
+    if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+        console.error("Stripe webhook misconfigured: missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET");
+        return res.status(500).json({ success: false, message: "Billing webhook is not configured correctly" });
+    }
+
+    if (!sig) {
+        return res.status(400).send("Webhook Error: Missing Stripe signature");
+    }
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        console.error("Webhook Error:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     switch (event.type) {

@@ -1,6 +1,7 @@
 const { nanoid } = require('nanoid');
 const shortid = require('shortid');
 const QRCode = require('qrcode');
+const mongoose = require('mongoose');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
@@ -14,6 +15,25 @@ function parseListLimit(value) {
     return Math.min(parsed, MAX_LINK_LIST_LIMIT);
 }
 
+async function fetchWebsiteTitle(url, fallback) {
+    if (fallback) return fallback;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const response = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        clearTimeout(timeoutId);
+        if (!response.ok) return deriveTitle(url);
+        const text = await response.text();
+        const match = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (match && match[1]) {
+            return match[1].trim().replace(/\s+/g, ' ');
+        }
+        return deriveTitle(url);
+    } catch (e) {
+        return deriveTitle(url);
+    }
+}
+
 /**
  * @function deriveTitle
  * @description Extracts or derives a meaningful title from a given URL.
@@ -23,7 +43,11 @@ function deriveTitle(redirectUrl, fallback) {
     if (fallback) return fallback;
     try {
         const parsed = new URL(redirectUrl);
-        const slug = parsed.pathname.split('/').filter(Boolean).pop();
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        let slug = parts.pop();
+        if (slug && ['description', 'index', 'home', 'page'].includes(slug.toLowerCase())) {
+            slug = parts.pop() || slug;
+        }
         if (slug) {
             return slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
         }
@@ -116,7 +140,7 @@ async function handleGenerateShortURL(req, res) {
             shortId,
             redirectUrl,
             userId: req.user?.id || null,
-            title: deriveTitle(redirectUrl, title?.trim()),
+            title: await fetchWebsiteTitle(redirectUrl, title?.trim()),
             tag: linkTag,
             linkedAt: new Date(),
         });
@@ -159,20 +183,16 @@ async function handleListUserLinks(req, res) {
     const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
     const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
-    const totalClicks = links.reduce((sum, link) => sum + link.totalClicks, 0);
-    const topLink = links.reduce(
-        (best, link) => (link.totalClicks > (best?.totalClicks || 0) ? link : best),
-        null
-    );
+    const userStats = await Url.getStatsForUser(userId);
 
     return res.json({
         links,
         stats: {
-            totalLinks: links.length,
-            totalClicks,
-            totalClicksLabel: formatClicks(totalClicks),
-            topLinkTitle: topLink?.title || '—',
-            topLinkClicks: topLink?.clicksLabel || '0',
+            totalLinks: userStats.totalLinks,
+            totalClicks: userStats.totalClicks,
+            totalClicksLabel: formatClicks(userStats.totalClicks),
+            topLinkTitle: userStats.topLink?.title || (userStats.topLink ? deriveTitle(userStats.topLink.redirectUrl) : '—'),
+            topLinkClicks: formatClicks(userStats.topLink?.totalClicks || 0),
         },
         domain: hostBase.replace(/^https?:\/\//, ''),
         pagination: {
@@ -210,6 +230,19 @@ const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Prevent loading entire collection into memory on large datasets
     const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+        return res.status(400).render("home", {
+            urls: [],
+            nextCursor: null,
+            hasMore: false,
+            id: null,
+            shortUrl: null,
+            qrCode: null,
+            campaignName: "",
+            error: "Invalid pagination cursor"
+        });
+    }
 
     const userId = req.user?.id || null;
     const query = cursor ? { _id: { $lt: cursor }, userId } : { userId };
@@ -273,6 +306,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
         qrBgColor: bgColor,
         qrGenerated: true,
         userId: req.user?.id || null,
+        title: await fetchWebsiteTitle(inputUrl),
     });
 
     const qrCodeDataUrl = await generateBase64QR(shortUrl, fgColor, bgColor);
@@ -406,7 +440,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    if (entry.userId?.toString() !== req.user.id) {
+    if (entry.userId && entry.userId?.toString() !== req.user.id) {
         return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 
@@ -425,6 +459,31 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
     });
 });
 
+// ── Delete Short URL ──────────────────────────────────────────────────────────
+const handleDeleteShortURL = asyncHandler(async (req, res) => {
+    const { shortId } = req.params;
+    const entry = await Url.findOne({ shortId });
+
+    if (!entry) {
+        return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId && entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Unauthorized to delete this URL", error: "Unauthorized to delete this URL" });
+    }
+
+    if (Url.findByIdAndDelete) {
+        await Url.findByIdAndDelete(entry._id || shortId);
+    } else if (Url.deleteOne) {
+        await Url.deleteOne({ shortId });
+    }
+
+    return res.json({
+        success: true,
+        message: "Short URL deleted successfully",
+    });
+});
+
 module.exports = {
     handleRenderDashboard,
     handleGenerateShortURL,
@@ -434,4 +493,5 @@ module.exports = {
     handleUpdateQRColors,
     handleGetAnalytics,
     handleListUserLinks,
+    handleDeleteShortURL,
 };

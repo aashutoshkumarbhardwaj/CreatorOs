@@ -10,13 +10,16 @@ const helmet = require('helmet');
 const cors = require('cors');
 const passport = require("passport");
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
-const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
+const { getProfileFromCache, setProfileInCache, invalidateProfileCache } = require('./utils/profileCache');
 
 // Validate required environment variables
 const requiredEnvVars = [
     { name: 'MONGODB_URI', description: 'MongoDB connection string' },
     { name: 'JWT_SECRET', description: 'Secret key for JWT token signing' },
+    { name: 'INSTAGRAM_WEBHOOK_VERIFY_TOKEN', description: 'Instagram webhook verification token' },
+    { name: 'INSTAGRAM_APP_SECRET', description: 'Instagram app secret for webhook signature verification' },
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v.name]);
@@ -52,11 +55,14 @@ const aiRoute = require("./routes/ai");
 const authRoutes = require("./routes/auth");
 const instagramRoutes = require('./routes/instagram');
 const billingRoute = require('./routes/billing');
+const { handleWebhook: handleBillingWebhook } = require('./controller/billing');
 const domainRoute = require('./routes/domain');
 const sponsorRoute = require('./routes/sponsor');
 const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const qrCodeRoutes = require('./routes/qrCode');
+const smartNotificationRoutes = require('./routes/smartNotificationRoutes');
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
@@ -67,6 +73,7 @@ app.use(helmet({
 app.use(cors());
 app.use(cacheHeadersMiddleware);
 app.use(cookieParser());
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), handleBillingWebhook);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({
     verify: (req, res, buf) => {
@@ -117,16 +124,6 @@ app.use((req, res, next) => {
     );
     next();
 });
-
-const rateLimit = require('express-rate-limit');
-
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
-    message: 'Too many login attempts, please try again later.'
-});
-app.post('/login', loginLimiter);
-
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
@@ -141,8 +138,7 @@ const urlShortenerLimiter = rateLimit({
 
 app.use("/", authRoutes);
 
-const { protect } = require("./middleware/auth");
-const { preventContributorWrites } = require("./middleware/auth");
+const { protect, preventContributorWrites, redirectIfAuthenticated } = require("./middleware/auth");
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -162,6 +158,8 @@ const { getDashboardData } = require('./utils/dashboardHelper');
 
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
+app.use('/services/qr-code-generator', qrCodeRoutes);
+app.use('/', smartNotificationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
 
@@ -305,89 +303,80 @@ function buildAccountViewModel(userDoc, fallbackUser) {
     };
 }
 
-async function buildAnalyticsViewModel(creatorId) {
-    const AnalyticsSnapshot = require('./model/analyticsSnapshot');
-    const EngagementHistory = require('./model/engagementHistory');
-    const Post = require('./model/post');
+async function buildAnalyticsViewModel(userId, shortLinkId = null) {
+    const Url = require('./model/url');
 
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    const [latestSnapshot, history, topPostsRaw, postCount] = await Promise.all([
-        AnalyticsSnapshot.findOne({ creatorId }).sort({ createdAt: -1 }).lean(),
-        EngagementHistory.find({ creatorId, date: { $gte: thirtyDaysAgo } })
-            .sort({ date: 1 })
-            .lean(),
-        Post.find({ creatorId }).sort({ views: -1 }).limit(5).lean(),
-        Post.countDocuments({ creatorId }),
-    ]);
-
-    const isEmpty = !latestSnapshot;
-
-    const labels = history.map((h) =>
-        new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    );
-
-    // Reconstruct a followers curve from growth deltas, ending at the latest known total
-    const endFollowers = latestSnapshot?.followers || 0;
-    let running = endFollowers;
-    const followersDesc = [...history].reverse().map((h) => {
-        const val = running;
-        running -= h.followersGrowth || 0;
-        return val;
+    let query = { userId };
+    if (shortLinkId) {
+        query.shortId = shortLinkId;
+    }
+    
+    let userUrls = await Url.find(query).lean();
+    if ((!userUrls || userUrls.length === 0) && process.env.USE_MOCK_DB === 'true') {
+        userUrls = await Url.find(shortLinkId ? { shortId: shortLinkId } : {}).lean();
+    }
+    
+    // Group visitHistory by day
+    const labels = [];
+    const followers = [];
+    const engagement = [];
+    
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        followers.push(0);
+        engagement.push(0);
+    }
+    
+    userUrls.forEach(url => {
+        if (url.visitHistory) {
+            url.visitHistory.forEach(visit => {
+                const visitDate = new Date(visit.timestamp || visit.date || new Date());
+                const diffTime = Math.abs(new Date() - visitDate);
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays < 30) {
+                    const idx = 29 - diffDays;
+                    if (idx >= 0 && idx < 30) {
+                        followers[idx]++;
+                        if (visit.source === 'direct' || !visit.source) {
+                            engagement[idx]++;
+                        }
+                    }
+                }
+            });
+        }
     });
-    const followers = followersDesc.reverse();
 
-    const engagement = history.map((h) =>
-        Number((h.engagementRateDelta || 0).toFixed(2))
-    );
-
-    const topPosts = topPostsRaw.map((p) => {
-        const engagementRate = latestSnapshot?.followers
-            ? (((p.likes + p.comments) / latestSnapshot.followers) * 100).toFixed(1) + '%'
-            : '—';
-        return {
-            title: p.caption ? p.caption.slice(0, 60) : `${p.platform} post`,
-            type: p.platform,
-            likes: p.likes,
-            comments: p.comments,
-            views: p.views,
-            engagement: engagementRate,
-            date: p.postedAt
-                ? new Date(p.postedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                : '',
-        };
-    });
+    const linkPosts = (userUrls || []).map((u) => ({
+        title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
+        type: u.tag ? u.tag.toUpperCase() : 'LINK',
+        likes: '—',
+        comments: '—',
+        views: u.totalClicks || 0,
+        engagement: `${u.totalClicks || 0} clicks`,
+        date: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : 'Today',
+    })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
     return {
         isLoading: false,
-        isEmpty,
+        isEmpty: userUrls.length === 0,
         selectedRange: 'Last 30 days',
-        lastUpdated: latestSnapshot?.createdAt
-            ? new Date(latestSnapshot.createdAt).toLocaleString('en-US', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-              })
-            : '—',
-        metrics: [
-            { label: 'Followers', value: (latestSnapshot?.followers ?? 0).toLocaleString(), change: '', tone: 'cyan' },
-            { label: 'Engagement rate', value: `${(latestSnapshot?.engagementRate ?? 0).toFixed(2)}%`, change: '', tone: 'green' },
-            { label: 'Total views', value: (latestSnapshot?.totalViews ?? 0).toLocaleString(), change: '', tone: 'blue' },
-            { label: 'Total likes', value: (latestSnapshot?.totalLikes ?? 0).toLocaleString(), change: '', tone: 'orange' },
-            { label: 'Total comments', value: (latestSnapshot?.totalComments ?? 0).toLocaleString(), change: '', tone: 'violet' },
-            { label: 'Total posts', value: postCount.toLocaleString(), change: '', tone: 'pink' },
-        ],
+        lastUpdated: new Date().toLocaleString('en-US', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: 'numeric', minute: '2-digit',
+        }),
+        metrics: [],
         charts: {
             labels,
             followers,
             engagement,
-            posts: topPosts.map((p) => p.title),
-            postPerformance: topPosts.map((p) => p.views),
+            posts: linkPosts.map((p) => p.title),
+            postPerformance: linkPosts.map((p) => p.views),
         },
-        topPosts,
-        timeline: [],
+        topPosts: linkPosts,
     };
 }
 
@@ -402,7 +391,7 @@ function buildEmptyInviteSummary() {
 // ── ROUTES ───────────────────────────────────────────────────────────────────
 
 // Home / services hub
-app.get('/', (req, res) => {
+app.get('/', redirectIfAuthenticated, (req, res) => {
     res.render('services-hub', { services });
 });
 
@@ -501,7 +490,12 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
         domain: req.get('host'),
     });
 }));
-
+app.get("/inbox", protect, asyncHandler(async (req, res) => {
+    res.render("inbox", {
+        services,
+        user: req.user
+    });
+}));
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
     return res.redirect('/services/analytics-dashboard');
@@ -540,12 +534,18 @@ app.get('/bio', protect, asyncHandler(async (req, res) => {
 // Save bio data
 app.post('/bio/save', protect, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
+    const { validateBioProfileInput } = require('./utils/bioProfileValidation');
     const userDoc = await User.findById(req.user.id);
     if (!userDoc) {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const validation = validateBioProfileInput(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    const { handle, name, bio, tags, avatarUrl, links } = validation.data;
     const userHandle = handle || userDoc.alias;
     
     if (!userHandle) {
@@ -573,6 +573,8 @@ app.post('/bio/save', protect, asyncHandler(async (req, res) => {
         { new: true, upsert: true }
     );
     
+    await invalidateProfileCache(userHandle);
+    
     return res.json({ success: true, data: bioProfile });
 }));
 
@@ -588,6 +590,41 @@ const clickTrackerLimiter = rateLimit({
 // IP-based deduplication map: linkId -> Map<ip, timestamp>
 const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
+
+// Periodic sweep: removes stale IP entries per link, and removes the
+// outer linkId key entirely once its inner map is empty. This prevents
+// unbounded growth from deleted links (orphaned linkId keys) and from
+// low-traffic links that never hit a per-request cleanup threshold.
+const clickCooldownsSweepInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [linkId, linkCooldowns] of clickCooldowns) {
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+        if (linkCooldowns.size === 0) {
+            clickCooldowns.delete(linkId);
+        }
+    }
+}, CLEANUP_INTERVAL_MS);
+clickCooldownsSweepInterval.unref();
+
+// Periodic cleanup every 5 minutes to prevent unbounded memory growth
+setInterval(() => {
+    const now = Date.now();
+    for (const [linkId, linkCooldowns] of clickCooldowns) {
+        for (const [ip, timestamp] of linkCooldowns) {
+            if (now - timestamp > CLICK_COOLDOWN_MS) {
+                linkCooldowns.delete(ip);
+            }
+        }
+        if (linkCooldowns.size === 0) {
+            clickCooldowns.delete(linkId);
+        }
+    }
+}, 5 * 60 * 1000);
 
 app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
     const BioProfile = require('./model/bioProfile');
@@ -607,16 +644,6 @@ app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res
 
     linkCooldowns.set(clientIp, Date.now());
 
-    // Periodically clean up old cooldown entries to prevent memory leak
-    if (linkCooldowns.size > 10000) {
-        const now = Date.now();
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-    }
-    
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
         { $inc: { "stats.clicks": 1 } },
@@ -702,15 +729,18 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
         const userDoc = await User.findById(req.user.id)
             .select('name email')
             .lean();
-        const creatorDoc = await Creator.findOne({ userId: req.user.id }).lean();
-        const analytics = creatorDoc
-            ? await buildAnalyticsViewModel(creatorDoc._id)
-            : { isLoading: false, isEmpty: true, metrics: [], charts: { labels: [], followers: [], engagement: [] }, topPosts: [] };
+        const allCreators = await Creator.find({ userId: req.user.id })
+            .select('_id username platform profileUrl avatar')
+            .lean();
+        const selectedCreatorId = req.query.creatorId || (allCreators[0] && allCreators[0]._id.toString());
+        const analytics = await buildAnalyticsViewModel(req.user.id, req.query.link);
         return res.render('analytics-dashboard', {
             service,
             services,
             user: buildAccountViewModel(userDoc, req.user),
             analytics,
+            creators: allCreators,
+            selectedCreatorId: selectedCreatorId || null,
         });
     }
 
@@ -736,8 +766,10 @@ app.get('/services/:serviceKey', protect, asyncHandler(async (req, res) => {
 // ── URL SHORTENER POST ──
 
 const { isValidUrl } = require('./utils/validators');
+const { parseVisitCoordinates } = require('./utils/visitTelemetry');
 
 const { handleGenerateShortUrlRender } = require('./controller/url');
+const { handleQrRedirect } = require('./controller/qrCodeController');
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
 // ── FILE UPLOAD POST ──
@@ -768,14 +800,13 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
-    const x = req.query.x ? parseFloat(req.query.x) : null;
-    const y = req.query.y ? parseFloat(req.query.y) : null;
+    const coordinates = parseVisitCoordinates(req.query);
 
     try {
         const visitData = { timestamp: new Date(), source: 'direct' };
-        if (x !== null && y !== null) {
-            visitData.x = x;
-            visitData.y = y;
+        if (coordinates) {
+            visitData.x = coordinates.x;
+            visitData.y = coordinates.y;
         }
         
         const entry = await Url.findOneAndUpdate(
@@ -800,6 +831,8 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
         return res.status(500).send('Server error');
     }
 }));
+
+app.get('/q/:shortId', handleQrRedirect);
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get('/sitemap.xml', (req, res) => {

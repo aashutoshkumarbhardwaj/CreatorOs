@@ -4,7 +4,8 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
-const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter } = require("../middleware/rateLimiters");
+const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
+const { redirectIfAuthenticated } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -88,7 +89,7 @@ if (googleAuthConfigured) {
  *       500:
  *         description: Internal server error
  */
-router.get("/signup", (req, res) => {
+router.get("/signup", redirectIfAuthenticated, (req, res) => {
     res.render("signup", { error: null });
 });
 
@@ -109,7 +110,7 @@ router.get("/signup", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get("/login", (req, res) => {
+router.get("/login", redirectIfAuthenticated, (req, res) => {
     const errorMessages = {
         google_cancelled: "Google sign-in was cancelled.",
         google_failed: "Google sign-in failed. Please try again.",
@@ -360,6 +361,24 @@ router.get("/logout", async (req, res) => {
 /**
  * @swagger
  * /forgot-password:
+ *   get:
+ *     summary: GET request for /forgot-password
+ *     description: Renders the forgot password page.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ */
+router.get("/forgot-password", (req, res) => {
+    res.render("forgot-password", {
+        error: null,
+        success: null,
+        prefilledEmail: req.query.email || null,
+    });
+});
+
+/**
+ * @swagger
+ * /forgot-password:
  *   post:
  *     summary: Request password reset
  *     description: Generates and sends a password reset token to the user's email.
@@ -390,22 +409,55 @@ router.post("/forgot-password", forgotPasswordLimiter, requestPasswordReset);
  *       200:
  *         description: Successful response
  */
-router.get("/reset-password", (req, res) => {
-    res.render("reset-password", { token: req.query.token, error: null });
-});
+router.get("/reset-password", async (req, res) => {
+    const token = req.query.token;
 
-/**
- * @swagger
- * /reset-password:
- *   get:
- *     summary: GET request for /reset-password
- *     description: Renders the password reset page.
- *     responses:
- *       200:
- *         description: Successful response
- */
-router.get("/reset-password", (req, res) => {
-    res.render("reset-password", { token: req.query.token, error: null });
+    if (!token) {
+        return res.render("reset-password", {
+            token: null,
+            error: "No reset token provided.",
+            formHidden: true,
+        });
+    }
+
+    try {
+        await connectDB();
+        const User = require("../model/user");
+        const PasswordResetToken = require("../model/passwordResetToken");
+
+        let tokenValid = false;
+        const resetTokenDoc = await PasswordResetToken.findOne({
+            token,
+            used: false,
+            expiresAt: { $gt: new Date() },
+        });
+
+        if (resetTokenDoc) {
+            tokenValid = true;
+        } else {
+            const user = await User.findOne({
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: Date.now() },
+            });
+            if (user) tokenValid = true;
+        }
+
+        if (!tokenValid) {
+            return res.render("reset-password", {
+                token: null,
+                error: "This reset link is invalid, expired, or has already been used. Please request a new one.",
+                formHidden: true,
+            });
+        }
+
+        res.render("reset-password", { token, error: null, formHidden: false });
+    } catch (err) {
+        res.render("reset-password", {
+            token: null,
+            error: "Something went wrong. Please try again later.",
+            formHidden: true,
+        });
+    }
 });
 
 /**
@@ -431,6 +483,6 @@ router.get("/reset-password", (req, res) => {
  *       400:
  *         description: Invalid, expired, or already used token
  */
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
 
 module.exports = router;

@@ -243,6 +243,12 @@ class MockUserModel {
             });
         }
 
+        if (update.$set) {
+            Object.entries(update.$set).forEach(([key, value]) => {
+                user[key] = value;
+            });
+        }
+
         Object.entries(update).forEach(([key, value]) => {
             if (!key.startsWith("$")) user[key] = value;
         });

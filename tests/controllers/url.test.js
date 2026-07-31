@@ -112,4 +112,34 @@ describe('URL Controller Endpoints', () => {
             expect([401, 302]).toContain(res.statusCode);
         }
     });
+
+    it('should delete a short URL or return 404/401/403', async () => {
+        const req = request(app)
+            .delete('/api/urls/non-existent-id')
+            .set(csrfHeader);
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        expect([200, 404, 401, 403]).toContain(res.statusCode);
+    });
+
+    it('should get analytics for a short URL or return 404/401/403', async () => {
+        const req = request(app)
+            .get('/api/urls/analytics/non-existent-id')
+            .set(csrfHeader);
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        expect([200, 404, 401, 403]).toContain(res.statusCode);
+    });
 });
