@@ -97,7 +97,9 @@ describe('Template Security Utility', () => {
         it('should call next() for valid template', () => {
             const middleware = validateTemplateParam(ALLOWED_TEMPLATES, 'page');
             const req = { params: { page: 'home' } };
-            const res = { status: jest.fn().returnThis(), render: jest.fn() };
+            const mockStatus = jest.fn();
+            const res = { status: mockStatus, render: jest.fn() };
+            mockStatus.mockReturnValue(res);
             const next = jest.fn();
 
             middleware(req, res, next);
@@ -109,7 +111,9 @@ describe('Template Security Utility', () => {
         it('should render 404 for invalid template', () => {
             const middleware = validateTemplateParam(ALLOWED_TEMPLATES, 'page');
             const req = { params: { page: '../../../etc/passwd' } };
-            const res = { status: jest.fn().returnThis(), render: jest.fn() };
+            const mockStatus = jest.fn();
+            const res = { status: mockStatus, render: jest.fn() };
+            mockStatus.mockReturnValue(res);
             const next = jest.fn();
 
             middleware(req, res, next);
@@ -122,7 +126,9 @@ describe('Template Security Utility', () => {
         it('should use custom parameter name', () => {
             const middleware = validateTemplateParam(ALLOWED_TEMPLATES, 'name');
             const req = { params: { name: 'home' } };
-            const res = { status: jest.fn().returnThis(), render: jest.fn() };
+            const mockStatus = jest.fn();
+            const res = { status: mockStatus, render: jest.fn() };
+            mockStatus.mockReturnValue(res);
             const next = jest.fn();
 
             middleware(req, res, next);
