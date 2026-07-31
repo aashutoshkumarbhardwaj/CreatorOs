@@ -222,6 +222,54 @@ const upload = multer({
     fileFilter: fileFilter
 });
 
+const sharp = require('sharp');
+
+async function compressImage(filePath, mimetype) {
+    // GIFs are skipped — sharp's default pipeline doesn't preserve animation
+    if (mimetype === 'image/gif') {
+        return { compressed: false };
+    }
+
+    const tempOutputPath = filePath + '.compressed';
+    const originalStats = fs.statSync(filePath);
+
+    try {
+        const pipeline = sharp(filePath).resize({
+            width: 1920,
+            height: 1920,
+            fit: 'inside',
+            withoutEnlargement: true,
+        });
+
+        if (mimetype === 'image/jpeg') {
+            pipeline.jpeg({ quality: 80 });
+        } else if (mimetype === 'image/png') {
+            pipeline.png({ quality: 80, compressionLevel: 8 });
+        } else if (mimetype === 'image/webp') {
+            pipeline.webp({ quality: 80 });
+        }
+
+        await pipeline.toFile(tempOutputPath);
+
+        const compressedStats = fs.statSync(tempOutputPath);
+
+        // Only keep the compressed version if it's actually smaller
+        if (compressedStats.size < originalStats.size) {
+            fs.renameSync(tempOutputPath, filePath);
+            return { compressed: true, originalSize: originalStats.size, newSize: compressedStats.size };
+        } else {
+            fs.unlinkSync(tempOutputPath);
+            return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+        }
+    } catch (err) {
+        console.error('[compress] Failed to compress image:', err);
+        if (fs.existsSync(tempOutputPath)) {
+            fs.unlinkSync(tempOutputPath);
+        }
+        return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+    }
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
 function findServiceByKey(key) {
@@ -774,18 +822,23 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
 // ── FILE UPLOAD POST ──
 
-app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
+app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    const compressionResult = await compressImage(req.file.path, req.file.mimetype);
+    const finalStats = fs.statSync(req.file.path);
+
     res.json({
         filename: req.file.originalname,
-        size: req.file.size,
+        size: finalStats.size,
+        originalSize: req.file.size,
+        compressed: compressionResult.compressed,
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
-});
+}));
 
 // ── FILE DELETE ──
 
@@ -807,6 +860,38 @@ app.delete('/services/file-upload/delete/:filename', protect, preventContributor
             return res.status(500).json({ success: false, message: 'Delete failed' });
         }
         return res.json({ success: true, filename: requestedName });
+    });
+}));
+
+// ── STORAGE USAGE ──
+
+app.get('/services/file-upload/storage-usage', protect, asyncHandler(async (req, res) => {
+    fs.readdir(uploadDir, (err, files) => {
+        if (err) {
+            console.error('[storage-usage] Failed to read upload dir:', err);
+            return res.status(500).json({ success: false, message: 'Could not read storage' });
+        }
+
+        let totalSize = 0;
+        let fileCount = 0;
+        let pending = files.length;
+
+        if (pending === 0) {
+            return res.json({ success: true, totalSize: 0, fileCount: 0 });
+        }
+
+        files.forEach((f) => {
+            fs.stat(path.join(uploadDir, f), (statErr, stats) => {
+                pending--;
+                if (!statErr && stats.isFile()) {
+                    totalSize += stats.size;
+                    fileCount++;
+                }
+                if (pending === 0) {
+                    res.json({ success: true, totalSize: totalSize, fileCount: fileCount });
+                }
+            });
+        });
     });
 }));
 

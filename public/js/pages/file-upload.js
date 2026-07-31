@@ -132,7 +132,12 @@ const dropZone = document.getElementById('drop-zone');
                 if (xhr.status >= 200 && xhr.status < 300) {
                     var data = JSON.parse(xhr.responseText);
                     statusEl.className = 'message-box message-success';
-                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size) +
+                    var sizeLine = 'Size: ' + formatSize(data.size);
+                    if (data.compressed && data.originalSize > data.size) {
+                        var savedPct = Math.round((1 - data.size / data.originalSize) * 100);
+                        sizeLine = 'Size: ' + formatSize(data.size) + ' (compressed from ' + formatSize(data.originalSize) + ', -' + savedPct + '%)';
+                    }
+                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>' + sizeLine +
                         ' <button type="button" class="rename-uploaded-btn" data-filename="' + data.path + '" style="margin-left:1rem;">Rename</button>' +
                         ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.path + '" style="margin-left:0.5rem;">Delete</button>';
                     statusEl.style.display = 'block';
@@ -174,6 +179,22 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
         }
+
+        function loadStorageUsage() {
+            fetch('/services/file-upload/storage-usage')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var el = document.getElementById('storage-usage');
+                    if (el) {
+                        el.textContent = 'Storage used: ' + formatSize(data.totalSize) + ' (' + data.fileCount + ' files)';
+                    }
+                }
+            })
+            .catch(function() {});
+        }
+
+        loadStorageUsage();
 
         function formatSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
