@@ -13,7 +13,7 @@ const dropZone = document.getElementById('drop-zone');
         const progressPct = document.getElementById('progress-pct');
         const progressLabel = document.getElementById('progress-label');
         const statusEl = document.getElementById('status');
-        let selectedFile = null;
+        let selectedFiles = [];
 
         // Firefox fix: preventDefault is REQUIRED on dragover
         dropZone.addEventListener('dragover', function(e) {
@@ -46,7 +46,7 @@ const dropZone = document.getElementById('drop-zone');
 
             var files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleFile(files[0]);
+                handleFiles(files);
             }
         });
 
@@ -54,8 +54,10 @@ const dropZone = document.getElementById('drop-zone');
             if (!selectedFile) fileInput.click();
         });
 
+        fileInput.setAttribute('multiple', 'true');
+
         fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) handleFile(this.files[0]);
+            if (this.files.length > 0) handleFiles(this.files);
         });
 
         removeBtn.addEventListener('click', function(e) {
@@ -64,14 +66,14 @@ const dropZone = document.getElementById('drop-zone');
         });
 
         uploadBtn.addEventListener('click', function() {
-            if (!selectedFile) return;
-            uploadFile(selectedFile);
+            if (!selectedFiles.length) return;
+            selectedFiles.forEach(uploadFile);
         });
 
-        function handleFile(file) {
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileSize.textContent = formatSize(file.size);
+        function handleFiles(fileList) {
+            selectedFiles = Array.from(fileList);
+            fileName.textContent = selectedFiles.map(function(f) { return f.name; }).join(', ');
+            fileSize.textContent = formatSize(selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0));
             fileInfo.style.display = 'flex';
             uploadBtn.disabled = false;
             uploadBtn.className = 'primary-action-btn';
@@ -81,14 +83,14 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.style.padding = '1rem';
             uploadBtn.style.opacity = '1';
             uploadBtn.style.cursor = 'pointer';
-            uploadBtn.textContent = 'Upload ' + file.name;
-            dropText.textContent = 'File selected';
-            dropSub.textContent = 'click to choose a different file';
+            uploadBtn.textContent = 'Upload ' + selectedFiles.length + ' file(s)';
+            dropText.textContent = selectedFiles.length + ' file(s) selected';
+            dropSub.textContent = 'click to choose different files';
             uploadIcon.textContent = '✅';
         }
 
         function clearSelection() {
-            selectedFile = null;
+            selectedFiles = [];
             fileInfo.style.display = 'none';
             uploadBtn.disabled = true;
             uploadBtn.className = 'primary-action-btn';
@@ -98,9 +100,9 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.style.padding = '1rem';
             uploadBtn.style.opacity = '0.5';
             uploadBtn.style.cursor = 'not-allowed';
-            uploadBtn.textContent = 'Select a file to upload';
+            uploadBtn.textContent = 'Select files to upload';
             fileInput.value = '';
-            dropText.textContent = 'Drag & drop a file here';
+            dropText.textContent = 'Drag & drop files here';
             dropSub.textContent = 'or click to browse files';
             uploadIcon.textContent = '📁';
             progressArea.style.display = 'none';
