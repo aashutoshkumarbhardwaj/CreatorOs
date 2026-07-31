@@ -53,6 +53,9 @@
             <div class="field">
               <label>Tags (press Enter to add)</label>
               <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagInput').focus()">
+                <% (bioProfile?.tags || []).forEach(tag => { %>
+                  <span class="tag-chip"><%= tag %> <button type="button" onclick="this.parentElement.remove()">×</button></span>
+                <% }) %>
                 <input type="text" id="tagInput" class="tag-input" placeholder="Add tag..." onkeydown="handleTagKey(event)" />
               </div>
             </div>
@@ -99,19 +102,65 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <button type="button" class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
-                <button type="button" class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
-                <button type="button" class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
-                <button type="button" class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
+                <% const savedTheme = bioProfile?.theme || 'light'; %>
+                <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    onclick="selectTheme('light',this)">☀ Light</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     onclick="selectTheme('dark',this)">● Dark</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     onclick="selectTheme('neon',this)">⚡ Neon</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'gradient' ? 'active' : '' %>" id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <button type="button" class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
-                <button type="button" class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
-                <button type="button" class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
+                <% const savedLayout = bioProfile?.layout || 'list'; %>
+                <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  onclick="selectLayout('list',this)">≡ List</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  onclick="selectLayout('grid',this)">⊞ Grid</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" onclick="selectLayout('cards',this)">▤ Cards</button>
               </div>
+            </div>
+            <div class="field">
+              <label>Avatar URL</label>
+              <input type="text" id="avatarUrlInput" value="<%= bioProfile?.avatarUrl || '' %>" placeholder="https://..." oninput="updatePreview()" />
+            </div>
+            <div class="field">
+              <label>Background (color or CSS gradient)</label>
+              <input type="text" id="backgroundInput" value="<%= bioProfile?.background || '' %>" placeholder="#fdf6e3 or linear-gradient(...)" oninput="updatePreview()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Button -->
+        <div class="panel-box">
+          <div class="panel-head"><h3>Contact Button</h3></div>
+          <div class="panel-body">
+            <div class="field-row">
+              <div class="field">
+                <label>Label</label>
+                <input type="text" id="contactLabel" value="<%= bioProfile?.contactButton?.label || '' %>" placeholder="Contact Me" />
+              </div>
+              <div class="field">
+                <label>URL (mailto:, tel:, or link)</label>
+                <input type="text" id="contactUrl" value="<%= bioProfile?.contactButton?.url || '' %>" placeholder="mailto:you@example.com" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domain & SEO -->
+        <div class="panel-box">
+          <div class="panel-head"><h3>Domain & SEO</h3></div>
+          <div class="panel-body">
+            <div class="field">
+              <label>Custom Domain (future ready)</label>
+              <input type="text" id="customDomainInput" value="<%= bioProfile?.customDomain || '' %>" placeholder="yourbrand.com" />
+            </div>
+            <div class="field">
+              <label>SEO Title</label>
+              <input type="text" id="seoTitleInput" value="<%= bioProfile?.seo?.title || '' %>" maxlength="60" placeholder="Page title for search engines" />
+            </div>
+            <div class="field">
+              <label>SEO Description</label>
+              <textarea id="seoDescInput" maxlength="160" placeholder="Short description for search engines"><%= bioProfile?.seo?.description || '' %></textarea>
             </div>
           </div>
         </div>
@@ -146,10 +195,11 @@
 <div class="toast" id="toast">✓ Saved!</div>
 
 <script nonce="<%= nonce %>">
-  let links = [];
+  const savedLinks = <%- JSON.stringify(bioProfile?.links || []) %>;
   let linkIdCounter = 0;
-  let currentTheme = 'light';
-  let currentLayout = 'list';
+  let links = savedLinks.map(l => ({ ...l, id: ++linkIdCounter }));
+  let currentTheme = '<%= bioProfile?.theme || "light" %>';
+  let currentLayout = '<%= bioProfile?.layout || "list" %>';
 
   // ── LINKS ──
   function addPreset(type, icon, label, urlPrefix, category) {
@@ -185,6 +235,7 @@
         <input type="text" value="${link.url}"
                onchange="updateLinkField(${link.id},'url',this.value)"
                placeholder="https://..." />
+        <button type="button" class="link-row-featured ${link.featured ? 'active' : ''}" onclick="toggleFeatured(${link.id})" title="Feature this link">★</button>
         <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
       </div>
     `).join('');
@@ -261,8 +312,13 @@
     if (link) { link[field] = value; updatePreview(); }
   }
 
+  function toggleFeatured(id) {
+    const link = links.find(l => l.id === id);
+    if (link) { link.featured = !link.featured; renderLinks(); updatePreview(); }
+  }
+
   // ── TAGS ──
-  const tags = [];
+  const tags = <%- JSON.stringify(bioProfile?.tags || []) %>;
   function handleTagKey(e) {
     if (e.key === 'Enter' && e.target.value.trim()) {
       e.preventDefault();
@@ -289,13 +345,29 @@
     document.getElementById('prevAvatar').textContent =
       (document.getElementById('profileName').value || 'U').charAt(0).toUpperCase();
 
+    const sortedLinks = [...links].sort((a, b) => (b.featured === true) - (a.featured === true));
     const prevLinks = document.getElementById('prevLinks');
-    prevLinks.innerHTML = links.slice(0,6).map(l => `
-      <div class="prev-link">
+    prevLinks.innerHTML = sortedLinks.slice(0,6).map(l => `
+      <div class="prev-link ${l.featured ? 'featured' : ''}">
         <span class="prev-link-icon">${l.icon}</span>
         <span>${l.label}</span>
+        ${l.featured ? '<span class="prev-link-star">★</span>' : ''}
       </div>
     `).join('');
+
+    const bg = document.getElementById('backgroundInput').value;
+    document.getElementById('previewInner').style.background = bg || '';
+
+    const avatarUrl = document.getElementById('avatarUrlInput').value;
+    const av = document.getElementById('prevAvatar');
+    if (avatarUrl) {
+      av.style.backgroundImage = `url(${avatarUrl})`;
+      av.style.backgroundSize = 'cover';
+      av.textContent = '';
+    } else if (!av.style.backgroundImage.includes('base64')) {
+      av.style.backgroundImage = '';
+      av.textContent = (document.getElementById('profileName').value || 'U').charAt(0).toUpperCase();
+    }
   }
 
   // ── THEME ──
@@ -314,6 +386,7 @@
       if (['≡ List','⊞ Grid','▤ Cards'].includes(b.textContent)) b.classList.remove('active');
     });
     btn.classList.add('active');
+    document.getElementById('prevLinks').className = 'prev-links layout-' + layout;
   }
 
   // ── SAVE ──
@@ -326,6 +399,15 @@
       links,
       theme:  currentTheme,
       layout: currentLayout,
+      avatarUrl: document.getElementById('avatarUrlInput').value,
+      background: document.getElementById('backgroundInput').value,
+      contactButton: {
+        label: document.getElementById('contactLabel').value,
+        url: document.getElementById('contactUrl').value,
+      },
+      customDomain: document.getElementById('customDomainInput').value,
+      seoTitle: document.getElementById('seoTitleInput').value,
+      seoDescription: document.getElementById('seoDescInput').value,
     };
 
     fetch('/bio/save', {
@@ -349,12 +431,19 @@
   function previewAvatar(input) {
     const file = input.files[0];
     if (!file) return;
+    if (file.size > 2_000_000) {
+      showToast('Image too large (max 2MB)');
+      input.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = e => {
       const av = document.getElementById('prevAvatar');
       av.style.backgroundImage = `url(${e.target.result})`;
       av.style.backgroundSize = 'cover';
       av.textContent = '';
+      // Persist so it actually gets sent on save, not just previewed
+      document.getElementById('avatarUrlInput').value = e.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -367,7 +456,15 @@
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  // Init preview
+  // Init: render seeded links and preview
+  renderLinks();
   updatePreview();
+  document.getElementById('previewInner').setAttribute('data-theme-preview', currentTheme);
+  document.getElementById('prevLinks').className = 'prev-links layout-' + currentLayout;
+  if ('<%= bioProfile?.avatarUrl || "" %>') {
+    document.getElementById('prevAvatar').style.backgroundImage = "url('<%= bioProfile?.avatarUrl || "" %>')";
+    document.getElementById('prevAvatar').style.backgroundSize = 'cover';
+    document.getElementById('prevAvatar').textContent = '';
+  }
 </script>
 <%- include('partials/layout/footer') %>
