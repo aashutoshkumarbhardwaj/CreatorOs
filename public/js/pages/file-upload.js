@@ -51,7 +51,7 @@ const dropZone = document.getElementById('drop-zone');
         });
 
         dropZone.addEventListener('click', function() {
-            if (!selectedFile) fileInput.click();
+            fileInput.click();
         });
 
         fileInput.setAttribute('multiple', 'true');
