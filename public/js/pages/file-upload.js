@@ -132,8 +132,16 @@ const dropZone = document.getElementById('drop-zone');
                 if (xhr.status >= 200 && xhr.status < 300) {
                     var data = JSON.parse(xhr.responseText);
                     statusEl.className = 'message-box message-success';
-                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size);
+                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size) +
+                        ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.path + '" style="margin-left:1rem;">Delete</button>';
                     statusEl.style.display = 'block';
+
+                    var delBtn = statusEl.querySelector('.delete-uploaded-btn');
+                    if (delBtn) {
+                        delBtn.addEventListener('click', function() {
+                            deleteFile(this.getAttribute('data-filename'), statusEl);
+                        });
+                    }
                 } else {
                     statusEl.className = 'message-box message-error';
                     statusEl.textContent = 'Upload failed. Please try again.';
@@ -163,6 +171,30 @@ const dropZone = document.getElementById('drop-zone');
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function deleteFile(filename, rowEl) {
+            fetch('/services/file-upload/delete/' + encodeURIComponent(filename), {
+                method: 'DELETE'
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (rowEl) rowEl.remove();
+                    statusEl.className = 'message-box message-success';
+                    statusEl.textContent = 'Deleted: ' + filename;
+                    statusEl.style.display = 'block';
+                } else {
+                    statusEl.className = 'message-box message-error';
+                    statusEl.textContent = 'Delete failed: ' + filename;
+                    statusEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                statusEl.className = 'message-box message-error';
+                statusEl.textContent = 'Network error while deleting.';
+                statusEl.style.display = 'block';
+            });
         }
    
 

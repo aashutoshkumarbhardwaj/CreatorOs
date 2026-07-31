@@ -785,16 +785,30 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
         mimetype: req.file.mimetype,
         path: req.file.filename,
     });
-
-    // Clean up temporary file to prevent DoS via disk exhaustion
-    try {
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error(`[upload] Failed to delete temp file ${req.file.path}:`, err);
-        });
-    } catch (e) {
-        console.error(`[upload] Error deleting temp file:`, e);
-    }
 });
+
+// ── FILE DELETE ──
+
+app.delete('/services/file-upload/delete/:filename', protect, preventContributorWrites, asyncHandler(async (req, res) => {
+    const requestedName = path.basename(req.params.filename);
+    const filePath = path.join(uploadDir, requestedName);
+
+    // Ensure resolved path stays inside uploadDir (defense against traversal)
+    if (!filePath.startsWith(path.resolve(uploadDir))) {
+        return res.status(400).json({ success: false, message: 'Invalid filename' });
+    }
+
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                return res.status(404).json({ success: false, message: 'File not found' });
+            }
+            console.error('[delete] Failed to delete file:', err);
+            return res.status(500).json({ success: false, message: 'Delete failed' });
+        }
+        return res.json({ success: true, filename: requestedName });
+    });
+}));
 
 // ── SHORT URL REDIRECT ──
 
