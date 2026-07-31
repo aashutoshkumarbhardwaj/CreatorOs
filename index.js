@@ -399,8 +399,8 @@ app.get('/services', (req, res) => {
     res.redirect('/');
 });
 
-app.get('/terms', (req, res) => {
-    res.render('terms');
+app.get('/privacy', (req, res) => {
+    res.render('privacy');
 });
 app.get('/about', (req, res) => {
     res.render('about');
