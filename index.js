@@ -798,11 +798,44 @@ app.post('/services/file-upload/upload', protect, preventContributorWrites, uplo
 
 // ── SHORT URL REDIRECT ──
 
+<<<<<<< Updated upstream
 app.get('/u/:shortId', asyncHandler(async (req, res) => {
+=======
+const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
+
+async function recordClickAndRedirect(req, res, entry) {
+  const coordinates = parseVisitCoordinates(req.query);
+  const visitData = { timestamp: new Date(), source: "direct" };
+  if (coordinates) {
+    visitData.x = coordinates.x;
+    visitData.y = coordinates.y;
+  }
+
+  await Url.findOneAndUpdate(
+    { shortId: entry.shortId },
+    {
+      $inc: { totalClicks: 1 },
+      $push: {
+        visitHistory: {
+          $each: [visitData],
+          $sort: { timestamp: -1 },
+          $slice: 1000,
+        },
+      },
+    },
+  );
+
+  return res.redirect(entry.redirectUrl);
+}
+
+app.get(
+  "/u/:shortId",
+  asyncHandler(async (req, res) => {
+>>>>>>> Stashed changes
     const shortId = req.params.shortId;
-    const coordinates = parseVisitCoordinates(req.query);
 
     try {
+<<<<<<< Updated upstream
         const visitData = { timestamp: new Date(), source: 'direct' };
         if (coordinates) {
             visitData.x = coordinates.x;
@@ -826,13 +859,81 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
 
         if (!entry) return res.status(404).send('URL not found');
         return res.redirect(entry.redirectUrl);
+=======
+      const entry = await Url.findOne({ shortId });
+      if (!entry)
+        return res.status(404).render("404", { url: req.originalUrl });
+
+      if (entry.archived) {
+        return res.status(404).render("404", { url: req.originalUrl });
+      }
+
+      if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+        return res.status(410).render("link-expired", { shortId });
+      }
+
+      if (entry.password) {
+        return res.render("link-password", { shortId, error: null });
+      }
+
+      return await recordClickAndRedirect(req, res, entry);
+>>>>>>> Stashed changes
     } catch (err) {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
     }
 }));
 
+<<<<<<< Updated upstream
 app.get('/q/:shortId', handleQrRedirect);
+=======
+// Password-protected link: verify submitted password, then redirect.
+// A POST (not a query param) so the password never lands in the URL,
+// browser history, server access logs, or the Referer header.
+const linkPasswordAttemptLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Too many attempts, please try again later.",
+});
+
+app.post(
+  "/u/:shortId",
+  linkPasswordAttemptLimiter,
+  asyncHandler(async (req, res) => {
+    const shortId = req.params.shortId;
+    const { password } = req.body;
+
+    const entry = await Url.findOne({ shortId });
+    if (!entry) return res.status(404).render("404", { url: req.originalUrl });
+
+    if (entry.archived) {
+      return res.status(404).render("404", { url: req.originalUrl });
+    }
+
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+      return res.status(410).render("link-expired", { shortId });
+    }
+
+    if (!entry.password) {
+      // No password set (e.g. removed between page load and submit) — just proceed.
+      return await recordClickAndRedirect(req, res, entry);
+    }
+
+    const isMatch =
+      password && (await bcrypt.compare(String(password), entry.password));
+    if (!isMatch) {
+      return res.status(401).render("link-password", {
+        shortId,
+        error: "Incorrect password. Please try again.",
+      });
+    }
+
+    return await recordClickAndRedirect(req, res, entry);
+  }),
+);
+
+app.get("/q/:shortId", handleQrRedirect);
+>>>>>>> Stashed changes
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get('/sitemap.xml', (req, res) => {
