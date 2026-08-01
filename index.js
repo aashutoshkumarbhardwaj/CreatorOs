@@ -12,7 +12,7 @@ const passport = require("passport");
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const cacheHeadersMiddleware = require('./middleware/cacheHeaders');
-const { getProfileFromCache, setProfileInCache } = require('./utils/profileCache');
+const { getProfileFromCache, setProfileInCache, invalidateProfileCache } = require('./utils/profileCache');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -62,7 +62,7 @@ const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const qrCodeRoutes = require('./routes/qrCode');
-
+const smartNotificationRoutes = require('./routes/smartNotificationRoutes');
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
@@ -124,7 +124,6 @@ app.use((req, res, next) => {
     );
     next();
 });
-
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
@@ -160,6 +159,7 @@ const { getDashboardData } = require('./utils/dashboardHelper');
 app.use('/suggestions', protect, suggestionRoutes);
 app.use('/services/creator-crm', protect, collaborationRoutes);
 app.use('/services/qr-code-generator', qrCodeRoutes);
+app.use('/', smartNotificationRoutes);
 app.post('/dashboard/accept-invite', protect, preventContributorWrites, acceptInviteFromDashboard);
 app.get('/invites/accept/:token', acceptInvite);
 
@@ -572,6 +572,8 @@ app.post('/bio/save', protect, asyncHandler(async (req, res) => {
         updateData,
         { new: true, upsert: true }
     );
+    
+    await invalidateProfileCache(userHandle);
     
     return res.json({ success: true, data: bioProfile });
 }));
