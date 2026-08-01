@@ -63,11 +63,32 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedProjectName = projectName?.trim() || 'CreatorOS Collaboration';
 
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentInvitesCount = await Invite.countDocuments({
+    inviter: req.user.id,
+    createdAt: { $gte: oneHourAgo }
+  });
+
+  if (recentInvitesCount >= 20) {
+    const userDoc = await User.findById(req.user.id).select('name email').lean();
+    const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
+    return res.status(429).render('creator-crm', {
+      user: buildAccountViewModel(userDoc, req.user),
+      invites,
+      success: null,
+      error: 'You have reached the maximum limit of 20 invitations per hour. Please try again later.',
+    });
+  }
+
   const existingPendingInvite = await Invite.findOne({
     inviter: req.user.id,
     email: normalizedEmail,
-    projectName: normalizedProjectName,
     status: 'pending',
+    $or: [
+      { expiresAt: { $exists: false } },
+      { expiresAt: null },
+      { expiresAt: { $gt: new Date() } },
+    ]
   });
 
   if (existingPendingInvite) {
@@ -77,7 +98,7 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
       user: buildAccountViewModel(userDoc, req.user),
       invites,
       success: null,
-      error: `An invite is already pending for ${normalizedEmail}.`,
+      error: `An active invitation is already pending for ${normalizedEmail}.`,
     });
   }
 

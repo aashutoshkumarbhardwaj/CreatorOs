@@ -23,6 +23,10 @@ jest.mock("../../middleware/validators", () => ({
   resendVerificationValidator: (req, res, next) => next(),
 }));
 
+jest.mock("../../model/user", () => ({
+  findOne: jest.fn().mockResolvedValue({ id: "user123" }),
+}));
+
 jest.mock("../../middleware/rateLimiters", () => ({
   loginLimiter: (req, res, next) => next(),
   signupLimiter: (req, res, next) => next(),
@@ -35,9 +39,7 @@ jest.mock("../../connect", () => jest.fn());
 jest.mock("../../model/passwordResetToken", () => ({
   findOne: jest.fn().mockResolvedValue({ token: "abc123", used: false }),
 }));
-jest.mock("../../model/user", () => ({
-  findOne: jest.fn().mockResolvedValue(null),
-}));
+
 
 const authRoutes = require("../../routes/auth");
 
