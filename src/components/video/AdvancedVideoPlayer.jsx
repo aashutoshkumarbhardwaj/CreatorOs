@@ -113,7 +113,7 @@ const AdvancedVideoPlayer = ({ src, poster }) => {
   };
 
   const formatTime = (time) => {
-    if (isNaN(time)) return "00:00";
+    if (Number.isNaN(time)) return "00:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
