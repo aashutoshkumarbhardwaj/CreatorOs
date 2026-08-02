@@ -160,7 +160,7 @@
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
                 const currentLinks = useStore.getState().allLinks;
-                const nextLinks = currentLinks.map(l => {
+                const nextLinks = (currentLinks ?? []).map(l => {
                     if (l.shortId === id || l._id === id) {
                         const newClicks = (l.totalClicks || 0) + 1;
                         return {
