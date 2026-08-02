@@ -373,7 +373,7 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
             labels,
             followers,
             engagement,
-            posts: linkPosts.map((p) => p.title),
+            posts: (linkPosts ?? []).map((p) => p.title),
             postPerformance: linkPosts.map((p) => p.views),
         },
         topPosts: linkPosts,
