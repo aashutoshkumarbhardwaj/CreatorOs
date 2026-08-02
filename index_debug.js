@@ -329,7 +329,7 @@ async function buildAnalyticsViewModel(creatorId) {
 
     const isEmpty = !latestSnapshot;
 
-    const labels = history.map((h) =>
+    const labels = (history ?? []).map((h) =>
         new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     );
 
