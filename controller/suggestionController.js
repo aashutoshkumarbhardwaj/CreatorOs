@@ -33,7 +33,8 @@ async function generateAISuggestions(topic) {
           ]
         })
       });
-      const data = await response.json();
+      if (!response.ok) throw new Error("Request failed");
+const data = await response.json();
       if (data.choices && data.choices[0]) {
         try {
           let rawContent = data.choices[0].message.content;
