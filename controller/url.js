@@ -182,7 +182,7 @@ async function handleListUserLinks(req, res) {
     const hasMore = entries.length > limit;
     const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
-    const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
+    const links = (pageEntries ?? []).map((entry) => serializeLink(entry, hostBase));
     const userStats = await Url.getStatsForUser(userId);
 
     return res.json({
