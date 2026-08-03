@@ -254,3 +254,5 @@ module.exports = {
   acceptInvite,
   acceptInviteFromDashboard,
 };
+
+.catch(err => console.error("Promise.all failed:", err));
