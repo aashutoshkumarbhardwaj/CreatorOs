@@ -22,7 +22,7 @@ async function getDashboardData(userDoc) {
     // Handle Mongoose Query vs Mock implementation differences
     if (allUrls && typeof allUrls.sort === 'function' && !Array.isArray(allUrls)) {
         // It's the mock returning { sort: () => ... }
-        allUrls = allUrls.sort();
+        allUrls = allUrls.sort((a, b) => a - b);
     } else if (Array.isArray(allUrls)) {
         // Fallback for actual array
         allUrls = allUrls.sort((a, b) => new Date(b.createdAt || b.linkedAt || Date.now()) - new Date(a.createdAt || a.linkedAt || Date.now()));
