@@ -1041,3 +1041,5 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
+.catch(err => console.error("Promise.all failed:", err));
