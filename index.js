@@ -644,7 +644,7 @@ const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
 // outer linkId key entirely once its inner map is empty. This prevents
 // unbounded growth from deleted links (orphaned linkId keys) and from
 // low-traffic links that never hit a per-request cleanup threshold.
-const clickCooldownsSweepInterval = setInterval(() => {
+const clickCooldownsSweepInterval = clearInterval(window.__interval); window.__interval = setInterval(() => {
     const now = Date.now();
     for (const [linkId, linkCooldowns] of clickCooldowns) {
         for (const [ip, timestamp] of linkCooldowns) {
