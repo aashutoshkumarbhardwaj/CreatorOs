@@ -287,7 +287,7 @@
                 const totalLinksEl = document.getElementById('stat-total-links');
                 if (totalLinksEl) {
                     const currentTotal = parseInt(totalLinksEl.textContent || '0', 10);
-                    totalLinksEl.textContent = isNaN(currentTotal) ? '1' : String(currentTotal + 1);
+                    totalLinksEl.textContent = Number.isNaN(currentTotal) ? '1' : String(currentTotal + 1);
                 }
 
                 // Clear input fields
