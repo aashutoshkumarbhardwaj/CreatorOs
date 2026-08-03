@@ -136,7 +136,7 @@ function parseMetricValue(raw) {
     const suffix = match[2];
 
     if (suffix === 'k') {
-        return Math.round(base * 1000);
+        return Math.round(base * 1000 + Number.EPSILON);
     }
 
     if (suffix === 'm') {
