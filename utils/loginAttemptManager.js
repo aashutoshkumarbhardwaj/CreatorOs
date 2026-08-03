@@ -23,7 +23,7 @@ async function getFailedLoginAttempts(identifier) {
 
     try {
         const key = getLoginAttemptKey(identifier);
-        const attempts = parseInt(await redisClient.get(key) || '0');
+        const attempts = parseInt(await redisClient.get(key, 10) || '0');
         return attempts;
     } catch (error) {
         console.error('[LoginAttempts] Error fetching failed attempts:', error);
