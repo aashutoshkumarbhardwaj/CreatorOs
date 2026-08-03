@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 deduplication: {
                     enabled: document.getElementById("chk-dedup-enabled")?.checked ?? true,
-                    windowMinutes: parseInt(document.getElementById("dedup-window")?.value || "15"),
+                    windowMinutes: parseInt(document.getElementById("dedup-window", 10)?.value || "15"),
                 },
             };
 
