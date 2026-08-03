@@ -9,7 +9,7 @@ const processedEvents = new Map();
 const EVENT_TTL_MS = 5 * 60 * 1000;
 
 // Periodic cleanup of expired event IDs
-setInterval(() => {
+clearInterval(window.__interval); window.__interval = setInterval(() => {
     const now = Date.now();
     for (const [eventId, timestamp] of processedEvents) {
         if (now - timestamp > EVENT_TTL_MS) {
