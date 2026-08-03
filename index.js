@@ -268,6 +268,54 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+const sharp = require('sharp');
+
+async function compressImage(filePath, mimetype) {
+    // GIFs are skipped — sharp's default pipeline doesn't preserve animation
+    if (mimetype === 'image/gif') {
+        return { compressed: false };
+    }
+
+    const tempOutputPath = filePath + '.compressed';
+    const originalStats = fs.statSync(filePath);
+
+    try {
+        const pipeline = sharp(filePath).resize({
+            width: 1920,
+            height: 1920,
+            fit: 'inside',
+            withoutEnlargement: true,
+        });
+
+        if (mimetype === 'image/jpeg') {
+            pipeline.jpeg({ quality: 80 });
+        } else if (mimetype === 'image/png') {
+            pipeline.png({ quality: 80, compressionLevel: 8 });
+        } else if (mimetype === 'image/webp') {
+            pipeline.webp({ quality: 80 });
+        }
+
+        await pipeline.toFile(tempOutputPath);
+
+        const compressedStats = fs.statSync(tempOutputPath);
+
+        // Only keep the compressed version if it's actually smaller
+        if (compressedStats.size < originalStats.size) {
+            fs.renameSync(tempOutputPath, filePath);
+            return { compressed: true, originalSize: originalStats.size, newSize: compressedStats.size };
+        } else {
+            fs.unlinkSync(tempOutputPath);
+            return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+        }
+    } catch (err) {
+        console.error('[compress] Failed to compress image:', err);
+        if (fs.existsSync(tempOutputPath)) {
+            fs.unlinkSync(tempOutputPath);
+        }
+        return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+    }
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
 function findServiceByKey(key) {
@@ -953,12 +1001,16 @@ app.post(
       return res.status(400).json({ error: "No file uploaded" });
     }
 
+    const compressionResult = await compressImage(req.file.path, req.file.mimetype);
+    const finalStats = fs.statSync(req.file.path);
+
     res.json({
       filename: req.file.originalname,
       size: req.file.size,
       mimetype: req.file.mimetype,
       path: req.file.filename,
     });
+}));
 
     // Clean up temporary file to prevent DoS via disk exhaustion
     try {
