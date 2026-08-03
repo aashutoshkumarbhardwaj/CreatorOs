@@ -123,6 +123,27 @@ const listScheduledContent = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @function getScheduledContent
+ * @description Retrieves a specific piece of scheduled content by ID with ownership verification.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+const getScheduledContent = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid content id' });
+    }
+
+    const content = await ScheduledContent.findOne({ _id: req.params.id, userId: req.user.id });
+
+    if (!content) {
+        return res.status(404).json({ success: false, message: 'Scheduled content not found' });
+    }
+
+    return res.json({ success: true, content });
+});
+
+/**
  * @function cancelScheduledContent
  * @description Cancels a piece of content that hasn't published yet.
  * @param {Object} req - Express request object
@@ -150,4 +171,4 @@ const cancelScheduledContent = asyncHandler(async (req, res) => {
     return res.json({ success: true, content });
 });
 
-module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent };
+module.exports = { scheduleContent, listScheduledContent, getScheduledContent, cancelScheduledContent };

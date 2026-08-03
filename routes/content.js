@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     scheduleContent,
     listScheduledContent,
+    getScheduledContent,
     cancelScheduledContent,
 } = require('../controller/contentController');
 
@@ -34,6 +35,30 @@ router.post('/schedule', scheduleContent);
  *         description: Unauthorized
  */
 router.get('/scheduled', listScheduledContent);
+
+/**
+ * @swagger
+ * /scheduled/{id}:
+ *   get:
+ *     summary: Retrieve a specific piece of scheduled content by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the scheduled content
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       400:
+ *         description: Bad request (invalid ID format)
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Not found
+ */
+router.get('/scheduled/:id', getScheduledContent);
 
 /**
  * @swagger
