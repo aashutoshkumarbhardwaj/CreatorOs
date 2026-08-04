@@ -6,7 +6,9 @@ const fetchInstagramAnalytics = async (creator) => {
     try {
         const platformId = creator.platformId || 'me';
         // Using global fetch (available in Node 18+)
-        const response = await fetch(`https://graph.instagram.com/${platformId}?fields=followers_count,follows_count,media_count,id,username&access_token=${creator.accessToken}`);
+        const response = await fetch(
+            `https://graph.instagram.com/${platformId}?fields=followers_count,follows_count,media_count,id,username,media.limit(50){like_count,comments_count}&access_token=${creator.accessToken}`
+        );
         
         if (!response.ok) {
             const errBody = await response.text();
@@ -15,22 +17,43 @@ const fetchInstagramAnalytics = async (creator) => {
 
         const data = await response.json();
         
-        // Note: Full engagement metrics require fetching all media edges. 
-        // We calculate basic metrics available directly on the user node, and approximate the rest 
-        // to fit the existing database schema without blowing up API rate limits.
         const totalPosts = data.media_count || 0;
-        const totalLikes = totalPosts * 120; // Placeholder approx based on averages
-        const totalComments = totalPosts * 15; // Placeholder approx
-        const engagementRate = data.followers_count > 0 ? ((totalLikes + totalComments) / data.followers_count) * 100 : 0;
+        const followers = data.followers_count || 0;
+        const following = data.follows_count || 0;
+
+        let totalLikes = 0;
+        let totalComments = 0;
+        let engagementAvailable = false;
+
+        const mediaList = data.media?.data || (Array.isArray(data.media) ? data.media : null);
+
+        if (Array.isArray(mediaList) && mediaList.length > 0) {
+            let hasCounts = false;
+            for (const item of mediaList) {
+                if (typeof item.like_count === 'number' || typeof item.comments_count === 'number') {
+                    totalLikes += item.like_count || 0;
+                    totalComments += item.comments_count || 0;
+                    hasCounts = true;
+                }
+            }
+            if (hasCounts) {
+                engagementAvailable = true;
+            }
+        }
+
+        const engagementRate = (engagementAvailable && followers > 0)
+            ? parseFloat((((totalLikes + totalComments) / followers) * 100).toFixed(2))
+            : 0;
 
         return {
-            followers: data.followers_count || 0,
-            following: data.follows_count || 0,
+            followers,
+            following,
             totalPosts,
-            totalLikes,
-            totalComments,
-            totalViews: totalLikes * 3,
-            engagementRate: parseFloat(engagementRate.toFixed(2)),
+            totalLikes: engagementAvailable ? totalLikes : 0,
+            totalComments: engagementAvailable ? totalComments : 0,
+            totalViews: 0,
+            engagementRate,
+            engagementAvailable,
         };
     } catch (error) {
         console.error(`[InstagramAPI] Failed to fetch analytics for ${creator._id}:`, error.message);
