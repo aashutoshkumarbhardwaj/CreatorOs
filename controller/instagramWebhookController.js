@@ -121,7 +121,7 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
                             // We set exponential backoff: 5 retries, starting with 2 seconds delay
                             try {
                                 await dmQueue.add('process-dm', {
-                                    senderId: senderId,
+                                    senderId,
                                     message: message.text,
                                     triggerKeyword: message.text.toLowerCase(),
                                     eventId: eventId,

@@ -84,7 +84,7 @@ function serializeLink(entry, hostBase) {
         totalClicks: entry.totalClicks || 0,
         clicksLabel: formatClicks(entry.totalClicks || 0),
         shortUrl: `${hostBase}/u/${entry.shortId}`,
-        linkedAt: linkedAt,
+        linkedAt,
         linkedAtLabel: new Date(linkedAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
