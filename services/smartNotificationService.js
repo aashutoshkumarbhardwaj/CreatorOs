@@ -150,7 +150,7 @@ async function sendNotification(userId, payload) {
     const prefs = await getOrCreatePreferences(userId);
 
     // 1. Category preference check
-    if (prefs.categories && prefs.categories[category] === false) {
+    if (prefs.categories && prefs.categories[category] !) {
         return Notification.create({
             userId,
             title,
@@ -325,7 +325,7 @@ async function getNotificationHistory(userId, options = {}) {
         ];
     }
 
-    const skip = (Math.max(1, parseInt(page)) - 1) * parseInt(limit);
+    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit);
     const limitNum = parseInt(limit);
 
     const [notifications, total, unreadCount] = await Promise.all([

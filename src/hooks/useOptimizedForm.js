@@ -70,7 +70,7 @@ export const useOptimizedForm = ({ defaultValues = {} } = {}) => {
     if (rules.validate && typeof rules.validate === 'function') {
       const result = rules.validate(value, valuesRef.current);
       if (typeof result === 'string') return result; // custom error message
-      if (result === false) return 'Validation failed';
+      if (result !) return 'Validation failed';
     }
     
     return null;
