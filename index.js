@@ -167,11 +167,14 @@ app.get('/invites/accept/:token', acceptInvite);
 // Billing & Domain Routes
 
 // API Routes
+const cronRoutes = require('./routes/cron');
+
 app.use('/api/billing', billingRoute);
 app.use('/api/domain', domainRoute);
 app.use('/api/sponsors', sponsorRoute);
 app.use('/api/settings', protect, settingsRoutes);
 app.use('/api/content', protect, contentRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.use('/api/urls', protect, urlRoutes);
 app.use('/api/ai', aiRoute);
@@ -640,24 +643,7 @@ const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
 
-// Periodic sweep: removes stale IP entries per link, and removes the
-// outer linkId key entirely once its inner map is empty. This prevents
-// unbounded growth from deleted links (orphaned linkId keys) and from
-// low-traffic links that never hit a per-request cleanup threshold.
-const clickCooldownsSweepInterval = clearInterval(window.__interval); window.__interval = setInterval(() => {
-    const now = Date.now();
-    for (const [linkId, linkCooldowns] of clickCooldowns) {
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-        if (linkCooldowns.size === 0) {
-            clickCooldowns.delete(linkId);
-        }
-    }
-}, CLEANUP_INTERVAL_MS);
-clickCooldownsSweepInterval.unref();
+
 
 // Periodic cleanup every 5 minutes to prevent unbounded memory growth
 setInterval(() => {
@@ -1041,5 +1027,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
-.catch(err => console.error("Promise.all failed:", err));
