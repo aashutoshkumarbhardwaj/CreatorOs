@@ -1135,7 +1135,7 @@ app.post(
   preventContributorWrites,
   uploadLimiter,
   upload.single("file"),
-  (req, res) => {
+  async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
@@ -1145,11 +1145,11 @@ app.post(
 
     res.json({
       filename: req.file.originalname,
-      size: req.file.size,
+      size: finalStats.size,
       mimetype: req.file.mimetype,
       path: req.file.filename,
+      compressed: compressionResult.compressed,
     });
-}));
 
     // Clean up temporary file to prevent DoS via disk exhaustion
     try {
@@ -1285,5 +1285,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
-.catch(err => console.error("Promise.all failed:", err));
