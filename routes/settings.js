@@ -17,39 +17,27 @@ const { isEmailTransportConfigured, sendDeletionConfirmationEmail } = require('.
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 
-function defaultInvoices() {
-    return [
-        { date: 'Sep 24, 2023', invoiceId: '#INV-88219', amount: '$29.00', status: 'PAID' },
-        { date: 'Aug 24, 2023', invoiceId: '#INV-87112', amount: '$29.00', status: 'PAID' },
-    ];
-}
-
 function buildBillingPayload(user) {
     const sub = user.subscription || {};
-    const nextInvoice = sub.nextInvoiceDate
-        ? new Date(sub.nextInvoiceDate)
-        : (() => {
-            const d = new Date();
-            d.setMonth(d.getMonth() + 1);
-            d.setDate(24);
-            return d;
-        })();
+    const nextInvoice = sub.nextInvoiceDate ? new Date(sub.nextInvoiceDate) : null;
 
     return {
-        status: sub.status || 'inactive',
-        planName: sub.planName || 'Pro Individual',
-        priceMonthly: sub.priceMonthly ?? 29,
-        nextInvoiceDate: nextInvoice.toISOString(),
-        nextInvoiceLabel: nextInvoice.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        }),
-        estimatedTotal: `$${(sub.priceMonthly ?? 29).toFixed(2)} USD`,
-        cardBrand: sub.cardBrand || 'VISA',
-        cardLast4: sub.cardLast4 || '4242',
+        status: sub.status || 'free',
+        planName: sub.planName || 'Free',
+        priceMonthly: sub.priceMonthly ?? 0,
+        nextInvoiceDate: nextInvoice ? nextInvoice.toISOString() : null,
+        nextInvoiceLabel: nextInvoice
+            ? nextInvoice.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            })
+            : 'No upcoming invoice',
+        estimatedTotal: sub.priceMonthly ? `$${sub.priceMonthly.toFixed(2)} USD` : '$0.00 USD',
+        cardBrand: sub.cardBrand || null,
+        cardLast4: sub.cardLast4 || null,
         cancelAtPeriodEnd: sub.cancelAtPeriodEnd ?? false,
-        invoices: defaultInvoices(),
+        invoices: sub.invoices || [],
     };
 }
 

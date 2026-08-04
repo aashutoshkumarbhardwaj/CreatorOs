@@ -433,22 +433,30 @@
     async function refreshBilling() {
         try {
             const billing = await apiRequest('/api/settings/billing');
-            document.getElementById('plan-name').textContent = billing.planName;
-            document.getElementById('plan-price').textContent = billing.priceMonthly;
-            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel;
-            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal}`;
-            document.getElementById('card-info-text').textContent = `${billing.cardBrand} ending in ${billing.cardLast4}`;
+            document.getElementById('plan-name').textContent = billing.planName || 'Free';
+            document.getElementById('plan-price').textContent = billing.priceMonthly ?? 0;
+            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel || 'No upcoming invoice';
+            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal || '$0.00 USD'}`;
+            document.getElementById('card-info-text').textContent = (billing.cardBrand && billing.cardLast4)
+                ? `${billing.cardBrand} ending in ${billing.cardLast4}`
+                : 'No payment method saved';
             const tbody = document.querySelector('#invoices-table tbody');
-            tbody.innerHTML = billing.invoices
-                .map(
-                    (inv) => `<tr data-invoice-id="${inv.invoiceId}">
-                        <td>${inv.date}</td>
-                        <td>${inv.invoiceId}</td>
-                        <td>${inv.amount}</td>
-                        <td><span class="badge-paid">${inv.status}</span></td>
-                    </tr>`
-                )
-                .join('');
+            if (billing.invoices && billing.invoices.length > 0) {
+                tbody.innerHTML = billing.invoices
+                    .map(
+                        (inv) => `<tr data-invoice-id="${inv.invoiceId}" data-invoice-url="${inv.url || inv.receiptUrl || ''}">
+                            <td>${inv.date}</td>
+                            <td>${inv.invoiceId}</td>
+                            <td>${inv.amount}</td>
+                            <td><span class="badge-paid">${inv.status}</span></td>
+                        </tr>`
+                    )
+                    .join('');
+            } else {
+                tbody.innerHTML = `<tr class="no-invoices-row">
+                    <td colspan="4" style="text-align: center; color: var(--color-text-muted, #666); padding: 1.5rem;">No invoices found.</td>
+                </tr>`;
+            }
             bindInvoiceRows();
         } catch (_) {
             /* server-rendered fallback */
@@ -474,7 +482,7 @@
 
     const invoiceModal = document.getElementById('invoice-modal');
     function bindInvoiceRows() {
-        document.querySelectorAll('#invoices-table tbody tr').forEach((row) => {
+        document.querySelectorAll('#invoices-table tbody tr:not(.no-invoices-row)').forEach((row) => {
             row.onclick = () => {
                 const cells = row.querySelectorAll('td');
                 document.getElementById('invoice-modal-body').textContent =
@@ -482,6 +490,7 @@
                 invoiceModal.classList.add('open');
                 invoiceModal.setAttribute('aria-hidden', 'false');
                 invoiceModal.dataset.invoiceId = row.dataset.invoiceId || cells[1].textContent;
+                invoiceModal.dataset.invoiceUrl = row.dataset.invoiceUrl || '';
                 playSoundCue();
             };
         });
@@ -493,16 +502,13 @@
         invoiceModal.setAttribute('aria-hidden', 'true');
     });
     document.getElementById('invoice-download-btn').addEventListener('click', () => {
-        const id = invoiceModal.dataset.invoiceId || 'invoice';
-        const blob = new Blob([`CreatorOS Invoice ${id}\nGenerated: ${new Date().toISOString()}`], {
-            type: 'text/plain',
-        });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${id.replace('#', '')}.txt`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('Invoice downloaded');
+        const url = invoiceModal.dataset.invoiceUrl;
+        if (url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+            showToast('Opening invoice receipt');
+        } else {
+            showToast('Invoice receipt link is not available', true);
+        }
     });
 
     const upgradePlanBtn = document.getElementById('upgrade-plan-btn');

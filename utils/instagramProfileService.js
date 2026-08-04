@@ -100,7 +100,7 @@ function runPythonProvider(username) {
                     ));
                 }
 
-                if (payload.success !) {
+                if (!payload.success) {
                     const errorPayload = payload.error || {};
                     return reject(new InstagramProfileError(
                         errorPayload.code || 'TEMPORARY_FETCH_ERROR',
