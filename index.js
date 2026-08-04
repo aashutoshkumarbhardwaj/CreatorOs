@@ -1097,10 +1097,15 @@ app.get(
         .select("name email alias bio")
         .lean();
 
+      const bioProfile = userDoc?.alias
+        ? await BioProfile.findOne({ userId: req.user.id }).lean()
+        : null;
+
       return res.render("bio-editor", {
         service,
         services,
         user: buildAccountViewModel(userDoc, req.user),
+        bioProfile: bioProfile || null,
       });
     }
 

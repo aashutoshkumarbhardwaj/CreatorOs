@@ -14,11 +14,11 @@
       <h2>Smart Bio Editor</h2>
       <div class="share-url">
         <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
-        <button type="button" class="copy-btn" onclick="copyUrl()">Copy</button>
+        <button type="button" class="copy-btn" id="copyUrlBtn">Copy</button>
       </div>
       <div class="topbar-actions">
         <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
-        <button type="button" class="btn-retro primary" onclick="saveBio()">Save Changes</button>
+        <button type="button" class="btn-retro primary" id="saveBioBtn">Save Changes</button>
       </div>
     </header>
 
@@ -32,31 +32,31 @@
         <div class="panel-box">
           <div class="panel-head">
             <h3>Profile</h3>
-            <button type="button" class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" onclick="document.getElementById('avatarInput').click()">Upload Photo</button>
-            <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+            <button type="button" class="btn-retro" style="font-size:0.72rem; padding:0.25rem 0.65rem;" id="uploadPhotoBtn">Upload Photo</button>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
           </div>
           <div class="panel-body">
             <div class="field-row">
               <div class="field">
                 <label>Display Name</label>
-                <input type="text" id="profileName" value="<%= user.name %>" placeholder="Your name" oninput="updatePreview()" />
+                <input type="text" id="profileName" value="<%= user.name %>" placeholder="Your name" />
               </div>
               <div class="field">
                 <label>Handle</label>
-                <input type="text" id="profileHandle" value="<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %>" placeholder="@handle" oninput="updatePreview()" />
+                <input type="text" id="profileHandle" value="<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %>" placeholder="@handle" />
               </div>
             </div>
             <div class="field">
               <label>Bio</label>
-              <textarea id="profileBio" placeholder="Short description about you..." oninput="updatePreview()"><%= user.bio || '' %></textarea>
+              <textarea id="profileBio" placeholder="Short description about you..."><%= user.bio || '' %></textarea>
             </div>
             <div class="field">
               <label>Tags (press Enter to add)</label>
-              <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagInput').focus()">
+              <div class="tags-wrap" id="tagsWrap">
                 <% (bioProfile?.tags || []).forEach(tag => { %>
-                  <span class="tag-chip"><%= tag %> <button type="button" onclick="this.parentElement.remove()">×</button></span>
+                  <span class="tag-chip"><%= tag %> <button type="button" class="tag-remove-btn">×</button></span>
                 <% }) %>
-                <input type="text" id="tagInput" class="tag-input" placeholder="Add tag..." onkeydown="handleTagKey(event)" />
+                <input type="text" id="tagInput" class="tag-input" placeholder="Add tag..." />
               </div>
             </div>
           </div>
@@ -74,21 +74,21 @@
             <div class="field">
               <label>Quick Add</label>
               <div class="presets">
-                <button type="button" class="preset-btn" onclick="addPreset('instagram','📸','Instagram','https://instagram.com/','social')">📸 Instagram</button>
-                <button type="button" class="preset-btn" onclick="addPreset('youtube','🎥','YouTube','https://youtube.com/','social')">🎥 YouTube</button>
-                <button type="button" class="preset-btn" onclick="addPreset('github','💻','GitHub','https://github.com/','work')">💻 GitHub</button>
-                <button type="button" class="preset-btn" onclick="addPreset('linkedin','💼','LinkedIn','https://linkedin.com/in/','work')">💼 LinkedIn</button>
-                <button type="button" class="preset-btn" onclick="addPreset('portfolio','🌐','Portfolio','https://','work')">🌐 Portfolio</button>
-                <button type="button" class="preset-btn" onclick="addPreset('resume','📄','Resume','https://','work')">📄 Resume</button>
-                <button type="button" class="preset-btn" onclick="addPreset('email','📧','Email','mailto:','other')">📧 Email</button>
-                <button type="button" class="preset-btn" onclick="addPreset('whatsapp','💬','WhatsApp','https://wa.me/','other')">💬 WhatsApp</button>
+                <button type="button" class="preset-btn" data-preset-type="instagram" data-preset-icon="📸" data-preset-label="Instagram" data-preset-url="https://instagram.com/" data-preset-category="social">📸 Instagram</button>
+                <button type="button" class="preset-btn" data-preset-type="youtube" data-preset-icon="🎥" data-preset-label="YouTube" data-preset-url="https://youtube.com/" data-preset-category="social">🎥 YouTube</button>
+                <button type="button" class="preset-btn" data-preset-type="github" data-preset-icon="💻" data-preset-label="GitHub" data-preset-url="https://github.com/" data-preset-category="work">💻 GitHub</button>
+                <button type="button" class="preset-btn" data-preset-type="linkedin" data-preset-icon="💼" data-preset-label="LinkedIn" data-preset-url="https://linkedin.com/in/" data-preset-category="work">💼 LinkedIn</button>
+                <button type="button" class="preset-btn" data-preset-type="portfolio" data-preset-icon="🌐" data-preset-label="Portfolio" data-preset-url="https://" data-preset-category="work">🌐 Portfolio</button>
+                <button type="button" class="preset-btn" data-preset-type="resume" data-preset-icon="📄" data-preset-label="Resume" data-preset-url="https://" data-preset-category="work">📄 Resume</button>
+                <button type="button" class="preset-btn" data-preset-type="email" data-preset-icon="📧" data-preset-label="Email" data-preset-url="mailto:" data-preset-category="other">📧 Email</button>
+                <button type="button" class="preset-btn" data-preset-type="whatsapp" data-preset-icon="💬" data-preset-label="WhatsApp" data-preset-url="https://wa.me/" data-preset-category="other">💬 WhatsApp</button>
               </div>
             </div>
 
             <!-- Links list -->
             <div class="links-list" id="linksList"></div>
 
-            <button type="button" class="add-link-btn" onclick="addCustomLink()">
+            <button type="button" class="add-link-btn" id="addCustomLinkBtn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Custom Link
             </button>
@@ -103,28 +103,28 @@
               <label>Theme</label>
               <div class="presets">
                 <% const savedTheme = bioProfile?.theme || 'light'; %>
-                <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    onclick="selectTheme('light',this)">☀ Light</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     onclick="selectTheme('dark',this)">● Dark</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     onclick="selectTheme('neon',this)">⚡ Neon</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'gradient' ? 'active' : '' %>" id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    data-theme="light">☀ Light</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     data-theme="dark">● Dark</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     data-theme="neon">⚡ Neon</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'gradient' ? 'active' : '' %>" id="theme-gradient" data-theme="gradient">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
                 <% const savedLayout = bioProfile?.layout || 'list'; %>
-                <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  onclick="selectLayout('list',this)">≡ List</button>
-                <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  onclick="selectLayout('grid',this)">⊞ Grid</button>
-                <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" onclick="selectLayout('cards',this)">▤ Cards</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  data-layout="list">≡ List</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  data-layout="grid">⊞ Grid</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" data-layout="cards">▤ Cards</button>
               </div>
             </div>
             <div class="field">
               <label>Avatar URL</label>
-              <input type="text" id="avatarUrlInput" value="<%= bioProfile?.avatarUrl || '' %>" placeholder="https://..." oninput="updatePreview()" />
+              <input type="text" id="avatarUrlInput" value="<%= bioProfile?.avatarUrl || '' %>" placeholder="https://..." />
             </div>
             <div class="field">
               <label>Background (color or CSS gradient)</label>
-              <input type="text" id="backgroundInput" value="<%= bioProfile?.background || '' %>" placeholder="#fdf6e3 or linear-gradient(...)" oninput="updatePreview()" />
+              <input type="text" id="backgroundInput" value="<%= bioProfile?.background || '' %>" placeholder="#fdf6e3 or linear-gradient(...)" />
             </div>
           </div>
         </div>
@@ -230,13 +230,13 @@
       <div class="link-row" id="link-row-${link.id}" draggable="true" data-id="${link.id}">
         <div class="link-row-icon">${link.icon}</div>
         <input type="text" value="${link.label}"
-               onchange="updateLinkField(${link.id},'label',this.value)"
+               data-link-field="label" data-id="${link.id}"
                placeholder="Label" />
         <input type="text" value="${link.url}"
-               onchange="updateLinkField(${link.id},'url',this.value)"
+               data-link-field="url" data-id="${link.id}"
                placeholder="https://..." />
-        <button type="button" class="link-row-featured ${link.featured ? 'active' : ''}" onclick="toggleFeatured(${link.id})" title="Feature this link">★</button>
-        <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
+        <button type="button" class="link-row-featured ${link.featured ? 'active' : ''}" data-action="toggle-featured" data-id="${link.id}" title="Feature this link">★</button>
+        <button type="button" class="link-row-del" data-action="remove-link" data-id="${link.id}" title="Remove">×</button>
       </div>
     `).join('');
     attachDragHandlers();
@@ -317,15 +317,23 @@
     if (link) { link.featured = !link.featured; renderLinks(); updatePreview(); }
   }
 
+  // Event delegation for dynamically rendered link rows
+  document.getElementById('linksList').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    if (btn.dataset.action === 'remove-link') removeLink(id);
+    if (btn.dataset.action === 'toggle-featured') toggleFeatured(id);
+  });
+
+  document.getElementById('linksList').addEventListener('change', (e) => {
+    const field = e.target.dataset.linkField;
+    if (!field) return;
+    updateLinkField(Number(e.target.dataset.id), field, e.target.value);
+  });
+
   // ── TAGS ──
   const tags = <%- JSON.stringify(bioProfile?.tags || []) %>;
-  function handleTagKey(e) {
-    if (e.key === 'Enter' && e.target.value.trim()) {
-      e.preventDefault();
-      addTag(e.target.value.trim());
-      e.target.value = '';
-    }
-  }
 
   function addTag(text) {
     tags.push(text);
@@ -333,9 +341,27 @@
     const input = document.getElementById('tagInput');
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
-    chip.innerHTML = `${text} <button type="button" onclick="this.parentElement.remove()">×</button>`;
+    chip.innerHTML = `${text} <button type="button" class="tag-remove-btn">×</button>`;
     wrap.insertBefore(chip, input);
   }
+
+  document.getElementById('tagInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      e.preventDefault();
+      addTag(e.target.value.trim());
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('tagsWrap').addEventListener('click', (e) => {
+    if (e.target.classList.contains('tag-remove-btn')) {
+      e.target.parentElement.remove();
+      return;
+    }
+    if (e.target === e.currentTarget) {
+      document.getElementById('tagInput').focus();
+    }
+  });
 
   // ── PREVIEW ──
   function updatePreview() {
@@ -370,24 +396,48 @@
     }
   }
 
+  ['profileName', 'profileHandle', 'profileBio', 'avatarUrlInput', 'backgroundInput'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
   // ── THEME ──
   function selectTheme(theme, btn) {
     currentTheme = theme;
     document.querySelectorAll('[id^="theme-"]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    // Apply to preview
     document.getElementById('previewInner').setAttribute('data-theme-preview', theme);
   }
+
+  document.querySelectorAll('[data-theme]').forEach(btn => {
+    btn.addEventListener('click', () => selectTheme(btn.dataset.theme, btn));
+  });
 
   // ── LAYOUT ──
   function selectLayout(layout, btn) {
     currentLayout = layout;
-    document.querySelectorAll('.panel-body .presets .preset-btn').forEach(b => {
-      if (['≡ List','⊞ Grid','▤ Cards'].includes(b.textContent)) b.classList.remove('active');
-    });
+    document.querySelectorAll('[data-layout]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('prevLinks').className = 'prev-links layout-' + layout;
   }
+
+  document.querySelectorAll('[data-layout]').forEach(btn => {
+    btn.addEventListener('click', () => selectLayout(btn.dataset.layout, btn));
+  });
+
+  // ── PRESETS ──
+  document.querySelectorAll('[data-preset-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      addPreset(
+        btn.dataset.presetType,
+        btn.dataset.presetIcon,
+        btn.dataset.presetLabel,
+        btn.dataset.presetUrl,
+        btn.dataset.presetCategory
+      );
+    });
+  });
+
+  document.getElementById('addCustomLinkBtn').addEventListener('click', addCustomLink);
 
   // ── SAVE ──
   function saveBio() {
@@ -420,6 +470,8 @@
     .catch(() => showToast('✓ Saved locally!'));
   }
 
+  document.getElementById('saveBioBtn').addEventListener('click', saveBio);
+
   // ── COPY URL ──
   function copyUrl() {
     const handle = document.getElementById('profileHandle').value || 'handle';
@@ -427,7 +479,13 @@
     showToast('Link copied to clipboard!');
   }
 
-  // ── AVATAR PREVIEW ──
+  document.getElementById('copyUrlBtn').addEventListener('click', copyUrl);
+
+  // ── AVATAR UPLOAD / PREVIEW ──
+  document.getElementById('uploadPhotoBtn').addEventListener('click', () => {
+    document.getElementById('avatarInput').click();
+  });
+
   function previewAvatar(input) {
     const file = input.files[0];
     if (!file) return;
@@ -442,11 +500,14 @@
       av.style.backgroundImage = `url(${e.target.result})`;
       av.style.backgroundSize = 'cover';
       av.textContent = '';
-      // Persist so it actually gets sent on save, not just previewed
       document.getElementById('avatarUrlInput').value = e.target.result;
     };
     reader.readAsDataURL(file);
   }
+
+  document.getElementById('avatarInput').addEventListener('change', function () {
+    previewAvatar(this);
+  });
 
   // ── TOAST ──
   function showToast(msg) {
