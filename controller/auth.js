@@ -279,7 +279,7 @@ const login = asyncHandler(async (req, res, next) => {
 
     const { email, password, remember: rememberVal } = req.body || {};
     const remember = rememberVal === "on" || rememberVal === "true" || rememberVal === "1" || rememberVal === true || rememberVal === 1;
-    const allowUnverifiedLogin = req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true";
+    const allowUnverifiedLogin = process.env.NODE_ENV !== "production" && (req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true" || req.body?.allowUnverifiedLogin === true);
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
 
     if (!normalizedEmail || !password) {
