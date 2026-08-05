@@ -38,10 +38,7 @@ async function releaseClaimedResetToken(PasswordResetToken, resetTokenDoc) {
 /**
  * @function getUserModel
  * @description Retrieves the User model instance.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * @returns {Promise<Object>} User model instance
  */
 async function getUserModel() {
     await connectDB();

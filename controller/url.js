@@ -210,10 +210,10 @@ async function handleListUserLinks(req, res) {
 /**
  * @function generateBase64QR
  * @description Generates a base64 encoded QR code image for a given URL.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * @param {string} text - The text/url to encode.
+ * @param {string} fg - Foreground color hex.
+ * @param {string} bg - Background color hex.
+ * @returns {Promise<string>} Base64 encoded string
  */
 const generateBase64QR = async (text, fg, bg) => {
     return await QRCode.toDataURL(text, {

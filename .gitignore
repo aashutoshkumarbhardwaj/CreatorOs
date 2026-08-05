@@ -50,3 +50,7 @@ coverage/
 # MongoDB
 *.mongodb
 *.db
+
+# Developer scratch files
+scratch.*
+*_debug.js
