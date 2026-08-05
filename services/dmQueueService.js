@@ -101,6 +101,10 @@ if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
 async function sendInstagramDM(recipientId, text) {
     // In reality, this would make an Axios/Fetch call to the Graph API
     // e.g. await axios.post(`https://graph.facebook.com/v19.0/me/messages`, ...)
+    if (!process.env.INSTAGRAM_ACCESS_TOKEN) {
+        throw new Error("Instagram provider not configured: INSTAGRAM_ACCESS_TOKEN is missing");
+    }
+    
     console.log(`[Instagram API] Sending DM to ${recipientId}: "${text}"`);
-    return Promise.resolve(); // Simulate a successful API call
+    return Promise.resolve(); // Simulate a successful API call for when token IS present
 }
