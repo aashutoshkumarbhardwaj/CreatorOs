@@ -30,17 +30,17 @@ const asyncHandler = require('../utils/asyncHandler');
 
 
 router.get('/triggers', protect, asyncHandler(async (req, res) => {
-    const triggers = await DmTrigger.find({ creatorId: req.user._id });
+    const triggers = await DmTrigger.find({ creatorId: req.user.id });
     res.json({ success: true, data: triggers });
 }));
 
 router.post('/triggers', protect, asyncHandler(async (req, res) => {
-    const trigger = await DmTrigger.create({ ...req.body, creatorId: req.user._id });
+    const trigger = await DmTrigger.create({ ...req.body, creatorId: req.user.id });
     res.status(201).json({ success: true, data: trigger });
 }));
 
 router.delete('/triggers/:id', protect, asyncHandler(async (req, res) => {
-    const trigger = await DmTrigger.findOneAndDelete({ _id: req.params.id, creatorId: req.user._id });
+    const trigger = await DmTrigger.findOneAndDelete({ _id: req.params.id, creatorId: req.user.id });
     if (!trigger) return res.status(404).json({ success: false, message: 'Trigger not found' });
     res.json({ success: true, message: 'Trigger deleted' });
 }));

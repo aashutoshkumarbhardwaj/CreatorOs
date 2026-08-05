@@ -78,6 +78,8 @@ const protect = async (req, res, next) => {
             }
         }
 
+        // Note: The decoded JWT payload (from serializeUser) uses '.id', NOT '._id'.
+        // Always use req.user.id when querying the database.
         req.user = decoded;
 
         next();
