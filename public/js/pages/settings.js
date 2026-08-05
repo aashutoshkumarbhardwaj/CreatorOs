@@ -178,7 +178,7 @@
             const id = anchor.getAttribute('href').slice(1);
             const el = document.getElementById(id);
             if (el) {
-                el.scrollIntoView({ behavior: userData.preferences?.motionEffects === false ? 'auto' : 'smooth' });
+                el.scrollIntoView({ behavior: userData.preferences?.motionEffects ! ? 'auto' : 'smooth' });
                 subNavItems.forEach((a) => a.classList.remove('active'));
                 anchor.classList.add('active');
             }

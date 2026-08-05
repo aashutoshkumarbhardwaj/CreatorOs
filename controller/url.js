@@ -228,7 +228,7 @@ const generateBase64QR = async (text, fg, bg) => {
 const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Implement cursor-based pagination for performance
     // Prevent loading entire collection into memory on large datasets
-    const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+    const pageSize = Math.min(parseInt(req.query.limit, 10) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
 
     if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
@@ -447,6 +447,12 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;
     const directClicks = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "direct").length : 0;
 
+    // Exclude sensitive coordinate data from visitHistory before returning
+    const sanitizedHistory = (entry.visitHistory || []).map(v => ({
+        timestamp: v.timestamp,
+        source: v.source
+    }));
+
     return res.json({
         totalClicks:  entry.totalClicks || 0,
         qrClicks,
@@ -454,7 +460,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         qrGenerated:  entry.qrGenerated || false,
         qrFgColor:    entry.qrFgColor || "#1a1a1a",
         qrBgColor:    entry.qrBgColor || "#ffffff",
-        visitHistory: entry.visitHistory || [],
+        visitHistory: sanitizedHistory,
         createdAt:    entry.createdAt,
     });
 });
