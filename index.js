@@ -328,7 +328,7 @@ function buildAccountViewModel(userDoc, fallbackUser) {
             autoSaveLinks: true
         },
         passwordAgeDays,
-        billing: {
+        billing: sub.status === 'active' ? {
             planName: sub.planName || 'Pro Individual',
             priceMonthly: sub.priceMonthly ?? 29,
             nextInvoiceLabel: nextInvoice.toLocaleDateString('en-US', {
@@ -343,7 +343,7 @@ function buildAccountViewModel(userDoc, fallbackUser) {
                 { date: 'Sep 24, 2023', invoiceId: '#INV-88219', amount: '$29.00', status: 'PAID' },
                 { date: 'Aug 24, 2023', invoiceId: '#INV-87112', amount: '$29.00', status: 'PAID' },
             ],
-        },
+        } : null,
         initials,
         scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
         deletionConfirmed: userDoc?.deletionConfirmed || false,

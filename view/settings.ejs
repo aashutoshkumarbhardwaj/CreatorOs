@@ -97,6 +97,7 @@
                     </section>
 
                     <section id="billing">
+                        <% if (user.billing) { %>
                         <div class="billing-grid">
                             <div class="billing-card active-plan">
                                 <div class="billing-label">ACTIVE PLAN</div>
@@ -134,6 +135,19 @@
                                 <% }); %>
                             </tbody>
                         </table>
+                        <% } else { %>
+                        <div class="billing-grid">
+                            <div class="billing-card active-plan">
+                                <div class="billing-label">ACTIVE PLAN</div>
+                                <div class="plan-name">Free Plan</div>
+                                <div class="plan-price">$0<span>/mo</span></div>
+                                <button type="button" class="btn-black">Upgrade to Pro</button>
+                            </div>
+                            <div class="billing-card" style="display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
+                                No active subscription.
+                            </div>
+                        </div>
+                        <% } %>
                     </section>
 
                     <section id="global" class="section-card">
