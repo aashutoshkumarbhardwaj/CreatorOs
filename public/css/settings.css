@@ -33,21 +33,7 @@ body.settings-page.density-tactile {
     --card-gap: 3rem;
 }
 
-body.settings-page.appearance-dark {
-    --settings-bg: #1a1a1a;
-    --settings-sidebar: #2d2d2d;
-    color: #f5f5f5;
-}
 
-body.settings-page.appearance-dark .section-card,
-body.settings-page.appearance-dark .billing-card,
-body.settings-page.appearance-dark .sub-nav-item,
-body.settings-page.appearance-dark .form-input,
-body.settings-page.appearance-dark .form-textarea,
-body.settings-page.appearance-dark .setting-row {
-    background-color: #2d2d2d;
-    color: #f5f5f5;
-}
 
 body.settings-page.no-motion * {
     transition: none !important;
