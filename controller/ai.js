@@ -17,6 +17,14 @@ const handleAiRequest = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: "Prompt is required" });
     }
 
+    if (typeof prompt !== 'string') {
+        return res.status(400).json({ success: false, message: "Prompt must be a string" });
+    }
+
+    if (prompt.trim().length > 500) {
+        return res.status(400).json({ success: false, message: "Prompt exceeds maximum length of 500 characters" });
+    }
+
     if (openai) { // Real API call
         try {
             const response = await openai.chat.completions.create({
