@@ -142,7 +142,6 @@ const { protect, preventContributorWrites, redirectIfAuthenticated } = require("
 
 const fs = require('fs');
 app.use(express.static(path.join(__dirname, 'public')));
-const shortid = require('shortid');
 const multer = require('multer');
 const services = require('./services.config');
 const User = require('./model/user');

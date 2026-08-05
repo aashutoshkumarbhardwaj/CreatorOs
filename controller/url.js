@@ -1,5 +1,4 @@
 const { nanoid } = require('nanoid');
-const shortid = require('shortid');
 const QRCode = require('qrcode');
 const mongoose = require('mongoose');
 const Url = require('../model/url');
@@ -107,7 +106,7 @@ async function handleGenerateShortURL(req, res) {
     const { redirectUrl: redirectUrlField, url, title, customSlug, tag } = req.body;
     const redirectUrl = redirectUrlField || url;
 
-    let shortId = shortid();
+    let shortId = nanoid(8);
     if (customSlug) {
         const slug = String(customSlug).trim().toLowerCase();
         const existing = await Url.findOne({ shortId: slug });

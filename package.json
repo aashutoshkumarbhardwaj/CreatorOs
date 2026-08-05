@@ -46,7 +46,6 @@
     "qrcode-svg": "^1.1.0",
     "rate-limit-mongo": "^2.3.2",
     "sharp": "^0.35.3",
-    "shortid": "^2.2.17",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.0"
