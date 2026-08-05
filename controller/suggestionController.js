@@ -10,50 +10,62 @@ const asyncHandler = require('../utils/asyncHandler');
  * @returns {Promise<void>|void}
  */
 async function generateAISuggestions(topic) {
-  // If OpenAI API key is configured, use it for real AI generation
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert social media manager. Generate exactly 5 captions, 9 hashtags, and 5 song recommendations (with title and mood) for the given topic. Return ONLY a raw JSON object with keys: "captions" (array of strings), "hashtags" (array of strings), "songs" (array of objects with "title" and "mood").'
-            },
-            {
-              role: 'user',
-              content: `Topic: ${topic}`
-            }
-          ]
-        })
-      });
-      const data = await response.json();
-      if (data.choices && data.choices[0]) {
-        try {
-          let rawContent = data.choices[0].message.content;
-          rawContent = rawContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-          return JSON.parse(rawContent);
-        } catch (parseError) {
-          console.error('JSON Parse Failed, falling back to mock generator:', parseError);
-        }
-      }
-    } catch (e) {
-      console.error('AI Generation Failed, falling back to mock generator:', e);
+  if (!process.env.OPENAI_API_KEY) {
+    if (process.env.USE_TEMPLATE_FALLBACK === 'true') {
+      return generateTemplateFallback(topic);
     }
+    throw new Error('AI Provider is not configured.');
   }
 
-  // Fallback: Dynamic mock generator based on the topic
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert social media manager. Generate exactly 5 captions, 9 hashtags, and 5 song recommendations (with title and mood) for the given topic. Return ONLY a raw JSON object with keys: "captions" (array of strings), "hashtags" (array of strings), "songs" (array of objects with "title" and "mood").'
+          },
+          {
+            role: 'user',
+            content: `Topic: ${topic}`
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`API Error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    if (data.choices && data.choices[0]) {
+      let rawContent = data.choices[0].message.content;
+      rawContent = rawContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+      return JSON.parse(rawContent);
+    }
+    throw new Error('AI Provider returned an invalid response format.');
+  } catch (e) {
+    if (process.env.USE_TEMPLATE_FALLBACK === 'true') {
+        console.error('AI Generation Failed, falling back to mock generator:', e);
+        return generateTemplateFallback(topic);
+    }
+    throw new Error(`AI Generation Failed: ${e.message}`);
+  }
+}
+
+function generateTemplateFallback(topic) {
   const words = topic.split(' ').filter(w => w.length > 2);
   const mainWord = words.length > 0 ? words[0].toLowerCase() : 'vibes';
   const capWord = mainWord.charAt(0).toUpperCase() + mainWord.slice(1);
 
   return {
+    isTemplateFallback: true,
     captions: [
       `Embracing the ${mainWord} today ✨`,
       `Nothing beats good ${mainWord} and great company 🥂`,
@@ -66,13 +78,7 @@ async function generateAISuggestions(topic) {
       `#instadaily`, `#explore`, `#trending`,
       `#${mainWord}goals`, `#foryou`, `#creator`
     ],
-    songs: [
-      { title: `${capWord} Dreams - The Creator`, mood: 'chill' },
-      { title: `Summer ${capWord} - DJ Mix`, mood: 'upbeat' },
-      { title: `Midnight ${capWord} - Lofi Boy`, mood: 'focus' },
-      { title: `Golden ${capWord} - Sunset Bros`, mood: 'cinematic' },
-      { title: `Pure ${capWord} - Acoustic`, mood: 'relaxing' }
-    ]
+    songs: [] // Omitted as per issue 881: no unverified music recommendations in template mode
   };
 }
 
