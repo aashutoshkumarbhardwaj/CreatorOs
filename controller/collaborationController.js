@@ -66,7 +66,6 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   const existingPendingInvite = await Invite.findOne({
     inviter: req.user.id,
     email: normalizedEmail,
-    projectName: normalizedProjectName,
     status: 'pending',
   });
 
