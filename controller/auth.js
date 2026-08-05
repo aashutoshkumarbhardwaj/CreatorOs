@@ -773,7 +773,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     // Update user password
     const user = await User.findById(resetTokenDoc.userId);
     if (!user) {
-        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
         return res.status(400).json({ success: false, message: 'User not found' });
     }
 
@@ -783,7 +782,6 @@ const resetPassword = asyncHandler(async (req, res) => {
         user.passwordChangedAt = new Date();
         await user.save();
     } catch (error) {
-        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
         throw error;
     }
 
