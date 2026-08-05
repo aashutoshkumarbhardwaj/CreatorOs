@@ -46,13 +46,19 @@ const scheduledContentSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["scheduled", "published", "cancelled"],
+            enum: ["scheduled", "publishing", "published", "failed", "cancelled"],
             default: "scheduled",
         },
         publishedAt: {
             type: Date,
         },
         publishedBy: {
+            type: String,
+        },
+        remoteId: {
+            type: String,
+        },
+        failureReason: {
             type: String,
         },
     },

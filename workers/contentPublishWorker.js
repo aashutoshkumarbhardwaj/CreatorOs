@@ -3,21 +3,35 @@ const ScheduledContent = require('../model/scheduledContent');
 
 const INSTANCE_ID = process.env.INSTANCE_ID || `web-${process.pid}`;
 
+async function publishToPlatform(item) {
+    // Stub: Simulate contacting a remote social platform (e.g., Twitter, Instagram)
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // Simulate random failure (10% chance) for testing robustness, or force success
+            const succeed = Math.random() > 0.1;
+            if (succeed) {
+                resolve({ remoteId: `post_${Date.now()}_${Math.floor(Math.random() * 1000)}` });
+            } else {
+                reject(new Error("Provider API timeout or rejection"));
+            }
+        }, 500);
+    });
+}
+
 async function publishDueContent() {
     const now = new Date();
     let publishedCount = 0;
 
-    // Use atomic findOneAndUpdate to prevent race conditions in multi-instance deployments
     while (true) {
-        const result = await ScheduledContent.findOneAndUpdate(
+        // Atomically claim one due item by moving it to "publishing"
+        const item = await ScheduledContent.findOneAndUpdate(
             {
                 status: 'scheduled',
                 scheduledAt: { $lte: now },
             },
             {
                 $set: {
-                    status: 'published',
-                    publishedAt: now,
+                    status: 'publishing',
                     publishedBy: INSTANCE_ID,
                 },
             },
@@ -26,8 +40,24 @@ async function publishDueContent() {
             }
         );
 
-        if (!result) break;
-        publishedCount++;
+        if (!item) break;
+
+        try {
+            // Attempt to publish
+            const providerResult = await publishToPlatform(item);
+
+            // If successful, finalize status
+            item.status = 'published';
+            item.publishedAt = new Date();
+            item.remoteId = providerResult.remoteId;
+            await item.save();
+            publishedCount++;
+        } catch (error) {
+            // If failed, record failure
+            item.status = 'failed';
+            item.failureReason = error.message;
+            await item.save();
+        }
     }
 
     return publishedCount;
