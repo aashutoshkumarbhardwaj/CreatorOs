@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # MongoDB database service
+  mongodb:
+    image: mongo:6.0
+    container_name: creatoros_mongodb_dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+    networks:
+      - dev-network
+
+  # Redis caching & rate-limiting service
+  redis:
+    image: redis:7.0-alpine
+    container_name: creatoros_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - dev-network
+
+  # Node.js application service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creatoros_web_dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/creatoros
+      - REDIS_URI=redis://redis:6379
+      - SESSION_SECRET=dev-secret-key
+      - JWT_SECRET=super_secret_jwt_key_for_development
+      - APP_URL=http://localhost:3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy_key_for_build}
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis
+    command: npm run dev
+    networks:
+      - dev-network
+
+volumes:
+  mongodb_data_dev:
+  redis_data_dev:
+
+networks:
+  dev-network:
+    driver: bridge

@@ -187,6 +187,22 @@ npm install
 cp .env.example .env.local
 ```
 
+### 🐳 Docker Compose Development Environment (Recommended)
+
+To quickly spin up CreatorOS with MongoDB and Redis without installing them locally:
+
+```bash
+# 1. Start the development environment
+docker compose -f docker-compose.dev.yml up -d
+
+# 2. View logs (optional)
+docker compose -f docker-compose.dev.yml logs -f web
+
+# 3. Stop the environment
+docker compose -f docker-compose.dev.yml down
+```
+This will mount your local source code into the container, allowing for hot-reloading (via nodemon) as you make changes.
+
 ### Environment Setup
 
 > [!IMPORTANT]
