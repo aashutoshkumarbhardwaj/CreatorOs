@@ -23,6 +23,18 @@ const scheduledContentSchema = new mongoose.Schema(
         },
         mediaUrl: {
             type: String,
+            validate: {
+                validator: function(v) {
+                    if (!v) return true;
+                    try {
+                        const p = new URL(v);
+                        return ['http:', 'https:'].includes(p.protocol);
+                    } catch {
+                        return false;
+                    }
+                },
+                message: 'mediaUrl must be a valid http/https URL'
+            }
         },
         timezone: {
             type: String,
