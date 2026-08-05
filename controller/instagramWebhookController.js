@@ -27,6 +27,7 @@ function isEventAlreadyProcessed(eventId) {
 
 // Verify the webhook from Meta
 const verifyWebhook = (req, res) => {
+    // Token must be strictly provided through environment variables
     const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
 
     if (!VERIFY_TOKEN) {
