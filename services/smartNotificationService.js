@@ -150,7 +150,7 @@ async function sendNotification(userId, payload) {
     const prefs = await getOrCreatePreferences(userId);
 
     // 1. Category preference check
-    if (prefs.categories && prefs.categories[category] !) {
+    if (prefs.categories && !prefs.categories[category]) {
         return Notification.create({
             userId,
             title,

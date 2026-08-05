@@ -717,7 +717,21 @@ app.post(
         .json({ success: false, message: validation.message });
     }
 
-    const { handle, name, bio, tags, avatarUrl, links } = validation.data;
+    const {
+      handle,
+      name,
+      bio,
+      tags,
+      avatarUrl,
+      links,
+      theme,
+      layout,
+      background,
+      contactButton,
+      customDomain,
+      seoTitle,
+      seoDescription,
+    } = validation.data;
     const userHandle = handle || userDoc.alias;
 
     if (!userHandle) {
@@ -1146,5 +1160,3 @@ if (require.main === module) {
 }
 
 module.exports = app;
-
-.catch(err => console.error("Promise.all failed:", err));
