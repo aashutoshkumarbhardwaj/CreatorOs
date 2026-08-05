@@ -254,10 +254,6 @@ router.put('/security/password', preventContributorWrites, asyncHandler(async (r
 router.post('/account/request-deletion', preventContributorWrites, asyncHandler(async (req, res) => {
     const { password } = req.body;
     
-    if (!password) {
-        return res.status(400).json({ error: 'Password is required to request account deletion' });
-    }
-    
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
@@ -266,13 +262,12 @@ router.post('/account/request-deletion', preventContributorWrites, asyncHandler(
     }
     
     if (user.authProvider === 'local') {
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required to request account deletion' });
+        }
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: 'Incorrect password' });
-        }
-    } else {
-        if (password !== 'google-auth') {
-            return res.status(401).json({ error: 'For Google-authenticated accounts, please use "google-auth" as password' });
         }
     }
     
