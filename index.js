@@ -177,6 +177,26 @@ app.use('/api/ai', aiRoute);
 app.use('/api/analytics', protect, analyticsRoutes);
 app.use('/api/instagram', instagramRoutes);
 
+// Vercel Cron
+const { publishDueContent } = require('./workers/contentPublishWorker');
+app.get('/api/cron/publish', async (req, res) => {
+    // Vercel sends a CRON_SECRET authorization header
+    if (process.env.VERCEL === '1') {
+        const authHeader = req.headers.authorization;
+        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+    }
+    
+    try {
+        const publishedCount = await publishDueContent();
+        res.status(200).json({ success: true, publishedCount });
+    } catch (error) {
+        console.error('[Cron] Publish error:', error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 // API Documentation
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./utils/swaggerOptions');
