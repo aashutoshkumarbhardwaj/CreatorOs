@@ -40,6 +40,25 @@ function sanitizeClientErrorMessage(message) {
 function errorHandler(err, req, res, next) {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Handle Mongoose Duplicate Key Error
+  if (err.code === 11000) {
+    err.status = 409;
+    err.message = 'Duplicate field value entered';
+  }
+
+  // Handle Mongoose Validation Error
+  if (err.name === 'ValidationError') {
+    err.status = 400;
+    const errors = Object.values(err.errors || {}).map(val => val.message);
+    err.message = errors.join(', ') || 'Validation Error';
+  }
+
+  // Handle Mongoose Cast Error (invalid ObjectId)
+  if (err.name === 'CastError') {
+    err.status = 400;
+    err.message = 'Resource not found or invalid format';
+  }
+
   console.error('[ERROR]', {
     status: err.status || 500,
     message: err.message,
