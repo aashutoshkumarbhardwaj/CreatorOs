@@ -374,7 +374,20 @@ const handleGoogleCallback = asyncHandler(async (req, res, next) => {
         const token = createToken(req.user);
         setAuthCookie(res, token);
 
-        return res.redirect("/dashboard?login=google");
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta http-equiv="refresh" content="0;url=/dashboard?login=google">
+            <script>window.location.href = "/dashboard?login=google";</script>
+            <title>Redirecting...</title>
+        </head>
+        <body>
+            <p>Authentication successful. <a href="/dashboard?login=google">Click here to continue</a> if not redirected automatically.</p>
+        </body>
+        </html>
+        `;
+        return res.send(html);
     } catch (error) {
         console.error("Google login error:", error);
         return redirectWithLoginError(res, "Google sign-in failed. Please try again.");
