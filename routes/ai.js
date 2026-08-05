@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const { handleAiRequest } = require('../controller/ai');
 const { aiGenerationLimiter } = require('../middleware/rateLimiters');
+const { aiGenerateValidator } = require('../middleware/validators');
 
 /**
  * @swagger
@@ -36,6 +37,6 @@ const { aiGenerationLimiter } = require('../middleware/rateLimiters');
  *       500:
  *         description: Internal server error or AI service failure.
  */
-router.post('/generate', protect, aiGenerationLimiter, handleAiRequest);
+router.post('/generate', protect, aiGenerationLimiter, aiGenerateValidator, handleAiRequest);
 
 module.exports = router;

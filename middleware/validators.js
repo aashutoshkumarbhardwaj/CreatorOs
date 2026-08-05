@@ -70,6 +70,16 @@ const shortIdParamSchema = z.object({
   shortId: z.string().min(1, 'Short ID is required'),
 });
 
+const dmTriggerSchema = z.object({
+  keyword: z.string().trim().min(1, 'Keyword is required').max(100, 'Keyword is too long'),
+  responseUrl: z.string().url('responseUrl must be a valid HTTP or HTTPS URL'),
+});
+
+const aiGenerateSchema = z.object({
+  prompt: z.string().trim().min(1, 'Prompt is required').max(500, 'Prompt exceeds maximum length of 500 characters'),
+  context: z.string().optional(),
+});
+
 function validate(schema, source = 'body', viewName, buildLocals = () => ({})) {
   return (req, res, next) => {
     const result = schema.safeParse(req[source]);
@@ -109,5 +119,7 @@ module.exports = {
     shortenUrlValidator: validate(urlShortenSchema, 'body'),
     updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),
     inviteCollaboratorValidator: validate(collaborationInviteSchema, 'body'),
-    generateSuggestionValidator: validate(suggestionSchema, 'body')
+    generateSuggestionValidator: validate(suggestionSchema, 'body'),
+    dmTriggerValidator: validate(dmTriggerSchema, 'body'),
+    aiGenerateValidator: validate(aiGenerateSchema, 'body')
 };
