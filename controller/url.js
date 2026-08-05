@@ -3,6 +3,7 @@ const shortid = require('shortid');
 const QRCode = require('qrcode');
 const mongoose = require('mongoose');
 const Url = require('../model/url');
+const dns = require('dns').promises;
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -18,6 +19,26 @@ function parseListLimit(value) {
 async function fetchWebsiteTitle(url, fallback) {
     if (fallback) return fallback;
     try {
+        const parsedUrl = new URL(url);
+        const hostname = parsedUrl.hostname;
+        
+        // Resolve hostname to IP to prevent SSRF
+        const lookup = await dns.lookup(hostname);
+        const ip = lookup.address;
+        
+        // Check for private/loopback/link-local IPv4
+        const parts = ip.split('.');
+        if (parts.length === 4) {
+            const [a, b] = parts.map(Number);
+            if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254)) {
+                return deriveTitle(url); // Blocked
+            }
+        }
+        // Check for IPv6 local/private
+        if (ip === '::1' || ip.toLowerCase().startsWith('fc') || ip.toLowerCase().startsWith('fd') || ip.toLowerCase().startsWith('fe80')) {
+            return deriveTitle(url); // Blocked
+        }
+        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         const response = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
