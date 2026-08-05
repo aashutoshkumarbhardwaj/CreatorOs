@@ -637,8 +637,15 @@ const handleQrRedirect = asyncHandler(async (req, res) => {
             device: parseDeviceFromUa(req.get('user-agent')),
         };
 
-        const entry = await QrCode.findOneAndUpdate(
-            { shortId, isDynamic: true },
+        const entry = await QrCode.findOne({ shortId, isDynamic: true }).lean();
+        if (!entry) return res.status(404).send('QR code not found');
+        
+        // Immediately redirect
+        res.redirect(entry.targetUrl);
+        
+        // Asynchronously update analytics
+        QrCode.updateOne(
+            { _id: entry._id },
             {
                 $inc: { totalScans: 1 },
                 $push: {
@@ -648,12 +655,8 @@ const handleQrRedirect = asyncHandler(async (req, res) => {
                         $slice: 1000,
                     },
                 },
-            },
-            { new: true }
-        );
-
-        if (!entry) return res.status(404).send('QR code not found');
-        return res.redirect(entry.targetUrl);
+            }
+        ).catch(err => console.error('[async-qr-update]', err));
     } catch (err) {
         console.error('[qr-redirect]', err);
         return res.status(500).send('Server error');

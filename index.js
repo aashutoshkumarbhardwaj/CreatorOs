@@ -942,8 +942,15 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             visitData.y = coordinates.y;
         }
         
-        const entry = await Url.findOneAndUpdate(
-            { shortId },
+        const entry = await Url.findOne({ shortId }).lean();
+        if (!entry) return res.status(404).send('URL not found');
+        
+        // Immediately redirect the user
+        res.redirect(entry.redirectUrl);
+        
+        // Asynchronously update analytics
+        Url.updateOne(
+            { _id: entry._id },
             {
                 $inc:  { totalClicks: 1 },
                 $push: {
@@ -953,12 +960,8 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
                         $slice: 1000,
                     },
                 },
-            },
-            { new: true }
-        );
-
-        if (!entry) return res.status(404).send('URL not found');
-        return res.redirect(entry.redirectUrl);
+            }
+        ).catch(err => console.error('[async-redirect-update]', err));
     } catch (err) {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
