@@ -218,7 +218,7 @@ const signup = asyncHandler(async (req, res, next) => {
         return res.status(409).json({ success: false, message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     const verificationToken = generateVerificationToken();
     const verificationTokenExpiry = getVerificationTokenExpiry();
 
@@ -765,7 +765,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 
     try {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
         user.password = hashedPassword;
         user.passwordChangedAt = new Date();
         await user.save();
