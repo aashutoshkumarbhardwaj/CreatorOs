@@ -110,6 +110,19 @@ async function handleGenerateShortURL(req, res) {
     let shortId = shortid();
     if (customSlug) {
         const slug = String(customSlug).trim().toLowerCase();
+        
+        if (!/^[a-z0-9-_]+$/.test(slug)) {
+            return res.status(400).json({ error: 'Custom slug can only contain alphanumeric characters, hyphens, and underscores.' });
+        }
+        if (slug.length < 3 || slug.length > 50) {
+            return res.status(400).json({ error: 'Custom slug must be between 3 and 50 characters.' });
+        }
+        
+        const reservedWords = ['admin', 'api', 'dashboard', 'settings', 'login', 'register', 'u', 'invites', 'home', 'auth', 'user', 'services'];
+        if (reservedWords.includes(slug)) {
+            return res.status(400).json({ error: 'This slug is reserved and cannot be used.' });
+        }
+
         const existing = await Url.findOne({ shortId: slug });
         if (existing) {
             return res.status(409).json({ error: 'That slug is already taken. Try another.' });
