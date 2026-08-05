@@ -101,7 +101,6 @@ app.use((req, res, next) => {
     next();
 });
 app.use(generateCsrf);
-app.use(verifyCsrf);
 app.use(passport.initialize());
 
 app.set("view engine", "ejs");

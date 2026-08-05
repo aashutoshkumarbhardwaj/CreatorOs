@@ -6,6 +6,7 @@ const { signupValidator, loginValidator, resendVerificationValidator } = require
 const connectDB = require("../connect");
 const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
 const { redirectIfAuthenticated } = require("../middleware/auth");
+const { verifyCsrf } = require("../middleware/csrf");
 
 const router = express.Router();
 
@@ -141,7 +142,7 @@ router.get("/login", redirectIfAuthenticated, (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/signup", signupLimiter, signupValidator, signup);
+router.post("/signup", verifyCsrf, signupLimiter, signupValidator, signup);
 
 /**
  * @swagger
@@ -159,7 +160,7 @@ router.post("/signup", signupLimiter, signupValidator, signup);
  *       500:
  *         description: Internal server error
  */
-router.post("/login", loginLimiter, loginValidator, login);
+router.post("/login", verifyCsrf, loginLimiter, loginValidator, login);
 
 /**
  * @swagger
@@ -177,7 +178,7 @@ router.post("/login", loginLimiter, loginValidator, login);
  *       500:
  *         description: Internal server error
  */
-router.post("/login/contributor", loginLimiter, loginValidator, loginAsContributor);
+router.post("/login/contributor", verifyCsrf, loginLimiter, loginValidator, loginAsContributor);
 
 /**
  * @swagger
@@ -320,7 +321,7 @@ router.get("/resend-verification", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.post("/resend-verification", emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
+router.post("/resend-verification", verifyCsrf, emailVerificationLimiter, resendVerificationValidator, resendVerificationEmail);
 
 
 /**
@@ -397,7 +398,7 @@ router.get("/forgot-password", (req, res) => {
  *       400:
  *         description: Invalid request
  */
-router.post("/forgot-password", forgotPasswordLimiter, requestPasswordReset);
+router.post("/forgot-password", verifyCsrf, forgotPasswordLimiter, requestPasswordReset);
 
 /**
  * @swagger
@@ -483,6 +484,6 @@ router.get("/reset-password", async (req, res) => {
  *       400:
  *         description: Invalid, expired, or already used token
  */
-router.post("/reset-password", resetPasswordLimiter, resetPassword);
+router.post("/reset-password", verifyCsrf, resetPasswordLimiter, resetPassword);
 
 module.exports = router;
