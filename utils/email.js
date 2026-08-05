@@ -307,11 +307,57 @@ CreatorOS Team`;
   });
 }
 
+async function sendDuplicateRegistrationEmail({ to, userName, resetLink }) {
+  const transporter = createTransporter();
+  const { EMAIL_USER, EMAIL_FROM_NAME, EMAIL_FROM, EMAIL_REPLY_TO } = getEmailConfig();
+  const from = EMAIL_FROM || EMAIL_USER;
+  const fromName = EMAIL_FROM_NAME || 'CreatorOS';
+  const replyTo = EMAIL_REPLY_TO || from;
+  const escapedUserName = escapeHtml(userName);
+  const subject = 'Duplicate Registration Attempt for CreatorOS';
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+      <h2 style="color: #0f172a;">Registration Attempt</h2>
+      <p>Hi ${escapedUserName || 'there'},</p>
+      <p>Someone recently attempted to register a new CreatorOS account using this email address.</p>
+      <p>Since you already have an account, this attempt was blocked. If this was you, you can simply log in. If you forgot your password, you can reset it using the link below:</p>
+      <p style="text-align:center; margin: 32px 0;">
+        <a href="${resetLink}" style="display:inline-block; padding:14px 24px; background:#22d3ee; color:#0f172a; text-decoration:none; border-radius:999px; font-weight:700;">Reset Password</a>
+      </p>
+      <p style="color:#666; font-size:14px;">If you did not attempt this registration, please make sure your account is secure. You can safely ignore this email.</p>
+      <p>Best regards,<br />CreatorOS Team</p>
+    </div>
+  `;
+
+  const text = `Hi ${escapedUserName || 'there'},
+
+Someone recently attempted to register a new CreatorOS account using this email address. Since you already have an account, this attempt was blocked.
+
+If this was you, you can simply log in. If you forgot your password, you can reset it here:
+${resetLink}
+
+If you did not attempt this registration, please make sure your account is secure. You can safely ignore this email.
+
+Best regards,
+CreatorOS Team`;
+
+  return transporter.sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    replyTo,
+    subject,
+    text,
+    html,
+  });
+}
+
 module.exports = {
   sendInvitationEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendDeletionConfirmationEmail,
+  sendDuplicateRegistrationEmail,
   isEmailTransportConfigured,
   createTransporter,
 };

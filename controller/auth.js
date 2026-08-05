@@ -212,10 +212,53 @@ const signup = asyncHandler(async (req, res, next) => {
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
+        // Send duplicate registration email asynchronously
+        (async () => {
+            try {
+                const crypto = require('crypto');
+                const PasswordResetToken = require('../model/passwordResetToken');
+                const { sendDuplicateRegistrationEmail } = require('../utils/email');
+                
+                const resetToken = crypto.randomBytes(32).toString('hex');
+                const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+                await PasswordResetToken.create({
+                    userId: existingUser._id,
+                    token: resetToken,
+                    expiresAt,
+                    ipAddress: req.ip,
+                    userAgent: req.get('user-agent'),
+                });
+
+                const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+                const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
+                await sendDuplicateRegistrationEmail({
+                    to: existingUser.email,
+                    userName: existingUser.name,
+                    resetLink,
+                });
+            } catch (err) {
+                console.error("Failed to process duplicate registration email:", err);
+            }
+        })();
+
+        const signupSuccessMessage = "Sign up successful! Please check your email to verify your account.";
         if (wantsHtml(req)) {
-            return res.status(409).render("signup", { error: "User already exists" });
+            return res.render("signup", { 
+                error: null, 
+                success: signupSuccessMessage,
+                verificationDeliveryUnavailable: false,
+                verificationEmail: normalizedEmail,
+            });
         }
-        return res.status(409).json({ success: false, message: "User already exists" });
+        return res.status(201).json({ 
+            success: true, 
+            message: signupSuccessMessage,
+            verificationDeliveryUnavailable: false,
+            // Returning the existing ID matches the shape of a new signup
+            data: { id: existingUser._id, email: existingUser.email } 
+        });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
