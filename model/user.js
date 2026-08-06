@@ -76,7 +76,22 @@ const userSchema = new mongoose.Schema(
         },
 
         subscription: {
-            status: { type: String, enum: ['free', 'inactive', 'active', 'canceled'], default: 'free' },
+            status: {
+                type: String,
+                enum: [
+                    'free',
+                    'inactive',
+                    'active',
+                    'canceled',
+                    'trialing',
+                    'past_due',
+                    'unpaid',
+                    'incomplete',
+                    'incomplete_expired',
+                    'paused',
+                ],
+                default: 'free',
+            },
             planName: { type: String, default: 'Free' },
             priceMonthly: { type: Number, default: 0 },
             nextInvoiceDate: { type: Date },
@@ -297,7 +312,7 @@ const bcrypt = require("bcryptjs");
 (async () => {
     let hashed;
     try {
-        hashed = await bcrypt.hash("Password123!", 10);
+        hashed = await bcrypt.hash("Password123!", 12);
     } catch (e) {
         hashed = "hashed_password"; // fallback
     }

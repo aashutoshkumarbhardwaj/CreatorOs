@@ -430,6 +430,16 @@
     });
 
     // Billing
+    function isSafeHttpUrl(value) {
+        if (!value || typeof value !== 'string') return false;
+        try {
+            const parsed = new URL(value);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    }
+
     async function refreshBilling() {
         try {
             const billing = await apiRequest('/api/settings/billing');
@@ -441,21 +451,42 @@
                 ? `${billing.cardBrand} ending in ${billing.cardLast4}`
                 : 'No payment method saved';
             const tbody = document.querySelector('#invoices-table tbody');
+            tbody.replaceChildren();
             if (billing.invoices && billing.invoices.length > 0) {
-                tbody.innerHTML = billing.invoices
-                    .map(
-                        (inv) => `<tr data-invoice-id="${inv.invoiceId}" data-invoice-url="${inv.url || inv.receiptUrl || ''}">
-                            <td>${inv.date}</td>
-                            <td>${inv.invoiceId}</td>
-                            <td>${inv.amount}</td>
-                            <td><span class="badge-paid">${inv.status}</span></td>
-                        </tr>`
-                    )
-                    .join('');
+                billing.invoices.forEach((inv) => {
+                    const tr = document.createElement('tr');
+                    const safeUrl = isSafeHttpUrl(inv.url || inv.receiptUrl)
+                        ? (inv.url || inv.receiptUrl)
+                        : '';
+                    tr.dataset.invoiceId = String(inv.invoiceId || '');
+                    tr.dataset.invoiceUrl = safeUrl;
+
+                    const dateTd = document.createElement('td');
+                    dateTd.textContent = inv.date || '';
+                    const idTd = document.createElement('td');
+                    idTd.textContent = inv.invoiceId || '';
+                    const amountTd = document.createElement('td');
+                    amountTd.textContent = inv.amount || '';
+                    const statusTd = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-paid';
+                    badge.textContent = inv.status || '';
+                    statusTd.appendChild(badge);
+
+                    tr.append(dateTd, idTd, amountTd, statusTd);
+                    tbody.appendChild(tr);
+                });
             } else {
-                tbody.innerHTML = `<tr class="no-invoices-row">
-                    <td colspan="4" style="text-align: center; color: var(--color-text-muted, #666); padding: 1.5rem;">No invoices found.</td>
-                </tr>`;
+                const tr = document.createElement('tr');
+                tr.className = 'no-invoices-row';
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.style.textAlign = 'center';
+                td.style.color = 'var(--color-text-muted, #666)';
+                td.style.padding = '1.5rem';
+                td.textContent = 'No invoices found.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
             }
             bindInvoiceRows();
         } catch (_) {
@@ -490,7 +521,9 @@
                 invoiceModal.classList.add('open');
                 invoiceModal.setAttribute('aria-hidden', 'false');
                 invoiceModal.dataset.invoiceId = row.dataset.invoiceId || cells[1].textContent;
-                invoiceModal.dataset.invoiceUrl = row.dataset.invoiceUrl || '';
+                invoiceModal.dataset.invoiceUrl = isSafeHttpUrl(row.dataset.invoiceUrl)
+                    ? row.dataset.invoiceUrl
+                    : '';
                 playSoundCue();
             };
         });
@@ -503,7 +536,7 @@
     });
     document.getElementById('invoice-download-btn').addEventListener('click', () => {
         const url = invoiceModal.dataset.invoiceUrl;
-        if (url) {
+        if (isSafeHttpUrl(url)) {
             window.open(url, '_blank', 'noopener,noreferrer');
             showToast('Opening invoice receipt');
         } else {
