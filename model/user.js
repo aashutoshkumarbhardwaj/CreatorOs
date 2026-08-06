@@ -294,7 +294,7 @@ const bcrypt = require("bcryptjs");
 (async () => {
     let hashed;
     try {
-        hashed = await bcrypt.hash("Password123!", 10);
+        hashed = await bcrypt.hash("Password123!", 12);
     } catch (e) {
         hashed = "hashed_password"; // fallback
     }
