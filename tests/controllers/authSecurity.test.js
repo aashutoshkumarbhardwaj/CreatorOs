@@ -43,7 +43,7 @@ describe('Bulletproof Auth & Security Tests (#597)', () => {
         });
 
         it('should prevent duplicate registration with the same normalized email', async () => {
-            const hashedPassword = await bcrypt.hash('Password123!', 10);
+            const hashedPassword = await bcrypt.hash('Password123!', 12);
             await User.create({
                 name: 'Existing User',
                 email: 'duplicate@example.com',
@@ -67,7 +67,7 @@ describe('Bulletproof Auth & Security Tests (#597)', () => {
 
     describe('Login Security & Timing Mitigation', () => {
         beforeEach(async () => {
-            const passwordHash = await bcrypt.hash('SecretPass123!', 10);
+            const passwordHash = await bcrypt.hash('SecretPass123!', 12);
             await User.create({
                 name: 'Valid User',
                 email: 'valid@example.com',
