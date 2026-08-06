@@ -11,7 +11,7 @@ describe('Auth Controller Endpoints', () => {
     beforeEach(async () => {
         await User.deleteMany({});
 
-        const verifiedPassword = await bcrypt.hash('Password123!', 10);
+        const verifiedPassword = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Verified User',
             email: 'test@local.com',
@@ -19,7 +19,7 @@ describe('Auth Controller Endpoints', () => {
             isVerified: true,
         });
 
-        const unverifiedPassword = await bcrypt.hash('Password123!', 10);
+        const unverifiedPassword = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Unverified User',
             email: 'unverified@local.com',

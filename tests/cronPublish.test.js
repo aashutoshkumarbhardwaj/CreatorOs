@@ -31,6 +31,21 @@ describe('Vercel Cron Content Publishing', () => {
         }
     });
 
+    it('allows authorized requests when CRON_SECRET matches Authorization header', async () => {
+        process.env.CRON_SECRET = 'super-secret-cron-key';
+        try {
+            const res = await request(app)
+                .get('/api/cron/publish-content')
+                .set('Authorization', 'Bearer super-secret-cron-key');
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(typeof res.body.publishedCount).toBe('number');
+        } finally {
+            delete process.env.CRON_SECRET;
+        }
+    });
+
     it('processes due scheduled content and is idempotent on repeat calls', async () => {
         const userId = new mongoose.Types.ObjectId();
         const dueItem = await ScheduledContent.create({
