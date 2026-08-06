@@ -229,7 +229,7 @@
 
 .bio-editor-container .link-row {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
+  grid-template-columns: auto 1fr 1fr auto auto;
   gap: 0.5rem;
   align-items: center;
   padding: 0.65rem 0.85rem;
@@ -275,7 +275,38 @@
   font-size: 1rem;
   transition: all 0.12s;
 }
-.bio-editor-container .link-row-del:hover { background: #e13b3b; color: #fff; }
+.bio-editor-container .link-row-del:hover {
+  background: #e13b3b;
+  color: #fff;
+}
+
+.bio-editor-container .link-row-featured {
+  background: none;
+  border: 1.5px solid var(--border);
+  width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 1rem;
+  transition: all 0.12s;
+}
+.bio-editor-container .link-row-featured.active {
+  background: var(--accent-yellow);
+  color: #111;
+  border-color: var(--border);
+}
+
+.bio-editor-container .prev-link.featured {
+  border-color: var(--accent-yellow);
+  box-shadow: 3px 3px 0px var(--accent-yellow);
+}
+.bio-editor-container .prev-link-star {
+  margin-left: auto;
+  color: var(--accent-yellow);
+  font-size: 0.8rem;
+}
 
 .bio-editor-container .link-row.dragging {
   opacity: 0.4;
@@ -377,6 +408,47 @@
   flex-direction: column;
   align-items: center;
   gap: 0.85rem;
+  color: var(--text);
+  transition: background 0.2s ease;
+}
+
+/* ── PREVIEW THEME TOKENS (scoped, mirrors bio-profile.ejs) ── */
+.bio-editor-container .preview-inner[data-theme-preview="light"] {
+  --bg: #F5F1EA; --surface: #FFFFFF; --text: #111111; --muted: #666666;
+  --border: #111111; --accent: #37D6C8;
+  --shadow: 3px 3px 0px #111111; --shadow-btn: 3px 3px 0px #111111;
+}
+.bio-editor-container .preview-inner[data-theme-preview="dark"] {
+  --bg: #111111; --surface: #1E1E1E; --text: #F5F1EA; --muted: #999999;
+  --border: #F5F1EA; --accent: #37D6C8;
+  --shadow: 3px 3px 0px #F5F1EA; --shadow-btn: 3px 3px 0px #F5F1EA;
+}
+.bio-editor-container .preview-inner[data-theme-preview="neon"] {
+  --bg: #0A0A0F; --surface: #13131A; --text: #EEEEFF; --muted: #8888AA;
+  --border: #6C63FF; --accent: #00FFD1;
+  --shadow: 3px 3px 0px #6C63FF; --shadow-btn: 3px 3px 0px #6C63FF;
+}
+.bio-editor-container .preview-inner[data-theme-preview="gradient"] {
+  --bg: transparent; --surface: rgba(255,255,255,0.12); --text: #FFFFFF;
+  --muted: rgba(255,255,255,0.65); --border: rgba(255,255,255,0.4); --accent: #FFFFFF;
+  --shadow: 3px 3px 0px rgba(255,255,255,0.3); --shadow-btn: 3px 3px 0px rgba(255,255,255,0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ── PREVIEW LAYOUT VARIANTS ── */
+.bio-editor-container .prev-links.layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.bio-editor-container .prev-links.layout-grid .prev-link {
+  flex-direction: column;
+  text-align: center;
+  gap: 0.3rem;
+  padding: 0.65rem 0.5rem;
+}
+.bio-editor-container .prev-links.layout-cards .prev-link {
+  padding: 0.75rem 0.9rem;
 }
 
 /* Mini preview profile card */
@@ -407,6 +479,7 @@
 .bio-editor-container .prev-name {
   font-size: 1rem;
   font-weight: 800;
+  color: var(--text);
 }
 .bio-editor-container .prev-handle {
   font-family: "DM Mono", monospace;

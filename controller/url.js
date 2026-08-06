@@ -447,6 +447,12 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;
     const directClicks = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "direct").length : 0;
 
+    // Exclude sensitive coordinate data from visitHistory before returning
+    const sanitizedHistory = (entry.visitHistory || []).map(v => ({
+        timestamp: v.timestamp,
+        source: v.source
+    }));
+
     return res.json({
         totalClicks:  entry.totalClicks || 0,
         qrClicks,
@@ -454,7 +460,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         qrGenerated:  entry.qrGenerated || false,
         qrFgColor:    entry.qrFgColor || "#1a1a1a",
         qrBgColor:    entry.qrBgColor || "#ffffff",
-        visitHistory: entry.visitHistory || [],
+        visitHistory: sanitizedHistory,
         createdAt:    entry.createdAt,
     });
 });
