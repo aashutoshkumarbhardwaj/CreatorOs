@@ -178,7 +178,7 @@
             const id = anchor.getAttribute('href').slice(1);
             const el = document.getElementById(id);
             if (el) {
-                el.scrollIntoView({ behavior: userData.preferences?.motionEffects ! ? 'auto' : 'smooth' });
+                el.scrollIntoView({ behavior: !userData.preferences?.motionEffects ? 'auto' : 'smooth' });
                 subNavItems.forEach((a) => a.classList.remove('active'));
                 anchor.classList.add('active');
             }
@@ -430,25 +430,64 @@
     });
 
     // Billing
+    function isSafeHttpUrl(value) {
+        if (!value || typeof value !== 'string') return false;
+        try {
+            const parsed = new URL(value);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    }
+
     async function refreshBilling() {
         try {
             const billing = await apiRequest('/api/settings/billing');
-            document.getElementById('plan-name').textContent = billing.planName;
-            document.getElementById('plan-price').textContent = billing.priceMonthly;
-            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel;
-            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal}`;
-            document.getElementById('card-info-text').textContent = `${billing.cardBrand} ending in ${billing.cardLast4}`;
+            document.getElementById('plan-name').textContent = billing.planName || 'Free';
+            document.getElementById('plan-price').textContent = billing.priceMonthly ?? 0;
+            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel || 'No upcoming invoice';
+            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal || '$0.00 USD'}`;
+            document.getElementById('card-info-text').textContent = (billing.cardBrand && billing.cardLast4)
+                ? `${billing.cardBrand} ending in ${billing.cardLast4}`
+                : 'No payment method saved';
             const tbody = document.querySelector('#invoices-table tbody');
-            tbody.innerHTML = billing.invoices
-                .map(
-                    (inv) => `<tr data-invoice-id="${inv.invoiceId}">
-                        <td>${inv.date}</td>
-                        <td>${inv.invoiceId}</td>
-                        <td>${inv.amount}</td>
-                        <td><span class="badge-paid">${inv.status}</span></td>
-                    </tr>`
-                )
-                .join('');
+            tbody.replaceChildren();
+            if (billing.invoices && billing.invoices.length > 0) {
+                billing.invoices.forEach((inv) => {
+                    const tr = document.createElement('tr');
+                    const safeUrl = isSafeHttpUrl(inv.url || inv.receiptUrl)
+                        ? (inv.url || inv.receiptUrl)
+                        : '';
+                    tr.dataset.invoiceId = String(inv.invoiceId || '');
+                    tr.dataset.invoiceUrl = safeUrl;
+
+                    const dateTd = document.createElement('td');
+                    dateTd.textContent = inv.date || '';
+                    const idTd = document.createElement('td');
+                    idTd.textContent = inv.invoiceId || '';
+                    const amountTd = document.createElement('td');
+                    amountTd.textContent = inv.amount || '';
+                    const statusTd = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-paid';
+                    badge.textContent = inv.status || '';
+                    statusTd.appendChild(badge);
+
+                    tr.append(dateTd, idTd, amountTd, statusTd);
+                    tbody.appendChild(tr);
+                });
+            } else {
+                const tr = document.createElement('tr');
+                tr.className = 'no-invoices-row';
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.style.textAlign = 'center';
+                td.style.color = 'var(--color-text-muted, #666)';
+                td.style.padding = '1.5rem';
+                td.textContent = 'No invoices found.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
             bindInvoiceRows();
         } catch (_) {
             /* server-rendered fallback */
@@ -474,7 +513,7 @@
 
     const invoiceModal = document.getElementById('invoice-modal');
     function bindInvoiceRows() {
-        document.querySelectorAll('#invoices-table tbody tr').forEach((row) => {
+        document.querySelectorAll('#invoices-table tbody tr:not(.no-invoices-row)').forEach((row) => {
             row.onclick = () => {
                 const cells = row.querySelectorAll('td');
                 document.getElementById('invoice-modal-body').textContent =
@@ -482,6 +521,9 @@
                 invoiceModal.classList.add('open');
                 invoiceModal.setAttribute('aria-hidden', 'false');
                 invoiceModal.dataset.invoiceId = row.dataset.invoiceId || cells[1].textContent;
+                invoiceModal.dataset.invoiceUrl = isSafeHttpUrl(row.dataset.invoiceUrl)
+                    ? row.dataset.invoiceUrl
+                    : '';
                 playSoundCue();
             };
         });
@@ -493,16 +535,13 @@
         invoiceModal.setAttribute('aria-hidden', 'true');
     });
     document.getElementById('invoice-download-btn').addEventListener('click', () => {
-        const id = invoiceModal.dataset.invoiceId || 'invoice';
-        const blob = new Blob([`CreatorOS Invoice ${id}\nGenerated: ${new Date().toISOString()}`], {
-            type: 'text/plain',
-        });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${id.replace('#', '')}.txt`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('Invoice downloaded');
+        const url = invoiceModal.dataset.invoiceUrl;
+        if (isSafeHttpUrl(url)) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+            showToast('Opening invoice receipt');
+        } else {
+            showToast('Invoice receipt link is not available', true);
+        }
     });
 
     const upgradePlanBtn = document.getElementById('upgrade-plan-btn');

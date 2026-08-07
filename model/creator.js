@@ -133,8 +133,23 @@ class MockCreatorModel {
         return wrapped;
     }
 
+    static find(query = {}) {
+        const results = mockCreators.filter((item) => {
+            if (query.userId && item.userId?.toString() !== query.userId?.toString()) return false;
+            return true;
+        }).map((item) => new MockCreatorModel(item));
+
+        const wrapped = {
+            select: () => wrapped,
+            sort: () => wrapped,
+            lean: async () => results,
+            then: (resolve, reject) => resolve(results)
+        };
+        return wrapped;
+    }
+
     static async findById(id) {
-        const found = mockCreators.find((item) => item._id?.toString() === id?.toString());
+        const found = mockCreators.find((item) => item._id?.toString() ===id?.toString());
         return found ? new MockCreatorModel(found) : null;
     }
 
@@ -199,6 +214,7 @@ function CreatorModel(data) {
     return new ActiveModel(data);
 }
 
+CreatorModel.find = (...args) => getActiveCreatorModel().find(...args);
 CreatorModel.findOne = (...args) => getActiveCreatorModel().findOne(...args);
 CreatorModel.findById = (...args) => getActiveCreatorModel().findById(...args);
 CreatorModel.findByIdAndUpdate = (...args) => getActiveCreatorModel().findByIdAndUpdate(...args);
