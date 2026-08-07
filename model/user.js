@@ -76,12 +76,28 @@ const userSchema = new mongoose.Schema(
         },
 
         subscription: {
-            status: { type: String, enum: ['inactive', 'active', 'canceled'], default: 'inactive' },
-            planName: { type: String, default: 'Pro Individual' },
-            priceMonthly: { type: Number, default: 29 },
+            status: {
+                type: String,
+                enum: [
+                    'free',
+                    'inactive',
+                    'active',
+                    'canceled',
+                    'trialing',
+                    'past_due',
+                    'unpaid',
+                    'incomplete',
+                    'incomplete_expired',
+                    'paused',
+                ],
+                default: 'free',
+            },
+            planName: { type: String, default: 'Free' },
+            priceMonthly: { type: Number, default: 0 },
             nextInvoiceDate: { type: Date },
-            cardBrand: { type: String, default: 'VISA' },
-            cardLast4: { type: String, default: '4242' },
+            cardBrand: { type: String, default: null },
+            cardLast4: { type: String, default: null },
+            invoices: { type: Array, default: [] },
             stripeCustomerId: { type: String },
             stripeSubscriptionId: { type: String },
             priceId: { type: String },
@@ -177,10 +193,12 @@ class MockUserModel {
             autoSaveLinks: true,
         };
         this.subscription = data.subscription || {
-            planName: "Pro Individual",
-            priceMonthly: 29,
-            cardBrand: "VISA",
-            cardLast4: "4242",
+            status: "free",
+            planName: "Free",
+            priceMonthly: 0,
+            cardBrand: null,
+            cardLast4: null,
+            invoices: [],
         };
         this.isVerified = data.isVerified ?? false;
         this.collaborators = data.collaborators || [];

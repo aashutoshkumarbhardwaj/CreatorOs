@@ -360,12 +360,7 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   const sub = userDoc?.subscription || {};
   const nextInvoice = sub.nextInvoiceDate
     ? new Date(sub.nextInvoiceDate)
-    : (() => {
-        const d = new Date();
-        d.setMonth(d.getMonth() + 1);
-        d.setDate(24);
-        return d;
-      })();
+    : null;
 
   return {
     id: fallbackUser.id,
@@ -383,30 +378,22 @@ function buildAccountViewModel(userDoc, fallbackUser) {
     },
     passwordAgeDays,
     billing: {
-      planName: sub.planName || "Pro Individual",
-      priceMonthly: sub.priceMonthly ?? 29,
-      nextInvoiceLabel: nextInvoice.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      estimatedTotal: `$${(sub.priceMonthly ?? 29).toFixed(2)} USD`,
-      cardBrand: sub.cardBrand || "VISA",
-      cardLast4: sub.cardLast4 || "4242",
-      invoices: [
-        {
-          date: "Sep 24, 2023",
-          invoiceId: "#INV-88219",
-          amount: "$29.00",
-          status: "PAID",
-        },
-        {
-          date: "Aug 24, 2023",
-          invoiceId: "#INV-87112",
-          amount: "$29.00",
-          status: "PAID",
-        },
-      ],
+      status: sub.status || "free",
+      planName: sub.planName || "Free",
+      priceMonthly: sub.priceMonthly ?? 0,
+      nextInvoiceLabel: nextInvoice
+        ? nextInvoice.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "No upcoming invoice",
+      estimatedTotal: sub.priceMonthly
+        ? `$${sub.priceMonthly.toFixed(2)} USD`
+        : "$0.00 USD",
+      cardBrand: sub.cardBrand || null,
+      cardLast4: sub.cardLast4 || null,
+      invoices: sub.invoices || [],
     },
     initials,
     scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
