@@ -354,7 +354,14 @@ router.get("/logout", async (req, res) => {
             // Token may already be invalid, that's fine
         }
     }
-    res.clearCookie("token");
+    const isProduction = process.env.NODE_ENV === "production";
+    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === "true";
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: isSecureEnvironment,
+        sameSite: "lax",
+        path: "/",
+    });
     res.redirect("/login");
 });
 
