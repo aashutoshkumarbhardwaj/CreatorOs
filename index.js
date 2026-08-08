@@ -360,12 +360,7 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   const sub = userDoc?.subscription || {};
   const nextInvoice = sub.nextInvoiceDate
     ? new Date(sub.nextInvoiceDate)
-    : (() => {
-        const d = new Date();
-        d.setMonth(d.getMonth() + 1);
-        d.setDate(24);
-        return d;
-      })();
+    : null;
 
   return {
     id: fallbackUser.id,
@@ -383,30 +378,22 @@ function buildAccountViewModel(userDoc, fallbackUser) {
     },
     passwordAgeDays,
     billing: {
-      planName: sub.planName || "Pro Individual",
-      priceMonthly: sub.priceMonthly ?? 29,
-      nextInvoiceLabel: nextInvoice.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      estimatedTotal: `$${(sub.priceMonthly ?? 29).toFixed(2)} USD`,
-      cardBrand: sub.cardBrand || "VISA",
-      cardLast4: sub.cardLast4 || "4242",
-      invoices: [
-        {
-          date: "Sep 24, 2023",
-          invoiceId: "#INV-88219",
-          amount: "$29.00",
-          status: "PAID",
-        },
-        {
-          date: "Aug 24, 2023",
-          invoiceId: "#INV-87112",
-          amount: "$29.00",
-          status: "PAID",
-        },
-      ],
+      status: sub.status || "free",
+      planName: sub.planName || "Free",
+      priceMonthly: sub.priceMonthly ?? 0,
+      nextInvoiceLabel: nextInvoice
+        ? nextInvoice.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "No upcoming invoice",
+      estimatedTotal: sub.priceMonthly
+        ? `$${sub.priceMonthly.toFixed(2)} USD`
+        : "$0.00 USD",
+      cardBrand: sub.cardBrand || null,
+      cardLast4: sub.cardLast4 || null,
+      invoices: sub.invoices || [],
     },
     initials,
     scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
@@ -462,49 +449,50 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
             }
           }
         }
-      });
-    }
-  });
+    });
 
-  const linkPosts = (userUrls || [])
-    .map((u) => ({
-      title: u.title || u.redirectUrl?.slice(0, 50) || "Shortlink",
-      type: u.tag ? u.tag.toUpperCase() : "LINK",
-      likes: "—",
-      comments: "—",
-      views: u.totalClicks || 0,
-      engagement: `${u.totalClicks || 0} clicks`,
-      date: u.createdAt
-        ? new Date(u.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        : "Today",
-    }))
-    .sort((a, b) => (b.views || 0) - (a.views || 0))
-    .slice(0, 10);
+    const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
+    userUrls.forEach(url => {
+        (url.visitHistory || []).forEach(v => {
+            if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
+            if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
+            if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
+            if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
+        });
+    });
 
-  return {
-    isLoading: false,
-    isEmpty: userUrls.length === 0,
-    selectedRange: "Last 30 days",
-    lastUpdated: new Date().toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }),
-    metrics: [],
-    charts: {
-      labels,
-      followers,
-      engagement,
-      posts: linkPosts.map((p) => p.title),
-      postPerformance: linkPosts.map((p) => p.views),
-    },
-    topPosts: linkPosts,
-  };
+    const linkPosts = (userUrls || []).map((u) => ({
+        title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
+        type: u.tag ? u.tag.toUpperCase() : 'LINK',
+        likes: '—',
+        comments: '—',
+        views: u.totalClicks || 0,
+        engagement: `${u.totalClicks || 0} clicks`,
+        date: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : 'Today',
+    })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+
+    return {
+        isLoading: false,
+        isEmpty: userUrls.length === 0,
+        selectedRange: 'Last 30 days',
+        lastUpdated: new Date().toLocaleString('en-US', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: 'numeric', minute: '2-digit',
+        }),
+        metrics: [],
+        charts: {
+            labels,
+            followers,
+            engagement,
+            posts: linkPosts.map((p) => p.title),
+            postPerformance: linkPosts.map((p) => p.views),
+        },
+        topPosts: linkPosts,
+        breakdown,
+        totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
+    };
 }
 
 function isGuestContributor(user) {
@@ -1119,18 +1107,13 @@ app.get(
 
 // ── URL SHORTENER POST ──
 
-const { isValidUrl } = require("./utils/validators");
-const { parseVisitCoordinates } = require("./utils/visitTelemetry");
+const { isValidUrl } = require('./utils/validators');
+const { parseVisitCoordinates } = require('./utils/visitTelemetry');
+const { parseVisitMeta } = require('./utils/deviceParser');
 
-const { handleGenerateShortUrlRender } = require("./controller/url");
-const { handleQrRedirect } = require("./controller/qrCodeController");
-app.post(
-  "/services/url-shortener/shorten",
-  protect,
-  preventContributorWrites,
-  urlShortenerLimiter,
-  handleGenerateShortUrlRender,
-);
+const { handleGenerateShortUrlRender } = require('./controller/url');
+const { handleQrRedirect } = require('./controller/qrCodeController');
+app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
 // ── FILE UPLOAD POST ──
 
@@ -1180,21 +1163,24 @@ app.get(
     const coordinates = parseVisitCoordinates(req.query);
 
     try {
-      const visitData = { timestamp: new Date(), source: "direct" };
-      if (coordinates) {
-        visitData.x = coordinates.x;
-        visitData.y = coordinates.y;
-      }
-
-      const entry = await Url.findOneAndUpdate(
-        { shortId },
-        {
-          $inc: { totalClicks: 1 },
-          $push: {
-            visitHistory: {
-              $each: [visitData],
-              $sort: { timestamp: -1 },
-              $slice: 1000,
+        const visitData = { timestamp: new Date(), source: 'direct' };
+        if (coordinates) {
+            visitData.x = coordinates.x;
+            visitData.y = coordinates.y;
+        }
+        Object.assign(visitData, parseVisitMeta(req));
+        
+        const entry = await Url.findOneAndUpdate(
+            { shortId },
+            {
+                $inc:  { totalClicks: 1 },
+                $push: {
+                    visitHistory: {
+                        $each: [visitData],
+                        $sort: { timestamp: -1 },
+                        $slice: 1000,
+                    },
+                },
             },
           },
         },
@@ -1210,7 +1196,28 @@ app.get(
   }),
 );
 
-app.get("/q/:shortId", handleQrRedirect);
+app.get('/api/analytics/live-count', protect, asyncHandler(async (req, res) => {
+    const urls = await Url.find({ userId: req.user.id }).select('totalClicks').lean();
+    const total = urls.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
+    res.json({ totalClicks: total });
+}));
+
+app.get('/api/analytics/export', protect, asyncHandler(async (req, res) => {
+    const urls = await Url.find({ userId: req.user.id }).lean();
+    const rows = [['shortId', 'redirectUrl', 'totalClicks', 'timestamp', 'device', 'browser', 'referrer', 'country']];
+    urls.forEach(u => {
+        (u.visitHistory || []).forEach(v => {
+            rows.push([u.shortId, u.redirectUrl, u.totalClicks || 0,
+                new Date(v.timestamp).toISOString(), v.device || '', v.browser || '', v.referrer || '', v.country || '']);
+        });
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="analytics-export.csv"');
+    res.send(csv);
+}));
+
+app.get('/q/:shortId', handleQrRedirect);
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get("/sitemap.xml", (req, res) => {
