@@ -1,7 +1,7 @@
 const express = require("express");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
+const { signup, login, verifyLogin2FA, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, contributorLoginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
 const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
@@ -121,6 +121,7 @@ router.get("/login", redirectIfAuthenticated, (req, res) => {
         googleAuthConfigured,
         verificationUnavailable: req.query.verificationUnavailable === "1" || req.query.verificationUnavailable === "true",
         unverifiedEmail: req.query.email || null,
+        requires2FA: req.query.step === "2fa",
     });
 });
 
@@ -160,6 +161,7 @@ router.post("/signup", signupLimiter, signupValidator, signup);
  *         description: Internal server error
  */
 router.post("/login", loginLimiter, loginValidator, login);
+router.post("/login/2fa", loginLimiter, verifyLogin2FA);
 
 /**
  * @swagger
