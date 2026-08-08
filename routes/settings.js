@@ -13,6 +13,7 @@ const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
 const { validate, updateProfileSchema } = require('../middleware/validators');
 const { isEmailTransportConfigured, sendDeletionConfirmationEmail } = require('../utils/email');
+const { verifyTotp } = require('../utils/totp');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -128,14 +129,54 @@ router.get('/billing', asyncHandler(async (req, res) => {
  *         description: Internal server error
  */
 router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, res) => {
-    const { enabled } = req.body;
-    
-    const user = await User.findById(req.user.id);
+    const { enabled, password, otp, secret } = req.body;
+    const enableTwoFactor = !!enabled;
+
+    const user = await User.findById(req.user.id).select('+twoFactorSecret +password');
     if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    user.twoFactorEnabled = !!enabled;
+
+    // Local accounts must re-verify their current password before 2FA changes.
+    if (user.authProvider === 'local') {
+        if (!password) {
+            return res.status(401).json({ error: 'Password is required to update 2FA settings' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Incorrect password' });
+        }
+    }
+
+    if (enableTwoFactor) {
+        const sharedSecret = secret || user.twoFactorSecret;
+        if (!sharedSecret) {
+            return res.status(400).json({
+                error: 'A TOTP secret is required to enable two-factor authentication',
+            });
+        }
+
+        if (!otp || !verifyTotp(sharedSecret, otp)) {
+            return res.status(401).json({ error: 'Invalid or missing authenticator code' });
+        }
+
+        user.twoFactorSecret = sharedSecret;
+        user.twoFactorEnabled = true;
+    } else {
+        // Disabling an active 2FA configuration still requires a valid OTP challenge.
+        if (user.twoFactorEnabled) {
+            if (!user.twoFactorSecret) {
+                return res.status(400).json({ error: 'Two-factor authentication is misconfigured' });
+            }
+            if (!otp || !verifyTotp(user.twoFactorSecret, otp)) {
+                return res.status(401).json({ error: 'Invalid or missing authenticator code' });
+            }
+        }
+
+        user.twoFactorEnabled = false;
+    }
+
     await user.save();
-    
+
     res.json({ message: '2FA settings updated successfully', twoFactorEnabled: user.twoFactorEnabled });
 }));
 
