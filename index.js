@@ -1182,10 +1182,8 @@ app.get(
                     },
                 },
             },
-          },
-        },
-        { new: true },
-      );
+            { new: true },
+        );
 
       if (!entry) return res.status(404).send("URL not found");
       return res.redirect(entry.redirectUrl);
