@@ -2,7 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
-const { signupValidator, loginValidator, resendVerificationValidator } = require("../middleware/validators");
+const { signupValidator, loginValidator, contributorLoginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
 const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
 const { redirectIfAuthenticated } = require("../middleware/auth");
@@ -177,7 +177,7 @@ router.post("/login", loginLimiter, loginValidator, login);
  *       500:
  *         description: Internal server error
  */
-router.post("/login/contributor", loginLimiter, loginValidator, loginAsContributor);
+router.post("/login/contributor", loginLimiter, contributorLoginValidator, loginAsContributor);
 
 /**
  * @swagger
@@ -195,7 +195,7 @@ router.post("/login/contributor", loginLimiter, loginValidator, loginAsContribut
  *       500:
  *         description: Internal server error
  */
-router.post("/api/auth/contributor-login", loginLimiter, loginValidator, loginAsContributor);
+router.post("/api/auth/contributor-login", loginLimiter, contributorLoginValidator, loginAsContributor);
 
 
 /**

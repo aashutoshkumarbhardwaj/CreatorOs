@@ -62,6 +62,13 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+
+        // Base32-encoded TOTP secret used when two-factor authentication is enabled.
+        twoFactorSecret: {
+            type: String,
+            default: null,
+            select: false,
+        },
         
         preferences: {
             appearanceMode: { type: String, enum: ['light', 'dark', 'system'], default: 'light' },
