@@ -56,6 +56,64 @@ describe("smartNotificationService", () => {
             const dayTime = new Date(Date.UTC(2026, 6, 30, 12, 0, 0));
             expect(smartNotificationService.isQuietHoursActive(config, dayTime)).toBe(false);
         });
+
+        it("getQuietHoursEndTime uses endTime and handles overnight windows", () => {
+            const config = { enabled: true, startTime: "22:00", endTime: "08:00" };
+
+            // Before midnight: end should be next calendar day at 08:00 UTC
+            const lateNight = new Date(Date.UTC(2026, 6, 30, 23, 15, 0));
+            const endLate = smartNotificationService.getQuietHoursEndTime(config, lateNight);
+            expect(endLate.toISOString()).toBe("2026-07-31T08:00:00.000Z");
+
+            // After midnight still inside quiet hours: end is same day 08:00 UTC
+            const earlyMorning = new Date(Date.UTC(2026, 6, 31, 2, 30, 0));
+            const endEarly = smartNotificationService.getQuietHoursEndTime(config, earlyMorning);
+            expect(endEarly.toISOString()).toBe("2026-07-31T08:00:00.000Z");
+        });
+
+        it("getQuietHoursEndTime handles same-day quiet windows", () => {
+            const config = { enabled: true, startTime: "12:00", endTime: "14:00" };
+            const midday = new Date(Date.UTC(2026, 6, 30, 13, 0, 0));
+            const end = smartNotificationService.getQuietHoursEndTime(config, midday);
+            expect(end.toISOString()).toBe("2026-07-30T14:00:00.000Z");
+        });
+    });
+
+    describe("Scheduled notification flush", () => {
+        it("claims due scheduled notifications and marks them sent", async () => {
+            const due = await Notification.create({
+                userId: testUserId,
+                title: "Quiet deferral",
+                message: "Deliver after quiet hours",
+                status: "scheduled",
+                scheduledFor: new Date(Date.now() - 60 * 1000),
+                channels: ["in_app"],
+                deliveryLogs: [
+                    { channel: "in_app", status: "delayed", error: "Deferred due to active Quiet Hours" },
+                ],
+            });
+            const future = await Notification.create({
+                userId: testUserId,
+                title: "Not due",
+                message: "Later",
+                status: "scheduled",
+                scheduledFor: new Date(Date.now() + 60 * 60 * 1000),
+                channels: ["in_app"],
+            });
+
+            const result = await smartNotificationService.processDueScheduledNotifications();
+            expect(result.processed).toBe(1);
+            expect(result.sent).toBe(1);
+            expect(result.failed).toBe(0);
+
+            const refreshedDue = await Notification.findById(due._id);
+            expect(refreshedDue.status).toBe("sent");
+            expect(refreshedDue.sentAt).toBeInstanceOf(Date);
+            expect(refreshedDue.deliveryLogs.some((l) => l.status === "success")).toBe(true);
+
+            const refreshedFuture = await Notification.findById(future._id);
+            expect(refreshedFuture.status).toBe("scheduled");
+        });
     });
 
     describe("Deduplication Logic", () => {
