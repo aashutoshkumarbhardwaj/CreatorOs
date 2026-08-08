@@ -449,50 +449,52 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
             }
           }
         }
-    });
+      });
+    }
+  });
 
-    const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
-    userUrls.forEach(url => {
-        (url.visitHistory || []).forEach(v => {
-            if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
-            if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
-            if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
-            if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
-        });
-    });
+  const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
+  userUrls.forEach(url => {
+      (url.visitHistory || []).forEach(v => {
+          if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
+          if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
+          if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
+          if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
+      });
+  });
 
-    const linkPosts = (userUrls || []).map((u) => ({
-        title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
-        type: u.tag ? u.tag.toUpperCase() : 'LINK',
-        likes: '—',
-        comments: '—',
-        views: u.totalClicks || 0,
-        engagement: `${u.totalClicks || 0} clicks`,
-        date: u.createdAt
-            ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            : 'Today',
-    })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+  const linkPosts = (userUrls || []).map((u) => ({
+      title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
+      type: u.tag ? u.tag.toUpperCase() : 'LINK',
+      likes: '—',
+      comments: '—',
+      views: u.totalClicks || 0,
+      engagement: `${u.totalClicks || 0} clicks`,
+      date: u.createdAt
+          ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'Today',
+  })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
-    return {
-        isLoading: false,
-        isEmpty: userUrls.length === 0,
-        selectedRange: 'Last 30 days',
-        lastUpdated: new Date().toLocaleString('en-US', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: 'numeric', minute: '2-digit',
-        }),
-        metrics: [],
-        charts: {
-            labels,
-            followers,
-            engagement,
-            posts: linkPosts.map((p) => p.title),
-            postPerformance: linkPosts.map((p) => p.views),
-        },
-        topPosts: linkPosts,
-        breakdown,
-        totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
-    };
+  return {
+      isLoading: false,
+      isEmpty: userUrls.length === 0,
+      selectedRange: 'Last 30 days',
+      lastUpdated: new Date().toLocaleString('en-US', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: 'numeric', minute: '2-digit',
+      }),
+      metrics: [],
+      charts: {
+          labels,
+          followers,
+          engagement,
+          posts: linkPosts.map((p) => p.title),
+          postPerformance: linkPosts.map((p) => p.views),
+      },
+      topPosts: linkPosts,
+      breakdown,
+      totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
+  };
 }
 
 function isGuestContributor(user) {
@@ -1163,24 +1165,22 @@ app.get(
     const coordinates = parseVisitCoordinates(req.query);
 
     try {
-        const visitData = { timestamp: new Date(), source: 'direct' };
-        if (coordinates) {
-            visitData.x = coordinates.x;
-            visitData.y = coordinates.y;
-        }
-        Object.assign(visitData, parseVisitMeta(req));
-        
-        const entry = await Url.findOneAndUpdate(
-            { shortId },
-            {
-                $inc:  { totalClicks: 1 },
-                $push: {
-                    visitHistory: {
-                        $each: [visitData],
-                        $sort: { timestamp: -1 },
-                        $slice: 1000,
-                    },
-                },
+      const visitData = { timestamp: new Date(), source: "direct" };
+      if (coordinates) {
+        visitData.x = coordinates.x;
+        visitData.y = coordinates.y;
+      }
+      Object.assign(visitData, parseVisitMeta(req));
+
+      const entry = await Url.findOneAndUpdate(
+        { shortId },
+        {
+          $inc: { totalClicks: 1 },
+          $push: {
+            visitHistory: {
+              $each: [visitData],
+              $sort: { timestamp: -1 },
+              $slice: 1000,
             },
           },
         },
