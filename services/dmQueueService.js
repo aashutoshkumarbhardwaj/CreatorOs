@@ -114,3 +114,5 @@ async function sendInstagramDM(recipientId, text) {
     console.log(`[Instagram API] Sending DM to ${recipientId}: "${text}"`);
     return Promise.resolve(); // Simulate a successful API call
 }
+
+module.exports = { dmQueue, dmWorker };
