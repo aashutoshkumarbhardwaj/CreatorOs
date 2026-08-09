@@ -238,6 +238,11 @@ INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
 INSTAGRAM_APP_ID=your_instagram_app_id
 INSTAGRAM_APP_SECRET=your_instagram_app_secret
 
+# Required to enable the DM auto-reply feature (Instagram Messaging API).
+# When unset, DM automation fails loudly instead of pretending to send.
+
+INSTAGRAM_ACCESS_TOKEN=your_instagram_access_token
+
 # -------------------------------------------------------
 # AI Providers
 
@@ -301,6 +306,11 @@ JWT_SECRET=your_jwt_secret
 # Backend application URL
 
 APP_URL=http://localhost:3000 # Replace with your deployed URL in production
+
+# Content publishing is not implemented yet: it is gated behind this flag and
+# surfaces a "not_implemented" status until real platform adapters exist.
+
+CONTENT_PUBLISHING_ENABLED=false
 
 # Development server port
 

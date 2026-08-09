@@ -4,12 +4,18 @@ const ScheduledContent = require('../model/scheduledContent');
 
 describe('Content Publish Worker', () => {
     const originalEnv = process.env.TEST_PUBLISH_FAIL;
+    const originalPublishFlag = process.env.CONTENT_PUBLISHING_ENABLED;
 
     afterEach(() => {
         delete process.env.TEST_PUBLISH_FAIL;
+        if (originalPublishFlag === undefined) {
+            delete process.env.CONTENT_PUBLISHING_ENABLED;
+        } else {
+            process.env.CONTENT_PUBLISHING_ENABLED = originalPublishFlag;
+        }
     });
 
-    it('publishes content whose scheduledAt has passed, sets status to published, and assigns platformPostId', async () => {
+    it('marks gated due content as failed with a not-implemented message instead of fabricating a postId', async () => {
         const userId = new mongoose.Types.ObjectId();
         const dueItem = await ScheduledContent.create({
             userId,
@@ -20,14 +26,34 @@ describe('Content Publish Worker', () => {
         });
 
         const publishedCount = await publishDueContent();
-        expect(publishedCount).toBe(1);
+        expect(publishedCount).toBe(0);
 
         const refreshed = await ScheduledContent.findById(dueItem._id);
-        expect(refreshed.status).toBe('published');
-        expect(refreshed.publishedAt).toBeInstanceOf(Date);
-        expect(refreshed.platformPostId).toBeDefined();
-        expect(typeof refreshed.platformPostId).toBe('string');
-        expect(refreshed.errorMessage).toBeNull();
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.errorMessage).toContain('not implemented');
+        expect(refreshed.platformPostId).toBeUndefined();
+        expect(refreshed.publishedAt).toBeUndefined();
+    });
+
+    it('marks content as failed when publishing is enabled but no adapter is configured', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const dueItem = await ScheduledContent.create({
+            userId,
+            caption: 'Due for publishing',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 60 * 1000),
+            status: 'scheduled',
+        });
+
+        process.env.CONTENT_PUBLISHING_ENABLED = 'true';
+
+        const publishedCount = await publishDueContent();
+        expect(publishedCount).toBe(0);
+
+        const refreshed = await ScheduledContent.findById(dueItem._id);
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.errorMessage).toContain('no publishing adapter');
+        expect(refreshed.platformPostId).toBeUndefined();
     });
 
     it('marks item as failed and records errorMessage when platform delivery fails', async () => {

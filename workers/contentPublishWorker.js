@@ -8,9 +8,14 @@ async function publishToPlatform(item) {
         throw new Error('Platform API delivery failed: Invalid authentication token or missing media payload.');
     }
 
-    const platform = item.platform || 'instagram';
-    const remoteId = `${platform}_post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    return { postId: remoteId };
+    // Real platform adapters (auth token, media upload, platform API calls) are
+    // not implemented. Gate the feature behind a config flag and surface a
+    // "not_implemented" status instead of fabricating a postId.
+    if (process.env.CONTENT_PUBLISHING_ENABLED !== 'true') {
+        return { success: false, reason: 'not_implemented' };
+    }
+
+    throw new Error('Platform API delivery failed: no publishing adapter is configured.');
 }
 
 async function publishDueContent() {
@@ -37,15 +42,26 @@ async function publishDueContent() {
 
         try {
             const publishResult = await publishToPlatform(claimedItem);
-            await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
-                $set: {
-                    status: 'published',
-                    publishedAt: new Date(),
-                    platformPostId: publishResult.postId,
-                    errorMessage: null,
-                },
-            });
-            publishedCount++;
+            if (publishResult.success) {
+                await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
+                    $set: {
+                        status: 'published',
+                        publishedAt: new Date(),
+                        platformPostId: publishResult.postId,
+                        errorMessage: null,
+                    },
+                });
+                publishedCount++;
+            } else {
+                const errorMessage = `Content publishing not implemented: ${publishResult.reason || 'unknown'}.`;
+                console.warn(`[ContentPublishWorker] ${errorMessage}`);
+                await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
+                    $set: {
+                        status: 'failed',
+                        errorMessage,
+                    },
+                });
+            }
         } catch (error) {
             console.error(`[ContentPublishWorker] Platform publish failed for item ${claimedItem._id}:`, error.message);
             await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
