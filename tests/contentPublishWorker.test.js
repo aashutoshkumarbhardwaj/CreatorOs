@@ -31,7 +31,7 @@ describe('Content Publish Worker', () => {
         const refreshed = await ScheduledContent.findById(dueItem._id);
         expect(refreshed.status).toBe('failed');
         expect(refreshed.errorMessage).toContain('not implemented');
-        expect(refreshed.platformPostId).toBeUndefined();
+        expect(refreshed.platformPostId).toBeNull();
         expect(refreshed.publishedAt).toBeUndefined();
     });
 
@@ -53,7 +53,7 @@ describe('Content Publish Worker', () => {
         const refreshed = await ScheduledContent.findById(dueItem._id);
         expect(refreshed.status).toBe('failed');
         expect(refreshed.errorMessage).toContain('no publishing adapter');
-        expect(refreshed.platformPostId).toBeUndefined();
+        expect(refreshed.platformPostId).toBeNull();
     });
 
     it('marks item as failed and records errorMessage when platform delivery fails', async () => {
