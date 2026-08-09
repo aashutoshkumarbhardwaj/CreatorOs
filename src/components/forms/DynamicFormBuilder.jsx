@@ -25,7 +25,7 @@ const DynamicFormBuilder = ({ schema = [], onSubmit }) => {
   const validateField = (name, value, fieldSchema) => {
     // Required check
     if (fieldSchema.required) {
-      if (fieldSchema.type === 'checkbox' && value === false) {
+      if (fieldSchema.type === 'checkbox' && value !) {
          return `${fieldSchema.label} is required`;
       }
       if (value === '' || value === null || value === undefined) {

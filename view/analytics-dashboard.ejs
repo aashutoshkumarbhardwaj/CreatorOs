@@ -24,7 +24,9 @@
                         </select>
                     </div>
                     <% } %>
-                    <div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <span id="liveClickCounter" class="badge-retro" style="background:var(--accent-yellow); padding:0.5rem 1rem; font-weight:700;">🔴 Live: <%= analytics.totalClicks || 0 %> clicks</span>
+                        <a href="/api/analytics/export" class="btn-retro" style="background:var(--white); border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); padding:0.5rem 1rem; font-weight:700; text-decoration:none; color:var(--black);">⬇️ Export CSV</a>
                         <button id="refreshStatsBtn" class="btn-retro" style="background:var(--accent-yellow); border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); cursor:pointer; font-weight:700; padding:0.5rem 1rem;">🔄 Refresh Stats</button>
                     </div>
                 </div>
@@ -55,6 +57,26 @@
                             <canvas id="engagementChart"></canvas>
                         </div>
                     </section>
+                </div>
+
+                <!-- Breakdown Panels -->
+                <div class="analytics-grid" style="margin-top: 1.5rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+                    <% ['device','browser','referrer','country'].forEach(key => { %>
+                        <section class="panel-retro">
+                            <h2 style="text-transform:capitalize;"><%= key %> Analytics</h2>
+                            <ul style="list-style:none; padding:0; margin:0.5rem 0 0;">
+                                <% const entries = Object.entries((analytics.breakdown && analytics.breakdown[key]) || {}).sort((a,b)=>b[1]-a[1]); %>
+                                <% if (entries.length === 0) { %>
+                                    <li style="color:var(--muted);">No data yet</li>
+                                <% } %>
+                                <% entries.forEach(([label, count]) => { %>
+                                    <li style="display:flex; justify-content:space-between; padding:0.25rem 0; border-bottom:1px dashed var(--muted);">
+                                        <span><%= label %></span><strong><%= count %></strong>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        </section>
+                    <% }) %>
                 </div>
 
                 <!-- Top Posts -->
@@ -275,6 +297,18 @@
                 window.engagementChart.data.datasets[0].data = slicedEngagement;
                 window.engagementChart.update();
             });
+        }
+
+        // Poll live click counter every 15s
+        const liveCounterEl = document.getElementById('liveClickCounter');
+        if (liveCounterEl) {
+            setInterval(async () => {
+                try {
+                    const res = await fetch('/api/analytics/live-count');
+                    const data = await res.json();
+                    liveCounterEl.textContent = `🔴 Live: ${data.totalClicks} clicks`;
+                } catch (e) {}
+            }, 15000);
         }
 
         // Refresh stats button with toast notification

@@ -1,7 +1,8 @@
 const { nanoid } = require('nanoid');
 const shortid = require('shortid');
 const QRCode = require('qrcode');
-const mongoose = require('mongoose');
+const dns = require('dns');
+const net = require('net');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
@@ -15,9 +16,76 @@ function parseListLimit(value) {
     return Math.min(parsed, MAX_LINK_LIST_LIMIT);
 }
 
+function isPrivateIP(ip) {
+    if (net.isIPv6(ip)) {
+        return ip === '::1' || ip === '0:0:0:0:0:0:0:1';
+    }
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4) return false;
+    // 10.0.0.0/8
+    if (parts[0] === 10) return true;
+    // 127.0.0.0/8
+    if (parts[0] === 127) return true;
+    // 169.254.0.0/16
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    // 172.16.0.0/12
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    // 192.168.0.0/16
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    // 0.0.0.0/8
+    if (parts[0] === 0) return true;
+    // 100.64.0.0/10 (CGNAT)
+    if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+    // 198.18.0.0/15 (benchmarking)
+    if (parts[0] === 198 && parts[1] >= 18 && parts[1] <= 19) return true;
+    return false;
+}
+
+function isSSRFBlocked(hostname) {
+    // Block bare IP addresses in private ranges
+    if (net.isIP(hostname)) {
+        return isPrivateIP(hostname);
+    }
+    return false;
+}
+
+async function validateURL(urlString) {
+    let parsed;
+    try {
+        parsed = new URL(urlString);
+    } catch {
+        throw new Error('Invalid URL');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('Only HTTP and HTTPS URLs are allowed');
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (isSSRFBlocked(hostname)) {
+        throw new Error('URL points to a private or internal network address');
+    }
+
+    // Resolve hostname to IP addresses and check each one
+    const addresses = await new Promise((resolve) => {
+        dns.lookup(hostname, { all: true }, (err, addrs) => {
+            if (err) resolve([]);
+            else resolve(addrs.map(a => a.address));
+        });
+    });
+
+    for (const addr of addresses) {
+        if (isPrivateIP(addr)) {
+            throw new Error('URL resolves to a private or internal network address');
+        }
+    }
+}
+
 async function fetchWebsiteTitle(url, fallback) {
     if (fallback) return fallback;
     try {
+        await validateURL(url);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         const response = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
@@ -228,7 +296,7 @@ const generateBase64QR = async (text, fg, bg) => {
 const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Implement cursor-based pagination for performance
     // Prevent loading entire collection into memory on large datasets
-    const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+    const pageSize = Math.min(parseInt(req.query.limit, 10) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
 
     if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
@@ -447,6 +515,12 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;
     const directClicks = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "direct").length : 0;
 
+    // Exclude sensitive coordinate data from visitHistory before returning
+    const sanitizedHistory = (entry.visitHistory || []).map(v => ({
+        timestamp: v.timestamp,
+        source: v.source
+    }));
+
     return res.json({
         totalClicks:  entry.totalClicks || 0,
         qrClicks,
@@ -454,7 +528,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         qrGenerated:  entry.qrGenerated || false,
         qrFgColor:    entry.qrFgColor || "#1a1a1a",
         qrBgColor:    entry.qrBgColor || "#ffffff",
-        visitHistory: entry.visitHistory || [],
+        visitHistory: sanitizedHistory,
         createdAt:    entry.createdAt,
     });
 });

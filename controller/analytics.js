@@ -19,7 +19,7 @@ const getSnapshots = asyncHandler(async (req, res) => {
 
     const snapshots = await AnalyticsSnapshot.find({
         creatorId: req.params.creatorId,
-    }).sort({ createdAt: -1 });
+    }).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt').sort({ createdAt: -1 });
 
     res.json({ success: true, data: snapshots });
 });
@@ -35,7 +35,7 @@ const getLatestSnapshot = asyncHandler(async (req, res) => {
         { creatorId: req.params.creatorId },
         {},
         { sort: { createdAt: -1 } }
-    );
+    ).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt');
 
     if (!snapshot) {
         return res.status(404).json({ success: false, message: "No snapshot found" });
@@ -53,7 +53,7 @@ const getEngagementHistory = asyncHandler(async (req, res) => {
 
     const history = await EngagementHistory.find({
         creatorId: req.params.creatorId,
-    }).sort({ createdAt: -1 });
+    }).select('creatorId engagementMetric value timestamp createdAt updatedAt').sort({ createdAt: -1 });
 
     res.json({ success: true, data: history });
 });

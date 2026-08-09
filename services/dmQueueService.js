@@ -25,8 +25,7 @@ function createFallbackQueue() {
 let dmQueue = createFallbackQueue();
 let dmWorker = null;
 
-// Initialize BullMQ worker and queue if a standard Redis URI is provided.
-if (REDIS_URI) {
+function createRedisConnection(label) {
     const connection = new IORedis(REDIS_URI, {
         maxRetriesPerRequest: null,
         connectTimeout: 5000,
@@ -35,16 +34,27 @@ if (REDIS_URI) {
 
     // Add listeners for Redis connection events to improve observability.
     connection.on('error', (err) => {
-        console.error('❌ Redis Connection Error:', err.message);
+        console.error(`❌ Redis Connection Error (${label}):`, err.message);
     });
 
+    return connection;
+}
+
+// Initialize BullMQ worker and queue if a standard Redis URI is provided.
+// Queue and Worker must use separate sockets: workers issue blocking commands
+// (BRPOP/BLPOP) that starve shared connections used for queue.add().
+if (REDIS_URI) {
+    const queueConnection = createRedisConnection('dm-queue');
+
     // Create the Queue only when Redis is explicitly configured.
-    dmQueue = new Queue('dm-automation-queue', { connection });
+    dmQueue = new Queue('dm-automation-queue', { connection: queueConnection });
 
     // Create the Worker only when Redis is available and not on Vercel.
     if (process.env.VERCEL === '1') {
         console.warn("📦 DM Worker disabled on Vercel to prevent hanging Redis connections. Use Vercel Cron/Webhooks instead.");
     } else {
+        const workerConnection = createRedisConnection('dm-worker');
+
         dmWorker = new Worker('dm-automation-queue', async (job) => {
         const { senderId, message, triggerKeyword } = job.data;
         
@@ -64,7 +74,7 @@ if (REDIS_URI) {
             throw error;
         }
     }, {
-        connection,
+        connection: workerConnection,
         // Add rate limit pacing (e.g., max 50 jobs per 10 seconds)
         limiter: {
             max: 50,
