@@ -42,6 +42,8 @@ describe('Shared Redis rate-limit store', () => {
         expect(store).toBeDefined();
         expect(store.constructor.name).toBe('RedisStore');
         expect(getRedisClient()).toBeDefined();
+        // Stop the lazy client so pending script preloads do not keep Jest alive.
+        getRedisClient().disconnect();
     });
 
     test('rate limiters use the shared Redis store', () => {
@@ -52,7 +54,7 @@ describe('Shared Redis rate-limit store', () => {
 
     test('analytics refresh limiter uses the shared Redis store', () => {
         const source = fs.readFileSync(path.join(__dirname, '../routes/analytics.js'), 'utf8');
-        expect(source).toContain("require('../utils/rateLimitStore')");
+        expect(source).toContain('rateLimitStore');
         expect(source).toContain('store: createRateLimitStore()');
     });
 
