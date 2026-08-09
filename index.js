@@ -450,6 +450,8 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
           }
         }
     });
+    }
+  });
 
     const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
     userUrls.forEach(url => {
