@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { nanoid } = require('nanoid');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
+const { createRateLimitStore } = require('../utils/rateLimitStore');
 const QrCode = require('../model/qrCode');
 const User = require('../model/user');
 const services = require('../services.config');
@@ -21,12 +22,14 @@ const INPUT_TYPES = ['url', 'text'];
 const TEXT_QR_MAX_LENGTH = 2000;
 
 /**
- * In-memory rate limiter for QR create/batch (avoid rate-limit-mongo + mongodb+srv issues).
+ * Rate limiter for QR create/batch. Uses a shared Redis store when configured
+ * so limits apply across all app replicas; falls back to in-memory otherwise.
  */
 const qrWriteLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 60,
     keyGenerator: (req) => (req.user?.id ? `qr-user:${req.user.id}` : ipKeyGenerator(req.ip)),
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many QR code requests. Please try again later.';
         return res.status(429).json({ success: false, message, error: message });

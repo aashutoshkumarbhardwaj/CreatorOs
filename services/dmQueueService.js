@@ -7,6 +7,11 @@ const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 // Upstash REST credentials for other Redis clients (e.g., caching, rate-limiting).
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
 
+// Fallback used only when no standard Redis URI is configured. It keeps jobs
+// in the current process only - it does NOT provide a distributed queue, so
+// with multiple app replicas behind the load balancer each replica would see
+// only its own jobs. Configure REDIS_URI/REDIS_URL to get a shared BullMQ
+// queue backed by Redis.
 function createFallbackQueue() {
     return {
         async add(jobName, jobData) {

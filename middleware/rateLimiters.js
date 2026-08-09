@@ -2,6 +2,7 @@ const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 const { wantsHtml } = require('../utils/requestType');
 const { buildShortenerViewModel } = require('../utils/viewModels');
 const MongoStore = require('rate-limit-mongo');
+const { createRateLimitStore } = require('../utils/rateLimitStore');
 
 function shouldUseMongoStore() {
     const uri = process.env.MONGODB_URI;
@@ -13,6 +14,7 @@ function shouldUseMongoStore() {
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 15,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many login attempts, please try again later.';
         if (wantsHtml(req)) {
@@ -28,6 +30,7 @@ const loginLimiter = rateLimit({
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Upload limit reached, please try again later.';
         return res.status(429).json({ success: false, message, error: message });
@@ -37,6 +40,7 @@ const uploadLimiter = rateLimit({
 const urlShortenerPageLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 30,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many URLs generated, please try again later.';
         return res.status(429).render('home', buildShortenerViewModel(req, null, message));
@@ -46,6 +50,7 @@ const urlShortenerPageLimiter = rateLimit({
 const urlShortenerApiLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 30,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many URLs generated, please try again later.';
         return res.status(429).json({ success: false, message, error: message });
@@ -58,10 +63,10 @@ const signupLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: true,
     keyGenerator: (req) => ipKeyGenerator(req.ip),
-    store: shouldUseMongoStore() ? new MongoStore({
+    store: createRateLimitStore() || (shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 60 * 60 * 1000,
-    }) : undefined,
+    }) : undefined),
     handler: (req, res) => {
         const message = 'Too many accounts created from this IP, please try again later.';
         if (wantsHtml(req)) {
@@ -74,6 +79,7 @@ const signupLimiter = rateLimit({
 const emailVerificationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many requests. Please wait before trying again.';
         if (wantsHtml(req)) {
@@ -86,6 +92,7 @@ const emailVerificationLimiter = rateLimit({
 const forgotPasswordLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 3, // Allow max 3 forgot password attempts per 15 mins
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many password reset requests. Please try again later.';
         return res.status(429).json({ success: false, message, error: message });
@@ -95,6 +102,7 @@ const forgotPasswordLimiter = rateLimit({
 const resetPasswordLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
+    store: createRateLimitStore(),
     handler: (req, res) => {
         const message = 'Too many password reset attempts. Please try again later.';
         return res.status(429).json({ success: false, message, error: message });
@@ -111,10 +119,10 @@ const aiGenerationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 requests per 15 minutes
     keyGenerator: keyByUserOrIp,
-    store: shouldUseMongoStore() ? new MongoStore({
+    store: createRateLimitStore() || (shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 15 * 60 * 1000,
-    }) : undefined,
+    }) : undefined),
     handler: (req, res) => {
         const message = 'Too many AI generation requests. Please wait 15 minutes before trying again.';
         if (wantsHtml(req)) {
@@ -127,10 +135,10 @@ const instagramProfileLimiter = rateLimit({
     windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
     max: 1,
     keyGenerator: keyByUserOrIp,
-    store: shouldUseMongoStore() ? new MongoStore({
+    store: createRateLimitStore() || (shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
-    }) : undefined,
+    }) : undefined),
     handler: (req, res) => {
         return res.status(429).json({
             success: false,

@@ -12,6 +12,8 @@ const passport = require("passport");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
+const { createRateLimitStore } = require("./utils/rateLimitStore");
+const { createRedisClient } = require("./utils/redisClient");
 const {
   getProfileFromCache,
   setProfileInCache,
@@ -147,12 +149,14 @@ app.use((req, res, next) => {
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
+  store: createRateLimitStore(),
   message: { error: "Upload limit reached, please try again later." },
 });
 
 const urlShortenerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 30,
+  store: createRateLimitStore(),
   message: "Too many URLs generated, please try again later.",
 });
 
@@ -888,15 +892,51 @@ const clickTrackerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// IP-based deduplication map: linkId -> Map<ip, timestamp>
+// IP-based deduplication with cooldown. Uses shared Redis (SET NX EX) when
+// available so the cooldown applies across all app replicas behind the load
+// balancer. Falls back to an in-memory Map (per-process semantics) when Redis
+// is not configured or is temporarily unavailable.
+const redisClickClient = createRedisClient();
 const clickCooldowns = new Map();
 const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // sweep every 5 minutes
+
+async function isClickCooldownActive(linkId, clientIp) {
+  if (redisClickClient) {
+    try {
+      const cooldownKey = `click:cooldown:${linkId}:${clientIp}`;
+      const acquired = await redisClickClient.set(
+        cooldownKey,
+        "1",
+        "EX",
+        CLICK_COOLDOWN_MS / 1000,
+        "NX",
+      );
+      return !acquired;
+    } catch (error) {
+      console.warn(
+        `[ClickTracker] Redis cooldown unavailable, using in-memory fallback: ${error.message}`,
+      );
+    }
+  }
+
+  if (!clickCooldowns.has(linkId)) {
+    clickCooldowns.set(linkId, new Map());
+  }
+  const linkCooldowns = clickCooldowns.get(linkId);
+  const lastClick = linkCooldowns.get(clientIp);
+  if (lastClick && Date.now() - lastClick < CLICK_COOLDOWN_MS) {
+    return true;
+  }
+  linkCooldowns.set(clientIp, Date.now());
+  return false;
+}
 
 // Periodic sweep: removes stale IP entries per link, and removes the
 // outer linkId key entirely once its inner map is empty. This prevents
 // unbounded growth from deleted links (orphaned linkId keys) and from
 // low-traffic links that never hit a per-request cleanup threshold.
+// Only needed for the in-memory fallback; Redis keys expire via TTL.
 const clickCooldownsSweepInterval = setInterval(() => {
   const now = Date.now();
   for (const [linkId, linkCooldowns] of clickCooldowns) {
@@ -912,24 +952,6 @@ const clickCooldownsSweepInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
-// Periodic cleanup every 5 minutes to prevent unbounded memory growth
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [linkId, linkCooldowns] of clickCooldowns) {
-      for (const [ip, timestamp] of linkCooldowns) {
-        if (now - timestamp > CLICK_COOLDOWN_MS) {
-          linkCooldowns.delete(ip);
-        }
-      }
-      if (linkCooldowns.size === 0) {
-        clickCooldowns.delete(linkId);
-      }
-    }
-  },
-  5 * 60 * 1000,
-);
-
 app.post(
   "/bio/track/:linkId",
   clickTrackerLimiter,
@@ -938,18 +960,10 @@ app.post(
     const { linkId } = req.params;
     const clientIp = req.ip || req.connection.remoteAddress;
 
-    // IP-based deduplication with cooldown
-    if (!clickCooldowns.has(linkId)) {
-      clickCooldowns.set(linkId, new Map());
-    }
-    const linkCooldowns = clickCooldowns.get(linkId);
-    const lastClick = linkCooldowns.get(clientIp);
-
-    if (lastClick && Date.now() - lastClick < CLICK_COOLDOWN_MS) {
+    // IP-based deduplication with cooldown (shared Redis when available)
+    if (await isClickCooldownActive(linkId, clientIp)) {
       return res.json({ success: true, tracked: false, reason: "cooldown" });
     }
-
-    linkCooldowns.set(clientIp, Date.now());
 
     const bioProfile = await BioProfile.findOneAndUpdate(
       { "links._id": linkId },
