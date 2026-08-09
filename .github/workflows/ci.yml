@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Fail on unexpected root-level scratch files
+        run: |
+          SCRATCH=$(ls scratch* prs.json process_pages.py 2>/dev/null || true)
+          if [ -n "$SCRATCH" ]; then
+            echo "Unexpected root-level scratch files found:"
+            echo "$SCRATCH"
+            exit 1
+          fi
+
+      - name: git diff --check
+        run: |
+          git diff --check HEAD

@@ -50,3 +50,8 @@ coverage/
 # MongoDB
 *.mongodb
 *.db
+
+# Scratch / local experiment files (must never be committed)
+scratch*
+prs.json
+process_pages.py
