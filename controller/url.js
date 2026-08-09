@@ -16,11 +16,8 @@ function parseListLimit(value) {
     return Math.min(parsed, MAX_LINK_LIST_LIMIT);
 }
 
-function isPrivateIP(ip) {
-    if (net.isIPv6(ip)) {
-        return ip === '::1' || ip === '0:0:0:0:0:0:0:1';
-    }
-    const parts = ip.split('.').map(Number);
+function isPrivateIPv4(ipv4) {
+    const parts = ipv4.split('.').map(Number);
     if (parts.length !== 4) return false;
     // 10.0.0.0/8
     if (parts[0] === 10) return true;
@@ -41,10 +38,67 @@ function isPrivateIP(ip) {
     return false;
 }
 
+function isPrivateIP(ip) {
+    if (net.isIPv4(ip)) {
+        return isPrivateIPv4(ip);
+    }
+
+    if (net.isIPv6(ip)) {
+        const lower = ip.toLowerCase();
+
+        // Loopback (::1) and unspecified (::) addresses
+        if (lower === '::1' || lower === '0:0:0:0:0:0:0:1' || lower === '::') {
+            return true;
+        }
+
+        // IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1 or ::ffff:7f00:1) → check the embedded IPv4
+        if (lower.startsWith('::ffff:')) {
+            const embedded = lower.slice('::ffff:'.length);
+
+            if (/^(\d{1,3}\.){3}\d{1,3}$/.test(embedded)) {
+                return isPrivateIPv4(embedded);
+            }
+
+            // Hex-compressed form: last 32 bits as one or two 16-bit groups
+            const groups = embedded.split(':').filter(Boolean);
+            if (groups.length === 1 || groups.length === 2) {
+                const value = groups.reduce(
+                    (acc, group) => acc * 0x10000 + Number.parseInt(group, 16),
+                    0,
+                );
+                const ipv4 = [
+                    (value >>> 24) & 255,
+                    (value >>> 16) & 255,
+                    (value >>> 8) & 255,
+                    value & 255,
+                ].join('.');
+                return isPrivateIPv4(ipv4);
+            }
+            return false;
+        }
+
+        // Unique local addresses (ULA) fc00::/7
+        if (/^f[cd]/.test(lower)) return true;
+
+        // Link-local addresses fe80::/10
+        if (/^fe[89ab]/.test(lower)) return true;
+
+        return false;
+    }
+
+    return false;
+}
+
 function isSSRFBlocked(hostname) {
+    // Strip brackets from IPv6 literals (e.g. "[::ffff:7f00:1]")
+    const normalized =
+        hostname.startsWith('[') && hostname.endsWith(']')
+            ? hostname.slice(1, -1)
+            : hostname;
+
     // Block bare IP addresses in private ranges
-    if (net.isIP(hostname)) {
-        return isPrivateIP(hostname);
+    if (net.isIP(normalized)) {
+        return isPrivateIP(normalized);
     }
     return false;
 }
@@ -559,6 +613,9 @@ const handleDeleteShortURL = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+    isPrivateIP,
+    isSSRFBlocked,
+    validateURL,
     handleRenderDashboard,
     handleGenerateShortURL,
     handleGenerateShortUrlRender,
