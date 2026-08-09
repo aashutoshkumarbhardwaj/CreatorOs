@@ -174,6 +174,17 @@ const acceptInvite = asyncHandler(async (req, res, next) => {
     });
   }
 
+  if (invite.status === 'expired' || (invite.expiresAt && invite.expiresAt < new Date())) {
+    if (invite.status !== 'expired') {
+      await Invite.updateOne({ _id: invite._id }, { $set: { status: 'expired' } });
+      invite.status = 'expired';
+    }
+    return res.render('invite-accept', {
+      status: 'expired',
+      invite,
+    });
+  }
+
   // Don't auto-accept anymore if unauthenticated.
   // Just render the pending state so they can copy the token and login.
   res.render('invite-accept', {

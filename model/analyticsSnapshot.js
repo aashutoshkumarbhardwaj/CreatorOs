@@ -23,6 +23,7 @@ const analyticsSnapshotSchema = new mongoose.Schema(
         totalComments: { type: Number, default: 0 },
         totalViews: { type: Number, default: 0 },
         engagementRate: { type: Number, default: 0 },
+        engagementAvailable: { type: Boolean, default: false },
         snapshotDate: {
             type: Date,
             default: Date.now,
@@ -51,6 +52,7 @@ class MockAnalyticsSnapshotModel {
         this.totalComments = data.totalComments !== undefined ? data.totalComments : 0;
         this.totalViews = data.totalViews !== undefined ? data.totalViews : 0;
         this.engagementRate = data.engagementRate !== undefined ? data.engagementRate : 0;
+        this.engagementAvailable = data.engagementAvailable !== undefined ? data.engagementAvailable : false;
         this.snapshotDate = data.snapshotDate || new Date();
         this.createdAt = data.createdAt || new Date();
         this.updatedAt = data.updatedAt || new Date();
@@ -122,6 +124,7 @@ class MockAnalyticsSnapshotModel {
                 totalComments: 18200,
                 totalViews: 1850400,
                 engagementRate: 5.42,
+                engagementAvailable: true,
                 snapshotDate: new Date(),
                 createdAt: new Date()
             }));

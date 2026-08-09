@@ -13,7 +13,7 @@ const dropZone = document.getElementById('drop-zone');
         const progressPct = document.getElementById('progress-pct');
         const progressLabel = document.getElementById('progress-label');
         const statusEl = document.getElementById('status');
-        let selectedFile = null;
+        let selectedFiles = [];
 
         // Firefox fix: preventDefault is REQUIRED on dragover
         dropZone.addEventListener('dragover', function(e) {
@@ -46,16 +46,18 @@ const dropZone = document.getElementById('drop-zone');
 
             var files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleFile(files[0]);
+                handleFiles(files);
             }
         });
 
         dropZone.addEventListener('click', function() {
-            if (!selectedFile) fileInput.click();
+            fileInput.click();
         });
 
+        fileInput.setAttribute('multiple', 'true');
+
         fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) handleFile(this.files[0]);
+            if (this.files.length > 0) handleFiles(this.files);
         });
 
         removeBtn.addEventListener('click', function(e) {
@@ -64,14 +66,14 @@ const dropZone = document.getElementById('drop-zone');
         });
 
         uploadBtn.addEventListener('click', function() {
-            if (!selectedFile) return;
-            uploadFile(selectedFile);
+            if (!selectedFiles.length) return;
+            selectedFiles.forEach(uploadFile);
         });
 
-        function handleFile(file) {
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileSize.textContent = formatSize(file.size);
+        function handleFiles(fileList) {
+            selectedFiles = Array.from(fileList);
+            fileName.textContent = selectedFiles.map(function(f) { return f.name; }).join(', ');
+            fileSize.textContent = formatSize(selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0));
             fileInfo.style.display = 'flex';
             uploadBtn.disabled = false;
             uploadBtn.className = 'primary-action-btn';
@@ -81,14 +83,14 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.style.padding = '1rem';
             uploadBtn.style.opacity = '1';
             uploadBtn.style.cursor = 'pointer';
-            uploadBtn.textContent = 'Upload ' + file.name;
-            dropText.textContent = 'File selected';
-            dropSub.textContent = 'click to choose a different file';
+            uploadBtn.textContent = 'Upload ' + selectedFiles.length + ' file(s)';
+            dropText.textContent = selectedFiles.length + ' file(s) selected';
+            dropSub.textContent = 'click to choose different files';
             uploadIcon.textContent = '✅';
         }
 
         function clearSelection() {
-            selectedFile = null;
+            selectedFiles = [];
             fileInfo.style.display = 'none';
             uploadBtn.disabled = true;
             uploadBtn.className = 'primary-action-btn';
@@ -98,9 +100,9 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.style.padding = '1rem';
             uploadBtn.style.opacity = '0.5';
             uploadBtn.style.cursor = 'not-allowed';
-            uploadBtn.textContent = 'Select a file to upload';
+            uploadBtn.textContent = 'Select files to upload';
             fileInput.value = '';
-            dropText.textContent = 'Drag & drop a file here';
+            dropText.textContent = 'Drag & drop files here';
             dropSub.textContent = 'or click to browse files';
             uploadIcon.textContent = '📁';
             progressArea.style.display = 'none';
@@ -130,8 +132,29 @@ const dropZone = document.getElementById('drop-zone');
                 if (xhr.status >= 200 && xhr.status < 300) {
                     var data = JSON.parse(xhr.responseText);
                     statusEl.className = 'message-box message-success';
-                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size);
+                    var sizeLine = 'Size: ' + formatSize(data.size);
+                    if (data.compressed && data.originalSize > data.size) {
+                        var savedPct = Math.round((1 - data.size / data.originalSize) * 100);
+                        sizeLine = 'Size: ' + formatSize(data.size) + ' (compressed from ' + formatSize(data.originalSize) + ', -' + savedPct + '%)';
+                    }
+                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>' + sizeLine +
+                        ' <button type="button" class="rename-uploaded-btn" data-filename="' + data.path + '" style="margin-left:1rem;">Rename</button>' +
+                        ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.path + '" style="margin-left:0.5rem;">Delete</button>';
                     statusEl.style.display = 'block';
+
+                    var renBtn = statusEl.querySelector('.rename-uploaded-btn');
+                    if (renBtn) {
+                        renBtn.addEventListener('click', function() {
+                            renameFile(this.getAttribute('data-filename'), statusEl);
+                        });
+                    }
+
+                    var delBtn = statusEl.querySelector('.delete-uploaded-btn');
+                    if (delBtn) {
+                        delBtn.addEventListener('click', function() {
+                            deleteFile(this.getAttribute('data-filename'), statusEl);
+                        });
+                    }
                 } else {
                     statusEl.className = 'message-box message-error';
                     statusEl.textContent = 'Upload failed. Please try again.';
@@ -157,8 +180,84 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.textContent = 'Uploading...';
         }
 
+        function loadStorageUsage() {
+            fetch('/services/file-upload/storage-usage')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var el = document.getElementById('storage-usage');
+                    if (el) {
+                        el.textContent = 'Storage used: ' + formatSize(data.totalSize) + ' (' + data.fileCount + ' files)';
+                    }
+                }
+            })
+            .catch(function() {});
+        }
+
+        loadStorageUsage();
+
         function formatSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1048576).toFixed(1) + ' MB';
         }
+
+        function renameFile(filename, rowEl) {
+            var newName = prompt('Enter new file name:');
+            if (!newName) return;
+
+            fetch('/services/file-upload/rename/' + encodeURIComponent(filename), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newName: newName })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    statusEl.className = 'message-box message-success';
+                    statusEl.textContent = 'Renamed to: ' + data.newName;
+                    statusEl.style.display = 'block';
+                    if (rowEl) {
+                        var delBtn = rowEl.querySelector('.delete-uploaded-btn');
+                        if (delBtn) delBtn.setAttribute('data-filename', data.newName);
+                        var renBtn = rowEl.querySelector('.rename-uploaded-btn');
+                        if (renBtn) renBtn.setAttribute('data-filename', data.newName);
+                    }
+                } else {
+                    statusEl.className = 'message-box message-error';
+                    statusEl.textContent = 'Rename failed: ' + filename;
+                    statusEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                statusEl.className = 'message-box message-error';
+                statusEl.textContent = 'Network error while renaming.';
+                statusEl.style.display = 'block';
+            });
+        }
+
+        function deleteFile(filename, rowEl) {
+            fetch('/services/file-upload/delete/' + encodeURIComponent(filename), {
+                method: 'DELETE'
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (rowEl) rowEl.remove();
+                    statusEl.className = 'message-box message-success';
+                    statusEl.textContent = 'Deleted: ' + filename;
+                    statusEl.style.display = 'block';
+                } else {
+                    statusEl.className = 'message-box message-error';
+                    statusEl.textContent = 'Delete failed: ' + filename;
+                    statusEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                statusEl.className = 'message-box message-error';
+                statusEl.textContent = 'Network error while deleting.';
+                statusEl.style.display = 'block';
+            });
+        }
+   
+
