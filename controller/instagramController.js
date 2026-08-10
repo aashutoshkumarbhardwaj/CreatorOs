@@ -130,7 +130,6 @@ function sendInstagramError(res, error) {
 async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
-
         const cacheKey = `ig:profile:${username}`;
         const cachedProfile = redis
             ? await redis.get(cacheKey)
