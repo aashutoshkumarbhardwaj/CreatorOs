@@ -380,19 +380,6 @@ git checkout -b feature/your-feature-name
 
 Ensure you are using a supported Node.js version and remove `node_modules` before reinstalling dependencies.
 
-### How do I start the project locally?
-
-```bash
-npm run dev
-```
-
-Then open:
-
-```text
-http://localhost:3000
-```
-
-
 ## 📁 Project Structure
 
 ```
