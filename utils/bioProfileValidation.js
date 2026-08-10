@@ -5,6 +5,7 @@ const MAX_TAGS = 10;
 const MAX_LINKS = 25;
 const VALID_THEMES = ["light", "dark", "neon", "gradient"];
 const VALID_LAYOUTS = ["list", "grid", "cards"];
+const SAFE_HEX_BACKGROUND = /^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/;
 
 const MAX_AVATAR_DATA_URL_LENGTH = 2_800_000; // ~2MB image as base64
 
@@ -16,6 +17,12 @@ function isOptionalHttpUrl(value) {
     return trimmed.length <= MAX_AVATAR_DATA_URL_LENGTH;
   }
   return isValidUrl(trimmed);
+}
+
+function isSafeBackground(value) {
+  if (value === undefined || value === null || value === "") return true;
+  if (typeof value !== "string") return false;
+  return SAFE_HEX_BACKGROUND.test(value.trim());
 }
 
 function validateHandle(handle) {
@@ -156,8 +163,16 @@ function validateBioProfileInput(body = {}) {
     };
   }
 
-  if (background !== undefined && (typeof background !== "string" || background.length > 200)) {
-    return { success: false, message: "Background must be at most 200 characters" };
+  if (background !== undefined) {
+    if (typeof background !== "string" || background.length > 200) {
+      return { success: false, message: "Background must be at most 200 characters" };
+    }
+    if (!isSafeBackground(background)) {
+      return {
+        success: false,
+        message: "Background must be a hex color (#RGB, #RRGGBB, or #RRGGBBAA)",
+      };
+    }
   }
 
   let normalizedContactButton;
@@ -171,6 +186,12 @@ function validateBioProfileInput(body = {}) {
       const url = typeof contactButton.url === "string" ? contactButton.url.trim() : "";
       if (label.length > 40 || url.length > 500) {
         return { success: false, message: "Contact button label/url too long" };
+      }
+      if (url && !isValidUrl(url)) {
+        return {
+          success: false,
+          message: "Contact button URL must be a valid HTTP or HTTPS URL",
+        };
       }
       normalizedContactButton = { label, url };
     }

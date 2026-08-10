@@ -508,7 +508,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    if (entry.userId && entry.userId?.toString() !== req.user.id) {
+    if (entry.userId && entry.userId?.toString() !== req.user?.id) {
         return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 

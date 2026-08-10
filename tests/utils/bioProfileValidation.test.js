@@ -31,6 +31,7 @@ describe("bio profile payload validation", () => {
           label: "Free guide",
           url: "https://example.com/guide",
           icon: "book",
+          featured: false,
         },
       ],
     });
@@ -82,6 +83,59 @@ describe("bio profile payload validation", () => {
     })).toEqual({
       success: false,
       message: `Links must be an array of up to ${MAX_LINKS} valid HTTP or HTTPS links`,
+    });
+  });
+
+  it("rejects javascript and data contact button URLs", () => {
+    expect(validateBioProfileInput({
+      contactButton: { label: "Contact", url: "javascript:alert(1)" },
+    })).toEqual({
+      success: false,
+      message: "Contact button URL must be a valid HTTP or HTTPS URL",
+    });
+
+    expect(validateBioProfileInput({
+      contactButton: { label: "Contact", url: "data:text/html,<script>alert(1)</script>" },
+    })).toEqual({
+      success: false,
+      message: "Contact button URL must be a valid HTTP or HTTPS URL",
+    });
+  });
+
+  it("accepts http(s) contact button URLs and hex backgrounds", () => {
+    const result = validateBioProfileInput({
+      contactButton: { label: "Contact", url: "https://example.com/contact" },
+      background: "#fdf6e3",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data.contactButton).toEqual({
+      label: "Contact",
+      url: "https://example.com/contact",
+    });
+    expect(result.data.background).toBe("#fdf6e3");
+  });
+
+  it("rejects CSS injection in background", () => {
+    expect(validateBioProfileInput({
+      background: "red; } body::after { content:'Phish'",
+    })).toEqual({
+      success: false,
+      message: "Background must be a hex color (#RGB, #RRGGBB, or #RRGGBBAA)",
+    });
+
+    expect(validateBioProfileInput({
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    })).toEqual({
+      success: false,
+      message: "Background must be a hex color (#RGB, #RRGGBB, or #RRGGBBAA)",
+    });
+
+    expect(validateBioProfileInput({
+      background: "url(https://evil.example/x)",
+    })).toEqual({
+      success: false,
+      message: "Background must be a hex color (#RGB, #RRGGBB, or #RRGGBBAA)",
     });
   });
 });

@@ -55,6 +55,15 @@ class MockContributorSessionModel {
 
         return session || null;
     }
+
+    static async deleteOne(query = {}) {
+        const index = mockSessions.findIndex((item) => item.contributorId === query.contributorId);
+        if (index === -1) {
+            return { deletedCount: 0 };
+        }
+        mockSessions.splice(index, 1);
+        return { deletedCount: 1 };
+    }
 }
 
 function getActiveContributorSessionModel() {
@@ -66,4 +75,5 @@ function getActiveContributorSessionModel() {
 module.exports = {
     create: (...args) => getActiveContributorSessionModel().create(...args),
     findOne: (...args) => getActiveContributorSessionModel().findOne(...args),
+    deleteOne: (...args) => getActiveContributorSessionModel().deleteOne(...args),
 };

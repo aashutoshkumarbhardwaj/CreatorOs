@@ -52,11 +52,21 @@ const scheduledContentSchema = new mongoose.Schema(
         publishedBy: {
             type: String,
         },
+        publishingStartedAt: {
+            type: Date,
+            default: null,
+        },
+        publishAttempts: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     { timestamps: true }
 );
 
 scheduledContentSchema.index({ status: 1, scheduledAt: 1 });
+scheduledContentSchema.index({ status: 1, publishingStartedAt: 1 });
 
 const ScheduledContentModel =
     mongoose.models.ScheduledContent || mongoose.model("ScheduledContent", scheduledContentSchema);
