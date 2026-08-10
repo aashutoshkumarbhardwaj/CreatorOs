@@ -1,6 +1,8 @@
 const { nanoid } = require('nanoid');
 const shortid = require('shortid');
 const QRCode = require('qrcode');
+const dns = require('dns');
+const net = require('net');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
@@ -14,6 +16,92 @@ function parseListLimit(value) {
     return Math.min(parsed, MAX_LINK_LIST_LIMIT);
 }
 
+function isPrivateIP(ip) {
+    if (net.isIPv6(ip)) {
+        return ip === '::1' || ip === '0:0:0:0:0:0:0:1';
+    }
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4) return false;
+    // 10.0.0.0/8
+    if (parts[0] === 10) return true;
+    // 127.0.0.0/8
+    if (parts[0] === 127) return true;
+    // 169.254.0.0/16
+    if (parts[0] === 169 && parts[1] === 254) return true;
+    // 172.16.0.0/12
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    // 192.168.0.0/16
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    // 0.0.0.0/8
+    if (parts[0] === 0) return true;
+    // 100.64.0.0/10 (CGNAT)
+    if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+    // 198.18.0.0/15 (benchmarking)
+    if (parts[0] === 198 && parts[1] >= 18 && parts[1] <= 19) return true;
+    return false;
+}
+
+function isSSRFBlocked(hostname) {
+    // Block bare IP addresses in private ranges
+    if (net.isIP(hostname)) {
+        return isPrivateIP(hostname);
+    }
+    return false;
+}
+
+async function validateURL(urlString) {
+    let parsed;
+    try {
+        parsed = new URL(urlString);
+    } catch {
+        throw new Error('Invalid URL');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('Only HTTP and HTTPS URLs are allowed');
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (isSSRFBlocked(hostname)) {
+        throw new Error('URL points to a private or internal network address');
+    }
+
+    // Resolve hostname to IP addresses and check each one
+    const addresses = await new Promise((resolve) => {
+        dns.lookup(hostname, { all: true }, (err, addrs) => {
+            if (err) resolve([]);
+            else resolve(addrs.map(a => a.address));
+        });
+    });
+
+    for (const addr of addresses) {
+        if (isPrivateIP(addr)) {
+            throw new Error('URL resolves to a private or internal network address');
+        }
+    }
+}
+
+async function fetchWebsiteTitle(url, fallback) {
+    if (fallback) return fallback;
+    try {
+        await validateURL(url);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const response = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
+        clearTimeout(timeoutId);
+        if (!response.ok) return deriveTitle(url);
+        const text = await response.text();
+        const match = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (match && match[1]) {
+            return match[1].trim().replace(/\s+/g, ' ');
+        }
+        return deriveTitle(url);
+    } catch (e) {
+        return deriveTitle(url);
+    }
+}
+
 /**
  * @function deriveTitle
  * @description Extracts or derives a meaningful title from a given URL.
@@ -23,7 +111,11 @@ function deriveTitle(redirectUrl, fallback) {
     if (fallback) return fallback;
     try {
         const parsed = new URL(redirectUrl);
-        const slug = parsed.pathname.split('/').filter(Boolean).pop();
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        let slug = parts.pop();
+        if (slug && ['description', 'index', 'home', 'page'].includes(slug.toLowerCase())) {
+            slug = parts.pop() || slug;
+        }
         if (slug) {
             return slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
         }
@@ -116,7 +208,7 @@ async function handleGenerateShortURL(req, res) {
             shortId,
             redirectUrl,
             userId: req.user?.id || null,
-            title: deriveTitle(redirectUrl, title?.trim()),
+            title: await fetchWebsiteTitle(redirectUrl, title?.trim()),
             tag: linkTag,
             linkedAt: new Date(),
         });
@@ -159,20 +251,16 @@ async function handleListUserLinks(req, res) {
     const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
     const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
-    const totalClicks = links.reduce((sum, link) => sum + link.totalClicks, 0);
-    const topLink = links.reduce(
-        (best, link) => (link.totalClicks > (best?.totalClicks || 0) ? link : best),
-        null
-    );
+    const userStats = await Url.getStatsForUser(userId);
 
     return res.json({
         links,
         stats: {
-            totalLinks: links.length,
-            totalClicks,
-            totalClicksLabel: formatClicks(totalClicks),
-            topLinkTitle: topLink?.title || '—',
-            topLinkClicks: topLink?.clicksLabel || '0',
+            totalLinks: userStats.totalLinks,
+            totalClicks: userStats.totalClicks,
+            totalClicksLabel: formatClicks(userStats.totalClicks),
+            topLinkTitle: userStats.topLink?.title || (userStats.topLink ? deriveTitle(userStats.topLink.redirectUrl) : '—'),
+            topLinkClicks: formatClicks(userStats.topLink?.totalClicks || 0),
         },
         domain: hostBase.replace(/^https?:\/\//, ''),
         pagination: {
@@ -208,8 +296,21 @@ const generateBase64QR = async (text, fg, bg) => {
 const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Implement cursor-based pagination for performance
     // Prevent loading entire collection into memory on large datasets
-    const pageSize = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+    const pageSize = Math.min(parseInt(req.query.limit, 10) || 20, 100); // Max 100 per page
     const cursor = req.query.cursor;
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+        return res.status(400).render("home", {
+            urls: [],
+            nextCursor: null,
+            hasMore: false,
+            id: null,
+            shortUrl: null,
+            qrCode: null,
+            campaignName: "",
+            error: "Invalid pagination cursor"
+        });
+    }
 
     const userId = req.user?.id || null;
     const query = cursor ? { _id: { $lt: cursor }, userId } : { userId };
@@ -273,6 +374,7 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
         qrBgColor: bgColor,
         qrGenerated: true,
         userId: req.user?.id || null,
+        title: await fetchWebsiteTitle(inputUrl),
     });
 
     const qrCodeDataUrl = await generateBase64QR(shortUrl, fgColor, bgColor);
@@ -406,12 +508,18 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    if (entry.userId?.toString() !== req.user.id) {
+    if (entry.userId && entry.userId?.toString() !== req.user.id) {
         return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 
     const qrClicks     = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "qr").length : 0;
     const directClicks = entry.visitHistory ? entry.visitHistory.filter((v) => v.source === "direct").length : 0;
+
+    // Exclude sensitive coordinate data from visitHistory before returning
+    const sanitizedHistory = (entry.visitHistory || []).map(v => ({
+        timestamp: v.timestamp,
+        source: v.source
+    }));
 
     return res.json({
         totalClicks:  entry.totalClicks || 0,
@@ -420,8 +528,33 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         qrGenerated:  entry.qrGenerated || false,
         qrFgColor:    entry.qrFgColor || "#1a1a1a",
         qrBgColor:    entry.qrBgColor || "#ffffff",
-        visitHistory: entry.visitHistory || [],
+        visitHistory: sanitizedHistory,
         createdAt:    entry.createdAt,
+    });
+});
+
+// ── Delete Short URL ──────────────────────────────────────────────────────────
+const handleDeleteShortURL = asyncHandler(async (req, res) => {
+    const { shortId } = req.params;
+    const entry = await Url.findOne({ shortId });
+
+    if (!entry) {
+        return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
+    }
+
+    if (entry.userId && entry.userId?.toString() !== req.user?.id) {
+        return res.status(403).json({ success: false, message: "Unauthorized to delete this URL", error: "Unauthorized to delete this URL" });
+    }
+
+    if (Url.findByIdAndDelete) {
+        await Url.findByIdAndDelete(entry._id || shortId);
+    } else if (Url.deleteOne) {
+        await Url.deleteOne({ shortId });
+    }
+
+    return res.json({
+        success: true,
+        message: "Short URL deleted successfully",
     });
 });
 
@@ -434,4 +567,5 @@ module.exports = {
     handleUpdateQRColors,
     handleGetAnalytics,
     handleListUserLinks,
+    handleDeleteShortURL,
 };

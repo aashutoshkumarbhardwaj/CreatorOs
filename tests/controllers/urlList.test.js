@@ -1,5 +1,6 @@
 jest.mock("../../model/url", () => ({
   listForUser: jest.fn(),
+  getStatsForUser: jest.fn().mockResolvedValue({ totalLinks: 0, totalClicks: 0, topLink: null }),
   findOne: jest.fn(),
   create: jest.fn(),
   findOneAndUpdate: jest.fn(),

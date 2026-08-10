@@ -69,5 +69,156 @@ links: [
     { timestamps: true }
 );
 
-const CreatorModel = mongoose.models.Creator || mongoose.model("Creator", creatorSchema);
+const MongooseCreatorModel = mongoose.models.Creator || mongoose.model("Creator", creatorSchema);
+
+const mockCreators = [];
+
+class MockCreatorModel {
+    constructor(data) {
+        this._id = data._id || new mongoose.Types.ObjectId().toString();
+        this.userId = data.userId;
+        this.username = data.username || "creator";
+        this.platform = data.platform || "instagram";
+        this.profileUrl = data.profileUrl || "";
+        this.avatar = data.avatar || "";
+        this.bio = data.bio || "";
+        this.theme = data.theme || "dark";
+        this.accentColor = data.accentColor || "#8b5cf6";
+        this.links = data.links || [];
+        this.lastRefreshedAt = data.lastRefreshedAt || new Date();
+        this.createdAt = data.createdAt || new Date();
+        this.updatedAt = data.updatedAt || new Date();
+    }
+
+    static create(data) {
+        const creator = new MockCreatorModel(data);
+        mockCreators.push(creator);
+        seedMockAnalyticsForCreator(creator._id);
+        const wrapped = {
+            lean: async () => creator,
+            then: (resolve, reject) => resolve(creator)
+        };
+        return wrapped;
+    }
+
+    static findOne(query = {}) {
+        let found = mockCreators.find((item) => {
+            if (query.userId && item.userId?.toString() !== query.userId?.toString()) return false;
+            if (query._id && item._id?.toString() !== query._id?.toString()) return false;
+            return true;
+        });
+
+        if (!found && query.userId && process.env.USE_MOCK_DB === "true") {
+            found = new MockCreatorModel({
+                _id: "creator_" + query.userId.toString().slice(-6),
+                userId: query.userId,
+                username: "test_creator",
+                platform: "instagram",
+                profileUrl: "https://instagram.com/test_creator",
+                avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+                lastRefreshedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+            mockCreators.push(found);
+            seedMockAnalyticsForCreator(found._id);
+        }
+
+        const wrapped = {
+            sort: () => wrapped,
+            select: () => wrapped,
+            lean: async () => found ? new MockCreatorModel(found) : null,
+            then: (resolve, reject) => resolve(found ? new MockCreatorModel(found) : null)
+        };
+        return wrapped;
+    }
+
+    static find(query = {}) {
+        const results = mockCreators.filter((item) => {
+            if (query.userId && item.userId?.toString() !== query.userId?.toString()) return false;
+            return true;
+        }).map((item) => new MockCreatorModel(item));
+
+        const wrapped = {
+            select: () => wrapped,
+            sort: () => wrapped,
+            lean: async () => results,
+            then: (resolve, reject) => resolve(results)
+        };
+        return wrapped;
+    }
+
+    static async findById(id) {
+        const found = mockCreators.find((item) => item._id?.toString() ===id?.toString());
+        return found ? new MockCreatorModel(found) : null;
+    }
+
+    static async findByIdAndUpdate(id, update = {}) {
+        let found = mockCreators.find((item) => item._id?.toString() === id?.toString());
+        if (!found) return null;
+        if (update.$set) Object.assign(found, update.$set);
+        else Object.assign(found, update);
+        found.updatedAt = new Date();
+        return new MockCreatorModel(found);
+    }
+
+    static async deleteOne(query = {}) {
+        const index = mockCreators.findIndex((item) => {
+            if (query.userId && item.userId?.toString() !== query.userId?.toString()) return false;
+            if (query._id && item._id?.toString() !== query._id?.toString()) return false;
+            return true;
+        });
+        const operation = {
+            session: () => operation,
+            exec: async () => {
+                if (index !== -1) mockCreators.splice(index, 1);
+                return { deletedCount: index !== -1 ? 1 : 0 };
+            },
+            then: (resolve, reject) => operation.exec().then(resolve, reject)
+        };
+        return operation;
+    }
+}
+
+function seedMockAnalyticsForCreator(creatorId) {
+    try {
+        const AnalyticsSnapshot = require("./analyticsSnapshot");
+        const EngagementHistory = require("./engagementHistory");
+        const Post = require("./post");
+
+        if (AnalyticsSnapshot.seedForCreator) AnalyticsSnapshot.seedForCreator(creatorId);
+        if (EngagementHistory.seedForCreator) EngagementHistory.seedForCreator(creatorId);
+        if (Post.seedForCreator) Post.seedForCreator(creatorId);
+    } catch (e) {
+        // Ignore if models aren't loaded yet
+    }
+}
+
+// Pre-seed default test creator for user 000000000000000000000001
+mockCreators.push(new MockCreatorModel({
+    _id: "creator_test_001",
+    userId: "000000000000000000000001",
+    username: "test_creator",
+    platform: "instagram",
+    profileUrl: "https://instagram.com/test_creator",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    lastRefreshedAt: new Date()
+}));
+
+function getActiveCreatorModel() {
+    return process.env.USE_MOCK_DB === "true" ? MockCreatorModel : MongooseCreatorModel;
+}
+
+function CreatorModel(data) {
+    const ActiveModel = getActiveCreatorModel();
+    return new ActiveModel(data);
+}
+
+CreatorModel.find = (...args) => getActiveCreatorModel().find(...args);
+CreatorModel.findOne = (...args) => getActiveCreatorModel().findOne(...args);
+CreatorModel.findById = (...args) => getActiveCreatorModel().findById(...args);
+CreatorModel.findByIdAndUpdate = (...args) => getActiveCreatorModel().findByIdAndUpdate(...args);
+CreatorModel.create = (...args) => getActiveCreatorModel().create(...args);
+CreatorModel.deleteOne = (...args) => getActiveCreatorModel().deleteOne(...args);
+
 module.exports = CreatorModel;
