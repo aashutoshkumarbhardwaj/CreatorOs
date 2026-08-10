@@ -33,18 +33,18 @@ body.settings-page.density-tactile {
     --card-gap: 3rem;
 }
 
-body.settings-page.appearance-dark {
+[data-theme="dark"] body.settings-page {
     --settings-bg: #1a1a1a;
     --settings-sidebar: #2d2d2d;
     color: #f5f5f5;
 }
 
-body.settings-page.appearance-dark .section-card,
-body.settings-page.appearance-dark .billing-card,
-body.settings-page.appearance-dark .sub-nav-item,
-body.settings-page.appearance-dark .form-input,
-body.settings-page.appearance-dark .form-textarea,
-body.settings-page.appearance-dark .setting-row {
+[data-theme="dark"] body.settings-page .section-card,
+[data-theme="dark"] body.settings-page .billing-card,
+[data-theme="dark"] body.settings-page .sub-nav-item,
+[data-theme="dark"] body.settings-page .form-input,
+[data-theme="dark"] body.settings-page .form-textarea,
+[data-theme="dark"] body.settings-page .setting-row {
     background-color: #2d2d2d;
     color: #f5f5f5;
 }
@@ -69,7 +69,7 @@ body.settings-page {
     color: var(--settings-text);
 }
 
-body.settings-page.appearance-dark {
+[data-theme="dark"] body.settings-page {
     --settings-bg: #1a1a18;
     --settings-surface: #252522;
     --settings-muted-surface: #2c2c28;
@@ -274,8 +274,8 @@ body.settings-page .brand-mark {
     font-weight: 600;
 }
 
-body.appearance-dark .settings-header p {
-    color: var(--settings-muted);
+[data-theme="dark"] body .settings-header p {
+    color: #a3a3a3;
 }
 
 .user-badge {
@@ -526,7 +526,7 @@ body.appearance-dark .settings-header p {
     color: var(--settings-muted);
 }
 
-body.appearance-dark .setting-info p {
+[data-theme="dark"] body .setting-info p {
     color: #bbb;
 }
 
@@ -1031,15 +1031,16 @@ body.appearance-dark .setting-info p {
     box-shadow: none;
 }
 
-body.appearance-dark .deletion-status {
-    background: #3b1f1f;
-    border-color: #dc2626;
+[data-theme="dark"] body .deletion-status {
+    background-color: #2c2c28;
+    border-color: #555;
 }
 
-body.appearance-dark .deletion-status-info {
-    color: #fca5a5;
+[data-theme="dark"] body .deletion-status-info {
+    color: #f5f5f5;
 }
 
-body.appearance-dark .deletion-info-box {
-    background: var(--settings-muted-surface);
+[data-theme="dark"] body .deletion-info-box {
+    background-color: #333;
+    border-color: #555;
 }
