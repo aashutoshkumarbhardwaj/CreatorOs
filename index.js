@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const passport = require("passport");
 const path = require("path");
+const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
 const {
@@ -78,9 +79,33 @@ const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
+// Generate a per-request nonce before Helmet so early exits (CSRF/validation)
+// still receive CSP headers that reference res.locals.nonce.
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString("base64");
+  next();
+});
+
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disabling CSP by default so we don't break existing inline scripts/styles without testing
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          (req, res) => `'nonce-${res.locals.nonce}'`,
+          "https://cdn.jsdelivr.net",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }),
 );
@@ -128,22 +153,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "view"));
 app.locals.BRAND = BRAND;
 
-// Generate a per-request nonce for inline scripts (used by CSP below and
-// exposed to views via res.locals.nonce)
-const crypto = require("crypto");
-app.use((req, res, next) => {
-  res.locals.nonce = crypto.randomBytes(16).toString("base64");
-  next();
-});
-
-// Content Security Policy (CSP) header - defense-in-depth against XSS
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${res.locals.nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; frame-src 'none';`,
-  );
-  next();
-});
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
