@@ -57,9 +57,13 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your settings
 
-# Start development server
+# Option A: Start local development server
 npm run dev
+
+# Option B: Start using Docker Compose Development Environment
+npm run docker:dev
 ```
+
 
 ### Running Tests
 ```bash

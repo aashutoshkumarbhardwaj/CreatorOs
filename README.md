@@ -358,6 +358,32 @@ Then open:
 http://localhost:3000
 ```
 
+### Run with Docker Compose (Development Environment)
+
+For local development with live code reloading (`nodemon`), background worker, and database services:
+
+```bash
+# Start dev services
+npm run docker:dev
+# OR directly using Docker Compose:
+docker compose -f docker-compose.dev.yml up --build
+
+# Stop dev services
+npm run docker:dev:down
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+> **Note on Docker Compose environments:**
+> - `docker-compose.dev.yml`: Used for local development with hot reloading and worker support (`http://localhost:3000`).
+> - `docker-compose.yml`: Used for production-like load-balanced deployments behind Nginx (`http://localhost`). See [NGINX_LOAD_BALANCING.md](NGINX_LOAD_BALANCING.md).
+
+
+
 ## ❓ FAQ
 
 ### Why is CreatorOS running in Mock Database Mode?

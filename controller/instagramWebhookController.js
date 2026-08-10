@@ -1,7 +1,10 @@
-const { dmQueue } = require('../services/dmQueueService');
+const dmQueueService = require('../services/dmQueueService');
 const asyncHandler = require('../utils/asyncHandler');
 
 const crypto = require('crypto');
+
+// Prefer exported dmQueue when present (#981 may add the export separately).
+const dmQueue = dmQueueService && dmQueueService.dmQueue;
 
 // In-memory deduplication set for processed webhook event IDs
 // TTL: 5 minutes to prevent unbounded memory growth
@@ -9,7 +12,7 @@ const processedEvents = new Map();
 const EVENT_TTL_MS = 5 * 60 * 1000;
 
 // Periodic cleanup of expired event IDs
-clearInterval(window.__interval); window.__interval = setInterval(() => {
+const cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [eventId, timestamp] of processedEvents) {
         if (now - timestamp > EVENT_TTL_MS) {
@@ -17,12 +20,20 @@ clearInterval(window.__interval); window.__interval = setInterval(() => {
         }
     }
 }, 60 * 1000);
+cleanupInterval.unref();
 
-function isEventAlreadyProcessed(eventId) {
+function hasProcessed(eventId) {
     if (!eventId) return false;
-    if (processedEvents.has(eventId)) return true;
+    return processedEvents.has(eventId);
+}
+
+function markProcessed(eventId) {
+    if (!eventId) return;
     processedEvents.set(eventId, Date.now());
-    return false;
+}
+
+function clearProcessedEvents() {
+    processedEvents.clear();
 }
 
 // Verify the webhook from Meta
@@ -86,12 +97,33 @@ const verifyWebhookSignature = (req, res, next) => {
     return res.sendStatus(403);
 };
 
+async function enqueueDmEvent(eventId, senderId, messageText) {
+    if (!dmQueue || typeof dmQueue.add !== 'function') {
+        throw new Error('DM queue unavailable');
+    }
+
+    await dmQueue.add('process-dm', {
+        senderId: senderId,
+        message: messageText,
+        triggerKeyword: messageText.toLowerCase(),
+        eventId: eventId,
+    }, {
+        attempts: 5,
+        backoff: {
+            type: 'exponential',
+            delay: 2000
+        },
+        jobId: eventId,
+    });
+}
+
 // Handle incoming webhook events
 const handleWebhook = asyncHandler(async (req, res, next) => {
     const body = req.body || {};
 
     // Check for duplicate event using X-Event-ID header or payload-level deduplication
     const headerEventId = req.headers['x-event-id'];
+    let enqueueFailed = false;
     
     // Check if it's a page or instagram event
     if (body.object === 'instagram') {
@@ -110,40 +142,32 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
                                 .update(`${senderId}:${message.mid || message.text}:${timestamp || Date.now()}`)
                                 .digest('hex');
 
-                            if (isEventAlreadyProcessed(eventId)) {
+                            if (hasProcessed(eventId)) {
                                 console.log(`[Webhook] Duplicate event ${eventId}, skipping`);
                                 continue;
                             }
 
                             console.log(`[Webhook] Received message from ${senderId}: ${message.text}`);
                             
-                            // Enqueue the message for asynchronous processing instead of synchronous execution
-                            // We set exponential backoff: 5 retries, starting with 2 seconds delay
+                            // Enqueue first; only mark processed after a successful add so Meta can retry on failure.
                             try {
-                                await dmQueue.add('process-dm', {
-                                    senderId: senderId,
-                                    message: message.text,
-                                    triggerKeyword: message.text.toLowerCase(),
-                                    eventId: eventId,
-                                }, {
-                                    attempts: 5,
-                                    backoff: {
-                                        type: 'exponential',
-                                        delay: 2000
-                                    },
-                                    jobId: eventId,
-                                });
+                                await enqueueDmEvent(eventId, senderId, message.text);
+                                markProcessed(eventId);
                             } catch (error) {
-                                console.warn(`[Webhook] DM queue unavailable, skipping async processing: ${error.message}`);
+                                enqueueFailed = true;
+                                console.warn(`[Webhook] DM queue enqueue failed: ${error.message}`);
                             }
                         }
                     }
                 }
             }
         }
+
+        if (enqueueFailed) {
+            // Ask Meta to retry; successfully enqueued events stay marked and will be skipped.
+            return res.status(503).send('SERVICE_UNAVAILABLE');
+        }
         
-        // Return a '200 OK' response to all requests immediately
-        // so Instagram doesn't think the webhook failed and resends it.
         return res.status(200).send('EVENT_RECEIVED');
     } else {
         // Return a '404 Not Found' if event is not from a supported object
@@ -154,5 +178,8 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
 module.exports = {
     verifyWebhook,
     verifyWebhookSignature,
-    handleWebhook
+    handleWebhook,
+    hasProcessed,
+    markProcessed,
+    clearProcessedEvents,
 };
