@@ -49,6 +49,12 @@ function generateCsrf(req, res, next) {
     next();
 }
 
+// Paths that receive external webhook callbacks and cannot include CSRF tokens.
+// These endpoints must rely on their own verification (e.g. HMAC signatures) instead.
+const CSRF_EXEMPT_PATHS = new Set([
+    '/api/instagram/webhook',
+]);
+
 /**
  * Middleware to verify the CSRF token on state-changing requests (POST, PUT, DELETE, PATCH).
  * Validates that the request includes a valid CSRF token matching the one in the secure cookie.
@@ -59,6 +65,12 @@ function verifyCsrf(req, res, next) {
 
     // Skip verification for safe HTTP methods
     if (safeMethods.includes(req.method)) {
+        return next();
+    }
+
+    // Skip verification for exempt external webhook endpoints, which are
+    // authenticated separately (e.g. via HMAC signature verification)
+    if (CSRF_EXEMPT_PATHS.has(req.path)) {
         return next();
     }
 
