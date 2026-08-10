@@ -366,6 +366,16 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
     }
 
+    // Google-only (or otherwise passwordless) accounts have no local password hash.
+    // Comparing against undefined throws inside bcrypt and becomes a 500 — treat like a failed login.
+    const hasLocalPassword = typeof user.password === "string" && user.password.length > 0;
+    if (!hasLocalPassword) {
+        await bcrypt.compare(password, DUMMY_HASH);
+        await recordFailedLoginAttempt(normalizedEmail);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
         await recordFailedLoginAttempt(normalizedEmail);
