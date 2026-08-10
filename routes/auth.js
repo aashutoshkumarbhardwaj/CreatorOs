@@ -6,6 +6,7 @@ const { signupValidator, loginValidator, contributorLoginValidator, resendVerifi
 const connectDB = require("../connect");
 const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
 const { redirectIfAuthenticated } = require("../middleware/auth");
+const { resolveGoogleOAuthUser } = require("../utils/resolveGoogleOAuthUser");
 
 const router = express.Router();
 
@@ -27,43 +28,13 @@ if (googleAuthConfigured) {
                 try {
                     await connectDB();
                     const User = require("../model/user");
-                    const email = profile.emails?.[0]?.value?.toLowerCase();
+                    const result = await resolveGoogleOAuthUser(profile, User);
 
-                    if (!email) {
-                        return done(null, false, { message: "Google account does not expose an email address." });
+                    if (!result.ok) {
+                        return done(null, false, { message: result.message });
                     }
 
-                    const googleUser = {
-                        googleId: profile.id,
-                        name: profile.displayName || email.split("@")[0],
-                        email,
-                        avatar: profile.photos?.[0]?.value,
-                        lastLoginAt: new Date(),
-                    };
-
-                    let user = await User.findOne({ googleId: profile.id });
-
-                    if (!user) {
-                        user = await User.findOne({ email });
-                    }
-
-                    if (user) {
-                        user.googleId = googleUser.googleId;
-                        user.name = user.name || googleUser.name;
-                        user.avatar = googleUser.avatar || user.avatar;
-                        user.authProvider = user.password ? user.authProvider : "google";
-                        user.lastLoginAt = googleUser.lastLoginAt;
-                        user.isVerified = true;
-                        await user.save();
-                    } else {
-                        user = await User.create({
-                            ...googleUser,
-                            authProvider: "google",
-                            isVerified: true,
-                        });
-                    }
-
-                    return done(null, user);
+                    return done(null, result.user);
                 } catch (error) {
                     return done(error);
                 }
