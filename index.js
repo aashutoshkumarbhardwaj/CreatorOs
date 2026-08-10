@@ -1191,8 +1191,6 @@ app.get(
               $sort: { timestamp: -1 },
               $slice: 1000,
             },
-          },
-        },
         { new: true },
       );
 
