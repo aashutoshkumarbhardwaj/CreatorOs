@@ -10,6 +10,7 @@ jest.mock("../../controller/auth", () => ({
   signup: jest.fn(),
   login: jest.fn(),
   handleGoogleCallback: jest.fn(),
+  verifyLogin2FA: jest.fn(),
   loginAsContributor: jest.fn(),
   verifyEmail: jest.fn(),
   resendVerificationEmail: jest.fn(),

@@ -318,6 +318,65 @@
 }
 .suggestions-page .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+/* Status / provenance banner */
+.suggestions-page .status-banner {
+  display: none;
+  margin: 0 1.5rem 0;
+  padding: 0.75rem 0.9rem;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.suggestions-page .status-banner.show { display: flex; }
+.suggestions-page .status-banner.error {
+  border-color: var(--danger);
+  background: rgba(225, 59, 59, 0.08);
+}
+.suggestions-page .status-banner.template {
+  border-color: var(--accent);
+  background: rgba(228, 193, 59, 0.12);
+}
+.suggestions-page .status-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.suggestions-page .status-banner-copy strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.suggestions-page .status-banner-copy span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.suggestions-page .status-retry-btn {
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  background: var(--text);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+.suggestions-page .status-retry-btn:hover { transform: translate(-1px, -1px); box-shadow: var(--shadow-sm); }
+.suggestions-page .panel-empty {
+  padding: 0.85rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.suggestions-page .unavailable-state .status-retry-btn {
+  margin-top: 0.75rem;
+}
+
 /* ── CUSTOM VARIABLES (page-specific) ── */
 .suggestions-page {
   --shadow-sm: 2px 2px 0px #111111;

@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 const passport = require("passport");
 const path = require("path");
+const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
 const {
@@ -78,9 +79,33 @@ const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
+// Generate a per-request nonce before Helmet so early exits (CSRF/validation)
+// still receive CSP headers that reference res.locals.nonce.
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString("base64");
+  next();
+});
+
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disabling CSP by default so we don't break existing inline scripts/styles without testing
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          (req, res) => `'nonce-${res.locals.nonce}'`,
+          "https://cdn.jsdelivr.net",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }),
 );
@@ -128,22 +153,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "view"));
 app.locals.BRAND = BRAND;
 
-// Generate a per-request nonce for inline scripts (used by CSP below and
-// exposed to views via res.locals.nonce)
-const crypto = require("crypto");
-app.use((req, res, next) => {
-  res.locals.nonce = crypto.randomBytes(16).toString("base64");
-  next();
-});
-
-// Content Security Policy (CSP) header - defense-in-depth against XSS
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${res.locals.nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; frame-src 'none';`,
-  );
-  next();
-});
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
@@ -449,52 +458,52 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
             }
           }
         }
-    });
+      });
     }
   });
 
-    const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
-    userUrls.forEach(url => {
-        (url.visitHistory || []).forEach(v => {
-            if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
-            if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
-            if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
-            if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
-        });
-    });
+  const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
+  userUrls.forEach(url => {
+      (url.visitHistory || []).forEach(v => {
+          if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
+          if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
+          if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
+          if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
+      });
+  });
 
-    const linkPosts = (userUrls || []).map((u) => ({
-        title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
-        type: u.tag ? u.tag.toUpperCase() : 'LINK',
-        likes: '—',
-        comments: '—',
-        views: u.totalClicks || 0,
-        engagement: `${u.totalClicks || 0} clicks`,
-        date: u.createdAt
-            ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            : 'Today',
-    })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+  const linkPosts = (userUrls || []).map((u) => ({
+      title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
+      type: u.tag ? u.tag.toUpperCase() : 'LINK',
+      likes: '—',
+      comments: '—',
+      views: u.totalClicks || 0,
+      engagement: `${u.totalClicks || 0} clicks`,
+      date: u.createdAt
+          ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'Today',
+  })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
 
-    return {
-        isLoading: false,
-        isEmpty: userUrls.length === 0,
-        selectedRange: 'Last 30 days',
-        lastUpdated: new Date().toLocaleString('en-US', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: 'numeric', minute: '2-digit',
-        }),
-        metrics: [],
-        charts: {
-            labels,
-            followers,
-            engagement,
-            posts: linkPosts.map((p) => p.title),
-            postPerformance: linkPosts.map((p) => p.views),
-        },
-        topPosts: linkPosts,
-        breakdown,
-        totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
-    };
+  return {
+      isLoading: false,
+      isEmpty: userUrls.length === 0,
+      selectedRange: 'Last 30 days',
+      lastUpdated: new Date().toLocaleString('en-US', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: 'numeric', minute: '2-digit',
+      }),
+      metrics: [],
+      charts: {
+          labels,
+          followers,
+          engagement,
+          posts: linkPosts.map((p) => p.title),
+          postPerformance: linkPosts.map((p) => p.views),
+      },
+      topPosts: linkPosts,
+      breakdown,
+      totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
+  };
 }
 
 function isGuestContributor(user) {
@@ -1165,27 +1174,23 @@ app.get(
     const coordinates = parseVisitCoordinates(req.query);
 
     try {
-        const visitData = { timestamp: new Date(), source: 'direct' };
-        if (coordinates) {
-            visitData.x = coordinates.x;
-            visitData.y = coordinates.y;
-        }
-        Object.assign(visitData, parseVisitMeta(req));
-        
-        const entry = await Url.findOneAndUpdate(
-            { shortId },
-            {
-                $inc:  { totalClicks: 1 },
-                $push: {
-                    visitHistory: {
-                        $each: [visitData],
-                        $sort: { timestamp: -1 },
-                        $slice: 1000,
-                    },
-                },
+      const visitData = { timestamp: new Date(), source: "direct" };
+      if (coordinates) {
+        visitData.x = coordinates.x;
+        visitData.y = coordinates.y;
+      }
+      Object.assign(visitData, parseVisitMeta(req));
+
+      const entry = await Url.findOneAndUpdate(
+        { shortId },
+        {
+          $inc: { totalClicks: 1 },
+          $push: {
+            visitHistory: {
+              $each: [visitData],
+              $sort: { timestamp: -1 },
+              $slice: 1000,
             },
-          },
-        },
         { new: true },
       );
 

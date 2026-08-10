@@ -7,7 +7,7 @@
     `
 }) %>
 
-<div class="suggestions-page">
+<div class="suggestions-page" data-csrf="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 <!-- page content begins -->
   <div class="main-content">
 
@@ -23,6 +23,14 @@
       <h1 class="page-title">Caption & Hashtag Generator</h1>
     </div>
 
+    <div id="statusBanner" class="status-banner<%= (typeof error !== 'undefined' && error) ? ' show error' : (typeof source !== 'undefined' && source === 'template' ? ' show template' : '') %>" role="status" aria-live="polite"<%= (typeof error !== 'undefined' && error) || (typeof source !== 'undefined' && source === 'template') ? '' : ' hidden' %>>
+      <div class="status-banner-copy">
+        <strong id="statusBannerTitle"><%= (typeof error !== 'undefined' && error) ? 'Suggestions unavailable' : (typeof source !== 'undefined' && source === 'template' ? 'Template mode' : '') %></strong>
+        <span id="statusBannerMessage"><%= (typeof error !== 'undefined' && error) ? error : (typeof source !== 'undefined' && source === 'template' ? 'These captions and hashtags are offline templates, not AI-generated results. Music recommendations are omitted.' : '') %></span>
+      </div>
+      <button type="button" class="status-retry-btn" id="statusRetryBtn"<%= (typeof retryable !== 'undefined' && retryable) ? '' : ' hidden' %>>Retry</button>
+    </div>
+
     <!-- Three columns -->
     <div class="tool-grid">
 
@@ -35,7 +43,7 @@
           <div>
             <div class="field-label">Topic / Concept</div>
             <textarea class="field-textarea" id="topicInput"
-              placeholder="e.g. My morning desk setup and creative routine..."></textarea>
+              placeholder="e.g. My morning desk setup and creative routine..."><%= typeof selected !== 'undefined' && selected ? selected : '' %></textarea>
           </div>
 
           <!-- Platform -->
@@ -73,7 +81,7 @@
         <!-- Generate -->
         <button type="button" class="generate-btn" id="generateBtn" onclick="generateCaptions()">
           <div class="spinner"></div>
-          <span class="btn-text">✦ Generate Captions</span>
+          <span class="btn-text">Generate Captions</span>
         </button>
 
         <!-- Usage -->
@@ -103,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Captions will be injected here -->
         <div class="captions-list" id="captionsList">
           <div class="empty-state" id="emptyState">
             <div class="empty-icon">
@@ -117,87 +124,25 @@
 
       <!-- ── COL 3: RIGHT PANEL ── -->
       <div class="col-right">
-
-        <!-- Trending Hashtags -->
         <div class="right-panel">
-          <div class="right-panel-head">02. Trending Hashtags</div>
+          <div class="right-panel-head">02. Hashtags</div>
           <div class="hashtag-list" id="hashtagList">
-            <div class="hashtag-row" onclick="copyHashtag('#CREATORECONOMY')">
-              <span class="hashtag-name">#CREATORECONOMY</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">98/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:98%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#AIGENERATED')">
-              <span class="hashtag-name">#AIGENERATED</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">85/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:85%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#PRODUCTIVITYHACKS')">
-              <span class="hashtag-name">#PRODUCTIVITYHACKS</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">72/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:72%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#DESKSETUP')">
-              <span class="hashtag-name">#DESKSETUP</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">64/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:64%"></div></div>
-              </div>
-            </div>
+            <div class="panel-empty" id="hashtagEmpty">Generate suggestions to see hashtags for your topic.</div>
           </div>
-          <button type="button" class="see-more-btn" onclick="showToast('Loading more trends...')">See more trends</button>
         </div>
 
-        <!-- Recommended Audio -->
         <div class="right-panel">
           <div class="right-panel-head">03. Recommended Audio</div>
-          <div class="audio-list">
-            <div class="audio-row">
-              <div class="audio-play">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Lofi M...</div>
-                <div class="audio-sub">High Growth Track</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
-            <div class="audio-row">
-              <div class="audio-play">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Tech R...</div>
-                <div class="audio-sub">Trending Globally</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
-            <div class="audio-row">
-              <div class="audio-play teal">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#111"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Hyper...</div>
-                <div class="audio-sub">8.2k usages today</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
+          <div class="audio-list" id="audioList">
+            <div class="panel-empty" id="audioEmpty">Music recommendations appear only from a successful AI response. Templates never invent songs.</div>
           </div>
         </div>
-
       </div>
     </div><!-- /tool-grid -->
 
   </div><!-- /main-content -->
 </div><!-- /suggestions-page -->
 
-<!-- Mobile bottom nav -->
 <nav class="mobile-nav">
   <div class="mobile-nav-inner">
     <a href="/dashboard" class="mobile-nav-item">
@@ -219,108 +164,179 @@
   </div>
 </nav>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<% if (typeof error !== 'undefined' && error) { %>
 <script nonce="<%= nonce %>">
-  document.addEventListener('DOMContentLoaded', () => {
-    const t = document.getElementById('toast');
-    if (t) {
-      t.textContent = "<%= error %>";
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3500);
-    }
-  });
-</script>
-<% } %>
+  const initialResult = <%- typeof result !== 'undefined' && result ? JSON.stringify({
+    captions: result.captions || [],
+    hashtags: result.hashtags || [],
+    songs: result.songs || [],
+    source: typeof source !== 'undefined' ? source : (result.source || null)
+  }).replace(/</g, '\\u003c') : 'null' %>;
+  const initialError = <%- typeof error !== 'undefined' && error ? JSON.stringify({
+    message: error,
+    code: typeof errorCode !== 'undefined' ? errorCode : null,
+    retryable: typeof retryable !== 'undefined' ? !!retryable : false
+  }).replace(/</g, '\\u003c') : 'null' %>;
 
-<script nonce="<%= nonce %>">
-  // ── PLATFORM TOGGLE ──
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function togglePlatform(el) {
     el.classList.toggle('selected');
   }
 
-  // ── MOOD TOGGLE ──
   function toggleMood(el) {
     el.classList.toggle('selected');
   }
 
-  // ── CAPTION DATA ──
-  const captionTemplates = {
-    witty: [
-      {
-        label: 'OPTION 01: WITTY',
-        text: "My morning routine: 5% actual work, 95% making sure my desk looks like a Pinterest board. 🖥️✨ Who else is guilty of the 'productive aesthetic'? #CreatorLife #WorkspaceVibes",
-        tags: ['#CreatorEconomy', '#MorningRoutine', '#ProductivityHacks']
-      },
-      {
-        label: 'OPTION 02: WITTY ALT',
-        text: "POV: You've rearranged your desk 4 times but only moved the plant. 🌿 The real productivity hack nobody talks about. Drop a 🖥️ if you relate.",
-        tags: ['#DeskSetup', '#CreatorLife', '#WorkFromHome']
-      }
-    ],
-    professional: [
-      {
-        label: 'OPTION 01: PROFESSIONAL',
-        text: "Efficiency starts with environment. 🧠 Optimizing my physical workspace has led to a 40% increase in deep work hours this month. Here's a breakdown of the tools keeping me focused.",
-        tags: ['#WorkspaceOptimization', '#DeepWork']
-      },
-      {
-        label: 'OPTION 02: PROFESSIONAL ALT',
-        text: "Your environment shapes your output. I spent 30 days redesigning my workspace — here's what changed about my productivity, creativity, and focus. The results surprised me.",
-        tags: ['#ProductivitySystem', '#CreatorWorkspace', '#FocusMode']
-      }
-    ],
-    energetic: [
-      {
-        label: 'OPTION 01: ENERGETIC',
-        text: "NEW SETUP DROP! 🚀⚡ I finally built the workspace of my dreams and I'm obsessed. Swipe to see the full tour and drop your fave element in the comments!",
-        tags: ['#SetupTour', '#NewSetup', '#CreatorSpace']
-      },
-      {
-        label: 'OPTION 02: ENERGETIC ALT',
-        text: "This desk setup is SENDING me 🔥 Spent the whole weekend on this and I have zero regrets. Would you work here? Tell me in the comments 👇",
-        tags: ['#DeskGoals', '#WorkspaceInspo', '#CreatorVibes']
-      }
-    ],
-    minimalist: [
-      {
-        label: 'OPTION 01: MINIMALIST',
-        text: "Less clutter. More clarity. A clean space for clear thinking.",
-        tags: ['#Minimalism', '#MinimalDesk', '#CleanSetup']
-      },
-      {
-        label: 'OPTION 02: MINIMALIST ALT',
-        text: "The desk. The work. Nothing else needed.",
-        tags: ['#MinimalWorkspace', '#SimpleLiving', '#Focus']
-      }
-    ]
-  };
+  function getCsrfToken() {
+    const page = document.querySelector('.suggestions-page');
+    return page ? page.getAttribute('data-csrf') || '' : '';
+  }
 
-  const trendingHashtags = {
-    instagram: [
-      { tag: '#CREATORECONOMY', score: 98 },
-      { tag: '#AIGENERATED', score: 85 },
-      { tag: '#PRODUCTIVITYHACKS', score: 72 },
-      { tag: '#DESKSETUP', score: 64 },
-    ],
-    tiktok: [
-      { tag: '#FYPAGE', score: 99 },
-      { tag: '#TIKTOKCREATOR', score: 91 },
-      { tag: '#VIRAL2026', score: 88 },
-      { tag: '#CONTENTCREATOR', score: 76 },
-    ],
-    youtube: [
-      { tag: '#YOUTUBER', score: 95 },
-      { tag: '#SHORTS', score: 90 },
-      { tag: '#VLOG', score: 82 },
-      { tag: '#SUBSCRIBE', score: 70 },
-    ]
-  };
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
 
-  // ── GENERATE ──
-  function generateCaptions() {
+  function setStatusBanner({ type, title, message, retryable }) {
+    const banner = document.getElementById('statusBanner');
+    const titleEl = document.getElementById('statusBannerTitle');
+    const messageEl = document.getElementById('statusBannerMessage');
+    const retryBtn = document.getElementById('statusRetryBtn');
+
+    banner.hidden = false;
+    banner.classList.add('show');
+    banner.classList.toggle('error', type === 'error');
+    banner.classList.toggle('template', type === 'template');
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    retryBtn.hidden = !retryable;
+  }
+
+  function clearStatusBanner() {
+    const banner = document.getElementById('statusBanner');
+    banner.hidden = true;
+    banner.classList.remove('show', 'error', 'template');
+    document.getElementById('statusRetryBtn').hidden = true;
+  }
+
+  function showUnavailableState(message, retryable) {
+    const list = document.getElementById('captionsList');
+    list.innerHTML = `
+      <div class="empty-state unavailable-state" id="emptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="empty-title">Suggestions unavailable</div>
+        <div class="empty-sub">${escapeHtml(message || 'Generation failed. Please try again.')}</div>
+        ${retryable ? '<button type="button" class="status-retry-btn" onclick="generateCaptions()">Retry</button>' : ''}
+      </div>
+    `;
+    document.getElementById('hashtagList').innerHTML =
+      '<div class="panel-empty">Hashtags unavailable until generation succeeds.</div>';
+    document.getElementById('audioList').innerHTML =
+      '<div class="panel-empty">Music recommendations are hidden when generation fails.</div>';
+    setStatusBanner({
+      type: 'error',
+      title: 'Suggestions unavailable',
+      message: message || 'Generation failed. Please try again.',
+      retryable: !!retryable
+    });
+  }
+
+  function renderCaptions(captions, hashtags, source) {
+    const list = document.getElementById('captionsList');
+    list.innerHTML = captions.map((text, i) => `
+      <div class="caption-card" style="animation-delay:${i * 0.08}s">
+        <span class="caption-option-label">OPTION ${String(i + 1).padStart(2, '0')}${source === 'template' ? ' · TEMPLATE' : ''}</span>
+        <p class="caption-text">${escapeHtml(text)}</p>
+        <div class="caption-tags">
+          ${hashtags.slice(0, 3).map((t) =>
+            `<span class="caption-tag" data-text="${escapeHtml(t)}">${escapeHtml(t)}</span>`
+          ).join('')}
+        </div>
+        <div class="caption-actions">
+          <button type="button" class="caption-btn" data-copy-index="${i}">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            COPY
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.caption-tag').forEach((tag) => {
+      tag.addEventListener('click', () => copyText(tag.getAttribute('data-text')));
+    });
+    list.querySelectorAll('[data-copy-index]').forEach((btn) => {
+      btn.addEventListener('click', () => copyCaption(Number(btn.getAttribute('data-copy-index'))));
+    });
+  }
+
+  function renderHashtags(hashtags) {
+    const list = document.getElementById('hashtagList');
+    if (!hashtags.length) {
+      list.innerHTML = '<div class="panel-empty">No hashtags returned.</div>';
+      return;
+    }
+    list.innerHTML = hashtags.map((tag) => `
+      <div class="hashtag-row" data-tag="${escapeHtml(tag)}">
+        <span class="hashtag-name">${escapeHtml(tag)}</span>
+      </div>
+    `).join('');
+    list.querySelectorAll('.hashtag-row').forEach((row) => {
+      row.addEventListener('click', () => copyHashtag(row.getAttribute('data-tag')));
+    });
+  }
+
+  function renderSongs(songs, source) {
+    const list = document.getElementById('audioList');
+    if (source === 'template' || !songs || songs.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No verified music recommendations for this result.</div>';
+      return;
+    }
+    list.innerHTML = songs.map((song) => `
+      <div class="audio-row">
+        <div class="audio-play">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
+        </div>
+        <div class="audio-info">
+          <div class="audio-name">${escapeHtml(song.title)}</div>
+          <div class="audio-sub">${escapeHtml(song.mood || 'AI suggestion')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function applyResult(payload) {
+    const source = payload.source || (payload.isTemplate ? 'template' : 'openai');
+    const result = payload.result || payload;
+    renderCaptions(result.captions || [], result.hashtags || [], source);
+    renderHashtags(result.hashtags || []);
+    renderSongs(result.songs || [], source);
+
+    if (source === 'template') {
+      setStatusBanner({
+        type: 'template',
+        title: 'Template mode',
+        message: 'These captions and hashtags are offline templates, not AI-generated results. Music recommendations are omitted.',
+        retryable: false
+      });
+    } else {
+      clearStatusBanner();
+    }
+  }
+
+  async function generateCaptions() {
     const topic = document.getElementById('topicInput').value.trim();
     if (!topic) {
       showToast('Please enter a topic first!');
@@ -329,75 +345,45 @@
 
     const btn = document.getElementById('generateBtn');
     btn.classList.add('loading');
+    btn.disabled = true;
 
-    // Get selected mood
-    const selectedMood = document.querySelector('.mood-chip.selected');
-    const mood = selectedMood ? selectedMood.textContent.toLowerCase() : 'energetic';
+    try {
+      const response = await fetch('/suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify({ topic })
+      });
 
-    // Get selected platforms
-    const selectedPlatforms = [...document.querySelectorAll('.platform-chip.selected')]
-      .map(el => el.dataset.platform);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        showUnavailableState(
+          data.message || data.error || 'AI suggestions are temporarily unavailable.',
+          data.retryable !== false
+        );
+        return;
+      }
 
-    setTimeout(() => {
-      btn.classList.remove('loading');
-      renderCaptions(mood, topic, selectedPlatforms);
-      updateHashtags(selectedPlatforms[0] || 'instagram');
+      applyResult(data);
       updateUsage();
-    }, 1200);
-  }
-
-  function renderCaptions(mood, topic, platforms) {
-    const list = document.getElementById('captionsList');
-    const empty = document.getElementById('emptyState');
-    if (empty) empty.remove();
-
-    const captions = captionTemplates[mood] || captionTemplates.energetic;
-
-    list.innerHTML = captions.map((c, i) => `
-      <div class="caption-card" style="animation-delay:${i*0.08}s">
-        <span class="caption-option-label">${c.label}</span>
-        <p class="caption-text">${c.text}</p>
-        <div class="caption-tags">
-          ${c.tags.map(t => `<span class="caption-tag" onclick="copyText('${t}')">${t}</span>`).join('')}
-        </div>
-        <div class="caption-actions">
-          <button type="button" class="caption-btn" onclick="copyCaption(${i})">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            COPY
-          </button>
-          <button type="button" class="caption-btn" onclick="showToast('Edit mode coming soon!')">
-            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            EDIT
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function updateHashtags(platform) {
-    const hashtags = trendingHashtags[platform] || trendingHashtags.instagram;
-    const list = document.getElementById('hashtagList');
-    list.innerHTML = hashtags.map(h => `
-      <div class="hashtag-row" onclick="copyHashtag('${h.tag}')">
-        <span class="hashtag-name">${h.tag}</span>
-        <div class="hashtag-score-wrap">
-          <span class="hashtag-score">${h.score}/100</span>
-          <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:${h.score}%"></div></div>
-        </div>
-      </div>
-    `).join('');
+    } catch (err) {
+      showUnavailableState('Could not reach the suggestions service. Please try again.', true);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
   }
 
   function updateUsage() {
-    const used = Math.min(95, parseInt(document.getElementById('usagePct').textContent) + 1);
+    const used = Math.min(95, parseInt(document.getElementById('usagePct').textContent, 10) + 1);
     document.getElementById('usagePct').textContent = used + '%';
     document.getElementById('usageBar').style.width = used + '%';
     const remaining = Math.max(0, 150 - Math.round(150 * used / 100));
     document.getElementById('usageSub').textContent = `${remaining} / 150 requests remaining this month.`;
   }
-
-  // ── COPY HELPERS ──
-  const captionTexts = [];
 
   function copyCaption(index) {
     const cards = document.querySelectorAll('.caption-card');
@@ -418,17 +404,18 @@
     showToast(`${tag} copied!`);
   }
 
-  // ── TOAST ──
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
-
-  // ── ENTER TO GENERATE ──
-  document.getElementById('topicInput').addEventListener('keydown', e => {
+  document.getElementById('topicInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.ctrlKey) generateCaptions();
+  });
+
+  document.getElementById('statusRetryBtn').addEventListener('click', () => generateCaptions());
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (initialResult) {
+      applyResult(initialResult);
+    } else if (initialError) {
+      showUnavailableState(initialError.message, initialError.retryable);
+    }
   });
 </script>
 
