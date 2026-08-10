@@ -50,10 +50,8 @@ router.get('/triggers', protect, asyncHandler(async (req, res) => {
 }));
 
 router.post('/triggers', protect, asyncHandler(async (req, res) => {
-    const userId = requireAuthenticatedUserId(req, res);
-    if (!userId) return;
-
-    const trigger = await DmTrigger.create({ ...req.body, creatorId: userId });
+    const { user_id, userId, ...safeBody } = req.body;
+    const trigger = await DmTrigger.create({ ...safeBody, creatorId: req.user.id });
     res.status(201).json({ success: true, data: trigger });
 }));
 

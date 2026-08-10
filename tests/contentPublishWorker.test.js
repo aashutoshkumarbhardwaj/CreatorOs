@@ -3,7 +3,13 @@ const { publishDueContent } = require('../workers/contentPublishWorker');
 const ScheduledContent = require('../model/scheduledContent');
 
 describe('Content Publish Worker', () => {
-    it('publishes content whose scheduledAt has passed and updates status/publishedAt', async () => {
+    const originalEnv = process.env.TEST_PUBLISH_FAIL;
+
+    afterEach(() => {
+        delete process.env.TEST_PUBLISH_FAIL;
+    });
+
+    it('publishes content whose scheduledAt has passed, sets status to published, and assigns platformPostId', async () => {
         const userId = new mongoose.Types.ObjectId();
         const dueItem = await ScheduledContent.create({
             userId,
@@ -19,6 +25,29 @@ describe('Content Publish Worker', () => {
         const refreshed = await ScheduledContent.findById(dueItem._id);
         expect(refreshed.status).toBe('published');
         expect(refreshed.publishedAt).toBeInstanceOf(Date);
+        expect(refreshed.platformPostId).toBeDefined();
+        expect(typeof refreshed.platformPostId).toBe('string');
+        expect(refreshed.errorMessage).toBeNull();
+    });
+
+    it('marks item as failed and records errorMessage when platform delivery fails', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const failingItem = await ScheduledContent.create({
+            userId,
+            caption: 'Will fail publishing',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 60 * 1000),
+            status: 'scheduled',
+        });
+
+        process.env.TEST_PUBLISH_FAIL = 'true';
+
+        const publishedCount = await publishDueContent();
+        expect(publishedCount).toBe(0);
+
+        const refreshed = await ScheduledContent.findById(failingItem._id);
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.errorMessage).toContain('Platform API delivery failed');
     });
 
     it('does not publish content scheduled in the future', async () => {
@@ -38,7 +67,7 @@ describe('Content Publish Worker', () => {
         expect(refreshed.publishedAt).toBeUndefined();
     });
 
-    it('does not re-publish content that is already published or cancelled', async () => {
+    it('does not re-publish content that is already published, failed, or cancelled', async () => {
         const userId = new mongoose.Types.ObjectId();
         const alreadyPublished = await ScheduledContent.create({
             userId,

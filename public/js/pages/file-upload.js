@@ -13,49 +13,51 @@ const dropZone = document.getElementById('drop-zone');
         const progressPct = document.getElementById('progress-pct');
         const progressLabel = document.getElementById('progress-label');
         const statusEl = document.getElementById('status');
-        let selectedFile = null;
+        let selectedFiles = [];
 
         // Firefox fix: preventDefault is REQUIRED on dragover
         dropZone.addEventListener('dragover', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.add('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.remove('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--accent-yellow)';
+            dropZone.style.borderColor = 'var(--text)';
         });
 
         dropZone.addEventListener('dragenter', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.add('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.remove('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--accent-yellow)';
+            dropZone.style.borderColor = 'var(--text)';
         });
 
         dropZone.addEventListener('dragleave', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.remove('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.add('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--bg-secondary)';
+            dropZone.style.borderColor = 'var(--border)';
         });
 
         // Firefox fix: preventDefault is REQUIRED on drop
         dropZone.addEventListener('drop', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            dropZone.classList.remove('border-cyan-400', 'bg-slate-800/50');
-            dropZone.classList.add('border-slate-600');
+            dropZone.style.backgroundColor = 'var(--bg-secondary)';
+            dropZone.style.borderColor = 'var(--border)';
 
             var files = e.dataTransfer.files;
             if (files.length > 0) {
-                handleFile(files[0]);
+                handleFiles(files);
             }
         });
 
         dropZone.addEventListener('click', function() {
-            if (!selectedFile) fileInput.click();
+            fileInput.click();
         });
 
+        fileInput.setAttribute('multiple', 'true');
+
         fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) handleFile(this.files[0]);
+            if (this.files.length > 0) handleFiles(this.files);
         });
 
         removeBtn.addEventListener('click', function(e) {
@@ -64,35 +66,47 @@ const dropZone = document.getElementById('drop-zone');
         });
 
         uploadBtn.addEventListener('click', function() {
-            if (!selectedFile) return;
-            uploadFile(selectedFile);
+            if (!selectedFiles.length) return;
+            selectedFiles.forEach(uploadFile);
         });
 
-        function handleFile(file) {
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileSize.textContent = formatSize(file.size);
-            fileInfo.classList.remove('hidden');
+        function handleFiles(fileList) {
+            selectedFiles = Array.from(fileList);
+            fileName.textContent = selectedFiles.map(function(f) { return f.name; }).join(', ');
+            fileSize.textContent = formatSize(selectedFiles.reduce(function(sum, f) { return sum + f.size; }, 0));
+            fileInfo.style.display = 'flex';
             uploadBtn.disabled = false;
-            uploadBtn.className = 'mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 cursor-pointer hover:brightness-110 transition-all duration-200';
-            uploadBtn.textContent = 'Upload ' + file.name;
-            dropText.textContent = 'File selected';
-            dropSub.textContent = 'click to choose a different file';
+            uploadBtn.className = 'primary-action-btn';
+            uploadBtn.style.width = '100%';
+            uploadBtn.style.justifyContent = 'center';
+            uploadBtn.style.fontSize = '1.1rem';
+            uploadBtn.style.padding = '1rem';
+            uploadBtn.style.opacity = '1';
+            uploadBtn.style.cursor = 'pointer';
+            uploadBtn.textContent = 'Upload ' + selectedFiles.length + ' file(s)';
+            dropText.textContent = selectedFiles.length + ' file(s) selected';
+            dropSub.textContent = 'click to choose different files';
             uploadIcon.textContent = '✅';
         }
 
         function clearSelection() {
-            selectedFile = null;
-            fileInfo.classList.add('hidden');
+            selectedFiles = [];
+            fileInfo.style.display = 'none';
             uploadBtn.disabled = true;
-            uploadBtn.className = 'mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 opacity-50 cursor-not-allowed transition-all duration-200';
-            uploadBtn.textContent = 'Select a file to upload';
+            uploadBtn.className = 'primary-action-btn';
+            uploadBtn.style.width = '100%';
+            uploadBtn.style.justifyContent = 'center';
+            uploadBtn.style.fontSize = '1.1rem';
+            uploadBtn.style.padding = '1rem';
+            uploadBtn.style.opacity = '0.5';
+            uploadBtn.style.cursor = 'not-allowed';
+            uploadBtn.textContent = 'Select files to upload';
             fileInput.value = '';
-            dropText.textContent = 'Drag & drop a file here';
+            dropText.textContent = 'Drag & drop files here';
             dropSub.textContent = 'or click to browse files';
             uploadIcon.textContent = '📁';
-            progressArea.classList.add('hidden');
-            statusEl.classList.add('hidden');
+            progressArea.style.display = 'none';
+            statusEl.style.display = 'none';
         }
 
         function uploadFile(file) {
@@ -102,7 +116,7 @@ const dropZone = document.getElementById('drop-zone');
             var xhr = new XMLHttpRequest();
 
             xhr.upload.onprogress = function(e) {
-                progressArea.classList.remove('hidden');
+                progressArea.style.display = 'block';
                 if (e.lengthComputable) {
                     var pct = Math.round((e.loaded / e.total) * 100);
                     progressBar.style.width = pct + '%';
@@ -117,13 +131,34 @@ const dropZone = document.getElementById('drop-zone');
 
                 if (xhr.status >= 200 && xhr.status < 300) {
                     var data = JSON.parse(xhr.responseText);
-                    statusEl.className = 'mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300';
-                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>Size: ' + formatSize(data.size);
-                    statusEl.classList.remove('hidden');
+                    statusEl.className = 'message-box message-success';
+                    var sizeLine = 'Size: ' + formatSize(data.size);
+                    if (data.compressed && data.originalSize > data.size) {
+                        var savedPct = Math.round((1 - data.size / data.originalSize) * 100);
+                        sizeLine = 'Size: ' + formatSize(data.size) + ' (compressed from ' + formatSize(data.originalSize) + ', -' + savedPct + '%)';
+                    }
+                    statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>' + sizeLine +
+                        ' <button type="button" class="rename-uploaded-btn" data-filename="' + data.path + '" style="margin-left:1rem;">Rename</button>' +
+                        ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.path + '" style="margin-left:0.5rem;">Delete</button>';
+                    statusEl.style.display = 'block';
+
+                    var renBtn = statusEl.querySelector('.rename-uploaded-btn');
+                    if (renBtn) {
+                        renBtn.addEventListener('click', function() {
+                            renameFile(this.getAttribute('data-filename'), statusEl);
+                        });
+                    }
+
+                    var delBtn = statusEl.querySelector('.delete-uploaded-btn');
+                    if (delBtn) {
+                        delBtn.addEventListener('click', function() {
+                            deleteFile(this.getAttribute('data-filename'), statusEl);
+                        });
+                    }
                 } else {
-                    statusEl.className = 'mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300';
+                    statusEl.className = 'message-box message-error';
                     statusEl.textContent = 'Upload failed. Please try again.';
-                    statusEl.classList.remove('hidden');
+                    statusEl.style.display = 'block';
                 }
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload another file';
@@ -131,9 +166,9 @@ const dropZone = document.getElementById('drop-zone');
 
             xhr.onerror = function() {
                 progressLabel.textContent = 'Error';
-                statusEl.className = 'mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300';
+                statusEl.className = 'message-box message-error';
                 statusEl.textContent = 'Network error. Please check your connection.';
-                statusEl.classList.remove('hidden');
+                statusEl.style.display = 'block';
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Try Again';
             };
@@ -145,8 +180,84 @@ const dropZone = document.getElementById('drop-zone');
             uploadBtn.textContent = 'Uploading...';
         }
 
+        function loadStorageUsage() {
+            fetch('/services/file-upload/storage-usage')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var el = document.getElementById('storage-usage');
+                    if (el) {
+                        el.textContent = 'Storage used: ' + formatSize(data.totalSize) + ' (' + data.fileCount + ' files)';
+                    }
+                }
+            })
+            .catch(function() {});
+        }
+
+        loadStorageUsage();
+
         function formatSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / 1048576).toFixed(1) + ' MB';
         }
+
+        function renameFile(filename, rowEl) {
+            var newName = prompt('Enter new file name:');
+            if (!newName) return;
+
+            fetch('/services/file-upload/rename/' + encodeURIComponent(filename), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newName: newName })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    statusEl.className = 'message-box message-success';
+                    statusEl.textContent = 'Renamed to: ' + data.newName;
+                    statusEl.style.display = 'block';
+                    if (rowEl) {
+                        var delBtn = rowEl.querySelector('.delete-uploaded-btn');
+                        if (delBtn) delBtn.setAttribute('data-filename', data.newName);
+                        var renBtn = rowEl.querySelector('.rename-uploaded-btn');
+                        if (renBtn) renBtn.setAttribute('data-filename', data.newName);
+                    }
+                } else {
+                    statusEl.className = 'message-box message-error';
+                    statusEl.textContent = 'Rename failed: ' + filename;
+                    statusEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                statusEl.className = 'message-box message-error';
+                statusEl.textContent = 'Network error while renaming.';
+                statusEl.style.display = 'block';
+            });
+        }
+
+        function deleteFile(filename, rowEl) {
+            fetch('/services/file-upload/delete/' + encodeURIComponent(filename), {
+                method: 'DELETE'
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    if (rowEl) rowEl.remove();
+                    statusEl.className = 'message-box message-success';
+                    statusEl.textContent = 'Deleted: ' + filename;
+                    statusEl.style.display = 'block';
+                } else {
+                    statusEl.className = 'message-box message-error';
+                    statusEl.textContent = 'Delete failed: ' + filename;
+                    statusEl.style.display = 'block';
+                }
+            })
+            .catch(function() {
+                statusEl.className = 'message-box message-error';
+                statusEl.textContent = 'Network error while deleting.';
+                statusEl.style.display = 'block';
+            });
+        }
+   
+
