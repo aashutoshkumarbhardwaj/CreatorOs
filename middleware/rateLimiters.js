@@ -55,6 +55,8 @@ const urlShortenerApiLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
+    standardHeaders: true,
+    legacyHeaders: true,
     keyGenerator: (req) => ipKeyGenerator(req.ip),
     store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
@@ -86,6 +88,15 @@ const forgotPasswordLimiter = rateLimit({
     max: 3, // Allow max 3 forgot password attempts per 15 mins
     handler: (req, res) => {
         const message = 'Too many password reset requests. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
+const resetPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        const message = 'Too many password reset attempts. Please try again later.';
         return res.status(429).json({ success: false, message, error: message });
     }
 });
@@ -140,5 +151,6 @@ module.exports = {
     emailVerificationLimiter,
     aiGenerationLimiter,
     instagramProfileLimiter,
-    forgotPasswordLimiter
+    forgotPasswordLimiter,
+    resetPasswordLimiter
 };

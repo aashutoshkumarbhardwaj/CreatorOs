@@ -27,13 +27,19 @@ if (!REDIS_URI) {
 } else if (process.env.VERCEL === '1') {
     console.warn("📦 Analytics refresh worker disabled on Vercel to prevent hanging Redis connections. Use Vercel Cron instead.");
 } else {
-    const redisConnection = new IORedis(REDIS_URI, {
+    // BullMQ workers use blocking Redis commands; share nothing with the Queue client.
+    const queueConnection = new IORedis(REDIS_URI, {
+        maxRetriesPerRequest: null,
+        connectTimeout: 5000,
+        lazyConnect: true,
+    });
+    const workerConnection = new IORedis(REDIS_URI, {
         maxRetriesPerRequest: null,
         connectTimeout: 5000,
         lazyConnect: true,
     });
 
-    analyticsQueue = new Queue("analytics-refresh", { connection: redisConnection });
+    analyticsQueue = new Queue("analytics-refresh", { connection: queueConnection });
 
     analyticsWorker = new Worker("analytics-refresh", async (job) => {
         const { creatorId } = job.data;
@@ -81,7 +87,7 @@ if (!REDIS_URI) {
 
         console.log(`[AnalyticsWorker] Refreshed creator: ${creator.username}`);
     }, {
-        connection: redisConnection,
+        connection: workerConnection,
         concurrency: 5,
     });
 

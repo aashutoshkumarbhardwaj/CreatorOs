@@ -42,7 +42,7 @@ describe('Error Handler Middleware', () => {
     });
 
     afterEach(() => {
-      delete process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
     });
 
     it('should not expose stack traces for 5xx errors', async () => {
@@ -88,7 +88,7 @@ describe('Error Handler Middleware', () => {
     });
 
     afterEach(() => {
-      delete process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
     });
 
     it('should expose error messages for debugging', async () => {

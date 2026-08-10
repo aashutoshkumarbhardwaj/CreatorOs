@@ -11,7 +11,7 @@ describe('URL Controller Endpoints', () => {
 
     beforeAll(async () => {
         await User.deleteMany({});
-        const password = await bcrypt.hash('Password123!', 10);
+        const password = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Verified User',
             email: 'test@local.com',
@@ -111,5 +111,65 @@ describe('URL Controller Endpoints', () => {
             // Only acceptable non-200 outcome is an auth failure
             expect([401, 302]).toContain(res.statusCode);
         }
+    });
+
+    it('should delete a short URL or return 404/401/403', async () => {
+        const req = request(app)
+            .delete('/api/urls/non-existent-id')
+            .set(csrfHeader);
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        expect([200, 404, 401, 403]).toContain(res.statusCode);
+    });
+
+    it('should get analytics for a short URL or return 404/401/403', async () => {
+        const req = request(app)
+            .get('/api/urls/analytics/non-existent-id')
+            .set(csrfHeader);
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        expect([200, 404, 401, 403]).toContain(res.statusCode);
+    });
+
+    it('should return 403 when unauthenticated user (req.user undefined) accesses analytics of a protected URL', async () => {
+        const { handleGetAnalytics } = require('../../controller/url');
+        const Url = require('../../model/url');
+
+        jest.spyOn(Url, 'findOne').mockResolvedValueOnce({
+            shortId: 'test1234',
+            userId: 'user123',
+            totalClicks: 0,
+            visitHistory: []
+        });
+
+        const req = {
+            params: { shortId: 'test1234' },
+            user: undefined
+        };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        await handleGetAnalytics(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            message: "Unauthorized to view these analytics",
+            error: "Unauthorized to view these analytics"
+        });
     });
 });

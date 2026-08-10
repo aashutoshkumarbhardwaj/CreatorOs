@@ -1,0 +1,139 @@
+.inbox-layout{
+    display:grid;
+    grid-template-columns:220px 330px minmax(420px,1fr);
+    gap:24px;
+    margin-top:30px;
+    padding:20px;
+}
+
+.inbox-sidebar{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.inbox-sidebar h3{
+    margin-bottom:10px;
+}
+
+.inbox-sidebar .badge-retro{
+    width:100%;
+    text-align:left;
+    cursor:pointer;
+}
+
+.message-list{
+    display:flex;
+    flex-direction:column;
+}
+.inbox-sidebar .badge-retro:hover{
+    background:#14B8A6;
+    color:white;
+}
+
+.inbox-sidebar .badge-retro.active{
+    background:#000;
+    color:#fff;
+}
+.inbox-search{
+    width:100%;
+    padding:12px;
+    margin:18px 0;
+    border:3px solid #000;
+    font-size:15px;
+    outline:none;
+}
+
+.message-card{
+    border:3px solid #000;
+    background:#fff;
+    padding:18px;
+    margin-bottom:15px;
+    cursor:pointer;
+    transition:.15s;
+}
+
+.message-card:hover{
+    transform:translateY(-2px);
+    box-shadow:6px 6px 0 #000;
+}
+
+.message-card h4{
+    margin:0;
+    font-size:18px;
+}
+
+.message-card p{
+    margin:8px 0;
+}
+
+.message-view textarea{
+    width:100%;
+    margin-top:18px;
+    padding:12px;
+    border:3px solid #000;
+    resize:vertical;
+    font-size:15px;
+}
+
+.message-view .badge-retro{
+    margin-right:10px;
+    cursor:pointer;
+}
+.message-card{
+    transition:all .2s ease;
+}
+
+.message-card:hover{
+    background:#F8FAFC;
+}
+
+.message-card.active{
+    background:#D8F6F3;
+    border-color:#0F766E;
+}
+.message-list{
+    max-height:700px;
+    overflow-y:auto;
+}
+
+.filter-btn.active{
+    background:#000;
+    color:#fff;
+}
+
+
+.filter-btn:hover{
+    transform:translateX(3px);
+}
+
+.message-card.active{
+    background:#D8F6F3;
+    border-color:#0F766E;
+    box-shadow:6px 6px 0 #000;
+}
+@media(max-width:1100px){
+
+    .inbox-layout{
+        grid-template-columns:1fr;
+    }
+
+}
+
+.notification-panel{
+    margin-top:20px;
+    padding:16px;
+}
+
+.notification-panel h4{
+    margin-bottom:16px;
+    font-size:18px;
+}
+
+.notification-panel label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:14px;
+    cursor:pointer;
+}

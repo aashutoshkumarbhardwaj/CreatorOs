@@ -28,12 +28,14 @@ describe('Rate Limiters', () => {
       for (let i = 0; i < 5; i++) {
         await request(app)
           .post('/signup')
+          .set('Accept', 'application/json')
           .send({ email: `test${i}@example.com`, password: 'Test123!' });
       }
 
       // The 6th request should be rate-limited
       const response = await request(app)
         .post('/signup')
+        .set('Accept', 'application/json')
         .send({ email: 'test6@example.com', password: 'Test123!' });
 
       expect(response.status).toBe(429);

@@ -2,19 +2,23 @@ const { z } = require('zod');
 const { wantsHtml } = require('../utils/requestType');
 
 const signupSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email format'),
+  name: z.string().trim().min(1, 'Name is required'),
+  email: z.string().trim().toLowerCase().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().trim().toLowerCase().email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
   allowUnverifiedLogin: z.string().optional(),
+  remember: z.union([z.boolean(), z.string(), z.number()]).optional(),
 });
 
+// Guest contributor login creates a session without creator credentials.
+const contributorLoginSchema = z.object({}).passthrough();
+
 const resendVerificationSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().trim().toLowerCase().email('Invalid email format'),
 });
 
 const collaborationInviteSchema = z.object({
@@ -50,13 +54,15 @@ const urlQRColorsSchema = z.object({
 });
 
 const suggestionSchema = z.object({
-  topic: z.string().min(1, 'Topic is required'),
+  topic: z.string().trim().min(1, 'Topic is required'),
 });
 
 const updateProfileSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters').optional(),
   alias: z.string().min(1, 'Alias is required').max(50, 'Alias must be at most 50 characters').regex(/^[a-zA-Z0-9_-]+$/, 'Alias can only contain letters, numbers, hyphens and underscores').optional(),
   bio: z.string().max(500, 'Bio must be at most 500 characters').optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: 'At least one profile field is required',
 });
 
 const objectIdParamSchema = z.object({
@@ -88,6 +94,7 @@ function validate(schema, source = 'body', viewName, buildLocals = () => ({})) {
 module.exports = { 
     signupSchema, 
     loginSchema, 
+    contributorLoginSchema,
     resendVerificationSchema,
     collaborationInviteSchema,
     collaborationAcceptSchema,
@@ -102,6 +109,7 @@ module.exports = {
     loginValidator: validate(loginSchema, 'body', 'login', () => ({
         googleAuthConfigured: Boolean(process.env.GOOGLE_CLIENT_ID)
     })),
+    contributorLoginValidator: validate(contributorLoginSchema, 'body'),
     resendVerificationValidator: validate(resendVerificationSchema, 'body', 'resend-verification'),
     shortenUrlValidator: validate(urlShortenSchema, 'body'),
     updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),

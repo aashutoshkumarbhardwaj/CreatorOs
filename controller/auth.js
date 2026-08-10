@@ -15,14 +15,29 @@ const {
     getRemainingResetLockoutTime,
 } = require("../utils/loginAttemptManager");
 const { isEmailTransportConfigured } = require("../utils/email");
+const { verifyTotp } = require("../utils/totp");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const VERIFICATION_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PENDING_2FA_TTL_MS = 5 * 60 * 1000;
+const MIN_PASSWORD_LENGTH = 8;
 const GUEST_CONTRIBUTOR_ROLE = "guest_contributor";
+const PENDING_2FA_PURPOSE = "2fa_pending";
 const GENERIC_LOGIN_ERROR = "Invalid email or password";
+const INVALID_2FA_ERROR = "Invalid authenticator code";
 const GOOGLE_AUTH_CANCELLED_ERROR = "Google sign-in was cancelled or could not be completed.";
 const VERIFICATION_UNAVAILABLE_ERROR = "Email verification is temporarily unavailable because email delivery is not configured. Please try again later or contact support.";
+
+async function releaseClaimedResetToken(PasswordResetToken, resetTokenDoc) {
+    if (!resetTokenDoc?._id) return;
+
+    await PasswordResetToken.updateOne(
+        { _id: resetTokenDoc._id, used: true },
+        { $set: { used: false }, $unset: { usedAt: "" } }
+    );
+}
 
 /**
  * @function getUserModel
@@ -98,14 +113,14 @@ function serializeUser(user) {
  * @description Creates a JWT token for standard user authentication.
  * @returns {any}
  */
-function createToken(user) {
+function createToken(user, { remember = false } = {}) {
     const tokenUser = serializeUser(user);
 
     return jwt.sign(
         tokenUser,
         process.env.JWT_SECRET,
         {
-            expiresIn: "7d",
+            expiresIn: remember ? "30d" : "7d",
         }
     );
 }
@@ -139,18 +154,75 @@ function createContributorToken(session) {
  * - CSRF attacks (sameSite strict prevents cross-origin cookie inclusion)
  * @returns {any}
  */
-function setAuthCookie(res, token) {
+function getCookieSecureFlag() {
+    const isProduction = process.env.NODE_ENV === "production";
+    return isProduction || process.env.COOKIE_SECURE_DEV === "true";
+}
+
+function setAuthCookie(res, token, { remember = false } = {}) {
     // Determine if we should enforce HTTPS-only cookies
     // In production, this is mandatory. In development, allow HTTP for localhost testing.
-    const isProduction = process.env.NODE_ENV === "production";
-    const isSecureEnvironment = isProduction || process.env.COOKIE_SECURE_DEV === "true";
-
     res.cookie("token", token, {
         httpOnly: true, // Prevents JavaScript from accessing this cookie (XSS protection)
-        secure: isSecureEnvironment, // Only transmit over HTTPS in production/secure environments
-        sameSite: "strict", // Prevents CSRF by not including cookie in cross-origin requests
-        maxAge: ONE_WEEK_MS,
+        secure: getCookieSecureFlag(), // Only transmit over HTTPS in production/secure environments
+        sameSite: "lax", // Lax allows top-level OAuth callback navigation to attach session cookie
+        maxAge: remember ? THIRTY_DAYS_MS : ONE_WEEK_MS,
         path: "/", // Explicitly set path for clarity
+    });
+}
+
+function createPending2FAToken(user, { remember = false } = {}) {
+    return jwt.sign(
+        {
+            id: user.id || user._id.toString(),
+            purpose: PENDING_2FA_PURPOSE,
+            remember: !!remember,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "5m" }
+    );
+}
+
+function setPending2FACookie(res, token) {
+    res.cookie("pending2fa", token, {
+        httpOnly: true,
+        secure: getCookieSecureFlag(),
+        sameSite: "lax",
+        maxAge: PENDING_2FA_TTL_MS,
+        path: "/",
+    });
+}
+
+function clearPending2FACookie(res) {
+    res.clearCookie("pending2fa", { path: "/" });
+}
+
+async function issueAuthenticatedSession(res, user, { remember = false, redirectTo = "/dashboard" } = {}) {
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    const token = createToken(user, { remember });
+    setAuthCookie(res, token, { remember });
+    clearPending2FACookie(res);
+
+    return { token, redirectTo };
+}
+
+function respondRequires2FA(req, res, pendingToken) {
+    setPending2FACookie(res, pendingToken);
+
+    if (wantsHtml(req)) {
+        return res.status(200).render("login", {
+            error: null,
+            requires2FA: true,
+            googleAuthConfigured: isGoogleAuthConfigured(),
+        });
+    }
+
+    return res.status(200).json({
+        success: false,
+        requires2FA: true,
+        message: "Two-factor authentication required",
     });
 }
 
@@ -195,6 +267,7 @@ const signup = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ success: false, message: "Name, email, and password are required" });
     }
 
+    const normalizedName = name.trim();
     const normalizedEmail = email.toLowerCase().trim();
 
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -206,12 +279,12 @@ const signup = asyncHandler(async (req, res, next) => {
         return res.status(409).json({ success: false, message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     const verificationToken = generateVerificationToken();
     const verificationTokenExpiry = getVerificationTokenExpiry();
 
     const user = await User.create({
-        name,
+        name: normalizedName,
         email: normalizedEmail,
         password: hashedPassword,
         authProvider: "local",
@@ -231,7 +304,7 @@ const signup = asyncHandler(async (req, res, next) => {
             await sendVerificationEmail({
                 to: normalizedEmail,
                 verificationLink,
-                userName: name,
+                userName: normalizedName,
             });
         } else {
             verificationDeliveryUnavailable = true;
@@ -265,7 +338,8 @@ const signup = asyncHandler(async (req, res, next) => {
 const login = asyncHandler(async (req, res, next) => {
     const User = await getUserModel();
 
-    const { email, password } = req.body || {};
+    const { email, password, remember: rememberVal, otp } = req.body || {};
+    const remember = rememberVal === "on" || rememberVal === "true" || rememberVal === "1" || rememberVal === true || rememberVal === 1;
     const allowUnverifiedLogin = req.body?.allowUnverifiedLogin === "1" || req.body?.allowUnverifiedLogin === "true";
     const normalizedEmail = (email && typeof email === 'string') ? email.toLowerCase().trim() : "";
 
@@ -282,8 +356,21 @@ const login = asyncHandler(async (req, res, next) => {
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const DUMMY_HASH = "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUU";
+
+    const user = await User.findOne({ email: normalizedEmail }).select("+twoFactorSecret");
     if (!user) {
+        await bcrypt.compare(password, DUMMY_HASH);
+        await recordFailedLoginAttempt(normalizedEmail);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
+    // Google-only (or otherwise passwordless) accounts have no local password hash.
+    // Comparing against undefined throws inside bcrypt and becomes a 500 — treat like a failed login.
+    const hasLocalPassword = typeof user.password === "string" && user.password.length > 0;
+    if (!hasLocalPassword) {
+        await bcrypt.compare(password, DUMMY_HASH);
         await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
         return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
@@ -297,23 +384,12 @@ const login = asyncHandler(async (req, res, next) => {
     }
 
     const isProduction = process.env.NODE_ENV === "production";
+    const isTest = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined || process.env.USE_MOCK_DB === "true";
+    const verificationDeliveryUnavailable = !isEmailTransportConfigured();
+    const unverifiedLocal = (isProduction || isTest) && user.authProvider !== "google" && !user.isVerified;
+    const allowUnverifiedBypass = unverifiedLocal && verificationDeliveryUnavailable && allowUnverifiedLogin;
 
-    if (isProduction && user.authProvider !== "google" && !user.isVerified) {
-        const verificationDeliveryUnavailable = !isEmailTransportConfigured();
-
-        if (verificationDeliveryUnavailable && allowUnverifiedLogin) {
-            await clearLoginAttempts(normalizedEmail);
-
-            user.lastLoginAt = new Date();
-            await user.save();
-
-            const token = createToken(user);
-            setAuthCookie(res, token);
-
-            if (wantsHtml(req)) return res.redirect("/dashboard?login=unverified");
-            return res.status(200).json({ success: true, token, user: serializeUser(user) });
-        }
-
+    if (unverifiedLocal && !allowUnverifiedBypass) {
         if (wantsHtml(req)) {
             return res.redirect(`/resend-verification?email=${encodeURIComponent(normalizedEmail)}${verificationDeliveryUnavailable ? "&delivery=unavailable" : ""}`);
         }
@@ -330,11 +406,87 @@ const login = asyncHandler(async (req, res, next) => {
 
     await clearLoginAttempts(normalizedEmail);
 
-    user.lastLoginAt = new Date();
-    await user.save();
+    if (user.twoFactorEnabled) {
+        if (!otp) {
+            const pendingToken = createPending2FAToken(user, { remember });
+            return respondRequires2FA(req, res, pendingToken);
+        }
 
-    const token = createToken(user);
-    setAuthCookie(res, token);
+        if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, otp)) {
+            await recordFailedLoginAttempt(normalizedEmail);
+            if (wantsHtml(req)) {
+                return res.status(401).render("login", {
+                    error: INVALID_2FA_ERROR,
+                    requires2FA: true,
+                });
+            }
+            return res.status(401).json({ success: false, requires2FA: true, message: INVALID_2FA_ERROR });
+        }
+    }
+
+    const { token } = await issueAuthenticatedSession(res, user, { remember });
+
+    if (wantsHtml(req)) {
+        return res.redirect(allowUnverifiedBypass ? "/dashboard?login=unverified" : "/dashboard");
+    }
+    return res.status(200).json({ success: true, token, user: serializeUser(user) });
+});
+
+/**
+ * Complete login after TOTP verification using the pending 2FA cookie.
+ */
+const verifyLogin2FA = asyncHandler(async (req, res) => {
+    const User = await getUserModel();
+    const { otp } = req.body || {};
+    const pendingToken = req.cookies?.pending2fa || req.body?.pendingToken;
+
+    if (!pendingToken) {
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: "Two-factor challenge expired. Please sign in again." });
+    }
+
+    let payload;
+    try {
+        payload = jwt.verify(pendingToken, process.env.JWT_SECRET);
+    } catch {
+        clearPending2FACookie(res);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: "Two-factor challenge expired. Please sign in again." });
+    }
+
+    if (payload.purpose !== PENDING_2FA_PURPOSE || !payload.id) {
+        clearPending2FACookie(res);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
+    const user = await User.findById(payload.id).select("+twoFactorSecret");
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+        clearPending2FACookie(res);
+        if (wantsHtml(req)) return res.redirect("/login?error=" + encodeURIComponent(GENERIC_LOGIN_ERROR));
+        return res.status(401).json({ success: false, message: GENERIC_LOGIN_ERROR });
+    }
+
+    const normalizedEmail = user.email;
+    const isLocked = await checkIfLoginLocked(normalizedEmail);
+    if (isLocked) {
+        const remainingTime = await getRemainingLoginLockoutTime(normalizedEmail);
+        const lockoutMessage = `Account locked due to too many failed login attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) return res.status(429).render("login", { error: lockoutMessage, requires2FA: true });
+        return res.status(429).json({ success: false, message: lockoutMessage });
+    }
+
+    if (!otp || !verifyTotp(user.twoFactorSecret, otp)) {
+        await recordFailedLoginAttempt(normalizedEmail);
+        if (wantsHtml(req)) {
+            return res.status(401).render("login", { error: INVALID_2FA_ERROR, requires2FA: true });
+        }
+        return res.status(401).json({ success: false, requires2FA: true, message: INVALID_2FA_ERROR });
+    }
+
+    await clearLoginAttempts(normalizedEmail);
+    const remember = !!payload.remember;
+    const { token } = await issueAuthenticatedSession(res, user, { remember });
 
     if (wantsHtml(req)) return res.redirect("/dashboard");
     return res.status(200).json({ success: true, token, user: serializeUser(user) });
@@ -354,9 +506,22 @@ const handleGoogleCallback = asyncHandler(async (req, res, next) => {
             return redirectWithLoginError(res, GOOGLE_AUTH_CANCELLED_ERROR);
         }
 
-        const token = createToken(req.user);
-        setAuthCookie(res, token);
+        const User = await getUserModel();
+        const user = await User.findById(req.user.id || req.user._id).select("+twoFactorSecret");
+        if (!user) {
+            return redirectWithLoginError(res, "Google sign-in failed. Please try again.");
+        }
 
+        if (user.twoFactorEnabled) {
+            const pendingToken = createPending2FAToken(user, { remember: false });
+            setPending2FACookie(res, pendingToken);
+            return res.redirect("/login?step=2fa");
+        }
+
+        await issueAuthenticatedSession(res, user, {
+            remember: false,
+            redirectTo: "/dashboard?login=google",
+        });
         return res.redirect("/dashboard?login=google");
     } catch (error) {
         console.error("Google login error:", error);
@@ -610,6 +775,12 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     const { email } = req.body || {};
 
     if (!email) {
+        if (wantsHtml(req)) {
+            return res.status(400).render('forgot-password', {
+                error: 'Email address is required',
+                success: null,
+            });
+        }
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
 
@@ -619,14 +790,34 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     if (isLocked) {
         const remainingTime = await getRemainingResetLockoutTime(normalizedEmail);
         const lockoutMessage = `Too many password reset attempts. Try again in ${Math.ceil(remainingTime / 60)} minutes.`;
+        if (wantsHtml(req)) {
+            return res.status(429).render('forgot-password', {
+                error: lockoutMessage,
+                success: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
         await recordFailedResetAttempt(normalizedEmail);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent' });
+        const genericMessage = 'If that email address is in our system, you will receive a password reset link shortly.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: genericMessage,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: genericMessage });
     }
+
+    await PasswordResetToken.updateMany(
+        { userId: user._id, used: false },
+        { $set: { used: true, usedAt: new Date() } }
+    );
 
     // Create password reset token (15 minute validity)
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -641,6 +832,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     });
 
     // Send reset link via email
+    const successMsg = 'Password reset link sent! Please check your email inbox (and spam folder).';
     try {
         const { sendPasswordResetEmail } = require('../utils/email');
         const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
@@ -653,10 +845,25 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
         });
     } catch (emailError) {
         console.error('Failed to send password reset email:', emailError);
-        return res.json({ success: true, message: 'If email exists, reset link has been sent. If you do not receive an email, please contact support or try again later.' });
+        const fallbackMsg = 'If email exists, reset link has been generated. If you do not receive an email, please contact support or try again later.';
+        if (wantsHtml(req)) {
+            return res.render('forgot-password', {
+                success: fallbackMsg,
+                error: null,
+                prefilledEmail: normalizedEmail,
+            });
+        }
+        return res.json({ success: true, message: fallbackMsg });
     }
 
-    return res.json({ success: true, message: 'If email exists, reset link has been sent. Please check your email inbox (and spam folder).' });
+    if (wantsHtml(req)) {
+        return res.render('forgot-password', {
+            success: successMsg,
+            error: null,
+            prefilledEmail: normalizedEmail,
+        });
+    }
+    return res.json({ success: true, message: successMsg });
 });
 
 /**
@@ -671,6 +878,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     if (!token || !newPassword) {
         return res.status(400).json({ success: false, message: 'Token and password are required' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({
+            success: false,
+            message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
+        });
     }
 
     // Atomically claim the token: find a valid unused token and mark it used in one operation
@@ -694,13 +908,19 @@ const resetPassword = asyncHandler(async (req, res) => {
     // Update user password
     const user = await User.findById(resetTokenDoc.userId);
     if (!user) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
         return res.status(400).json({ success: false, message: 'User not found' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.passwordChangedAt = new Date();
-    await user.save();
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        user.password = hashedPassword;
+        user.passwordChangedAt = new Date();
+        await user.save();
+    } catch (error) {
+        await releaseClaimedResetToken(PasswordResetToken, resetTokenDoc);
+        throw error;
+    }
 
     await clearResetAttempts(user.email);
 
@@ -710,6 +930,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 module.exports = {
     signup,
     login,
+    verifyLogin2FA,
     handleGoogleCallback,
     loginAsContributor,
     verifyEmail,
