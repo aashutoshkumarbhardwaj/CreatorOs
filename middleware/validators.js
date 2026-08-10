@@ -55,6 +55,12 @@ const urlQRColorsSchema = z.object({
 
 const suggestionSchema = z.object({
   topic: z.string().trim().min(1, 'Topic is required'),
+  platform: z.enum(['instagram', 'linkedin', 'twitter', 'threads', 'facebook', 'youtube', 'tiktok']).optional().default('instagram'),
+  tone: z.string().trim().optional().default('energetic'),
+  length: z.enum(['short', 'medium', 'long']).optional().default('medium'),
+  language: z.string().trim().optional().default('english'),
+  includeEmojis: z.boolean().optional().default(true),
+  includeCta: z.boolean().optional().default(true),
 });
 
 const updateProfileSchema = z.object({
