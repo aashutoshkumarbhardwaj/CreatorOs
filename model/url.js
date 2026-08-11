@@ -39,6 +39,43 @@ const urlSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Previously used by the controller (serializeLink, fetchWebsiteTitle) but
+  // never declared here — Mongoose strict mode was silently dropping these
+  // on every real (non-mock) save. Declaring them now so title/tag/linkedAt
+  // actually persist to MongoDB.
+  title: {
+    type: String,
+    default: null,
+  },
+  tag: {
+    type: String,
+    enum: ["active", "social", "campaign", "general"],
+    default: "active",
+  },
+  tags: {
+    type: [String],
+    default: [],
+  },
+  linkedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  expiresAt: {
+    type: Date,
+    default: null,
+  },
+  password: {
+    type: String, // bcrypt hash, never the raw password
+    default: null,
+  },
+  archived: {
+    type: Boolean,
+    default: false,
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -56,10 +93,6 @@ const urlSchema = new mongoose.Schema({
       },
       x: { type: Number },
       y: { type: Number },
-      device: { type: String, default: "Desktop" },
-      browser: { type: String, default: "Unknown" },
-      referrer: { type: String, default: "Direct" },
-      country: { type: String, default: "Unknown" },
     },
   ],
 });
@@ -67,7 +100,10 @@ const urlSchema = new mongoose.Schema({
 urlSchema.statics.listForUser = async function (userId, options = {}) {
   const limit = typeof options === "number" ? options : options.limit || 100;
   const cursor = typeof options === "object" ? options.cursor : null;
+  const includeArchived =
+    typeof options === "object" && options.includeArchived;
   const query = { userId };
+  if (!includeArchived) query.archived = { $ne: true };
 
   if (cursor) {
     const cursorLink = await this.findOne({ _id: cursor, userId })
@@ -83,6 +119,11 @@ urlSchema.statics.listForUser = async function (userId, options = {}) {
   }
 
   return this.find(query).sort({ createdAt: -1, _id: -1 }).limit(limit).lean();
+};
+
+urlSchema.statics.findDuplicate = async function (userId, redirectUrl) {
+  if (!userId || !redirectUrl) return null;
+  return this.findOne({ userId, redirectUrl, archived: { $ne: true } }).lean();
 };
 
 urlSchema.statics.getStatsForUser = async function (userId) {
@@ -121,6 +162,14 @@ class MockUrlModel {
     this.qrFgColor = data.qrFgColor || "#1a1a1a";
     this.qrBgColor = data.qrBgColor || "#ffffff";
     this.qrGenerated = data.qrGenerated || false;
+    this.title = data.title ?? null;
+    this.tag = data.tag || "active";
+    this.tags = data.tags || [];
+    this.linkedAt = data.linkedAt || data.createdAt || new Date();
+    this.expiresAt = data.expiresAt || null;
+    this.password = data.password || null;
+    this.archived = data.archived || false;
+    this.favorite = data.favorite || false;
     this.createdAt = data.createdAt || new Date();
     this.visitHistory = data.visitHistory || [];
   }
@@ -177,7 +226,7 @@ class MockUrlModel {
     return new MockUrlModel(found);
   }
 
-  static find(query = {}) {
+  static async find(query = {}) {
     const keys = Object.keys(query);
     let results = mockUrls.filter((u) =>
       keys.every((k) => u[k]?.toString() === query[k]?.toString()),
@@ -233,8 +282,12 @@ class MockUrlModel {
   static async listForUser(userId, options = {}) {
     const limit = typeof options === "number" ? options : options.limit || 100;
     const cursor = typeof options === "object" ? options.cursor : null;
+    const includeArchived =
+      typeof options === "object" && options.includeArchived;
     let results = mockUrls.filter(
-      (u) => (u.userId?.toString() || null) === (userId?.toString() || null),
+      (u) =>
+        (u.userId?.toString() || null) === (userId?.toString() || null) &&
+        (includeArchived || !u.archived),
     );
     if (cursor) {
       const cursorIndex = results.findIndex(
@@ -301,6 +354,16 @@ class MockUrlModel {
     return items;
   }
 
+  static async findDuplicate(userId, redirectUrl) {
+    const found = mockUrls.find(
+      (u) =>
+        (u.userId?.toString() || null) === (userId?.toString() || null) &&
+        u.redirectUrl === redirectUrl &&
+        !u.archived,
+    );
+    return found ? new MockUrlModel(found) : null;
+  }
+
   static async getStatsForUser(userId) {
     const userLinks = mockUrls.filter(
       (u) =>
@@ -352,5 +415,7 @@ UrlModel.countDocuments = (...args) =>
 UrlModel.aggregate = (...args) => getActiveUrlModel().aggregate(...args);
 UrlModel.getStatsForUser = (...args) =>
   getActiveUrlModel().getStatsForUser(...args);
+UrlModel.findDuplicate = (...args) =>
+  getActiveUrlModel().findDuplicate(...args);
 
 module.exports = UrlModel;
