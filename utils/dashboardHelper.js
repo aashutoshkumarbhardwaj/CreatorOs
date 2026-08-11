@@ -22,10 +22,12 @@ async function getDashboardData(userDoc) {
     // Handle Mongoose Query vs Mock implementation differences
     if (allUrls && typeof allUrls.sort === 'function' && !Array.isArray(allUrls)) {
         // It's the mock returning { sort: () => ... }
-        allUrls = allUrls.sort();
+        allUrls = allUrls.sort((a, b) => a - b);
     } else if (Array.isArray(allUrls)) {
         // Fallback for actual array
-        allUrls = allUrls.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        allUrls = allUrls.sort((a, b) => new Date(b.createdAt || b.linkedAt || Date.now()) - new Date(a.createdAt || a.linkedAt || Date.now()));
+    } else {
+        allUrls = [];
     }
 
     // Default stats
@@ -109,11 +111,12 @@ async function getDashboardData(userDoc) {
 
     // Prepare recent links (max 5)
     const recentLinks = allUrls.slice(0, 5).map(u => {
+        const linkDate = u.createdAt || u.linkedAt || new Date();
         return {
             originalUrl: u.redirectUrl,
             shortUrl: u.shortId,
             clicks: u.totalClicks || 0,
-            date: new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            date: new Date(linkDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         };
     });
 

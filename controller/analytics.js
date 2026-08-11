@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Creator = require("../model/creator");
 const AnalyticsSnapshot = require("../model/analyticsSnapshot");
 const EngagementHistory = require("../model/engagementHistory");
@@ -5,6 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { fetchInstagramAnalytics } = require("../utils/instagramApi");
 
 const verifyCreatorOwnership = async (creatorId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(creatorId)) return false;
     const creator = await Creator.findById(creatorId);
     if (!creator) return false;
     return creator.userId.toString() === userId.toString();
@@ -19,7 +21,7 @@ const getSnapshots = asyncHandler(async (req, res) => {
 
     const snapshots = await AnalyticsSnapshot.find({
         creatorId: req.params.creatorId,
-    }).sort({ createdAt: -1 });
+    }).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt').sort({ createdAt: -1 });
 
     res.json({ success: true, data: snapshots });
 });
@@ -35,7 +37,7 @@ const getLatestSnapshot = asyncHandler(async (req, res) => {
         { creatorId: req.params.creatorId },
         {},
         { sort: { createdAt: -1 } }
-    );
+    ).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt');
 
     if (!snapshot) {
         return res.status(404).json({ success: false, message: "No snapshot found" });
@@ -53,13 +55,17 @@ const getEngagementHistory = asyncHandler(async (req, res) => {
 
     const history = await EngagementHistory.find({
         creatorId: req.params.creatorId,
-    }).sort({ createdAt: -1 });
+    }).select('creatorId engagementMetric value timestamp createdAt updatedAt').sort({ createdAt: -1 });
 
     res.json({ success: true, data: history });
 });
 
 // POST /api/analytics/:creatorId/refresh
 const triggerRefresh = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.creatorId)) {
+        return res.status(400).json({ success: false, message: "Invalid creatorId" });
+    }
+
     const creator = await Creator.findById(req.params.creatorId);
     if (!creator) {
         return res.status(404).json({ success: false, message: "Creator not found" });
@@ -90,4 +96,13 @@ const triggerRefresh = asyncHandler(async (req, res) => {
     res.json({ success: true, message: "Refresh successful", data: snapshot });
 });
 
-module.exports = { getSnapshots, getLatestSnapshot, triggerRefresh, getEngagementHistory };
+// GET /api/analytics/creators
+const getCreatorsByUser = asyncHandler(async (req, res) => {
+    const creators = await Creator.find({ userId: req.user.id })
+        .select('_id username platform profileUrl avatar')
+        .lean();
+
+    res.json({ success: true, data: creators });
+});
+
+module.exports = { getSnapshots, getLatestSnapshot, triggerRefresh, getEngagementHistory, getCreatorsByUser };

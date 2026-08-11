@@ -11,9 +11,27 @@
     const resultBanner = document.getElementById('result-banner');
     const resultText = document.getElementById('result-text');
 
-    let allLinks = [];
-    let sortMode = 'date';
-    let lastCreatedUrl = '';
+    // Initialize Zustag store
+    const useStore = window.zustag.createStore((set, get) => ({
+        allLinks: [],
+        sortMode: 'date',
+        lastCreatedUrl: '',
+    }));
+
+    // Subscribe to store changes to trigger UI updates
+    useStore.subscribe((state, prevState) => {
+        if (state.allLinks !== prevState.allLinks || state.sortMode !== prevState.sortMode) {
+            renderLinks();
+        }
+        if (state.lastCreatedUrl !== prevState.lastCreatedUrl) {
+            if (state.lastCreatedUrl) {
+                resultText.textContent = state.lastCreatedUrl;
+                resultBanner.style.display = 'flex';
+            } else {
+                resultBanner.style.display = 'none';
+            }
+        }
+    });
 
     function showToast(message, isError) {
         toastEl.textContent = message;
@@ -22,10 +40,22 @@
         setTimeout(() => toastEl.classList.remove('visible'), 3200);
     }
 
-    async function apiRequest(url, options) {
+    function getCsrfToken() {
+        const match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
+        return match ? decodeURIComponent(match[1]) : (document.body.getAttribute('data-csrf') || document.querySelector('meta[name="csrf-token"]')?.content || '');
+    }
+
+    async function apiRequest(url, options = {}) {
+        const csrfToken = getCsrfToken();
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+            ...(options.headers || {}),
+        };
         const res = await fetch(url, {
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             ...options,
+            headers,
         });
         let payload = null;
         try {
@@ -44,7 +74,8 @@
     }
 
     function filterAndSortLinks() {
-        const query = searchInput.value.trim().toLowerCase();
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        const { allLinks, sortMode } = useStore.getState();
         let links = [...allLinks];
 
         if (query) {
@@ -66,14 +97,14 @@
         return links;
     }
 
-   function renderLinks() {
-    const skeleton = document.getElementById('links-skeleton');
+    function renderLinks() {
+        const skeleton = document.getElementById('links-skeleton');
 
-    if (skeleton) {
-        skeleton.style.display = 'none';
-    }
+        if (skeleton) {
+            skeleton.style.display = 'none';
+        }
 
-    const links = filterAndSortLinks();
+        const links = filterAndSortLinks();
         feedEl.querySelectorAll('.link-card').forEach((el) => el.remove());
 
         if (links.length === 0) {
@@ -108,8 +139,9 @@
                     </p>
                     <div class="link-actions">
                         <button type="button" class="link-action-btn copy-btn" data-url="${escapeAttr(link.shortUrl)}">Copy</button>
-                        <a href="${escapeAttr(link.shortUrl)}" target="_blank" rel="noopener" class="link-action-btn">Open</a>
+                        <a href="${escapeAttr(link.shortUrl)}" target="_blank" rel="noopener" class="link-action-btn open-btn" data-id="${escapeAttr(link.shortId)}">Open</a>
                         <button type="button" class="link-action-btn analytics-btn" data-id="${escapeAttr(link.shortId)}">Analytics</button>
+                        <button type="button" class="link-action-btn delete-btn" data-id="${escapeAttr(link.shortId)}" style="color:var(--accent-red, #E13B3B);border-color:var(--accent-red, #E13B3B);">Delete</button>
                     </div>
                 </div>
                 <div class="link-clicks">
@@ -124,14 +156,51 @@
             btn.addEventListener('click', () => copyText(btn.dataset.url, 'Link copied!'));
         });
 
-        feedEl.querySelectorAll('.analytics-btn').forEach((btn) => {
+        feedEl.querySelectorAll('.open-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                const currentLinks = useStore.getState().allLinks;
+                const nextLinks = currentLinks.map(l => {
+                    if (l.shortId === id || l._id === id) {
+                        const newClicks = (l.totalClicks || 0) + 1;
+                        return {
+                            ...l,
+                            totalClicks: newClicks,
+                            clicksLabel: newClicks.toString()
+                        };
+                    }
+                    return l;
+                });
+                useStore.setState({ allLinks: nextLinks });
+                setTimeout(async () => {
+                    try {
+                        const res = await apiRequest('/api/urls?limit=100');
+                        if (res && res.stats) updateStats(res.stats);
+                    } catch (e) {}
+                }, 1000);
+            });
+        });
+
+        feedEl.querySelectorAll('.delete-btn').forEach((btn) => {
             btn.addEventListener('click', async () => {
+                if (!confirm('Are you sure you want to delete this shortlink?')) return;
                 try {
-                    const data = await apiRequest(`/api/urls/analytics/${btn.dataset.id}`);
-                    showToast(`${data.totalClicks} total clicks recorded`);
+                    await apiRequest(`/api/urls/${btn.dataset.id}`, { method: 'DELETE' });
+                    showToast('Link deleted successfully!');
+                    const currentLinks = useStore.getState().allLinks;
+                    const nextLinks = currentLinks.filter(l => l.shortId !== btn.dataset.id && l._id !== btn.dataset.id);
+                    useStore.setState({ allLinks: nextLinks });
+                    const res = await apiRequest('/api/urls?limit=100');
+                    if (res && res.stats) updateStats(res.stats);
                 } catch (err) {
-                    showToast(err.message, true);
+                    showToast(err.message || 'Failed to delete link', true);
                 }
+            });
+        });
+
+        feedEl.querySelectorAll('.analytics-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                window.location.href = `/services/analytics-dashboard?link=${btn.dataset.id}`;
             });
         });
     }
@@ -174,12 +243,11 @@
     async function loadLinks() {
         try {
             const data = await apiRequest('/api/urls');
-            allLinks = data.links || [];
+            useStore.setState({ allLinks: data.links || [] });
             updateStats(data.stats || { totalLinks: 0, totalClicksLabel: '0', topLinkTitle: '—' });
             if (data.domain) {
                 document.getElementById('domain-label').textContent = data.domain + '/';
             }
-            renderLinks();
         } catch (err) {
             showToast(err.message, true);
         }
@@ -188,48 +256,94 @@
     emptyEl.style.display = 'none';
     loadLinks();
 
-    document.getElementById('copy-result-btn').addEventListener('click', () => {
+    // Form Submit Handler utilizing the store
+    if (shortenForm) {
+        shortenForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const redirectUrl = document.getElementById('redirect-url').value.trim();
+            const customSlug = document.getElementById('custom-slug').value.trim();
+            const linkTitle = document.getElementById('link-title').value.trim();
+            const linkTag = document.getElementById('link-tag').value;
+
+            try {
+                const data = await apiRequest('/api/urls', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        redirectUrl,
+                        customSlug: customSlug || undefined,
+                        title: linkTitle || undefined,
+                        tag: linkTag
+                    })
+                });
+
+                // Prepend new link to state & store short URL
+                const { allLinks } = useStore.getState();
+                useStore.setState({
+                    allLinks: [data.link, ...allLinks],
+                    lastCreatedUrl: data.link.shortUrl
+                });
+
+                // Optimistically update Link Vault total count
+                const totalLinksEl = document.getElementById('stat-total-links');
+                if (totalLinksEl) {
+                    const currentTotal = parseInt(totalLinksEl.textContent || '0', 10);
+                    totalLinksEl.textContent = Number.isNaN(currentTotal) ? '1' : String(currentTotal + 1);
+                }
+
+                // Clear input fields
+                document.getElementById('redirect-url').value = '';
+                document.getElementById('custom-slug').value = '';
+                document.getElementById('link-title').value = '';
+                document.getElementById('link-tag').value = 'active';
+
+                showToast('Short link created successfully!');
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+    }
+
+    document.getElementById('copy-result-btn')?.addEventListener('click', () => {
+        const { lastCreatedUrl } = useStore.getState();
         if (lastCreatedUrl) copyText(lastCreatedUrl, 'Short link copied!');
     });
 
-    document.getElementById('slug-toggle').addEventListener('click', () => {
-        document.getElementById('slug-panel').classList.toggle('open');
+    document.getElementById('slug-toggle')?.addEventListener('click', () => {
+        document.getElementById('slug-panel')?.classList.toggle('open');
     });
 
-    searchInput.addEventListener('input', renderLinks);
+    if (searchInput) searchInput.addEventListener('input', renderLinks);
 
-    document.getElementById('sort-date').addEventListener('click', () => {
-        sortMode = 'date';
-        document.getElementById('sort-date').classList.add('active');
-        document.getElementById('sort-clicks').classList.remove('active');
-        renderLinks();
+    document.getElementById('sort-date')?.addEventListener('click', () => {
+        useStore.setState({ sortMode: 'date' });
+        document.getElementById('sort-date')?.classList.add('active');
+        document.getElementById('sort-clicks')?.classList.remove('active');
     });
 
-    document.getElementById('sort-clicks').addEventListener('click', () => {
-        sortMode = 'clicks';
-        document.getElementById('sort-clicks').classList.add('active');
-        document.getElementById('sort-date').classList.remove('active');
-        renderLinks();
+    document.getElementById('sort-clicks')?.addEventListener('click', () => {
+        useStore.setState({ sortMode: 'clicks' });
+        document.getElementById('sort-clicks')?.classList.add('active');
+        document.getElementById('sort-date')?.classList.remove('active');
     });
 
-    document.getElementById('scroll-shorten-btn').addEventListener('click', () => {
-        document.getElementById('shorten-section').scrollIntoView({ behavior: 'smooth' });
-        document.getElementById('redirect-url').focus();
+    document.getElementById('scroll-shorten-btn')?.addEventListener('click', () => {
+        document.getElementById('shorten-section')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('redirect-url')?.focus();
     });
 
-    document.getElementById('widget-new-btn').addEventListener('click', () => {
-        document.getElementById('scroll-shorten-btn').click();
+    document.getElementById('widget-new-btn')?.addEventListener('click', () => {
+        document.getElementById('scroll-shorten-btn')?.click();
     });
 
     const emptyCTA = document.getElementById('empty-state-cta');
 
-if (emptyCTA) {
-    emptyCTA.addEventListener('click', () => {
-        document.getElementById('shorten-section')
-            ?.scrollIntoView({ behavior: 'smooth' });
+    if (emptyCTA) {
+        emptyCTA.addEventListener('click', () => {
+            document.getElementById('shorten-section')
+                ?.scrollIntoView({ behavior: 'smooth' });
 
-        document.getElementById('redirect-url')
-            ?.focus();
-    });
-}
+            document.getElementById('redirect-url')
+                ?.focus();
+        });
+    }
 })();

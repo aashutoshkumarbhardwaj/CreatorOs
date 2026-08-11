@@ -130,9 +130,6 @@ function sendInstagramError(res, error) {
 async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
-
-        await assertLookupAllowed(req);
-
         const cacheKey = `ig:profile:${username}`;
         const cachedProfile = redis
             ? await redis.get(cacheKey)
@@ -144,6 +141,8 @@ async function getInstagramProfile(req, res) {
                 data: JSON.parse(cachedProfile),
             });
         }
+
+        await assertLookupAllowed(req);
 
         const profile = await fetchInstagramProfile(username);
 

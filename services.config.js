@@ -45,6 +45,15 @@ module.exports = [
         svgPath: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     },
     {
+        key: 'qr-code-generator',
+        name: 'QR Code Generator',
+        description: 'Create dynamic QR codes with exports, batch generation, and scan telemetry.',
+        route: '/services/qr-code-generator',
+        status: 'available',
+        // QR/grid icon
+        svgPath: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/><path d="M19 20h2v1h-2z"/>',
+    },
+    {
         key: 'creator-crm',
         name: '🤝 Creator CRM',
         description: 'Invite collaborators, manage team access, and view pending invitations.',
