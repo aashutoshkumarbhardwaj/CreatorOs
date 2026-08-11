@@ -296,7 +296,7 @@ const generateBase64QR = async (text, fg, bg) => {
 const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Implement cursor-based pagination for performance
     // Prevent loading entire collection into memory on large datasets
-    const pageSize = Math.min(parseInt(req.query.limit, 10) || 20, 100); // Max 100 per page
+    const pageSize = parseListLimit(req.query.limit); // Max 100 per page, defaults to 20
     const cursor = req.query.cursor;
 
     if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
