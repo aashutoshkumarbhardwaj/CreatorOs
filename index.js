@@ -155,11 +155,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "view"));
 app.locals.BRAND = BRAND;
 
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: { error: "Upload limit reached, please try again later." },
-});
+
 
 const urlShortenerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -178,7 +174,6 @@ const {
 const fs = require("fs");
 app.use(express.static(path.join(__dirname, "public")));
 const shortid = require("shortid");
-const multer = require("multer");
 const services = require("./services.config");
 const User = require("./model/user");
 const Creator = require("./model/creator");
@@ -234,99 +229,7 @@ app.use(
   }),
 );
 
-const os = require("os");
-const uploadDir = os.tmpdir();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    let sanitizedFilename = path.basename(file.originalname);
-    sanitizedFilename = sanitizedFilename
-      .replace(/[/\\?%*:|"<>]/g, "-")
-      .replace(/^\.+/, "");
-    cb(null, Date.now() + "-" + sanitizedFilename);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const ALLOWED_MIME_TYPES = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-  ];
-  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-
-  const fileExtension = path.extname(file.originalname).toLowerCase();
-
-  if (
-    !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
-    !ALLOWED_EXTENSIONS.includes(fileExtension)
-  ) {
-    return cb(
-      new Error("Only image files (JPEG, PNG, WebP, GIF) are allowed."),
-      false,
-    );
-  }
-
-  cb(null, true);
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: fileFilter,
-});
-
-const sharp = require('sharp');
-
-async function compressImage(filePath, mimetype) {
-    // GIFs are skipped — sharp's default pipeline doesn't preserve animation
-    if (mimetype === 'image/gif') {
-        return { compressed: false };
-    }
-
-    const tempOutputPath = filePath + '.compressed';
-    const originalStats = fs.statSync(filePath);
-
-    try {
-        const pipeline = sharp(filePath).resize({
-            width: 1920,
-            height: 1920,
-            fit: 'inside',
-            withoutEnlargement: true,
-        });
-
-        if (mimetype === 'image/jpeg') {
-            pipeline.jpeg({ quality: 80 });
-        } else if (mimetype === 'image/png') {
-            pipeline.png({ quality: 80, compressionLevel: 8 });
-        } else if (mimetype === 'image/webp') {
-            pipeline.webp({ quality: 80 });
-        }
-
-        await pipeline.toFile(tempOutputPath);
-
-        const compressedStats = fs.statSync(tempOutputPath);
-
-        // Only keep the compressed version if it's actually smaller
-        if (compressedStats.size < originalStats.size) {
-            fs.renameSync(tempOutputPath, filePath);
-            return { compressed: true, originalSize: originalStats.size, newSize: compressedStats.size };
-        } else {
-            fs.unlinkSync(tempOutputPath);
-            return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
-        }
-    } catch (err) {
-        console.error('[compress] Failed to compress image:', err);
-        if (fs.existsSync(tempOutputPath)) {
-            fs.unlinkSync(tempOutputPath);
-        }
-        return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
-    }
-}
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -1133,43 +1036,13 @@ const { handleGenerateShortUrlRender } = require('./controller/url');
 const { handleQrRedirect } = require('./controller/qrCodeController');
 app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
 
-// ── FILE UPLOAD POST ──
-
-app.post(
-  "/services/file-upload/upload",
+// ── FILE UPLOAD (VAULT) ROUTES ──
+const fileUploadRoutes = require("./routes/fileUpload");
+app.use(
+  "/services/file-upload",
   protect,
   preventContributorWrites,
-  uploadLimiter,
-  upload.single("file"),
-  async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    const compressionResult = await compressImage(req.file.path, req.file.mimetype);
-    const finalStats = fs.statSync(req.file.path);
-
-    res.json({
-      filename: req.file.originalname,
-      size: finalStats.size,
-      mimetype: req.file.mimetype,
-      path: req.file.filename,
-      compressed: compressionResult.compressed,
-    });
-
-    // Clean up temporary file to prevent DoS via disk exhaustion
-    try {
-      fs.unlink(req.file.path, (err) => {
-        if (err)
-          console.error(
-            `[upload] Failed to delete temp file ${req.file.path}:`,
-            err,
-          );
-      });
-    } catch (e) {
-      console.error(`[upload] Error deleting temp file:`, e);
-    }
-  },
+  fileUploadRoutes,
 );
 
 // ── SHORT URL REDIRECT ──
@@ -1222,6 +1095,22 @@ app.get(
       if (entry.password) {
         return res.render("link-password", { shortId, error: null });
       }
+      Object.assign(visitData, parseVisitMeta(req));
+
+      const entry = await Url.findOneAndUpdate(
+        { shortId },
+        {
+          $inc: { totalClicks: 1 },
+          $push: {
+            visitHistory: {
+              $each: [visitData],
+              $sort: { timestamp: -1 },
+              $slice: 1000,
+            },
+          },
+        },
+        { new: true },
+      );
 
       return await recordClickAndRedirect(req, res, entry);
     } catch (err) {
