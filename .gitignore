@@ -50,3 +50,6 @@ coverage/
 # MongoDB
 *.mongodb
 *.db
+
+# Vault file uploads (persisted user files — not committed)
+uploads/
