@@ -3,6 +3,7 @@ const shortid = require('shortid');
 const QRCode = require('qrcode');
 const dns = require('dns');
 const net = require('net');
+const mongoose = require('mongoose');
 const Url = require('../model/url');
 const { isValidUrl } = require('../utils/validators');
 const asyncHandler = require('../utils/asyncHandler');
