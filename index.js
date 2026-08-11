@@ -76,6 +76,7 @@ const contentRoutes = require("./routes/content");
 const suggestionRoutes = require("./routes/suggestionRoutes");
 const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
+const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
@@ -210,9 +211,9 @@ app.get("/invites/accept/:token", acceptInvite);
 app.use("/api/billing", billingRoute);
 app.use("/api/domain", domainRoute);
 app.use("/api/sponsors", sponsorRoute);
+app.use("/api/crm", creatorCrmRoutes);
 app.use("/api/settings", protect, settingsRoutes);
 app.use("/api/content", protect, contentRoutes);
-
 app.use("/api/urls", protect, urlRoutes);
 app.use("/api/ai", aiRoute);
 app.use("/api/analytics", protect, analyticsRoutes);
