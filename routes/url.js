@@ -1,22 +1,33 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const {
-    handleGenerateShortURL,
-    handleListUserLinks,
-    handleGetQRCode,
-    handleDownloadQRCode,
-    handleUpdateQRColors,
-    handleGetAnalytics,
-    handleDeleteShortURL,
-} = require('../controller/url');
+  handleGenerateShortURL,
+  handleListUserLinks,
+  handleGetQRCode,
+  handleDownloadQRCode,
+  handleUpdateQRColors,
+  handleGetAnalytics,
+  handleDeleteShortURL,
+  handleUpdateShortURL,
+  handleToggleFavorite,
+  handleToggleArchive,
+  handleBulkImport,
+} = require("../controller/url");
+
+// In-memory storage is fine here — bulk import files are small text/CSV,
+// parsed immediately and never written to disk.
+const bulkImportUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 1 * 1024 * 1024 }, // 1MB
+});
+const { protect, preventContributorWrites } = require("../middleware/auth");
+
+const { urlShortenerApiLimiter } = require("../middleware/rateLimiters");
 const {
-    protect,
-    preventContributorWrites,
-} = require('../middleware/auth');
-
-const { urlShortenerApiLimiter } = require('../middleware/rateLimiters');
-const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/validators');
-
+  shortenUrlValidator,
+  updateQrColorsValidator,
+} = require("../middleware/validators");
 
 /**
  * @swagger
@@ -34,7 +45,7 @@ const { shortenUrlValidator, updateQrColorsValidator } = require('../middleware/
  *       500:
  *         description: Internal server error
  */
-router.get('/', protect, handleListUserLinks);
+router.get("/", protect, handleListUserLinks);
 
 // ── Short URL Endpoints ─────────────────────────────────────────────────────
 
@@ -54,13 +65,66 @@ router.get('/', protect, handleListUserLinks);
  *       500:
  *         description: Internal server error
  */
-router.post('/shorten', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortURL);
+router.post(
+  "/shorten",
+  protect,
+  preventContributorWrites,
+  urlShortenerApiLimiter,
+  shortenUrlValidator,
+  handleGenerateShortURL,
+);
 
 // POST /api/urls — alias so the My Links front-end (which POSTs to /api/urls) also works
-router.post('/', protect, preventContributorWrites, urlShortenerApiLimiter, shortenUrlValidator, handleGenerateShortURL);
+router.post(
+  "/",
+  protect,
+  preventContributorWrites,
+  urlShortenerApiLimiter,
+  shortenUrlValidator,
+  handleGenerateShortURL,
+);
 
 // DELETE /api/urls/:shortId — delete a short link
-router.delete('/:shortId', protect, preventContributorWrites, handleDeleteShortURL);
+router.delete(
+  "/:shortId",
+  protect,
+  preventContributorWrites,
+  handleDeleteShortURL,
+);
+
+// PATCH /api/urls/:shortId — edit title/destination/tag/tags/expiry/password
+router.patch(
+  "/:shortId",
+  protect,
+  preventContributorWrites,
+  handleUpdateShortURL,
+);
+
+// PATCH /api/urls/:shortId/favorite — toggle favorite
+router.patch(
+  "/:shortId/favorite",
+  protect,
+  preventContributorWrites,
+  handleToggleFavorite,
+);
+
+// PATCH /api/urls/:shortId/archive — toggle archive
+router.patch(
+  "/:shortId/archive",
+  protect,
+  preventContributorWrites,
+  handleToggleArchive,
+);
+
+// POST /api/urls/bulk — bulk import via pasted text and/or a .csv file
+router.post(
+  "/bulk",
+  protect,
+  preventContributorWrites,
+  urlShortenerApiLimiter,
+  bulkImportUpload.single("file"),
+  handleBulkImport,
+);
 
 // ── QR Code Endpoints ───────────────────────────────────────────────────────
 
@@ -80,7 +144,7 @@ router.delete('/:shortId', protect, preventContributorWrites, handleDeleteShortU
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId/download', protect, handleDownloadQRCode);      
+router.get("/qr/:shortId/download", protect, handleDownloadQRCode);
 
 /**
  * @swagger
@@ -98,7 +162,7 @@ router.get('/qr/:shortId/download', protect, handleDownloadQRCode);
  *       500:
  *         description: Internal server error
  */
-router.get('/qr/:shortId', protect, handleGetQRCode);       
+router.get("/qr/:shortId", protect, handleGetQRCode);
 
 /**
  * @swagger
@@ -116,7 +180,13 @@ router.get('/qr/:shortId', protect, handleGetQRCode);
  *       500:
  *         description: Internal server error
  */
-router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrColorsValidator, handleUpdateQRColors);
+router.patch(
+  "/qr/:shortId/colors",
+  protect,
+  preventContributorWrites,
+  updateQrColorsValidator,
+  handleUpdateQRColors,
+);
 
 // ── Analytics Endpoints ─────────────────────────────────────────────────────
 
@@ -136,6 +206,6 @@ router.patch('/qr/:shortId/colors', protect, preventContributorWrites, updateQrC
  *       500:
  *         description: Internal server error
  */
-router.get('/analytics/:shortId', protect, handleGetAnalytics);
+router.get("/analytics/:shortId", protect, handleGetAnalytics);
 
 module.exports = router;
