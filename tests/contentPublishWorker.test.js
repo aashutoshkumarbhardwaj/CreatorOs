@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
-const { publishDueContent } = require('../workers/contentPublishWorker');
+const {
+    publishDueContent,
+    reclaimStalePublishingLeases,
+    PUBLISH_LEASE_MS,
+    MAX_PUBLISH_ATTEMPTS,
+} = require('../workers/contentPublishWorker');
 const ScheduledContent = require('../model/scheduledContent');
 
 describe('Content Publish Worker', () => {
-    const originalEnv = process.env.TEST_PUBLISH_FAIL;
-
     afterEach(() => {
         delete process.env.TEST_PUBLISH_FAIL;
     });
@@ -28,6 +31,8 @@ describe('Content Publish Worker', () => {
         expect(refreshed.platformPostId).toBeDefined();
         expect(typeof refreshed.platformPostId).toBe('string');
         expect(refreshed.errorMessage).toBeNull();
+        expect(refreshed.publishingStartedAt).toBeNull();
+        expect(refreshed.publishAttempts).toBe(1);
     });
 
     it('marks item as failed and records errorMessage when platform delivery fails', async () => {
@@ -90,5 +95,64 @@ describe('Content Publish Worker', () => {
 
         expect((await ScheduledContent.findById(alreadyPublished._id)).status).toBe('published');
         expect((await ScheduledContent.findById(cancelled._id)).status).toBe('cancelled');
+    });
+
+    it('reclaims stale publishing leases and republishes them', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const staleStartedAt = new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000);
+        const stuck = await ScheduledContent.create({
+            userId,
+            caption: 'Stuck in publishing',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'dead-worker',
+            publishingStartedAt: staleStartedAt,
+            publishAttempts: 1,
+        });
+        const fresh = await ScheduledContent.create({
+            userId,
+            caption: 'Actively publishing',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'live-worker',
+            publishingStartedAt: new Date(),
+            publishAttempts: 1,
+        });
+
+        const publishedCount = await publishDueContent();
+        expect(publishedCount).toBe(1);
+
+        const refreshedStuck = await ScheduledContent.findById(stuck._id);
+        expect(refreshedStuck.status).toBe('published');
+        expect(refreshedStuck.publishAttempts).toBe(2);
+
+        const refreshedFresh = await ScheduledContent.findById(fresh._id);
+        expect(refreshedFresh.status).toBe('publishing');
+        expect(refreshedFresh.publishedBy).toBe('live-worker');
+    });
+
+    it('marks stale publishing as failed after max attempts', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const staleStartedAt = new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000);
+        const exhausted = await ScheduledContent.create({
+            userId,
+            caption: 'Exhausted publishing attempts',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'dead-worker',
+            publishingStartedAt: staleStartedAt,
+            publishAttempts: MAX_PUBLISH_ATTEMPTS,
+        });
+
+        const result = await reclaimStalePublishingLeases();
+        expect(result.failed).toBe(1);
+        expect(result.reclaimed).toBe(0);
+
+        const refreshed = await ScheduledContent.findById(exhausted._id);
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.errorMessage).toContain('Publishing lease expired');
     });
 });

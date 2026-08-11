@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Creator = require("../model/creator");
 const AnalyticsSnapshot = require("../model/analyticsSnapshot");
 const EngagementHistory = require("../model/engagementHistory");
@@ -5,6 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { fetchInstagramAnalytics } = require("../utils/instagramApi");
 
 const verifyCreatorOwnership = async (creatorId, userId) => {
+    if (!mongoose.Types.ObjectId.isValid(creatorId)) return false;
     const creator = await Creator.findById(creatorId);
     if (!creator) return false;
     return creator.userId.toString() === userId.toString();
@@ -60,6 +62,10 @@ const getEngagementHistory = asyncHandler(async (req, res) => {
 
 // POST /api/analytics/:creatorId/refresh
 const triggerRefresh = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.creatorId)) {
+        return res.status(400).json({ success: false, message: "Invalid creatorId" });
+    }
+
     const creator = await Creator.findById(req.params.creatorId);
     if (!creator) {
         return res.status(404).json({ success: false, message: "Creator not found" });

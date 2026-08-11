@@ -130,4 +130,9 @@ describe('Instagram Analytics API', () => {
         await expect(fetchInstagramAnalytics({ platform: 'youtube' }))
             .rejects.toThrow('Creator does not have a valid Instagram access token');
     });
+
+    it('throws a clear error when the platform ID is missing', async () => {
+        await expect(fetchInstagramAnalytics({ platform: 'instagram', accessToken: 'valid_token' }))
+            .rejects.toThrow('no Instagram platform ID');
+    });
 });

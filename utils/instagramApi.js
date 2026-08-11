@@ -59,8 +59,12 @@ const fetchInstagramAnalytics = async (creator) => {
         throw new Error('Creator does not have a valid Instagram access token or is not on the Instagram platform.');
     }
 
+    if (!creator.platformId) {
+        throw new Error('Creator has no Instagram platform ID; link an Instagram account to the creator to enable analytics.');
+    }
+
     try {
-        const platformId = creator.platformId || 'me';
+        const platformId = creator.platformId;
         const accessToken = creator.accessToken;
 
         // Always fetch profile metrics first so a media-permission failure can
