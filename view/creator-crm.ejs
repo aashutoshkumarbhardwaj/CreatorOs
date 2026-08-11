@@ -1,233 +1,637 @@
 <%- include('partials/layout/header', {
     activeNav: 'creator-crm',
     title: 'Creator CRM',
-    
-    
-    extraHead: '<link rel="stylesheet" href="/css/crm.css">'
+    extraHead: '<link rel="stylesheet" href="/css/crm.css"><script src="/js/pages/crm.js" defer></script>'
 }) %>
 
     <!-- CONTENT -->
     <div class="content">
 
-      <!-- PIPELINE -->
-      <div class="pipeline">
-
-        <!-- LEADS -->
-        <div class="pipeline-col">
-          <div class="col-header">
-            <span class="col-title">Leads (4)</span>
-            <button type="button" class="col-header-action">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-            </button>
-          </div>
-  
-          <div class="col-body">
-            <!-- Card 1 -->
-            <div class="deal-card">
-              <div class="deal-top">
-                <span class="category-tag tag-tech">TECH</span>
-                <span class="deal-amount">$5,000</span>
-              </div>
-              <div class="deal-name">Adobe Creative Cloud</div>
-              <div class="deal-sub">Summer Campaign Intro</div>
-              <div class="deal-footer">
-                <div class="contact-row">
-                  <div class="contact-avatar">SK</div>
-                  <span class="contact-name">Sarah Miller</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 2 -->
-            <div class="deal-card">
-              <div class="deal-top">
-                <span class="category-tag tag-gaming">GAMING</span>
-                <span class="deal-amount">$2,200</span>
-              </div>
-              <div class="deal-name">Razer Global</div>
-              <div class="deal-sub">BlackShark V2 Pro Review</div>
-              <div class="deal-footer">
-                <div class="contact-row">
-                  <div class="contact-avatar" style="background: linear-gradient(135deg,#1e1e1e,#444); color:#fff;">JC</div>
-                  <span class="contact-name">James Chen</span>
-                </div>
-              </div>
-            </div>
-          </div>
+      <!-- DASHBOARD HEAD & STATS -->
+      <div class="dashboard-head">
+        <div>
+          <h1>🤝 Creator CRM</h1>
+          <p>Manage brand partnerships, campaign pipelines, lead tracking, invoices, and contracts.</p>
         </div>
+        <div class="crm-actions-bar">
+          <button type="button" class="crm-btn-primary" onclick="openCrmModal('add-deal-modal')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Deal
+          </button>
+          <button type="button" class="crm-btn-secondary" onclick="openCrmModal('add-brand-modal')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Add Brand
+          </button>
+          <button type="button" class="crm-btn-secondary" onclick="openCrmModal('add-invoice-modal')">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="14" y2="12"/></svg>
+            New Invoice
+          </button>
+        </div>
+      </div>
 
-        <!-- OUTREACH -->
-        <div class="pipeline-col">
-          <div class="col-header">
-            <span class="col-title">Outreach (2)</span>
-            <button type="button" class="col-header-action">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-          </div>
-          <div class="col-body">
-            <!-- Card 3 -->
-            <div class="deal-card" style="position:relative;">
-              <span class="emailed-badge">Emailed</span>
-              <div class="deal-top">
-                <span class="category-tag tag-fintech">FINTECH</span>
-                <span class="deal-amount" style="visibility:hidden;">$0</span>
-              </div>
-              <div class="deal-name">Revolut Business</div>
-              <div class="deal-sub">Tax Season Partnership</div>
-              <div class="deal-footer">
-                <div class="contact-row">
-                  <div class="contact-avatar" style="background: linear-gradient(135deg,#6ee7b7,#059669); color:#fff;">ER</div>
-                  <span class="contact-name">Elena Ross</span>
-                </div>
-                <button type="button" class="deal-icon-btn">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-card-retro accent-blue">
+          <span class="card-id">VAL</span>
+          <span class="label">Pipeline Value</span>
+          <div class="value">$<%= (typeof crmData !== 'undefined' && crmData.summary) ? crmData.summary.totalPipelineValue.toLocaleString() : '19,200' %></div>
+          <span class="subtext">Across active campaign deals</span>
+        </div>
+        <div class="stat-card-retro">
+          <span class="card-id">DEALS</span>
+          <span class="label">Active Deals</span>
+          <div class="value"><%= (typeof crmData !== 'undefined' && crmData.summary) ? crmData.summary.activeDealsCount : '4' %></div>
+          <span class="subtext">In pipeline stage</span>
+        </div>
+        <div class="stat-card-retro">
+          <span class="card-id">UNPAID</span>
+          <span class="label">Pending Invoices</span>
+          <div class="value" style="color: var(--accent-red);">$<%= (typeof crmData !== 'undefined' && crmData.summary) ? crmData.summary.totalUnpaidInvoices.toLocaleString() : '32,450' %></div>
+          <span class="subtext">Awaiting payment</span>
+        </div>
+        <div class="stat-card-retro">
+          <span class="card-id">BRANDS</span>
+          <span class="label">Brand Contacts</span>
+          <div class="value"><%= (typeof crmData !== 'undefined' && crmData.summary) ? crmData.summary.totalBrandsCount : '6' %></div>
+          <span class="subtext">In brand database</span>
+        </div>
+      </div>
+
+      <!-- CONTROLS & SEARCH BAR -->
+      <div class="crm-controls-header">
+        <div class="crm-search-box">
+          <svg class="crm-search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="crm-search-input" placeholder="Search brands, deals, contacts, invoices..." />
+        </div>
+        <div class="crm-actions-bar">
+          <label style="font-size:0.8rem; font-weight:700;">Category Filter:</label>
+          <select id="crm-category-filter" class="crm-filter-select">
+            <option value="all">All Categories</option>
+            <option value="Tech">Tech</option>
+            <option value="Gaming">Gaming</option>
+            <option value="Fintech">Fintech</option>
+            <option value="Lifestyle">Lifestyle</option>
+            <option value="Education">Education</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CRM TABS BAR -->
+      <div class="crm-tabs-bar">
+        <button type="button" class="crm-tab-btn active" data-tab="pipeline">
+          📊 Campaign Pipeline
+        </button>
+        <button type="button" class="crm-tab-btn" data-tab="brands">
+          🏢 Brand & Sponsor Database
+        </button>
+        <button type="button" class="crm-tab-btn" data-tab="invoices">
+          💳 Invoices & Payments
+        </button>
+        <button type="button" class="crm-tab-btn" data-tab="tasks">
+          ☑️ Tasks & Contracts
+        </button>
+        <button type="button" class="crm-tab-btn" data-tab="mediakit">
+          🧰 Media Kit & Integrations
+        </button>
+      </div>
+
+      <!-- TAB 1: PIPELINE BOARD -->
+      <div id="tab-pipeline" class="crm-tab-pane active">
+        <div class="pipeline">
+          <% 
+            const stages = [
+              { id: 'lead', name: 'Leads' },
+              { id: 'outreach', name: 'Outreach' },
+              { id: 'negotiation', name: 'Negotiation' },
+              { id: 'contract', name: 'Contract' },
+              { id: 'closed_won', name: 'Closed Won' }
+            ];
+            const dealsList = (typeof crmData !== 'undefined' && crmData.deals) ? crmData.deals : [];
+          %>
+
+          <% stages.forEach(function(stg) { 
+            const stageDeals = dealsList.filter(d => d.stage === stg.id);
+          %>
+            <div class="pipeline-col">
+              <div class="col-header">
+                <span class="col-title"><%= stg.name %> (<%= stageDeals.length %>)</span>
+                <button type="button" class="col-header-action" title="Add Deal" onclick="openCrmModal('add-deal-modal')">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- NEGOTIATION -->
-        <div class="pipeline-col">
-          <div class="col-header">
-            <span class="col-title">Negotiation (1)</span>
-          </div>
-          <div class="col-body">
-            <!-- Card 4 - highlighted -->
-            <div class="deal-card">
-              <div class="deal-top">
-                <span class="category-tag tag-lifestyle">LIFESTYLE</span>
-                <span class="deal-amount">$8,500</span>
-              </div>
-              <div class="deal-name">Nespresso</div>
-              <div class="deal-sub">Vertuo Pop Showcase · 3 Reels</div>
-              <div class="deal-status-row">
-                <div class="deal-status-tag">
-                  <span class="check">
-                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
-                  Counter-offer sent
-                </div>
-              </div>
-              <div class="deal-footer">
-                <div class="contact-row">
-                  <div class="contact-avatar" style="background: linear-gradient(135deg,#c4b5fd,#7c3aed); color:#fff;">MT</div>
-                  <span class="contact-name">Marcus Thorne</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div><!-- /pipeline -->
+              <div class="col-body">
+                <% if (stageDeals.length === 0) { %>
+                  <div style="font-size:0.78rem; color:var(--muted-2); text-align:center; padding:1.5rem 0;">No deals in stage</div>
+                <% } else { %>
+                  <% stageDeals.forEach(function(deal) { %>
+                    <div class="deal-card" data-category="<%= deal.category || '' %>">
+                      <% if (deal.emailedBadge) { %>
+                        <span class="emailed-badge">Emailed</span>
+                      <% } %>
+                      <div class="deal-top">
+                        <span class="category-tag tag-<%= (deal.category || 'tech').toLowerCase() %>"><%= (deal.category || 'TECH').toUpperCase() %></span>
+                        <span class="deal-amount">$<%= (deal.amount || 0).toLocaleString() %></span>
+                      </div>
+                      <div class="deal-name"><%= deal.companyName %></div>
+                      <div class="deal-sub"><%= deal.dealName %> <%= deal.deliverables ? '· ' + deal.deliverables : '' %></div>
+                      
+                      <% if (deal.statusTag) { %>
+                        <div class="deal-status-row" style="display:flex;">
+                          <div class="deal-status-tag">
+                            <span class="check">
+                              <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                            <%= deal.statusTag %>
+                          </div>
+                        </div>
+                      <% } %>
 
-      <!-- BOTTOM STRIP -->
-      <div class="bottom-strip">
-
-        <!-- RECENT BRAND CONTACTS -->
-        <div class="contacts-panel">
-          <div class="panel-header">
-            <span class="panel-title">Recent Brand Contacts</span>
-            <a href="/services/creator-crm/all" class="view-all-link">View All CRM</a>
-          </div>
-          <table class="contacts-table">
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>Primary Contact</th>
-                <th>Last Activity</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
-                <% contacts.forEach(function(c) { %>
-                  <tr>
-                    <td class="contact-company"><%= c.company %></td>
-                    <td><%= c.contact %></td>
-                    <td><%= c.lastActivity %></td>
-                    <td><span class="status-chip chip-<%= c.statusClass %>"><%= c.status %></span></td>
-                    <td><span class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span></td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr>
-                  <td class="contact-company">SquareSpace</td>
-                  <td>David Hoffman</td>
-                  <td>2 days ago</td>
-                  <td><span class="status-chip chip-partner">Partner</span></td>
-                  <td><span class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span></td>
-                </tr>
-                <tr>
-                  <td class="contact-company">HelloFresh</td>
-                  <td>Clara Vance</td>
-                  <td>Yesterday</td>
-                  <td><span class="status-chip chip-negotiating">Negotiating</span></td>
-                  <td><span class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span></td>
-                </tr>
-                <tr>
-                  <td class="contact-company">MasterClass</td>
-                  <td>Benny G.</td>
-                  <td>14h ago</td>
-                  <td><span class="status-chip chip-active">Active</span></td>
-                  <td><span class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span></td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- INVOICED & UNPAID -->
-        <div class="invoiced-panel">
-          <div class="invoiced-header">
-            <span class="panel-title">Invoiced &amp; Unpaid</span>
-          </div>
-          <div class="invoiced-body">
-            <div class="invoiced-amount">
-              <span class="big-num">$<%= typeof totalUnpaid !== 'undefined' ? totalUnpaid.toLocaleString() : '32,450' %></span>
-              <span class="pending-label">Pending</span>
-            </div>
-            <div class="invoice-list">
-              <% if (typeof invoices !== 'undefined' && invoices.length > 0) { %>
-                <% invoices.forEach(function(inv) { %>
-                  <div class="invoice-item">
-                    <div class="invoice-info">
-                      <div class="invoice-name"><%= inv.name %></div>
-                      <div class="invoice-due <%= inv.overdue ? 'overdue' : 'due-in' %>">
-                        <%= inv.overdue ? 'OVERDUE ' + inv.dueLabel : 'DUE IN ' + inv.dueLabel %>
+                      <div class="deal-footer">
+                        <div class="contact-row">
+                          <div class="contact-avatar">
+                            <%= (deal.contactName || deal.companyName).split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() %>
+                          </div>
+                          <span class="contact-name"><%= deal.contactName || 'Primary Contact' %></span>
+                        </div>
+                        <button type="button" class="crm-btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.72rem;" onclick="moveDealStage('<%= deal._id %>', '<%= deal.stage %>')">
+                          Move →
+                        </button>
                       </div>
                     </div>
-                    <div class="invoice-amount">$<%= inv.amount.toLocaleString() %></div>
-                  </div>
-                <% }) %>
-              <% } else { %>
-                <div class="invoice-item">
-                  <div class="invoice-info">
-                    <div class="invoice-name">Skillshare · Annual</div>
-                    <div class="invoice-due overdue">OVERDUE 4D</div>
-                  </div>
-                  <div class="invoice-amount">$12,000</div>
-                </div>
-                <div class="invoice-item">
-                  <div class="invoice-info">
-                    <div class="invoice-name">NordVPN · Mar</div>
-                    <div class="invoice-due due-in">DUE IN 12D</div>
-                  </div>
-                  <div class="invoice-amount"></div>
-                </div>
-              <% } %>
+                  <% }) %>
+                <% } %>
+              </div>
             </div>
-            <button type="button" class="add-invoice-btn">+</button>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- TAB 2: BRAND DATABASE -->
+      <div id="tab-brands" class="crm-tab-pane">
+        <div class="bottom-strip" style="grid-template-columns: 1fr;">
+          <div class="contacts-panel" style="border-right:none;">
+            <div class="panel-header">
+              <span class="panel-title">Brand &amp; Sponsor Directory</span>
+              <button type="button" class="crm-btn-primary" onclick="openCrmModal('add-brand-modal')">+ Add Brand</button>
+            </div>
+            <table class="contacts-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Category</th>
+                  <th>Primary Contact</th>
+                  <th>Contact Email</th>
+                  <th>Status</th>
+                  <th>Social Links</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% const brandsList = (typeof crmData !== 'undefined' && crmData.brands) ? crmData.brands : []; %>
+                <% if (brandsList.length > 0) { %>
+                  <% brandsList.forEach(function(b) { %>
+                    <tr class="brand-row" data-category="<%= b.category || '' %>">
+                      <td class="contact-company"><%= b.companyName %></td>
+                      <td><span class="category-tag tag-<%= (b.category || 'tech').toLowerCase() %>"><%= (b.category || 'TECH').toUpperCase() %></span></td>
+                      <td><%= b.contactName || '-' %></td>
+                      <td><%= b.contactEmail || '-' %></td>
+                      <td><span class="status-chip chip-<%= b.status === 'partner' ? 'partner' : (b.status === 'negotiating' ? 'negotiating' : 'active') %>"><%= (b.status || 'lead').toUpperCase() %></span></td>
+                      <td>
+                        <div style="display:flex; gap:0.4rem;">
+                          <% if (b.contactEmail) { %>
+                            <button type="button" class="crm-btn-secondary" style="padding:0.2rem 0.4rem; font-size:0.7rem;" onclick="triggerIntegrationOutreach('email', '<%= b.contactEmail %>', '<%= b.companyName %>')">Email</button>
+                          <% } %>
+                          <% if (b.socialLinks && b.socialLinks.linkedin) { %>
+                            <button type="button" class="crm-btn-secondary" style="padding:0.2rem 0.4rem; font-size:0.7rem;" onclick="triggerIntegrationOutreach('linkedin', '', '<%= b.companyName %>')">LinkedIn</button>
+                          <% } %>
+                        </div>
+                      </td>
+                      <td>
+                        <button type="button" class="crm-btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.75rem;" onclick='openContactHistoryModal("<%= b._id %>", "<%= b.companyName %>", `<%= JSON.stringify(b.contactHistory || []) %>`)'>
+                          Notes (<%= (b.contactHistory || []).length %>)
+                        </button>
+                        <button type="button" class="crm-btn-secondary" style="padding:0.25rem 0.55rem; font-size:0.75rem; color:var(--accent-red);" onclick="deleteCrmItem('brand', '<%= b._id %>')">✕</button>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:2rem; color:var(--muted-2);">No brands found. Click "+ Add Brand" to add your first sponsor contact.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
           </div>
         </div>
+      </div>
 
-      </div><!-- /bottom-strip -->
+      <!-- TAB 3: INVOICES & PAYMENTS -->
+      <div id="tab-invoices" class="crm-tab-pane">
+        <div class="bottom-strip" style="grid-template-columns: 1fr 360px;">
+
+          <div class="contacts-panel">
+            <div class="panel-header">
+              <span class="panel-title">Invoice Ledger</span>
+              <button type="button" class="crm-btn-primary" onclick="openCrmModal('add-invoice-modal')">+ Create Invoice</button>
+            </div>
+            <table class="contacts-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Company</th>
+                  <th>Invoice Name</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% const invoicesList = (typeof crmData !== 'undefined' && crmData.invoices) ? crmData.invoices : []; %>
+                <% if (invoicesList.length > 0) { %>
+                  <% invoicesList.forEach(function(inv) { %>
+                    <tr class="invoice-item">
+                      <td style="font-family:monospace; font-weight:700;"><%= inv.invoiceNumber || 'INV-001' %></td>
+                      <td class="contact-company"><%= inv.companyName %></td>
+                      <td><%= inv.invoiceName %></td>
+                      <td style="font-weight:800;">$<%= (inv.amount || 0).toLocaleString() %></td>
+                      <td><%= inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'N/A' %></td>
+                      <td>
+                        <span class="status-chip <%= inv.status === 'paid' ? 'chip-partner' : (inv.status === 'overdue' ? 'chip-negotiating' : 'chip-active') %>">
+                          <%= (inv.status || 'pending').toUpperCase() %>
+                        </span>
+                      </td>
+                      <td>
+                        <% if (inv.status !== 'paid') { %>
+                          <button type="button" class="crm-btn-primary" style="padding:0.25rem 0.55rem; font-size:0.75rem;" onclick="markInvoicePaid('<%= inv._id %>')">Mark Paid</button>
+                        <% } else { %>
+                          <span style="font-size:0.75rem; color:var(--success); font-weight:700;">✓ Paid</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:2rem;">No invoices created yet.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="invoiced-panel">
+            <div class="invoiced-header">
+              <span class="panel-title">Pending Unpaid Balance</span>
+            </div>
+            <div class="invoiced-body">
+              <div class="invoiced-amount">
+                <span class="big-num">$<%= (typeof crmData !== 'undefined' && crmData.summary) ? crmData.summary.totalUnpaidInvoices.toLocaleString() : '0' %></span>
+                <span class="pending-label">Pending Total</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--muted-2); line-height:1.5; margin-bottom:1.5rem;">
+                Keep track of pending sponsor payments and automated follow-up reminders.
+              </div>
+              <button type="button" class="crm-btn-primary" style="width:100%; justify-content:center;" onclick="openCrmModal('add-invoice-modal')">+ Add Invoice</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 4: TASKS & CONTRACTS -->
+      <div id="tab-tasks" class="crm-tab-pane">
+        <div class="bottom-strip" style="grid-template-columns: 1fr 1fr;">
+          <div class="contacts-panel">
+            <div class="panel-header">
+              <span class="panel-title">Campaign Deliverable Tasks</span>
+            </div>
+            <div style="padding:1.5rem; display:flex; flex-direction:column; gap:0.75rem;">
+              <% 
+                const allDeals = (typeof crmData !== 'undefined' && crmData.deals) ? crmData.deals : [];
+                let hasTasks = false;
+                allDeals.forEach(function(d) {
+                  if (d.tasks && d.tasks.length > 0) {
+                    hasTasks = true;
+                    d.tasks.forEach(function(t) {
+              %>
+                      <div class="history-item" style="display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                          <span class="stage-badge stage-<%= d.stage %>"><%= d.companyName %></span>
+                          <strong style="margin-left:0.5rem;"><%= t.title %></strong>
+                        </div>
+                        <span class="history-type type-<%= t.priority || 'medium' %>"><%= t.priority || 'medium' %></span>
+                      </div>
+              <% 
+                    });
+                  }
+                });
+                if (!hasTasks) {
+              %>
+                <div style="color:var(--muted-2); font-size:0.85rem; text-align:center; padding:1.5rem 0;">No active tasks recorded on campaign deals.</div>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="contacts-panel" style="border-right:none;">
+            <div class="panel-header">
+              <span class="panel-title">Contracts &amp; Agreements</span>
+            </div>
+            <div style="padding:1.5rem; display:flex; flex-direction:column; gap:0.75rem;">
+              <% 
+                let hasContracts = false;
+                allDeals.forEach(function(d) {
+                  if (d.contracts && d.contracts.length > 0) {
+                    hasContracts = true;
+                    d.contracts.forEach(function(c) {
+              %>
+                      <div class="history-item" style="display:flex; align-items:center; justify-content:space-between;">
+                        <div>
+                          <strong><%= c.title %></strong>
+                          <div style="font-size:0.78rem; color:var(--muted-2);"><%= d.companyName %></div>
+                        </div>
+                        <span class="status-chip chip-partner"><%= (c.status || 'draft').toUpperCase() %></span>
+                      </div>
+              <% 
+                    });
+                  }
+                });
+                if (!hasContracts) {
+              %>
+                <div style="color:var(--muted-2); font-size:0.85rem; text-align:center; padding:1.5rem 0;">No contracts attached.</div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: MEDIA KIT & INTEGRATIONS -->
+      <div id="tab-mediakit" class="crm-tab-pane">
+        <div style="display:flex; flex-direction:column; gap:1.5rem;">
+          
+          <div class="panel-retro">
+            <div class="panel-retro-title-row">
+              <h2>🧰 Creator Media Kit Overview</h2>
+              <span class="badge-retro">READY TO SHARE</span>
+            </div>
+            <% const mk = (typeof crmData !== 'undefined' && crmData.mediaKit) ? crmData.mediaKit : null; %>
+            <p><%= mk ? mk.bio : 'High-impact Content Creator building premium brand partnerships.' %></p>
+            
+            <div class="status-grid-retro" style="margin-top:0.5rem;">
+              <div class="status-card-retro pending">
+                <h3>Total Audience</h3>
+                <p><%= mk && mk.stats ? mk.stats.followers.toLocaleString() : '185,000' %></p>
+              </div>
+              <div class="status-card-retro accepted">
+                <h3>Engagement Rate</h3>
+                <p><%= mk && mk.stats ? mk.stats.engagementRate : '5.2%' %></p>
+              </div>
+              <div class="status-card-retro">
+                <h3>Avg Views / Video</h3>
+                <p><%= mk && mk.stats ? mk.stats.avgViews.toLocaleString() : '62,000' %></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-retro">
+            <div class="panel-retro-title-row">
+              <h2>⚡ Future &amp; Active Integrations Outreach</h2>
+            </div>
+            <div class="integrations-grid">
+              <div class="integration-card">
+                <div class="integration-card-head">
+                  <div class="brand-mark" style="background:#ea4335; color:#fff;">@</div>
+                  <h4>Email Pitching</h4>
+                </div>
+                <p>Send direct pitch templates to brand marketing contacts.</p>
+                <button type="button" class="crm-btn-primary" onclick="triggerIntegrationOutreach('email', '', 'Brand')">Trigger Email Pitch</button>
+              </div>
+
+              <div class="integration-card">
+                <div class="integration-card-head">
+                  <div class="brand-mark" style="background:#0a66c2; color:#fff;">in</div>
+                  <h4>LinkedIn Outreach</h4>
+                </div>
+                <p>Connect with brand sponsorship managers & Decision makers.</p>
+                <button type="button" class="crm-btn-secondary" onclick="triggerIntegrationOutreach('linkedin', '', 'Brand')">Search LinkedIn</button>
+              </div>
+
+              <div class="integration-card">
+                <div class="integration-card-head">
+                  <div class="brand-mark" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743); color:#fff;">IG</div>
+                  <h4>Instagram DM</h4>
+                </div>
+                <p>Direct outreach to brand social handles and creator managers.</p>
+                <button type="button" class="crm-btn-secondary" onclick="triggerIntegrationOutreach('instagram', '', 'Brand')">Open Instagram</button>
+              </div>
+
+              <div class="integration-card">
+                <div class="integration-card-head">
+                  <div class="brand-mark" style="background:#1da1f2; color:#fff;">X</div>
+                  <h4>Twitter / X</h4>
+                </div>
+                <p>Public outreach and sponsor tag engagement.</p>
+                <button type="button" class="crm-btn-secondary" onclick="triggerIntegrationOutreach('twitter', '', 'Brand')">Tweet @ Brand</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
     </div><!-- /content -->
   </div><!-- /main -->
-
 </div><!-- /layout -->
-    
 
+<!-- MODAL 1: ADD DEAL -->
+<div id="add-deal-modal" class="crm-modal-overlay">
+  <div class="crm-modal-card">
+    <div class="crm-modal-header">
+      <h3>New Campaign Deal / Lead</h3>
+      <button type="button" class="crm-modal-close" data-close-modal>&times;</button>
+    </div>
+    <form id="form-add-deal">
+      <div class="crm-modal-body">
+        <div class="crm-form-group">
+          <label>Company / Brand Name</label>
+          <input type="text" name="companyName" required placeholder="e.g. Adobe Creative Cloud" />
+        </div>
+        <div class="crm-form-group">
+          <label>Deal / Campaign Title</label>
+          <input type="text" name="dealName" required placeholder="e.g. Summer Video Series" />
+        </div>
+        <div class="crm-form-row">
+          <div class="crm-form-group">
+            <label>Category</label>
+            <select name="category">
+              <option value="Tech">Tech</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Fintech">Fintech</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Education">Education</option>
+            </select>
+          </div>
+          <div class="crm-form-group">
+            <label>Stage</label>
+            <select name="stage">
+              <option value="lead">Lead</option>
+              <option value="outreach">Outreach</option>
+              <option value="negotiation">Negotiation</option>
+              <option value="contract">Contract</option>
+              <option value="closed_won">Closed Won</option>
+            </select>
+          </div>
+        </div>
+        <div class="crm-form-row">
+          <div class="crm-form-group">
+            <label>Deal Amount ($)</label>
+            <input type="number" name="amount" placeholder="5000" />
+          </div>
+          <div class="crm-form-group">
+            <label>Contact Name</label>
+            <input type="text" name="contactName" placeholder="e.g. Sarah Miller" />
+          </div>
+        </div>
+        <div class="crm-form-group">
+          <label>Deliverables</label>
+          <input type="text" name="deliverables" placeholder="e.g. 1 Dedicated Video + 2 Reels" />
+        </div>
+        <div class="crm-form-group">
+          <label>Notes</label>
+          <textarea name="notes" rows="2" placeholder="Campaign goals, discount terms, notes..."></textarea>
+        </div>
+      </div>
+      <div class="crm-modal-footer">
+        <button type="button" class="crm-btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="crm-btn-primary">Create Deal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: ADD BRAND -->
+<div id="add-brand-modal" class="crm-modal-overlay">
+  <div class="crm-modal-card">
+    <div class="crm-modal-header">
+      <h3>Add Brand Contact</h3>
+      <button type="button" class="crm-modal-close" data-close-modal>&times;</button>
+    </div>
+    <form id="form-add-brand">
+      <div class="crm-modal-body">
+        <div class="crm-form-group">
+          <label>Company Name</label>
+          <input type="text" name="companyName" required placeholder="e.g. Razer Global" />
+        </div>
+        <div class="crm-form-row">
+          <div class="crm-form-group">
+            <label>Category</label>
+            <select name="category">
+              <option value="Tech">Tech</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Fintech">Fintech</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Education">Education</option>
+            </select>
+          </div>
+          <div class="crm-form-group">
+            <label>Status</label>
+            <select name="status">
+              <option value="lead">Lead</option>
+              <option value="contacted">Contacted</option>
+              <option value="negotiating">Negotiating</option>
+              <option value="partner">Partner</option>
+            </select>
+          </div>
+        </div>
+        <div class="crm-form-row">
+          <div class="crm-form-group">
+            <label>Primary Contact Name</label>
+            <input type="text" name="contactName" placeholder="e.g. James Chen" />
+          </div>
+          <div class="crm-form-group">
+            <label>Contact Email</label>
+            <input type="email" name="contactEmail" placeholder="james@brand.com" />
+          </div>
+        </div>
+        <div class="crm-form-group">
+          <label>Website</label>
+          <input type="url" name="website" placeholder="https://brand.com" />
+        </div>
+      </div>
+      <div class="crm-modal-footer">
+        <button type="button" class="crm-btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="crm-btn-primary">Add Brand</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 3: ADD INVOICE -->
+<div id="add-invoice-modal" class="crm-modal-overlay">
+  <div class="crm-modal-card">
+    <div class="crm-modal-header">
+      <h3>Create New Invoice</h3>
+      <button type="button" class="crm-modal-close" data-close-modal>&times;</button>
+    </div>
+    <form id="form-add-invoice">
+      <div class="crm-modal-body">
+        <div class="crm-form-group">
+          <label>Company Name</label>
+          <input type="text" name="companyName" required placeholder="e.g. Skillshare" />
+        </div>
+        <div class="crm-form-group">
+          <label>Invoice Item / Title</label>
+          <input type="text" name="invoiceName" required placeholder="e.g. Skillshare · Annual Sponsorship" />
+        </div>
+        <div class="crm-form-row">
+          <div class="crm-form-group">
+            <label>Amount ($)</label>
+            <input type="number" name="amount" required placeholder="12000" />
+          </div>
+          <div class="crm-form-group">
+            <label>Due Date</label>
+            <input type="date" name="dueDate" />
+          </div>
+        </div>
+      </div>
+      <div class="crm-modal-footer">
+        <button type="button" class="crm-btn-secondary" data-close-modal>Cancel</button>
+        <button type="submit" class="crm-btn-primary">Generate Invoice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 4: CONTACT HISTORY -->
+<div id="contact-history-modal" class="crm-modal-overlay">
+  <div class="crm-modal-card">
+    <div class="crm-modal-header">
+      <h3 id="history-modal-title">Contact History</h3>
+      <button type="button" class="crm-modal-close" data-close-modal>&times;</button>
+    </div>
+    <div class="crm-modal-body">
+      <div id="history-modal-list" class="history-list"></div>
+
+      <form id="form-add-history" style="margin-top:1rem; border-top:var(--border-thick); padding-top:1rem;">
+        <div class="crm-form-group">
+          <label>Log New Contact Activity</label>
+          <div class="crm-form-row" style="margin-bottom:0.5rem;">
+            <select name="type">
+              <option value="email">Email</option>
+              <option value="call">Call</option>
+              <option value="meeting">Meeting</option>
+              <option value="note">Note</option>
+            </select>
+          </div>
+          <textarea name="note" rows="2" required placeholder="Details of communication or outcome..."></textarea>
+        </div>
+        <button type="submit" class="crm-btn-primary" style="margin-top:0.5rem; width:100%; justify-content:center;">Add Note Log</button>
+      </form>
+    </div>
+    <div class="crm-modal-footer">
+      <button type="button" class="crm-btn-secondary" data-close-modal>Close</button>
+    </div>
+  </div>
+</div>
 
 <%- include('partials/layout/footer') %>

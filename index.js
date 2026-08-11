@@ -76,6 +76,8 @@ const contentRoutes = require("./routes/content");
 const suggestionRoutes = require("./routes/suggestionRoutes");
 const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
+const contentOsRoutes = require("./routes/contentOsRoutes");
+const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
@@ -190,6 +192,7 @@ const { getDashboardData } = require("./utils/dashboardHelper");
 app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
+app.use("/services/content-os", protect, contentOsRoutes);
 app.use("/", smartNotificationRoutes);
 app.post(
   "/dashboard/accept-invite",
@@ -205,9 +208,9 @@ app.get("/invites/accept/:token", acceptInvite);
 app.use("/api/billing", billingRoute);
 app.use("/api/domain", domainRoute);
 app.use("/api/sponsors", sponsorRoute);
+app.use("/api/crm", creatorCrmRoutes);
 app.use("/api/settings", protect, settingsRoutes);
 app.use("/api/content", protect, contentRoutes);
-
 app.use("/api/urls", protect, urlRoutes);
 app.use("/api/ai", aiRoute);
 app.use("/api/analytics", protect, analyticsRoutes);
@@ -970,6 +973,10 @@ app.get(
       return res.redirect("/services/creator-crm");
     }
 
+    if (service.key === "content-os") {
+      return res.redirect("/services/content-os");
+    }
+
     if (service.key === "analytics-dashboard") {
       const userDoc = await User.findById(req.user.id)
         .select("name email")
@@ -1040,17 +1047,53 @@ app.use(
 
 // ── SHORT URL REDIRECT ──
 
+const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
+
+async function recordClickAndRedirect(req, res, entry) {
+  const coordinates = parseVisitCoordinates(req.query);
+  const visitData = { timestamp: new Date(), source: "direct" };
+  if (coordinates) {
+    visitData.x = coordinates.x;
+    visitData.y = coordinates.y;
+  }
+
+  await Url.findOneAndUpdate(
+    { shortId: entry.shortId },
+    {
+      $inc: { totalClicks: 1 },
+      $push: {
+        visitHistory: {
+          $each: [visitData],
+          $sort: { timestamp: -1 },
+          $slice: 1000,
+        },
+      },
+    },
+  );
+
+  return res.redirect(entry.redirectUrl);
+}
+
 app.get(
   "/u/:shortId",
   asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
-    const coordinates = parseVisitCoordinates(req.query);
 
     try {
-      const visitData = { timestamp: new Date(), source: "direct" };
-      if (coordinates) {
-        visitData.x = coordinates.x;
-        visitData.y = coordinates.y;
+      const entry = await Url.findOne({ shortId });
+      if (!entry)
+        return res.status(404).render("404", { url: req.originalUrl });
+
+      if (entry.archived) {
+        return res.status(404).render("404", { url: req.originalUrl });
+      }
+
+      if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+        return res.status(410).render("link-expired", { shortId });
+      }
+
+      if (entry.password) {
+        return res.render("link-password", { shortId, error: null });
       }
       Object.assign(visitData, parseVisitMeta(req));
 
@@ -1069,8 +1112,7 @@ app.get(
         { new: true },
       );
 
-      if (!entry) return res.status(404).send("URL not found");
-      return res.redirect(entry.redirectUrl);
+      return await recordClickAndRedirect(req, res, entry);
     } catch (err) {
       console.error("[redirect]", err);
       return res.status(500).send("Server error");
@@ -1078,28 +1120,52 @@ app.get(
   }),
 );
 
-app.get('/api/analytics/live-count', protect, asyncHandler(async (req, res) => {
-    const urls = await Url.find({ userId: req.user.id }).select('totalClicks').lean();
-    const total = urls.reduce((sum, u) => sum + (u.totalClicks || 0), 0);
-    res.json({ totalClicks: total });
-}));
+// Password-protected link: verify submitted password, then redirect.
+// A POST (not a query param) so the password never lands in the URL,
+// browser history, server access logs, or the Referer header.
+const linkPasswordAttemptLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Too many attempts, please try again later.",
+});
 
-app.get('/api/analytics/export', protect, asyncHandler(async (req, res) => {
-    const urls = await Url.find({ userId: req.user.id }).lean();
-    const rows = [['shortId', 'redirectUrl', 'totalClicks', 'timestamp', 'device', 'browser', 'referrer', 'country']];
-    urls.forEach(u => {
-        (u.visitHistory || []).forEach(v => {
-            rows.push([u.shortId, u.redirectUrl, u.totalClicks || 0,
-                new Date(v.timestamp).toISOString(), v.device || '', v.browser || '', v.referrer || '', v.country || '']);
-        });
-    });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="analytics-export.csv"');
-    res.send(csv);
-}));
+app.post(
+  "/u/:shortId",
+  linkPasswordAttemptLimiter,
+  asyncHandler(async (req, res) => {
+    const shortId = req.params.shortId;
+    const { password } = req.body;
 
-app.get('/q/:shortId', handleQrRedirect);
+    const entry = await Url.findOne({ shortId });
+    if (!entry) return res.status(404).render("404", { url: req.originalUrl });
+
+    if (entry.archived) {
+      return res.status(404).render("404", { url: req.originalUrl });
+    }
+
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+      return res.status(410).render("link-expired", { shortId });
+    }
+
+    if (!entry.password) {
+      // No password set (e.g. removed between page load and submit) — just proceed.
+      return await recordClickAndRedirect(req, res, entry);
+    }
+
+    const isMatch =
+      password && (await bcrypt.compare(String(password), entry.password));
+    if (!isMatch) {
+      return res.status(401).render("link-password", {
+        shortId,
+        error: "Incorrect password. Please try again.",
+      });
+    }
+
+    return await recordClickAndRedirect(req, res, entry);
+  }),
+);
+
+app.get("/q/:shortId", handleQrRedirect);
 
 // ── SITEMAP ─────────────────────────────────────────────
 app.get("/sitemap.xml", (req, res) => {
