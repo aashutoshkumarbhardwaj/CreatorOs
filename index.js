@@ -1218,7 +1218,17 @@ app.get('/api/analytics/export', protect, asyncHandler(async (req, res) => {
                 new Date(v.timestamp).toISOString(), v.device || '', v.browser || '', v.referrer || '', v.country || '']);
         });
     });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    // Neutralize spreadsheet formula injection: prefix cells that start with
+    // a formula-leading character (=, +, -, @, tab, CR) so Excel/LibreOffice
+    // treat them as text instead of evaluating them as formulas.
+    const csvSafeCell = (cell) => {
+        let str = String(cell ?? '');
+        if (/^[=+\-@\t\r]/.test(str)) {
+            str = `'${str}`;
+        }
+        return `"${str.replace(/"/g, '""')}"`;
+    };
+    const csv = rows.map(r => r.map(csvSafeCell).join(',')).join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="analytics-export.csv"');
     res.send(csv);
