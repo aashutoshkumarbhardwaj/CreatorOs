@@ -1,6 +1,7 @@
 const express = require("express");
 const { createCheckoutSession } = require("../controller/billing");
 const { protect } = require("../middleware/auth");
+const { billingCheckoutLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -17,7 +18,9 @@ const router = express.Router();
  *         description: Checkout session created successfully
  *       401:
  *         description: Unauthorized
+ *       429:
+ *         description: Too many requests
  */
-router.post("/checkout", protect, createCheckoutSession);
+router.post("/checkout", protect, billingCheckoutLimiter, createCheckoutSession);
 
 module.exports = router;

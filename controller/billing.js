@@ -28,6 +28,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
 
     const user = req.user;
 
+    // Derive a deterministic idempotency key so repeated identical requests
+    // reuse the same checkout session instead of creating duplicates.
+    const idempotencyKey = `checkout:${user.id}:${resolvedPriceId}`;
+
     try {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
@@ -42,7 +46,7 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
             cancel_url: `${process.env.BASE_URL}/dashboard?checkout=cancelled`,
             customer_email: user.email,
             client_reference_id: user.id,
-        });
+        }, { idempotencyKey });
 
         res.json({ success: true, url: session.url });
     } catch (error) {
