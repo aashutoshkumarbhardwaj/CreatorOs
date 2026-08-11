@@ -76,6 +76,7 @@ const contentRoutes = require("./routes/content");
 const suggestionRoutes = require("./routes/suggestionRoutes");
 const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
+const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
@@ -196,6 +197,7 @@ const { getDashboardData } = require("./utils/dashboardHelper");
 app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
+app.use("/services/content-os", protect, contentOsRoutes);
 app.use("/", smartNotificationRoutes);
 app.post(
   "/dashboard/accept-invite",
@@ -1066,6 +1068,10 @@ app.get(
 
     if (service.key === "creator-crm") {
       return res.redirect("/services/creator-crm");
+    }
+
+    if (service.key === "content-os") {
+      return res.redirect("/services/content-os");
     }
 
     if (service.key === "analytics-dashboard") {
