@@ -247,11 +247,13 @@ async function sendNotification(userId, payload) {
                     deliveryLogs.push({ channel: "email", status: "failed", error: err.message });
                 }
             } else if (channel === "push") {
-                // Multi-channel Push Notification Handler simulator
-                deliveryLogs.push({ channel: "push", status: "success" });
+                // Push delivery is not implemented yet; report honestly
+                // instead of claiming a fake success.
+                deliveryLogs.push({ channel: "push", status: "unavailable", error: "Push notifications are not currently supported" });
             } else if (channel === "sms") {
-                // Multi-channel SMS Delivery Handler simulator
-                deliveryLogs.push({ channel: "sms", status: "success" });
+                // SMS delivery is not implemented yet; report honestly
+                // instead of claiming a fake success.
+                deliveryLogs.push({ channel: "sms", status: "unavailable", error: "SMS notifications are not currently supported" });
             }
         }
     } else {
