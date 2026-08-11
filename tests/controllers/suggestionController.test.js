@@ -1,6 +1,7 @@
 const {
   generateAISuggestions,
   generateTemplateSuggestions,
+  extractKeywords,
   SuggestionProviderError,
   getSuggestions,
   getPage,
@@ -241,5 +242,35 @@ describe('suggestionController AI provenance', () => {
     expect(err.retryable).toBe(true);
     expect(err.statusCode).toBe(503);
     expect(err.code).toBe('PROVIDER_ERROR');
+  });
+
+  it('extractKeywords extracts top keywords excluding stopwords', () => {
+    const keywords = extractKeywords('Building a viral TikTok strategy for audience growth and digital marketing');
+    expect(keywords).toContain('building');
+    expect(keywords).toContain('tiktok');
+    expect(keywords).toContain('strategy');
+    expect(keywords).not.toContain('a');
+    expect(keywords).not.toContain('and');
+    expect(keywords.length).toBeLessThanOrEqual(6);
+  });
+
+  it('generateTemplateSuggestions returns keywords, CTAs, and emojis for options input', () => {
+    const result = generateTemplateSuggestions({
+      topic: 'desk setup inspiration',
+      platform: 'youtube',
+      tone: 'professional',
+      length: 'long',
+      language: 'english',
+      includeEmojis: true,
+      includeCta: true
+    });
+
+    expect(result.source).toBe('template');
+    expect(result.captions.length).toBe(5);
+    expect(result.hashtags.length).toBeGreaterThan(0);
+    expect(result.keywords).toContain('desk');
+    expect(result.keywords).toContain('setup');
+    expect(result.ctas.length).toBe(4);
+    expect(result.emojis.length).toBe(5);
   });
 });
