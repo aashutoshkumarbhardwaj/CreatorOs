@@ -3,6 +3,9 @@ dotenv.config();
 if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env.local", override: true });
 }
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "dev_secret_key_creatoros_2026";
+}
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const express = require("express");

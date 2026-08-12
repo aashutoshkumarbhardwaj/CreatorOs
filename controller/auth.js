@@ -288,7 +288,7 @@ const signup = asyncHandler(async (req, res, next) => {
         email: normalizedEmail,
         password: hashedPassword,
         authProvider: "local",
-        isVerified: false,
+        isVerified: process.env.USE_MOCK_DB === "true",
         verificationToken,
         verificationTokenExpiry,
     });
