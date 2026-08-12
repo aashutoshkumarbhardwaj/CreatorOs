@@ -142,6 +142,20 @@ const instagramProfileLimiter = rateLimit({
     }
 });
 
+const billingCheckoutLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 checkout session creations per 15 minutes per user
+    keyGenerator: keyByUserOrIp,
+    store: shouldUseMongoStore() ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 15 * 60 * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        const message = 'Too many checkout requests. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
 module.exports = {
     loginLimiter,
     uploadLimiter,
@@ -151,6 +165,7 @@ module.exports = {
     emailVerificationLimiter,
     aiGenerationLimiter,
     instagramProfileLimiter,
+    billingCheckoutLimiter,
     forgotPasswordLimiter,
     resetPasswordLimiter
 };
