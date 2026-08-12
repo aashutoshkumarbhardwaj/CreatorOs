@@ -199,11 +199,13 @@ const {
   acceptInviteFromDashboard,
 } = require("./controller/collaborationController");
 const { getDashboardData } = require("./utils/dashboardHelper");
+const { renderCalendarPage } = require("./controller/contentOsController");
 
 app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
 app.use("/services/content-os", protect, contentOsRoutes);
+app.get("/services/content-calendar", protect, renderCalendarPage);
 app.use("/", smartNotificationRoutes);
 app.post(
   "/dashboard/accept-invite",
