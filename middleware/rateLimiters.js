@@ -1,6 +1,7 @@
 const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 const { wantsHtml } = require('../utils/requestType');
 const { buildShortenerViewModel } = require('../utils/viewModels');
+const { getInstagramLookupCooldownSeconds } = require('../utils/instagramCooldown');
 const MongoStore = require('rate-limit-mongo');
 
 function shouldUseMongoStore() {
@@ -123,20 +124,22 @@ const aiGenerationLimiter = rateLimit({
         return res.status(429).json({ success: false, message, error: message });
     }
 });
+const instagramLookupCooldownSeconds = getInstagramLookupCooldownSeconds();
+
 const instagramProfileLimiter = rateLimit({
-    windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+    windowMs: instagramLookupCooldownSeconds * 1000,
     max: 1,
     keyGenerator: keyByUserOrIp,
     store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
-        expireTimeMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+        expireTimeMs: instagramLookupCooldownSeconds * 1000,
     }) : undefined,
     handler: (req, res) => {
         return res.status(429).json({
             success: false,
             error: {
                 code: 'RATE_LIMITED',
-                message: `Please wait ${process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30} seconds before fetching another Instagram profile.`,
+                message: `Please wait ${instagramLookupCooldownSeconds} seconds before fetching another Instagram profile.`,
             }
         });
     }

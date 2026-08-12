@@ -1,4 +1,5 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
+const { getInstagramLookupCooldownSeconds } = require('../utils/instagramCooldown');
 const { createRedisClient } = require('../utils/redisClient');
 
 const redis = createRedisClient();
@@ -16,8 +17,7 @@ if (redis?.on) {
  * @returns {any}
  */
 function getCooldownSeconds() {
-    const value = Number(process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30);
-    return Number.isFinite(value) && value >= 0 ? value : 30;
+    return getInstagramLookupCooldownSeconds({ allowZero: true });
 }
 
 /**
