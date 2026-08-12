@@ -83,7 +83,7 @@ const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
-
+const meetingRoutes = require("./routes/meetingRoutes");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
 // Generate a per-request nonce before Helmet so early exits (CSRF/validation)
@@ -205,6 +205,7 @@ app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
 app.use("/services/content-os", protect, contentOsRoutes);
 app.use("/", smartNotificationRoutes);
+app.use("/", meetingRoutes);
 app.post(
   "/dashboard/accept-invite",
   protect,
