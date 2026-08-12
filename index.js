@@ -155,8 +155,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "view"));
 app.locals.BRAND = BRAND;
 
-
-
 const urlShortenerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 30,
@@ -171,7 +169,6 @@ const {
   redirectIfAuthenticated,
 } = require("./middleware/auth");
 
-const fs = require("fs");
 app.use(express.static(path.join(__dirname, "public")));
 const shortid = require("shortid");
 const services = require("./services.config");
@@ -180,6 +177,7 @@ const Creator = require("./model/creator");
 const Invite = require("./model/invite");
 const BioProfile = require("./model/bioProfile");
 const Url = require("./model/url");
+const UploadFile = require("./model/upload");
 const port = process.env.PORT || 3000;
 const asyncHandler = require("./utils/asyncHandler");
 
@@ -228,8 +226,6 @@ app.use(
       "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
   }),
 );
-
-
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -369,46 +365,60 @@ async function buildAnalyticsViewModel(userId, shortLinkId = null) {
   });
 
   const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
-  userUrls.forEach(url => {
-      (url.visitHistory || []).forEach(v => {
-          if (v.device) breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
-          if (v.browser) breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
-          if (v.referrer) breakdown.referrer[v.referrer] = (breakdown.referrer[v.referrer] || 0) + 1;
-          if (v.country) breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
-      });
+  userUrls.forEach((url) => {
+    (url.visitHistory || []).forEach((v) => {
+      if (v.device)
+        breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
+      if (v.browser)
+        breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
+      if (v.referrer)
+        breakdown.referrer[v.referrer] =
+          (breakdown.referrer[v.referrer] || 0) + 1;
+      if (v.country)
+        breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
+    });
   });
 
-  const linkPosts = (userUrls || []).map((u) => ({
-      title: u.title || u.redirectUrl?.slice(0, 50) || 'Shortlink',
-      type: u.tag ? u.tag.toUpperCase() : 'LINK',
-      likes: '—',
-      comments: '—',
+  const linkPosts = (userUrls || [])
+    .map((u) => ({
+      title: u.title || u.redirectUrl?.slice(0, 50) || "Shortlink",
+      type: u.tag ? u.tag.toUpperCase() : "LINK",
+      likes: "—",
+      comments: "—",
       views: u.totalClicks || 0,
       engagement: `${u.totalClicks || 0} clicks`,
       date: u.createdAt
-          ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          : 'Today',
-  })).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 10);
+        ? new Date(u.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          })
+        : "Today",
+    }))
+    .sort((a, b) => (b.views || 0) - (a.views || 0))
+    .slice(0, 10);
 
   return {
-      isLoading: false,
-      isEmpty: userUrls.length === 0,
-      selectedRange: 'Last 30 days',
-      lastUpdated: new Date().toLocaleString('en-US', {
-          day: '2-digit', month: 'short', year: 'numeric',
-          hour: 'numeric', minute: '2-digit',
-      }),
-      metrics: [],
-      charts: {
-          labels,
-          followers,
-          engagement,
-          posts: linkPosts.map((p) => p.title),
-          postPerformance: linkPosts.map((p) => p.views),
-      },
-      topPosts: linkPosts,
-      breakdown,
-      totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
+    isLoading: false,
+    isEmpty: userUrls.length === 0,
+    selectedRange: "Last 30 days",
+    lastUpdated: new Date().toLocaleString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+    metrics: [],
+    charts: {
+      labels,
+      followers,
+      engagement,
+      posts: linkPosts.map((p) => p.title),
+      postPerformance: linkPosts.map((p) => p.views),
+    },
+    topPosts: linkPosts,
+    breakdown,
+    totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
   };
 }
 
@@ -829,24 +839,6 @@ const clickCooldownsSweepInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
-// Periodic cleanup every 5 minutes to prevent unbounded memory growth
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [linkId, linkCooldowns] of clickCooldowns) {
-      for (const [ip, timestamp] of linkCooldowns) {
-        if (now - timestamp > CLICK_COOLDOWN_MS) {
-          linkCooldowns.delete(ip);
-        }
-      }
-      if (linkCooldowns.size === 0) {
-        clickCooldowns.delete(linkId);
-      }
-    }
-  },
-  5 * 60 * 1000,
-);
-
 app.post(
   "/bio/track/:linkId",
   clickTrackerLimiter,
@@ -1028,13 +1020,19 @@ app.get(
 
 // ── URL SHORTENER POST ──
 
-const { isValidUrl } = require('./utils/validators');
-const { parseVisitCoordinates } = require('./utils/visitTelemetry');
-const { parseVisitMeta } = require('./utils/deviceParser');
+const { isValidUrl } = require("./utils/validators");
+const { parseVisitCoordinates } = require("./utils/visitTelemetry");
+const { parseVisitMeta } = require("./utils/deviceParser");
 
-const { handleGenerateShortUrlRender } = require('./controller/url');
-const { handleQrRedirect } = require('./controller/qrCodeController');
-app.post('/services/url-shortener/shorten', protect, preventContributorWrites, urlShortenerLimiter, handleGenerateShortUrlRender);
+const { handleGenerateShortUrlRender } = require("./controller/url");
+const { handleQrRedirect } = require("./controller/qrCodeController");
+app.post(
+  "/services/url-shortener/shorten",
+  protect,
+  preventContributorWrites,
+  urlShortenerLimiter,
+  handleGenerateShortUrlRender,
+);
 
 // ── FILE UPLOAD (VAULT) ROUTES ──
 const fileUploadRoutes = require("./routes/fileUpload");
@@ -1095,23 +1093,6 @@ app.get(
       if (entry.password) {
         return res.render("link-password", { shortId, error: null });
       }
-      Object.assign(visitData, parseVisitMeta(req));
-
-      const entry = await Url.findOneAndUpdate(
-        { shortId },
-        {
-          $inc: { totalClicks: 1 },
-          $push: {
-            visitHistory: {
-              $each: [visitData],
-              $sort: { timestamp: -1 },
-              $slice: 1000,
-            },
-          },
-        },
-        { new: true },
-      );
-
       return await recordClickAndRedirect(req, res, entry);
     } catch (err) {
       console.error("[redirect]", err);
