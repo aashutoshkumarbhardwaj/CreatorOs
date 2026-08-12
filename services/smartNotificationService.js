@@ -4,6 +4,21 @@ const User = require("../model/user");
 const { isEmailTransportConfigured, createTransporter } = require("../utils/email");
 
 /**
+ * Escape a string for safe inclusion in an HTML email body.
+ * @param {String} str
+ * @returns {String}
+ */
+function escapeHtml(str) {
+    if (typeof str !== "string") return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+/**
  * Get or create default notification preferences for a user.
  * @param {String|ObjectId} userId
  * @returns {Promise<Document>}
@@ -233,8 +248,8 @@ async function sendNotification(userId, payload) {
                             subject: `[CreatorOS] ${title}`,
                             text: message,
                             html: `<div style="font-family:sans-serif; padding:20px;">
-                              <h2 style="color:#2563eb;">${title}</h2>
-                              <p>${message}</p>
+                              <h2 style="color:#2563eb;">${escapeHtml(title)}</h2>
+                              <p>${escapeHtml(message)}</p>
                               <hr style="border:none; border-top:1px solid #e5e7eb; margin:20px 0;" />
                               <small style="color:#6b7280;">Sent via CreatorOS Smart Notifications</small>
                             </div>`,
