@@ -1,27 +1,34 @@
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
 const multer = require("multer");
 const rateLimit = require("express-rate-limit");
 const sharp = require("sharp");
-const VaultFile = require("../model/vaultFile");
+const {
+  uploadFile: hfUploadFile,
+  deleteFiles: hfDeleteFiles,
+} = require("@huggingface/hub");
+const Upload = require("../model/upload");
 const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
 
-// Persistent storage root for Vault uploads. Configurable via env var so
-// deployments can point this at a mounted volume; defaults to a local
-// ./uploads/vault directory (NOT os.tmpdir() — that gets wiped and previously
-// caused uploaded files to vanish immediately after upload, see issue #381).
-const VAULT_ROOT = process.env.VAULT_STORAGE_PATH
-  ? path.resolve(process.env.VAULT_STORAGE_PATH)
-  : path.join(__dirname, "..", "uploads", "vault");
+const HF_TOKEN = process.env.HF_TOKEN;
+const HF_REPO = process.env.HF_DATASET_REPO;
+const HF_REPO_DESIGNATION = { type: "dataset", name: HF_REPO };
 
-function userVaultDir(userId) {
-  const dir = path.join(VAULT_ROOT, String(userId));
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
+function assertHfConfigured() {
+  if (!HF_TOKEN || !HF_REPO) {
+    const err = new Error(
+      "Hugging Face storage is not configured (HF_TOKEN / HF_DATASET_REPO missing).",
+    );
+    err.status = 500;
+    throw err;
+  }
+}
+
+function hfPublicUrl(hfPath) {
+  return `https://huggingface.co/datasets/${HF_REPO}/resolve/main/${hfPath}`;
 }
 
 // Only allow bare filenames we generated ourselves — blocks path traversal
@@ -43,45 +50,32 @@ function sanitizeName(name) {
     .replace(/^\.+/, "");
 }
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    try {
-      cb(null, userVaultDir(req.user.id));
-    } catch (err) {
-      cb(err);
-    }
-  },
-  filename: function (req, file, cb) {
-    const sanitizedFilename = sanitizeName(file.originalname);
-    cb(
-      null,
-      Date.now() + "-" + crypto.randomBytes(4).toString("hex") + "-" + sanitizedFilename,
-    );
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-  const fileExtension = path.extname(file.originalname).toLowerCase();
-
-  if (
-    !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
-    !ALLOWED_EXTENSIONS.includes(fileExtension)
-  ) {
-    return cb(
-      new Error("Only image files (JPEG, PNG, WebP, GIF) are allowed."),
-      false,
-    );
-  }
-
-  cb(null, true);
-};
-
+// Buffer in memory — we upload straight to Hugging Face, never touch local disk.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter,
+  fileFilter: (req, file, cb) => {
+    const ALLOWED_MIME_TYPES = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
+    const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    if (
+      !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
+      !ALLOWED_EXTENSIONS.includes(fileExtension)
+    ) {
+      return cb(
+        new Error("Only image files (JPEG, PNG, WebP, GIF) are allowed."),
+        false,
+      );
+    }
+
+    cb(null, true);
+  },
 });
 
 const uploadLimiter = rateLimit({
@@ -90,17 +84,19 @@ const uploadLimiter = rateLimit({
   message: { error: "Upload limit reached, please try again later." },
 });
 
-async function compressImage(filePath, mimetype) {
+async function compressBuffer(buffer, mimetype) {
   // GIFs are skipped — sharp's default pipeline doesn't preserve animation
   if (mimetype === "image/gif") {
-    return { compressed: false };
+    return {
+      compressed: false,
+      buffer,
+      originalSize: buffer.length,
+      newSize: buffer.length,
+    };
   }
 
-  const tempOutputPath = filePath + ".compressed";
-  const originalStats = fs.statSync(filePath);
-
   try {
-    const pipeline = sharp(filePath).resize({
+    const pipeline = sharp(buffer).resize({
       width: 1920,
       height: 1920,
       fit: "inside",
@@ -115,23 +111,31 @@ async function compressImage(filePath, mimetype) {
       pipeline.webp({ quality: 80 });
     }
 
-    await pipeline.toFile(tempOutputPath);
+    const compressedBuffer = await pipeline.toBuffer();
 
-    const compressedStats = fs.statSync(tempOutputPath);
-
-    if (compressedStats.size < originalStats.size) {
-      fs.renameSync(tempOutputPath, filePath);
-      return { compressed: true, originalSize: originalStats.size, newSize: compressedStats.size };
-    } else {
-      fs.unlinkSync(tempOutputPath);
-      return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+    if (compressedBuffer.length < buffer.length) {
+      return {
+        compressed: true,
+        buffer: compressedBuffer,
+        originalSize: buffer.length,
+        newSize: compressedBuffer.length,
+      };
     }
+
+    return {
+      compressed: false,
+      buffer,
+      originalSize: buffer.length,
+      newSize: buffer.length,
+    };
   } catch (err) {
     console.error("[compress] Failed to compress image:", err);
-    if (fs.existsSync(tempOutputPath)) {
-      fs.unlinkSync(tempOutputPath);
-    }
-    return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
+    return {
+      compressed: false,
+      buffer,
+      originalSize: buffer.length,
+      newSize: buffer.length,
+    };
   }
 }
 
@@ -141,28 +145,52 @@ router.post(
   uploadLimiter,
   upload.single("file"),
   asyncHandler(async (req, res) => {
+    assertHfConfigured();
+
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const compressionResult = await compressImage(req.file.path, req.file.mimetype);
-    const finalStats = fs.statSync(req.file.path);
+    const compressionResult = await compressBuffer(
+      req.file.buffer,
+      req.file.mimetype,
+    );
 
-    const vaultFile = await VaultFile.create({
-      userId: req.user.id,
-      originalName: req.file.originalname,
-      storedFilename: req.file.filename,
-      size: finalStats.size,
-      mimetype: req.file.mimetype,
+    const sanitizedFilename = sanitizeName(req.file.originalname);
+    const storedFilename =
+      Date.now() +
+      "-" +
+      crypto.randomBytes(4).toString("hex") +
+      "-" +
+      sanitizedFilename;
+    const hfPath = `${req.user.id}/${storedFilename}`;
+
+    await hfUploadFile({
+      repo: HF_REPO_DESIGNATION,
+      accessToken: HF_TOKEN,
+      file: {
+        path: hfPath,
+        content: new Blob([compressionResult.buffer], {
+          type: req.file.mimetype,
+        }),
+      },
     });
 
-    // File is persisted on disk and tracked in the Vault collection — no
-    // cleanup/unlink here. This was the root cause of issue #381.
+    const uploadDoc = await Upload.create({
+      userId: req.user.id,
+      filename: req.file.originalname,
+      hfPath,
+      url: hfPublicUrl(hfPath),
+      mimetype: req.file.mimetype,
+      size: compressionResult.newSize,
+    });
+
     return res.json({
-      filename: vaultFile.originalName,
-      size: vaultFile.size,
-      mimetype: vaultFile.mimetype,
-      path: vaultFile.storedFilename,
+      filename: uploadDoc.filename,
+      size: uploadDoc.size,
+      mimetype: uploadDoc.mimetype,
+      path: uploadDoc.hfPath,
+      url: uploadDoc.url,
       compressed: compressionResult.compressed,
       originalSize: compressionResult.originalSize,
     });
@@ -173,55 +201,90 @@ router.post(
 router.get(
   "/storage-usage",
   asyncHandler(async (req, res) => {
-    const files = await VaultFile.find({ userId: req.user.id }).select("size").lean();
+    const files = await Upload.find({ userId: req.user.id })
+      .select("size")
+      .lean();
     const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
     return res.json({ success: true, totalSize, fileCount: files.length });
   }),
 );
 
 // ── RENAME ──────────────────────────────────────────────────────────────
-// Frontend treats the stored filename as the file's identifier and expects
-// it to change after a rename, so we actually rename the file on disk (and
-// its DB record), rather than just relabeling a display name.
+// Hugging Face has no native rename — we re-upload the file's existing
+// content under a new path, delete the old path, and update the DB record.
 router.patch(
   "/rename/:filename",
   asyncHandler(async (req, res) => {
+    assertHfConfigured();
+
     const { filename } = req.params;
     const { newName } = req.body;
 
     if (!isSafeFilename(filename)) {
-      return res.status(400).json({ success: false, message: "Invalid filename" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid filename" });
     }
     if (!newName || typeof newName !== "string" || !newName.trim()) {
-      return res.status(400).json({ success: false, message: "New name is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "New name is required" });
     }
 
-    const vaultFile = await VaultFile.findOne({
+    const uploadDoc = await Upload.findOne({
       userId: req.user.id,
-      storedFilename: filename,
+      hfPath: `${req.user.id}/${filename}`,
     });
-    if (!vaultFile) {
-      return res.status(404).json({ success: false, message: "File not found" });
+    if (!uploadDoc) {
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found" });
     }
 
     const sanitizedDisplayName = sanitizeName(newName);
     if (!sanitizedDisplayName) {
-      return res.status(400).json({ success: false, message: "Invalid new name" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid new name" });
     }
 
+    const fetchRes = await fetch(uploadDoc.url);
+    if (!fetchRes.ok) {
+      return res
+        .status(502)
+        .json({ success: false, message: "Could not read existing file" });
+    }
+    const contentBuffer = Buffer.from(await fetchRes.arrayBuffer());
+
     const newStoredFilename =
-      Date.now() + "-" + crypto.randomBytes(4).toString("hex") + "-" + sanitizedDisplayName;
-    const dir = userVaultDir(req.user.id);
-    const oldPath = path.join(dir, vaultFile.storedFilename);
-    const newPath = path.join(dir, newStoredFilename);
+      Date.now() +
+      "-" +
+      crypto.randomBytes(4).toString("hex") +
+      "-" +
+      sanitizedDisplayName;
+    const newHfPath = `${req.user.id}/${newStoredFilename}`;
 
-    fs.renameSync(oldPath, newPath);
+    await hfUploadFile({
+      repo: HF_REPO_DESIGNATION,
+      accessToken: HF_TOKEN,
+      file: {
+        path: newHfPath,
+        content: new Blob([contentBuffer], { type: uploadDoc.mimetype }),
+      },
+    });
 
-    vaultFile.storedFilename = newStoredFilename;
-    vaultFile.originalName = sanitizedDisplayName;
-    await vaultFile.save();
+    await hfDeleteFiles({
+      repo: HF_REPO_DESIGNATION,
+      accessToken: HF_TOKEN,
+      paths: [uploadDoc.hfPath],
+    });
 
-    return res.json({ success: true, newName: vaultFile.storedFilename });
+    uploadDoc.hfPath = newHfPath;
+    uploadDoc.url = hfPublicUrl(newHfPath);
+    uploadDoc.filename = sanitizedDisplayName;
+    await uploadDoc.save();
+
+    return res.json({ success: true, newName: newStoredFilename });
   }),
 );
 
@@ -229,28 +292,33 @@ router.patch(
 router.delete(
   "/delete/:filename",
   asyncHandler(async (req, res) => {
+    assertHfConfigured();
+
     const { filename } = req.params;
 
     if (!isSafeFilename(filename)) {
-      return res.status(400).json({ success: false, message: "Invalid filename" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid filename" });
     }
 
-    const vaultFile = await VaultFile.findOne({
+    const uploadDoc = await Upload.findOne({
       userId: req.user.id,
-      storedFilename: filename,
+      hfPath: `${req.user.id}/${filename}`,
     });
-    if (!vaultFile) {
-      return res.status(404).json({ success: false, message: "File not found" });
+    if (!uploadDoc) {
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found" });
     }
 
-    const filePath = path.join(userVaultDir(req.user.id), vaultFile.storedFilename);
-    fs.unlink(filePath, (err) => {
-      if (err && err.code !== "ENOENT") {
-        console.error(`[vault] Failed to delete file ${filePath}:`, err);
-      }
+    await hfDeleteFiles({
+      repo: HF_REPO_DESIGNATION,
+      accessToken: HF_TOKEN,
+      paths: [uploadDoc.hfPath],
     });
 
-    await VaultFile.deleteOne({ _id: vaultFile._id });
+    await Upload.deleteOne({ _id: uploadDoc._id });
 
     return res.json({ success: true });
   }),
