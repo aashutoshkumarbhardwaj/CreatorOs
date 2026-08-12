@@ -69,6 +69,11 @@ const authRoutes = require("./routes/auth");
 const instagramRoutes = require("./routes/instagram");
 const billingRoute = require("./routes/billing");
 const { handleWebhook: handleBillingWebhook } = require("./controller/billing");
+const {
+  verifyWebhook,
+  verifyWebhookSignature,
+  handleWebhook: handleInstagramWebhook,
+} = require("./controller/instagramWebhookController");
 const domainRoute = require("./routes/domain");
 const sponsorRoute = require("./routes/sponsor");
 const settingsRoutes = require("./routes/settings");
@@ -147,6 +152,14 @@ app.use((req, res, next) => {
   });
   next();
 });
+// Instagram webhook must be mounted before the global CSRF middleware so Meta
+// callbacks (which carry no _csrf cookie) are verified by HMAC signature only.
+app.get("/api/instagram/webhook", verifyWebhook);
+app.post(
+  "/api/instagram/webhook",
+  verifyWebhookSignature,
+  handleInstagramWebhook,
+);
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
