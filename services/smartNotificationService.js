@@ -325,8 +325,8 @@ async function getNotificationHistory(userId, options = {}) {
         ];
     }
 
-    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit);
-    const limitNum = parseInt(limit);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 20);
+    const skip = (Math.max(1, parseInt(page, 10) || 1) - 1) * limitNum;
 
     const [notifications, total, unreadCount] = await Promise.all([
         Notification.find(query)

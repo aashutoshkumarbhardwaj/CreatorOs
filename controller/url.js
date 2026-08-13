@@ -75,7 +75,7 @@ function formatClicks(count) {
  * @returns {any}
  */
 function serializeLink(entry, hostBase) {
-    const linkedAt = entry.linkedAt || entry.createdAt?.[0]?.timeStamp || new Date();
+    const linkedAt = entry.linkedAt || (entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt?.[0]?.timeStamp) || new Date();
     return {
         shortId: entry.shortId,
         redirectUrl: entry.redirectUrl,
@@ -106,6 +106,10 @@ async function handleGenerateShortURL(req, res) {
     // normalize here so the rest of the function only deals with one field.
     const { redirectUrl: redirectUrlField, url, title, customSlug, tag } = req.body;
     const redirectUrl = redirectUrlField || url;
+
+    if (!redirectUrl || !isValidUrl(redirectUrl)) {
+        return res.status(400).json({ error: 'A valid HTTP or HTTPS URL is required' });
+    }
 
     let shortId = shortid();
     if (customSlug) {
@@ -228,7 +232,7 @@ const generateBase64QR = async (text, fg, bg) => {
 const handleRenderDashboard = asyncHandler(async (req, res) => {
     // Implement cursor-based pagination for performance
     // Prevent loading entire collection into memory on large datasets
-    const pageSize = Math.min(parseInt(req.query.limit, 10) || 20, 100); // Max 100 per page
+    const pageSize = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 20), 100); // Max 100 per page
     const cursor = req.query.cursor;
 
     if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
@@ -440,7 +444,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    if (entry.userId && entry.userId?.toString() !== req.user.id) {
+    if (entry.userId?.toString() !== req.user?.id) {
         return res.status(403).json({ success: false, message: "Unauthorized to view these analytics", error: "Unauthorized to view these analytics" });
     }
 
@@ -474,7 +478,7 @@ const handleDeleteShortURL = asyncHandler(async (req, res) => {
         return res.status(404).json({ success: false, message: "Short URL not found", error: "Short URL not found" });
     }
 
-    if (entry.userId && entry.userId?.toString() !== req.user?.id) {
+    if (entry.userId?.toString() !== req.user?.id) {
         return res.status(403).json({ success: false, message: "Unauthorized to delete this URL", error: "Unauthorized to delete this URL" });
     }
 
