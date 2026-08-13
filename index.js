@@ -83,6 +83,7 @@ const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
+const taskRoutes = require("./routes/taskRoutes");
 
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
@@ -205,6 +206,7 @@ app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
 app.use("/services/content-os", protect, contentOsRoutes);
 app.use("/", smartNotificationRoutes);
+app.use("/", taskRoutes);
 app.post(
   "/dashboard/accept-invite",
   protect,
@@ -1228,6 +1230,7 @@ async function startServer() {
     // Initialize background workers after the database is ready
     require("./workers/analyticsRefreshWorker");
     require("./workers/contentPublishWorker").startContentPublishWorker();
+    require("./workers/taskReminderWorker").startTaskReminderWorker();
   } catch (error) {
     console.error("❌ Failed to start the application:", error);
     process.exit(1);
