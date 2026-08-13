@@ -3,6 +3,9 @@ dotenv.config();
 if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env.local", override: true });
 }
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "dev_secret_key_creatoros_2026";
+}
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const express = require("express");
@@ -199,11 +202,13 @@ const {
   acceptInviteFromDashboard,
 } = require("./controller/collaborationController");
 const { getDashboardData } = require("./utils/dashboardHelper");
+const { renderCalendarPage } = require("./controller/contentOsController");
 
 app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
 app.use("/services/content-os", protect, contentOsRoutes);
+app.get("/services/content-calendar", protect, renderCalendarPage);
 app.use("/", smartNotificationRoutes);
 app.use("/", meetingRoutes);
 app.post(

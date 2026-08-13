@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeScriptItem = null;
     let selectedTagFilter = '';
     let currentCalDate = new Date();
+    let currentCalView = 'month'; // 'month' | 'week' | 'day'
 
     // DOM Elements
     const tabBtns = document.querySelectorAll('.os-tab-btn');
@@ -27,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         setupTabListeners();
         setupEventListeners();
+
+        // Check if tab parameter is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'calendar') {
+            switchTab('calendar');
+        }
+
         await loadWorkspaceData();
     }
 
@@ -60,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-open-new-item')?.addEventListener('click', () => openItemModal());
         document.getElementById('btn-open-ai-modal')?.addEventListener('click', () => switchTab('ai'));
         document.getElementById('btn-create-folder-modal')?.addEventListener('click', () => openFolderModal());
+        document.getElementById('btn-cal-quick-create')?.addEventListener('click', () => {
+            openItemModal({ status: 'scheduled', scheduledAt: new Date() });
+        });
 
         document.getElementById('modal-item-close')?.addEventListener('click', closeItemModal);
         document.getElementById('modal-item-cancel')?.addEventListener('click', closeItemModal);
@@ -71,6 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('form-item-save')?.addEventListener('submit', handleSaveItem);
         document.getElementById('form-folder-save')?.addEventListener('submit', handleSaveFolder);
         document.getElementById('ai-generate-form')?.addEventListener('submit', handleGenerateAi);
+
+        // Multi-Platform & Formatting advice listeners
+        document.querySelectorAll('.platform-checkbox').forEach(chk => {
+            chk.addEventListener('change', updatePlatformTips);
+        });
+        document.getElementById('modal-input-description')?.addEventListener('input', updateCaptionCharCounter);
+
+        // Team Comment submission
+        document.getElementById('btn-post-comment')?.addEventListener('click', handlePostComment);
 
         // Script Studio
         document.getElementById('btn-new-script')?.addEventListener('click', () => {
@@ -102,13 +122,35 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Calendar View Switcher
+        document.querySelectorAll('.cal-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCalView = btn.getAttribute('data-cal-view') || 'month';
+                renderCalendar();
+            });
+        });
+
         // Calendar Navigation
         document.getElementById('cal-prev-month')?.addEventListener('click', () => {
-            currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            if (currentCalView === 'month') {
+                currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+            } else if (currentCalView === 'week') {
+                currentCalDate.setDate(currentCalDate.getDate() - 7);
+            } else {
+                currentCalDate.setDate(currentCalDate.getDate() - 1);
+            }
             renderCalendar();
         });
         document.getElementById('cal-next-month')?.addEventListener('click', () => {
-            currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            if (currentCalView === 'month') {
+                currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+            } else if (currentCalView === 'week') {
+                currentCalDate.setDate(currentCalDate.getDate() + 7);
+            } else {
+                currentCalDate.setDate(currentCalDate.getDate() + 1);
+            }
             renderCalendar();
         });
         document.getElementById('cal-today')?.addEventListener('click', () => {
@@ -245,17 +287,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------
-    // RENDER: CONTENT CALENDAR
+    // RENDER: CONTENT CALENDAR (MONTH, WEEK, DAY VIEWS)
     // -------------------------------------------------------------
     function renderCalendar() {
         const container = document.getElementById('calendar-days-container');
         const monthTitle = document.getElementById('cal-month-title');
+        const subtitle = document.getElementById('cal-view-subtitle');
+        const gridHeader = document.getElementById('cal-grid-header');
         if (!container || !monthTitle) return;
+
+        const filteredItems = getFilteredItems();
+        const scheduledItems = filteredItems.filter(i => i.scheduledAt || i.deadlineAt);
+
+        if (currentCalView === 'month') {
+            renderMonthView(container, monthTitle, subtitle, gridHeader, scheduledItems);
+        } else if (currentCalView === 'week') {
+            renderWeekView(container, monthTitle, subtitle, gridHeader, scheduledItems);
+        } else if (currentCalView === 'day') {
+            renderDayView(container, monthTitle, subtitle, gridHeader, scheduledItems);
+        }
+
+        attachCalendarEvents();
+    }
+
+    // --- MONTH VIEW ---
+    function renderMonthView(container, monthTitle, subtitle, gridHeader, scheduledItems) {
+        gridHeader.style.display = 'grid';
+        gridHeader.innerHTML = '<div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>';
 
         const year = currentCalDate.getFullYear();
         const month = currentCalDate.getMonth();
 
         monthTitle.textContent = currentCalDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        if (subtitle) subtitle.textContent = 'Month View Schedule';
 
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -268,32 +332,209 @@ document.addEventListener('DOMContentLoaded', () => {
             daysHtml += `<div class="cal-day-cell other-month"></div>`;
         }
 
-        const scheduledItems = contentItems.filter(i => i.scheduledAt);
-
         for (let day = 1; day <= daysInMonth; day++) {
             const cellDate = new Date(year, month, day);
+            const dateISO = cellDate.toISOString().split('T')[0];
             const isToday = cellDate.toDateString() === todayStr;
 
             const dayEvents = scheduledItems.filter(i => {
-                const d = new Date(i.scheduledAt);
-                return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+                const d = i.scheduledAt ? new Date(i.scheduledAt) : (i.deadlineAt ? new Date(i.deadlineAt) : null);
+                return d && d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
             });
 
-            const eventsHtml = dayEvents.map(e => `
-                <div class="cal-event-chip" title="${escapeHtml(e.title)}">
-                    ${e.platform ? `[${e.platform.slice(0, 2).toUpperCase()}] ` : ''}${escapeHtml(e.title)}
-                </div>
-            `).join('');
+            const eventsHtml = dayEvents.slice(0, 3).map(e => renderEventChipHtml(e)).join('');
+            const overflow = dayEvents.length > 3 ? `<div style="font-size:0.65rem; color:#4338ca; font-weight:bold; margin-top:2px;">+${dayEvents.length - 3} more</div>` : '';
 
             daysHtml += `
-                <div class="cal-day-cell ${isToday ? 'today' : ''}">
-                    <div class="day-num font-label">${day}</div>
+                <div class="cal-day-cell ${isToday ? 'today' : ''}" data-date="${dateISO}">
+                    <div class="day-num font-label">
+                        <span>${day}</span>
+                        ${dayEvents.some(e => e.deadlineAt) ? `<span title="Has Deadline">⏰</span>` : ''}
+                    </div>
                     ${eventsHtml}
+                    ${overflow}
                 </div>
             `;
         }
 
+        container.className = 'calendar-grid-body';
         container.innerHTML = daysHtml;
+    }
+
+    // --- WEEK VIEW ---
+    function renderWeekView(container, monthTitle, subtitle, gridHeader, scheduledItems) {
+        gridHeader.style.display = 'none';
+
+        // Calculate Sunday of current week
+        const startOfWeek = new Date(currentCalDate);
+        startOfWeek.setDate(currentCalDate.getDate() - currentCalDate.getDay());
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        const startStr = startOfWeek.toLocaleString('default', { month: 'short', day: 'numeric' });
+        const endStr = endOfWeek.toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+        monthTitle.textContent = `${startStr} - ${endStr}`;
+        if (subtitle) subtitle.textContent = 'Weekly Breakdown Schedule';
+
+        const todayStr = new Date().toDateString();
+        let weekColsHtml = '';
+
+        for (let i = 0; i < 7; i++) {
+            const colDate = new Date(startOfWeek);
+            colDate.setDate(startOfWeek.getDate() + i);
+            const dateISO = colDate.toISOString().split('T')[0];
+            const isToday = colDate.toDateString() === todayStr;
+            const dayName = colDate.toLocaleString('default', { weekday: 'short' });
+            const dayNum = colDate.getDate();
+
+            const colEvents = scheduledItems.filter(e => {
+                const d = e.scheduledAt ? new Date(e.scheduledAt) : (e.deadlineAt ? new Date(e.deadlineAt) : null);
+                return d && d.toDateString() === colDate.toDateString();
+            });
+
+            const eventsHtml = colEvents.map(e => renderEventChipHtml(e, true)).join('');
+
+            weekColsHtml += `
+                <div class="cal-week-col ${isToday ? 'today' : ''}" data-date="${dateISO}">
+                    <div class="week-col-header font-label">
+                        ${dayName} ${dayNum}
+                    </div>
+                    <div class="week-col-events" style="display:flex; flex-direction:column; gap:4px;">
+                        ${eventsHtml.length > 0 ? eventsHtml : '<div style="font-size:0.7rem; color:#9ca3af; text-align:center; padding:1rem;">No items</div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        container.className = 'cal-week-body';
+        container.innerHTML = weekColsHtml;
+    }
+
+    // --- DAY VIEW ---
+    function renderDayView(container, monthTitle, subtitle, gridHeader, scheduledItems) {
+        gridHeader.style.display = 'none';
+
+        const dateStr = currentCalDate.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        monthTitle.textContent = dateStr;
+        if (subtitle) subtitle.textContent = 'Hourly Daily Timeline Schedule';
+
+        const todayISO = currentCalDate.toISOString().split('T')[0];
+        const dayEvents = scheduledItems.filter(e => {
+            const d = e.scheduledAt ? new Date(e.scheduledAt) : (e.deadlineAt ? new Date(e.deadlineAt) : null);
+            return d && d.toDateString() === currentCalDate.toDateString();
+        });
+
+        let timelineHtml = '<div class="cal-day-timeline">';
+
+        for (let hour = 0; hour < 24; hour++) {
+            const hourLabel = `${hour.toString().padStart(2, '0')}:00`;
+            const hourEvents = dayEvents.filter(e => {
+                const d = e.scheduledAt ? new Date(e.scheduledAt) : (e.deadlineAt ? new Date(e.deadlineAt) : null);
+                return d && d.getHours() === hour;
+            });
+
+            const eventsHtml = hourEvents.map(e => renderEventChipHtml(e, true)).join('');
+
+            timelineHtml += `
+                <div class="timeline-hour-row" data-date="${todayISO}T${hourLabel}">
+                    <div class="hour-label">${hourLabel}</div>
+                    <div class="hour-events-slot">
+                        ${eventsHtml.length > 0 ? eventsHtml : '<span style="font-size:0.75rem; color:#d1d5db;">+ Click to schedule at this hour</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        timelineHtml += '</div>';
+        container.className = '';
+        container.innerHTML = timelineHtml;
+    }
+
+    function renderEventChipHtml(item, showDetails = false) {
+        const platforms = item.platforms && item.platforms.length > 0 ? item.platforms : (item.platform ? [item.platform] : ['general']);
+        const platBadges = platforms.map(p => `<span class="plat-badge ${p}">${p.slice(0, 2).toUpperCase()}</span>`).join('');
+        const statusClass = `status-${item.status || 'idea'}`;
+
+        const isOverdue = item.deadlineAt && new Date(item.deadlineAt) < new Date() && item.status !== 'published';
+        const deadlinePill = item.deadlineAt ? `<span class="deadline-indicator" title="Deadline">${isOverdue ? '⚠️ Overdue' : '⏰ Deadline'}</span>` : '';
+
+        const perfViews = item.performance?.views ? `<span class="perf-pill">📊 ${item.performance.views} v</span>` : '';
+
+        return `
+            <div class="cal-event-chip ${statusClass} ${item.deadlineAt ? 'has-deadline' : ''}" draggable="true" data-id="${item._id}" title="${escapeHtml(item.title)}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>${platBadges} <strong>${escapeHtml(item.title)}</strong></span>
+                    ${deadlinePill}
+                </div>
+                ${showDetails && item.description ? `<div style="font-size:0.65rem; color:#4b5563;">${escapeHtml(item.description.slice(0, 60))}</div>` : ''}
+                ${perfViews ? `<div style="margin-top:2px;">${perfViews}</div>` : ''}
+            </div>
+        `;
+    }
+
+    function attachCalendarEvents() {
+        // Event click to edit
+        document.querySelectorAll('.cal-event-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = chip.getAttribute('data-id');
+                const item = contentItems.find(i => i._id === id);
+                if (item) openItemModal(item);
+            });
+
+            // Drag Start
+            chip.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', chip.getAttribute('data-id'));
+            });
+        });
+
+        // Day cell click to schedule
+        document.querySelectorAll('.cal-day-cell, .cal-week-col, .timeline-hour-row').forEach(cell => {
+            const dateStr = cell.getAttribute('data-date');
+            if (!dateStr) return;
+
+            cell.addEventListener('click', (e) => {
+                if (e.target.closest('.cal-event-chip')) return;
+                const scheduledDate = new Date(dateStr);
+                if (isNaN(scheduledDate.getTime())) return;
+                openItemModal({ status: 'scheduled', scheduledAt: scheduledDate });
+            });
+
+            // Drag Over & Drop Rescheduling
+            cell.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                cell.classList.add('drag-over');
+            });
+
+            cell.addEventListener('dragleave', () => {
+                cell.classList.remove('drag-over');
+            });
+
+            cell.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                cell.classList.remove('drag-over');
+                const itemId = e.dataTransfer.getData('text/plain');
+                if (!itemId) return;
+
+                const targetDate = new Date(dateStr);
+                targetDate.setHours(12, 0, 0, 0);
+
+                try {
+                    const res = await fetch(`/services/content-os/api/items/${itemId}/reschedule`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ scheduledAt: targetDate.toISOString() })
+                    }).then(r => r.json());
+
+                    if (res.success) {
+                        await loadWorkspaceData();
+                    }
+                } catch (err) {
+                    console.error('Reschedule error:', err);
+                }
+            });
+        });
     }
 
     // -------------------------------------------------------------
@@ -522,7 +763,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------
     // MODAL & ITEM SAVE HANDLERS
     // -------------------------------------------------------------
+    let currentModalItem = null;
+
     function openItemModal(presetData = {}) {
+        currentModalItem = presetData;
+
         document.getElementById('modal-item-id').value = presetData._id || '';
         document.getElementById('modal-input-title').value = presetData.title || '';
         document.getElementById('modal-input-type').value = presetData.type || 'idea';
@@ -530,10 +775,137 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-input-platform').value = presetData.platform || 'general';
         document.getElementById('modal-input-description').value = presetData.description || '';
         document.getElementById('modal-input-tags').value = (presetData.tags || []).join(', ');
+
+        // Format ISO dates for datetime-local picker
         document.getElementById('modal-input-scheduled').value = presetData.scheduledAt ? new Date(presetData.scheduledAt).toISOString().slice(0, 16) : '';
+        document.getElementById('modal-input-deadline').value = presetData.deadlineAt ? new Date(presetData.deadlineAt).toISOString().slice(0, 16) : '';
+
+        // Multi-Platform checkboxes
+        const selectedPlatforms = presetData.platforms || (presetData.platform ? [presetData.platform] : ['general']);
+        document.querySelectorAll('.platform-checkbox').forEach(chk => {
+            chk.checked = selectedPlatforms.includes(chk.value);
+        });
+
+        // Performance metrics
+        document.getElementById('modal-input-views').value = presetData.performance?.views || 0;
+        document.getElementById('modal-input-er').value = presetData.performance?.engagementRate || 0;
+        document.getElementById('modal-input-clicks').value = presetData.performance?.clicks || 0;
+        document.getElementById('modal-input-likes').value = presetData.performance?.likes || 0;
+
+        // Platform Formatting Advice & Character Counter
+        updatePlatformTips();
+        updateCaptionCharCounter();
+
+        // Collaboration & Comments Section
+        const commentsSec = document.getElementById('modal-comments-section');
+        if (presetData._id) {
+            commentsSec.style.display = 'block';
+            renderCommentsThread(presetData.comments || []);
+        } else {
+            commentsSec.style.display = 'none';
+        }
 
         document.getElementById('modal-item-title').textContent = presetData._id ? '⚡ Edit Content Item' : '⚡ Create Content Item';
         toggleModal(modalItemBackdrop, true);
+    }
+
+    function updatePlatformTips() {
+        const checkedPlatforms = Array.from(document.querySelectorAll('.platform-checkbox:checked')).map(c => c.value);
+        const hintText = document.getElementById('platform-format-text');
+        if (!hintText) return;
+
+        if (checkedPlatforms.length === 0) {
+            hintText.textContent = 'Select target platforms above to view character limits and video format recommendations.';
+            return;
+        }
+
+        const tips = [];
+        if (checkedPlatforms.includes('twitter')) tips.push('🐦 Twitter/X: Limit posts to 280 chars. Use 1-2 trending hashtags max.');
+        if (checkedPlatforms.includes('instagram')) tips.push('📸 Instagram: Ideal caption 125-150 chars. Max 30 hashtags. 9:16 Reel aspect ratio.');
+        if (checkedPlatforms.includes('youtube')) tips.push('📺 YouTube: Keep title under 70 chars. First 3 lines of description are visible above fold.');
+        if (checkedPlatforms.includes('tiktok')) tips.push('🎵 TikTok: High energy first 3s hook required. Optimal duration 15-60 seconds.');
+        if (checkedPlatforms.includes('linkedin')) tips.push('💼 LinkedIn: Use line breaks for readability. 1000-1500 characters perform best.');
+
+        hintText.innerHTML = tips.join('<br/>');
+    }
+
+    function updateCaptionCharCounter() {
+        const text = document.getElementById('modal-input-description')?.value || '';
+        const counter = document.getElementById('caption-char-count');
+        if (counter) counter.textContent = `${text.length} characters`;
+    }
+
+    function renderCommentsThread(comments) {
+        const container = document.getElementById('comments-thread-list');
+        if (!container) return;
+
+        if (!comments || comments.length === 0) {
+            container.innerHTML = `<div style="font-size:0.8rem; color:#9ca3af; text-align:center; padding:0.5rem;">No team comments yet. Be the first to leave a feedback note below!</div>`;
+            return;
+        }
+
+        container.innerHTML = comments.map(c => `
+            <div class="comment-bubble" data-comment-id="${c._id}">
+                <div class="comment-meta">
+                    <strong>👤 ${escapeHtml(c.userName || 'Creator')}</strong>
+                    <span>${c.createdAt ? new Date(c.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>${escapeHtml(c.text)}</div>
+                    <button type="button" class="btn-del-comment" data-comment-id="${c._id}" title="Delete Comment">&times;</button>
+                </div>
+            </div>
+        `).join('');
+
+        // Attach delete comment event listeners
+        container.querySelectorAll('.btn-del-comment').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const commentId = btn.getAttribute('data-comment-id');
+                handleDeleteComment(commentId);
+            });
+        });
+    }
+
+    async function handlePostComment() {
+        if (!currentModalItem || !currentModalItem._id) return;
+        const textInput = document.getElementById('modal-comment-text');
+        const text = (textInput?.value || '').trim();
+        if (!text) return;
+
+        try {
+            const res = await fetch(`/services/content-os/api/items/${currentModalItem._id}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            }).then(r => r.json());
+
+            if (res.success) {
+                textInput.value = '';
+                currentModalItem.comments = res.item.comments || [];
+                renderCommentsThread(currentModalItem.comments);
+                await loadWorkspaceData();
+            }
+        } catch (err) {
+            console.error('Error posting comment:', err);
+        }
+    }
+
+    async function handleDeleteComment(commentId) {
+        if (!currentModalItem || !currentModalItem._id || !commentId) return;
+
+        try {
+            const res = await fetch(`/services/content-os/api/items/${currentModalItem._id}/comments/${commentId}`, {
+                method: 'DELETE'
+            }).then(r => r.json());
+
+            if (res.success) {
+                currentModalItem.comments = res.item.comments || [];
+                renderCommentsThread(currentModalItem.comments);
+                await loadWorkspaceData();
+            }
+        } catch (err) {
+            console.error('Error deleting comment:', err);
+        }
     }
 
     function closeItemModal() {
@@ -550,8 +922,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const description = document.getElementById('modal-input-description').value;
         const tags = document.getElementById('modal-input-tags').value;
         const scheduledAt = document.getElementById('modal-input-scheduled').value;
+        const deadlineAt = document.getElementById('modal-input-deadline').value;
+        const platforms = Array.from(document.querySelectorAll('.platform-checkbox:checked')).map(c => c.value);
 
-        const payload = { title, type, status, platform, description, tags, scheduledAt };
+        const performance = {
+            views: Number(document.getElementById('modal-input-views').value || 0),
+            engagementRate: Number(document.getElementById('modal-input-er').value || 0),
+            clicks: Number(document.getElementById('modal-input-clicks').value || 0),
+            likes: Number(document.getElementById('modal-input-likes').value || 0)
+        };
+
+        const payload = {
+            title,
+            type,
+            status,
+            platform,
+            platforms: platforms.length > 0 ? platforms : [platform],
+            description,
+            tags,
+            scheduledAt,
+            deadlineAt,
+            performance
+        };
+
         const url = id ? `/services/content-os/api/items/${id}` : '/services/content-os/api/items';
         const method = id ? 'PUT' : 'POST';
 
