@@ -13,6 +13,8 @@
   <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/PRs-Welcome-orange?style=for-the-badge&logo=github" />
+  <a href="https://github.com/Rakshak05/CreatorOs/actions/workflows/criticality-score.yml"><img src="https://img.shields.io/badge/OpenSSF%20Criticality-%E2%89%A5%200.40-blueviolet?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Criticality Score" /></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/Rakshak05/CreatorOs"><img src="https://img.shields.io/badge/OpenSSF%20Scorecard-Supply--Chain%20Security-success?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Scorecard" /></a>
 </p>
 
 <br/>
