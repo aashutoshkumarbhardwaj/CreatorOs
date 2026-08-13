@@ -331,114 +331,9 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   };
 }
 
-async function buildAnalyticsViewModel(userId, shortLinkId = null) {
-  const Url = require("./model/url");
-
-  let query = { userId };
-  if (shortLinkId) {
-    query.shortId = shortLinkId;
-  }
-
-  let userUrls = await Url.find(query).lean();
-  if (
-    (!userUrls || userUrls.length === 0) &&
-    process.env.USE_MOCK_DB === "true"
-  ) {
-    userUrls = await Url.find(
-      shortLinkId ? { shortId: shortLinkId } : {},
-    ).lean();
-  }
-
-  // Group visitHistory by day
-  const labels = [];
-  const followers = [];
-  const engagement = [];
-
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    labels.push(
-      d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    );
-    followers.push(0);
-    engagement.push(0);
-  }
-
-  userUrls.forEach((url) => {
-    if (url.visitHistory) {
-      url.visitHistory.forEach((visit) => {
-        const visitDate = new Date(visit.timestamp || visit.date || new Date());
-        const diffTime = Math.abs(new Date() - visitDate);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays < 30) {
-          const idx = 29 - diffDays;
-          if (idx >= 0 && idx < 30) {
-            followers[idx]++;
-            if (visit.source === "direct" || !visit.source) {
-              engagement[idx]++;
-            }
-          }
-        }
-      });
-    }
-  });
-
-  const breakdown = { device: {}, browser: {}, referrer: {}, country: {} };
-  userUrls.forEach((url) => {
-    (url.visitHistory || []).forEach((v) => {
-      if (v.device)
-        breakdown.device[v.device] = (breakdown.device[v.device] || 0) + 1;
-      if (v.browser)
-        breakdown.browser[v.browser] = (breakdown.browser[v.browser] || 0) + 1;
-      if (v.referrer)
-        breakdown.referrer[v.referrer] =
-          (breakdown.referrer[v.referrer] || 0) + 1;
-      if (v.country)
-        breakdown.country[v.country] = (breakdown.country[v.country] || 0) + 1;
-    });
-  });
-
-  const linkPosts = (userUrls || [])
-    .map((u) => ({
-      title: u.title || u.redirectUrl?.slice(0, 50) || "Shortlink",
-      type: u.tag ? u.tag.toUpperCase() : "LINK",
-      likes: "—",
-      comments: "—",
-      views: u.totalClicks || 0,
-      engagement: `${u.totalClicks || 0} clicks`,
-      date: u.createdAt
-        ? new Date(u.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        : "Today",
-    }))
-    .sort((a, b) => (b.views || 0) - (a.views || 0))
-    .slice(0, 10);
-
-  return {
-    isLoading: false,
-    isEmpty: userUrls.length === 0,
-    selectedRange: "Last 30 days",
-    lastUpdated: new Date().toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }),
-    metrics: [],
-    charts: {
-      labels,
-      followers,
-      engagement,
-      posts: linkPosts.map((p) => p.title),
-      postPerformance: linkPosts.map((p) => p.views),
-    },
-    topPosts: linkPosts,
-    breakdown,
-    totalClicks: userUrls.reduce((sum, u) => sum + (u.totalClicks || 0), 0),
-  };
+async function buildAnalyticsViewModel(userId, shortLinkId = null, range = "30", creatorId = null) {
+  const { buildUnifiedAnalyticsData } = require("./utils/analyticsHelper");
+  return await buildUnifiedAnalyticsData(userId, { shortLinkId, range, creatorId });
 }
 
 function isGuestContributor(user) {
@@ -1001,6 +896,8 @@ app.get(
       const analytics = await buildAnalyticsViewModel(
         req.user.id,
         req.query.link,
+        req.query.range || "30",
+        selectedCreatorId,
       );
       return res.render("analytics-dashboard", {
         service,
