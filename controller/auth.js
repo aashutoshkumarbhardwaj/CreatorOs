@@ -76,7 +76,9 @@ function getVerificationTokenExpiry() {
  * @returns {any}
  */
 function isVerificationTokenExpired(expiryDate) {
-    return expiryDate < new Date();
+    if (!expiryDate) return true;
+    const expiryTime = new Date(expiryDate).getTime();
+    return Number.isNaN(expiryTime) || expiryTime < Date.now();
 }
 /**
  * @function isGoogleAuthConfigured
@@ -937,4 +939,5 @@ module.exports = {
     resendVerificationEmail,
     requestPasswordReset,
     resetPassword,
+    isVerificationTokenExpired,
 };
