@@ -17,6 +17,11 @@ const {
   createBooking,
 } = require("../controller/meetingController");
 
+const {
+  validateEventType,
+  validateCreateBooking,
+} = require("../middleware/validators/meetingValidator");
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC BOOKING ROUTES (No Auth Required)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,7 +37,7 @@ router.get("/book/:alias/:slug", (req, res) => {
 // Public APIs
 router.get("/api/public/meetings/:alias/:slug", getPublicBookingData);
 router.get("/api/public/meetings/:alias/:slug/slots", getAvailableSlots);
-router.post("/api/public/meetings/:alias/:slug/book", createBooking);
+router.post("/api/public/meetings/:alias/:slug/book", validateCreateBooking, createBooking);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATOR DASHBOARD ROUTES (Protected)
@@ -48,8 +53,8 @@ router.get("/services/meetings", protect, (req, res) => {
 
 // Event Types API
 router.get("/api/meetings/event-types", protect, getEventTypes);
-router.post("/api/meetings/event-types", protect, createEventType);
-router.put("/api/meetings/event-types/:id", protect, updateEventType);
+router.post("/api/meetings/event-types", protect, validateEventType, createEventType);
+router.put("/api/meetings/event-types/:id", protect, validateEventType, updateEventType);
 router.delete("/api/meetings/event-types/:id", protect, deleteEventType);
 
 // Bookings API

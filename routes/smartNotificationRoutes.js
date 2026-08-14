@@ -17,6 +17,11 @@ const {
 } = require("../controller/smartNotificationController");
 const { protect, preventContributorWrites } = require("../middleware/auth");
 
+const {
+  validatePreferences,
+  validateCreateNotification,
+} = require("../middleware/validators/smartNotificationValidator");
+
 // UI View Pages
 router.get("/services/smart-notifications", protect, renderSmartNotificationsPage);
 router.get("/notifications", protect, renderSmartNotificationsPage);
@@ -25,10 +30,10 @@ router.get("/notifications", protect, renderSmartNotificationsPage);
 router.get("/api/notifications", protect, getNotifications);
 router.get("/api/notifications/unread-count", protect, getUnreadCount);
 router.get("/api/notifications/preferences", protect, getPreferences);
-router.put("/api/notifications/preferences", protect, preventContributorWrites, updatePreferences);
+router.put("/api/notifications/preferences", protect, preventContributorWrites, validatePreferences, updatePreferences);
 router.get("/api/notifications/analytics", protect, getAnalytics);
 
-router.post("/api/notifications", protect, preventContributorWrites, createNotification);
+router.post("/api/notifications", protect, preventContributorWrites, validateCreateNotification, createNotification);
 router.post("/api/notifications/test", protect, preventContributorWrites, sendTestNotification);
 
 router.patch("/api/notifications/read-all", protect, markAllAsRead);
