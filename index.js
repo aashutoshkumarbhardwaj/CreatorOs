@@ -87,6 +87,7 @@ const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
+const healthRoutes = require("./routes/health");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
 // Generate a per-request nonce before Helmet so early exits (CSRF/validation)
@@ -155,6 +156,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+// Observability endpoints (/health, /metrics) must be mounted before CSRF middleware
+app.use("/", healthRoutes);
+
 // Instagram webhook must be mounted before the global CSRF middleware so Meta
 // callbacks (which carry no _csrf cookie) are verified by HMAC signature only.
 app.get("/api/instagram/webhook", verifyWebhook);

@@ -49,6 +49,7 @@
 - [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [📁 Project Structure](#-project-structure)
+- [📈 Observability & Monitoring](#-observability--monitoring)
 - [🎯 Who Is This For?](#-who-is-this-for)
 - [💰 Pricing Model](#-pricing-model)
 - [🗺️ Roadmap](#%EF%B8%8F-roadmap)
@@ -433,6 +434,59 @@ CreatorOS/
 ├── 📂 utils/                  # Utility functions & helpers
 ├── 📂 public/                 # Static assets (CSS, JS, images)
 └── 📂 tests/                  # Test suites
+```
+
+---
+
+## 📈 Observability & Monitoring
+
+CreatorOS includes dedicated endpoints for production health checks, container probes, load balancers, and metrics scrapers.
+
+### Health Endpoint (`/health`)
+
+Used by Railway health probes, Nginx passive health checks, Docker healthcheck stanzas, and external uptime monitors (e.g., UptimeRobot, BetterStack).
+
+- **Endpoint**: `GET /health`
+- **Authentication**: Unauthenticated (bypasses CSRF & session auth)
+- **Status Codes**:
+  - `200 OK`: Database connected (or running in mock DB mode)
+  - `503 Service Unavailable`: Database disconnected or degraded
+
+**Sample Response (`200 OK`)**:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-08-14T15:30:00.000Z",
+  "uptime": 3600,
+  "database": "connected",
+  "redis": "connected",
+  "version": "1.0.0",
+  "memory": {
+    "rssMb": 45.2,
+    "heapTotalMb": 32.1,
+    "heapUsedMb": 24.5
+  }
+}
+```
+
+### Metrics Endpoint (`/metrics`)
+
+Exposes process, system, and database operational metrics for monitoring tools (e.g., Prometheus, Grafana, Datadog).
+
+- **Endpoint**: `GET /metrics`
+- **Formats**:
+  - **Prometheus Text Format (Default)**: `text/plain; version=0.0.4`
+  - **JSON Format**: Send `Accept: application/json` or append `?format=json`
+
+**Sample Prometheus Text Output**:
+```text
+# HELP process_uptime_seconds Process uptime in seconds.
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 3600
+
+# HELP creatoros_database_connected Database connection status (1 = connected, 0 = disconnected).
+# TYPE creatoros_database_connected gauge
+creatoros_database_connected 1
 ```
 
 ---
