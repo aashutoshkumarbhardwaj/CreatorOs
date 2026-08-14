@@ -545,6 +545,15 @@ Every contribution, no matter how small, helps us build something amazing for cr
 
 </div>
 
+## Security
+
+CreatorOS implements a multi-layered rate limiting middleware strategy using `express-rate-limit` to prevent API key abuse, credential stuffing, and denial-of-service conditions:
+
+- **General API Limiter (`generalLimiter`)**: Applied globally to all `/api` routes (100 requests per 15-minute window).
+- **Instagram & DM Automation Limiter (`instagramLimiter`)**: Applied to high-value Instagram Graph API proxies, analytics snapshots, and DM automation trigger endpoints (5 requests per 1-minute window per user/IP).
+- **Authentication Protection (`authLimiter`)**: Applied to login and contributor authentication endpoints to prevent brute-force attacks (10 failed attempts per 15-minute window, skipping successful logins).
+- **Store Persistence**: Automatically utilizes MongoStore (`rate-limit-mongo`) when `MONGODB_URI` is configured in non-mock environments for multi-instance deployments.
+
 ---
 
 ## 📬 Connect
