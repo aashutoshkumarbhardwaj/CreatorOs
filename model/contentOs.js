@@ -40,6 +40,11 @@ const contentOsSchema = new mongoose.Schema(
             default: "general",
             index: true,
         },
+        platforms: [
+            {
+                type: String,
+            },
+        ],
         priority: {
             type: String,
             enum: ["low", "medium", "high", "urgent"],
@@ -76,10 +81,46 @@ const contentOsSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        deadlineAt: {
+            type: Date,
+            default: null,
+        },
         publishedAt: {
             type: Date,
             default: null,
         },
+        performance: {
+            impressions: { type: Number, default: 0 },
+            views: { type: Number, default: 0 },
+            engagementRate: { type: Number, default: 0 },
+            clicks: { type: Number, default: 0 },
+            likes: { type: Number, default: 0 },
+            shares: { type: Number, default: 0 },
+        },
+        comments: [
+            {
+                _id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    default: () => new mongoose.Types.ObjectId(),
+                },
+                userId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                },
+                userName: {
+                    type: String,
+                    default: "Creator",
+                },
+                text: {
+                    type: String,
+                    required: true,
+                },
+                createdAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
         aiGenerated: {
             type: Boolean,
             default: false,
@@ -112,6 +153,9 @@ class MockContentOsModel {
         this.type = data.type || "idea";
         this.status = data.status || "idea";
         this.platform = data.platform || "general";
+        this.platforms = Array.isArray(data.platforms) && data.platforms.length > 0
+            ? data.platforms
+            : (data.platform ? [data.platform] : ["general"]);
         this.priority = data.priority || "medium";
         this.folderId = data.folderId || null;
         this.tags = data.tags || [];
@@ -125,7 +169,23 @@ class MockContentOsModel {
         };
         this.mediaAssets = data.mediaAssets || [];
         this.scheduledAt = data.scheduledAt ? new Date(data.scheduledAt) : null;
+        this.deadlineAt = data.deadlineAt ? new Date(data.deadlineAt) : null;
         this.publishedAt = data.publishedAt ? new Date(data.publishedAt) : null;
+        this.performance = {
+            impressions: Number(data.performance?.impressions || 0),
+            views: Number(data.performance?.views || 0),
+            engagementRate: Number(data.performance?.engagementRate || 0),
+            clicks: Number(data.performance?.clicks || 0),
+            likes: Number(data.performance?.likes || 0),
+            shares: Number(data.performance?.shares || 0),
+        };
+        this.comments = (data.comments || []).map((c) => ({
+            _id: c._id || new mongoose.Types.ObjectId().toString(),
+            userId: c.userId || null,
+            userName: c.userName || "Creator",
+            text: c.text || "",
+            createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+        }));
         this.aiGenerated = Boolean(data.aiGenerated);
         this.integrations = {
             notionId: data.integrations?.notionId || "",

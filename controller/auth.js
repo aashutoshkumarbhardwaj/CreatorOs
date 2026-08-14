@@ -76,7 +76,9 @@ function getVerificationTokenExpiry() {
  * @returns {any}
  */
 function isVerificationTokenExpired(expiryDate) {
-    return expiryDate < new Date();
+    if (!expiryDate) return true;
+    const expiryTime = new Date(expiryDate).getTime();
+    return Number.isNaN(expiryTime) || expiryTime < Date.now();
 }
 /**
  * @function isGoogleAuthConfigured
@@ -288,7 +290,7 @@ const signup = asyncHandler(async (req, res, next) => {
         email: normalizedEmail,
         password: hashedPassword,
         authProvider: "local",
-        isVerified: false,
+        isVerified: process.env.USE_MOCK_DB === "true",
         verificationToken,
         verificationTokenExpiry,
     });
@@ -937,4 +939,5 @@ module.exports = {
     resendVerificationEmail,
     requestPasswordReset,
     resetPassword,
+    isVerificationTokenExpired,
 };

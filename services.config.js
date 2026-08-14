@@ -72,6 +72,15 @@ module.exports = [
         svgPath: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
     },
     {
+        key: 'content-calendar',
+        name: '📅 Content Calendar',
+        description: 'Plan, schedule, and collaborate on content across multiple platforms.',
+        route: '/services/content-os?tab=calendar',
+        status: 'available',
+        // Calendar icon
+        svgPath: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    },
+    {
         key: 'suggestion-tool',
         name: '🎨 Caption & Hashtag Tool',
         description: 'Get captions, hashtags and song suggestions based on your content type.',

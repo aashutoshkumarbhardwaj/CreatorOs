@@ -154,14 +154,36 @@
         <section class="os-view-section" id="view-calendar">
             <div class="calendar-card neo-box">
                 <div class="calendar-header">
-                    <h2 class="font-display" id="cal-month-title">August 2026</h2>
-                    <div class="cal-nav-buttons">
-                        <button type="button" class="neo-btn sm" id="cal-prev-month">◀ Prev</button>
-                        <button type="button" class="neo-btn sm" id="cal-today">Today</button>
-                        <button type="button" class="neo-btn sm" id="cal-next-month">Next ▶</button>
+                    <div class="cal-title-area">
+                        <h2 class="font-display" id="cal-month-title">August 2026</h2>
+                        <span class="cal-subtitle font-sans" id="cal-view-subtitle">Month View Schedule</span>
+                    </div>
+                    <div class="cal-controls-group">
+                        <div class="cal-view-switcher" role="radiogroup" aria-label="Calendar View Option">
+                            <button type="button" class="cal-view-btn active" data-cal-view="month">📅 Month</button>
+                            <button type="button" class="cal-view-btn" data-cal-view="week">📆 Week</button>
+                            <button type="button" class="cal-view-btn" data-cal-view="day">⏱️ Day</button>
+                        </div>
+                        <div class="cal-nav-buttons">
+                            <button type="button" class="neo-btn sm" id="cal-prev-month">◀ Prev</button>
+                            <button type="button" class="neo-btn sm" id="cal-today">Today</button>
+                            <button type="button" class="neo-btn sm" id="cal-next-month">Next ▶</button>
+                        </div>
                     </div>
                 </div>
-                <div class="calendar-grid-header font-label">
+
+                <!-- Calendar Sub-Filter Bar -->
+                <div class="cal-filter-toolbar">
+                    <div class="cal-legend">
+                        <span class="legend-item"><span class="legend-dot status-scheduled"></span> Scheduled</span>
+                        <span class="legend-item"><span class="legend-dot status-ready"></span> Ready</span>
+                        <span class="legend-item"><span class="legend-dot status-published"></span> Published</span>
+                        <span class="legend-item"><span class="legend-dot status-deadline"></span> Deadline</span>
+                    </div>
+                    <button type="button" class="neo-btn sm primary" id="btn-cal-quick-create">+ Schedule Content</button>
+                </div>
+
+                <div class="calendar-grid-header font-label" id="cal-grid-header">
                     <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                 </div>
                 <div class="calendar-grid-body" id="calendar-days-container"></div>
@@ -383,7 +405,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="font-label">PLATFORM</label>
+                    <label class="font-label">PRIMARY PLATFORM</label>
                     <select id="modal-input-platform" class="neo-select">
                         <option value="general">General</option>
                         <option value="instagram">Instagram</option>
@@ -396,9 +418,29 @@
                 </div>
             </div>
 
+            <!-- Multi-Platform Distribution Checkboxes -->
             <div class="form-group">
-                <label class="font-label">DESCRIPTION / SUMMARY</label>
-                <textarea id="modal-input-description" class="neo-textarea" placeholder="Brief outline or context..."></textarea>
+                <label class="font-label">TARGET DISTRIBUTION PLATFORMS</label>
+                <div class="platforms-checkbox-group font-sans" id="modal-platforms-checkboxes">
+                    <label class="platform-check-pill"><input type="checkbox" value="instagram" class="platform-checkbox"> 📸 Instagram</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="youtube" class="platform-checkbox"> 📺 YouTube</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="twitter" class="platform-checkbox"> 🐦 Twitter/X</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="tiktok" class="platform-checkbox"> 🎵 TikTok</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="linkedin" class="platform-checkbox"> 💼 LinkedIn</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="blog" class="platform-checkbox"> 📝 Blog</label>
+                </div>
+            </div>
+
+            <!-- Platform Formatting Advice Box -->
+            <div class="platform-format-box neo-box" id="platform-format-hint" style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; font-size: 0.85rem;">
+                <span class="font-label" style="display:block; font-weight: bold; margin-bottom: 0.2rem;">💡 PLATFORM FORMATTING TIP</span>
+                <span id="platform-format-text" class="font-sans">Select target platforms above to view length limits and video spec recommendations.</span>
+            </div>
+
+            <div class="form-group">
+                <label class="font-label">DESCRIPTION / CAPTION SUMMARY</label>
+                <textarea id="modal-input-description" class="neo-textarea" placeholder="Brief outline, caption draft, or context..."></textarea>
+                <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem;" id="caption-char-count">0 characters</div>
             </div>
 
             <div class="form-row">
@@ -407,12 +449,50 @@
                     <input type="text" id="modal-input-tags" class="neo-input" placeholder="AI, Tutorial, Reels" />
                 </div>
                 <div class="form-group">
-                    <label class="font-label">SCHEDULED DATE</label>
+                    <label class="font-label">SCHEDULED DATE & TIME</label>
                     <input type="datetime-local" id="modal-input-scheduled" class="neo-input" />
+                </div>
+                <div class="form-group">
+                    <label class="font-label">DEADLINE DATE & TIME ⏰</label>
+                    <input type="datetime-local" id="modal-input-deadline" class="neo-input" />
                 </div>
             </div>
 
-            <div class="modal-footer">
+            <!-- Performance Metrics Section -->
+            <div class="modal-section-box neo-box" style="margin-top: 1rem; padding: 1rem;">
+                <h4 class="font-display" style="margin-bottom: 0.5rem; font-size: 1rem;">📊 Performance Integration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="font-label">VIEWS</label>
+                        <input type="number" id="modal-input-views" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">ENGAGEMENT RATE (%)</label>
+                        <input type="number" step="0.1" id="modal-input-er" class="neo-input" placeholder="0.0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">CLICKS</label>
+                        <input type="number" id="modal-input-clicks" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">LIKES</label>
+                        <input type="number" id="modal-input-likes" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Collaboration & Commenting Section -->
+            <div class="modal-section-box neo-box" id="modal-comments-section" style="margin-top: 1rem; padding: 1rem; display: none;">
+                <h4 class="font-display" style="margin-bottom: 0.5rem; font-size: 1rem;">💬 Team Collaboration & Comments</h4>
+                <div class="comments-thread-container" id="comments-thread-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+                <div class="comment-input-row" style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="modal-comment-text" class="neo-input" placeholder="Write a feedback note or review comment..." style="flex: 1;" />
+                    <button type="button" class="neo-btn sm primary" id="btn-post-comment">Send</button>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 1.5rem;">
                 <button type="button" class="neo-btn secondary" id="modal-item-cancel">Cancel</button>
                 <button type="submit" class="neo-btn primary">Save Content Item</button>
             </div>

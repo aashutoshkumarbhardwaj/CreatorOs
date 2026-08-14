@@ -9,6 +9,10 @@ const {
     updateItem,
     deleteItem,
     convertItem,
+    rescheduleItem,
+    updatePerformance,
+    addComment,
+    deleteComment,
     generateAiSuggestions,
     listFolders,
     createFolder,
@@ -39,6 +43,10 @@ router.get('/api/items/:id', getItemById);
 router.put('/api/items/:id', updateItem);
 router.delete('/api/items/:id', deleteItem);
 router.post('/api/items/:id/convert', convertItem);
+router.put('/api/items/:id/reschedule', rescheduleItem);
+router.put('/api/items/:id/performance', updatePerformance);
+router.post('/api/items/:id/comments', addComment);
+router.delete('/api/items/:id/comments/:commentId', deleteComment);
 
 // AI Suggestions & Content Brainstorming
 router.post('/api/ai/generate', aiGenerationLimiter, contentOsAiValidator, generateAiSuggestions);

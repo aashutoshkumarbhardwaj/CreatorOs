@@ -341,7 +341,101 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
+
+.cal-title-area {
+    display: flex;
+    flex-direction: column;
+}
+
+.cal-subtitle {
+    font-size: 0.8rem;
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.cal-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cal-view-switcher {
+    display: inline-flex;
+    border: 2px solid #000;
+    background: #fff;
+    box-shadow: 2px 2px 0px 0px #000;
+    overflow: hidden;
+}
+
+.cal-view-btn {
+    font-family: 'Azeret Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.65rem;
+    border: none;
+    border-right: 1.5px solid #000;
+    background: #fff;
+    color: #000;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.cal-view-btn:last-child {
+    border-right: none;
+}
+
+.cal-view-btn:hover {
+    background: #f3f4f6;
+}
+
+.cal-view-btn.active {
+    background: #4338ca;
+    color: #fff;
+}
+
+.cal-filter-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: #f9fafb;
+    border: 1.5px solid #000;
+    margin-bottom: 0.75rem;
+    box-shadow: 2px 2px 0px 0px #000;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    font-family: 'Azeret Mono', monospace;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid #000;
+    display: inline-block;
+}
+
+.legend-dot.status-scheduled { background: #3b82f6; }
+.legend-dot.status-ready { background: #10b981; }
+.legend-dot.status-published { background: #8b5cf6; }
+.legend-dot.status-deadline { background: #ef4444; }
 
 .calendar-grid-header {
     display: grid;
@@ -360,16 +454,22 @@
 }
 
 .cal-day-cell {
-    border: 1px solid #000;
-    min-height: 85px;
+    border: 1.5px solid #000;
+    min-height: 95px;
     padding: 0.35rem;
     background: #fff;
     font-size: 0.8rem;
-    box-shadow: 1px 1px 0px 0px #000;
+    box-shadow: 2px 2px 0px 0px #000;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    position: relative;
 
     .day-num {
         font-weight: 700;
         margin-bottom: 0.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     &.today {
@@ -380,17 +480,181 @@
     &.other-month {
         opacity: 0.35;
     }
+
+    &.drag-over {
+        background: #dbeafe !important;
+        border: 2px dashed #1d4ed8 !important;
+    }
 }
 
 .cal-event-chip {
-    font-size: 0.65rem;
-    padding: 0.15rem 0.3rem;
-    border: 1px solid #000;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.35rem;
+    border: 1.5px solid #000;
     background: #dbeafe;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-top: 3px;
+    border-radius: 2px;
+    box-shadow: 1px 1px 0px 0px #000;
+    cursor: grab;
+    transition: transform 0.1s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    &:active {
+        cursor: grabbing;
+        transform: scale(0.97);
+    }
+
+    &.status-scheduled { background: #dbeafe; }
+    &.status-ready { background: #d1fae5; }
+    &.status-published { background: #e0e7ff; }
+    &.status-idea { background: #fef3c7; }
+    &.has-deadline { border-left: 3px solid #ef4444; }
+}
+
+.plat-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.05rem 0.25rem;
+    border: 1px solid #000;
+    background: #fff;
+    border-radius: 2px;
+    display: inline-block;
+    margin-right: 2px;
+}
+
+.plat-badge.instagram { background: #fce7f3; color: #be185d; }
+.plat-badge.youtube { background: #fee2e2; color: #b91c1c; }
+.plat-badge.twitter { background: #e0f2fe; color: #0369a1; }
+.plat-badge.tiktok { background: #f3e8ff; color: #6b21a8; }
+.plat-badge.linkedin { background: #dbeafe; color: #1e40af; }
+
+.deadline-indicator {
+    font-size: 0.65rem;
+    color: #dc2626;
+    font-weight: bold;
+}
+
+.perf-pill {
+    font-size: 0.6rem;
+    background: #f3f4f6;
+    border: 1px solid #6b7280;
+    padding: 0.05rem 0.2rem;
+    border-radius: 2px;
+}
+
+/* WEEK VIEW STYLING */
+.cal-week-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.cal-week-col {
+    border: 1.5px solid #000;
+    min-height: 380px;
+    padding: 0.5rem;
+    background: #fff;
+    box-shadow: 2px 2px 0px 0px #000;
+
+    .week-col-header {
+        font-weight: 700;
+        font-size: 0.8rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 1.5px solid #000;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+}
+
+/* DAY VIEW TIMELINE STYLING */
+.cal-day-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+.timeline-hour-row {
+    display: flex;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #4338ca;
+    min-height: 44px;
+    background: #fff;
+    align-items: center;
+    padding: 0 0.5rem;
+
+    .hour-label {
+        width: 70px;
+        font-family: 'Azeret Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #4b5563;
+    }
+
+    .hour-events-slot {
+        flex: 1;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+}
+
+/* MULTI PLATFORM CHECKBOXES */
+.platforms-checkbox-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
+.platform-check-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    border: 1.5px solid #000;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 1.5px 1.5px 0px 0px #000;
+    user-select: none;
+}
+
+.platform-check-pill input {
+    cursor: pointer;
+}
+
+/* COMMENT THREAD STYLING */
+.comment-bubble {
+    background: #f9fafb;
+    border: 1.5px solid #000;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    box-shadow: 1.5px 1.5px 0px 0px #000;
+}
+
+.comment-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #4b5563;
+    margin-bottom: 0.2rem;
+    font-family: 'Azeret Mono', monospace;
+}
+
+.btn-del-comment {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 /* VIEW 3: IDEA VAULT */

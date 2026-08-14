@@ -167,19 +167,32 @@ async function createItem(req, res) {
         scriptDetails.wordCount = wordCount;
         scriptDetails.estimatedReadTime = estimatedReadTime;
 
+        let platforms = [];
+        if (Array.isArray(body.platforms)) {
+            platforms = body.platforms;
+        } else if (typeof body.platforms === "string" && body.platforms.trim()) {
+            platforms = body.platforms.split(",").map((p) => p.trim()).filter(Boolean);
+        } else if (body.platform) {
+            platforms = [body.platform];
+        }
+
         const newItemData = {
             userId,
             title: body.title,
             description: body.description || "",
             type: body.type || (body.status === "scripting" ? "script" : "idea"),
             status: body.status || "idea",
-            platform: body.platform || "general",
+            platform: body.platform || (platforms[0] || "general"),
+            platforms: platforms.length > 0 ? platforms : ["general"],
             priority: body.priority || "medium",
             folderId: body.folderId || null,
             tags,
             scriptDetails,
             mediaAssets: body.mediaAssets || [],
             scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
+            deadlineAt: body.deadlineAt ? new Date(body.deadlineAt) : null,
+            performance: body.performance || {},
+            comments: body.comments || [],
             aiGenerated: Boolean(body.aiGenerated),
         };
 
@@ -231,6 +244,17 @@ async function updateItem(req, res) {
             }
         }
 
+        let platforms = existing.platforms || [existing.platform || "general"];
+        if (body.platforms !== undefined) {
+            if (Array.isArray(body.platforms)) {
+                platforms = body.platforms;
+            } else if (typeof body.platforms === "string") {
+                platforms = body.platforms.split(",").map((p) => p.trim()).filter(Boolean);
+            }
+        } else if (body.platform) {
+            platforms = [body.platform];
+        }
+
         const scriptDetails = {
             ...existing.scriptDetails,
             ...(body.scriptDetails || {}),
@@ -245,13 +269,16 @@ async function updateItem(req, res) {
             type: body.type !== undefined ? body.type : existing.type,
             status: body.status !== undefined ? body.status : existing.status,
             platform: body.platform !== undefined ? body.platform : existing.platform,
+            platforms: platforms.length > 0 ? platforms : ["general"],
             priority: body.priority !== undefined ? body.priority : existing.priority,
             folderId: body.folderId !== undefined ? body.folderId : existing.folderId,
             tags,
             scriptDetails,
             mediaAssets: body.mediaAssets !== undefined ? body.mediaAssets : existing.mediaAssets,
             scheduledAt: body.scheduledAt !== undefined ? (body.scheduledAt ? new Date(body.scheduledAt) : null) : existing.scheduledAt,
+            deadlineAt: body.deadlineAt !== undefined ? (body.deadlineAt ? new Date(body.deadlineAt) : null) : existing.deadlineAt,
             publishedAt: body.status === "published" && !existing.publishedAt ? new Date() : existing.publishedAt,
+            performance: body.performance !== undefined ? { ...existing.performance, ...body.performance } : existing.performance,
         };
 
         const updatedItem = await ContentOsModel.findByIdAndUpdate(id, updateData, { new: true });
@@ -496,14 +523,182 @@ async function exportToIntegration(req, res) {
     }
 }
 
+/**
+ * Reschedule a Content OS item date & time.
+ */
+async function rescheduleItem(req, res) {
+    try {
+        const { id } = req.params;
+        const { scheduledAt, status } = req.body;
+        const userId = req.user.id;
+
+        if (!scheduledAt) {
+            return res.status(400).json({ success: false, message: "scheduledAt date is required for rescheduling." });
+        }
+
+        const existing = await ContentOsModel.findById(id);
+        if (!existing || existing.userId?.toString() !== userId.toString()) {
+            return res.status(404).json({ success: false, message: "Item not found." });
+        }
+
+        const updatedDate = new Date(scheduledAt);
+        if (Number.isNaN(updatedDate.getTime())) {
+            return res.status(400).json({ success: false, message: "Invalid scheduledAt date format." });
+        }
+
+        const newStatus = status || (existing.status === "idea" ? "scheduled" : existing.status);
+
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { scheduledAt: updatedDate, status: newStatus },
+            { new: true }
+        );
+
+        // Sync with ScheduledContent queue if status is scheduled
+        if (newStatus === "scheduled") {
+            try {
+                await ScheduledContentModel.create({
+                    userId,
+                    caption: updatedItem.title + (updatedItem.description ? "\n\n" + updatedItem.description : ""),
+                    platform: updatedItem.platform || "general",
+                    timezone: "UTC",
+                    scheduledAt: updatedDate,
+                    status: "scheduled",
+                });
+            } catch (scheduleErr) {
+                console.warn("Notice: ScheduledContent sync skipped:", scheduleErr.message);
+            }
+        }
+
+        return res.json({ success: true, item: updatedItem, message: "Content item rescheduled successfully." });
+    } catch (err) {
+        console.error("Error rescheduling item:", err);
+        return res.status(500).json({ success: false, message: "Server error rescheduling item." });
+    }
+}
+
+/**
+ * Update performance metrics for a Content OS item.
+ */
+async function updatePerformance(req, res) {
+    try {
+        const { id } = req.params;
+        const { impressions, views, engagementRate, clicks, likes, shares } = req.body;
+        const userId = req.user.id;
+
+        const existing = await ContentOsModel.findById(id);
+        if (!existing || existing.userId?.toString() !== userId.toString()) {
+            return res.status(404).json({ success: false, message: "Item not found." });
+        }
+
+        const newPerformance = {
+            impressions: impressions !== undefined ? Number(impressions) : existing.performance?.impressions || 0,
+            views: views !== undefined ? Number(views) : existing.performance?.views || 0,
+            engagementRate: engagementRate !== undefined ? Number(engagementRate) : existing.performance?.engagementRate || 0,
+            clicks: clicks !== undefined ? Number(clicks) : existing.performance?.clicks || 0,
+            likes: likes !== undefined ? Number(likes) : existing.performance?.likes || 0,
+            shares: shares !== undefined ? Number(shares) : existing.performance?.shares || 0,
+        };
+
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { performance: newPerformance },
+            { new: true }
+        );
+
+        return res.json({ success: true, item: updatedItem, message: "Performance metrics updated." });
+    } catch (err) {
+        console.error("Error updating performance metrics:", err);
+        return res.status(500).json({ success: false, message: "Server error updating performance metrics." });
+    }
+}
+
+/**
+ * Add a collaboration comment to a Content OS item.
+ */
+async function addComment(req, res) {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+        const userId = req.user.id;
+
+        if (!text || typeof text !== "string" || !text.trim()) {
+            return res.status(400).json({ success: false, message: "Comment text is required." });
+        }
+
+        const existing = await ContentOsModel.findById(id);
+        if (!existing || existing.userId?.toString() !== userId.toString()) {
+            return res.status(404).json({ success: false, message: "Item not found." });
+        }
+
+        const userDoc = await User.findById(userId).select("name email").lean();
+        const userName = userDoc?.name || req.user?.email || "Creator";
+
+        const newComment = {
+            _id: new (require("mongoose").Types.ObjectId)(),
+            userId,
+            userName,
+            text: text.trim(),
+            createdAt: new Date(),
+        };
+
+        const comments = [...(existing.comments || []), newComment];
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments }, { new: true });
+
+        return res.status(201).json({ success: true, comment: newComment, item: updatedItem, message: "Comment added successfully." });
+    } catch (err) {
+        console.error("Error adding comment:", err);
+        return res.status(500).json({ success: false, message: "Server error adding comment." });
+    }
+}
+
+/**
+ * Delete a collaboration comment from a Content OS item.
+ */
+async function deleteComment(req, res) {
+    try {
+        const { id, commentId } = req.params;
+        const userId = req.user.id;
+
+        const existing = await ContentOsModel.findById(id);
+        if (!existing || existing.userId?.toString() !== userId.toString()) {
+            return res.status(404).json({ success: false, message: "Item not found." });
+        }
+
+        const updatedComments = (existing.comments || []).filter(
+            (c) => c._id?.toString() !== commentId.toString()
+        );
+
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments: updatedComments }, { new: true });
+
+        return res.json({ success: true, item: updatedItem, message: "Comment deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting comment:", err);
+        return res.status(500).json({ success: false, message: "Server error deleting comment." });
+    }
+}
+
+/**
+ * Render Content Calendar standalone page (renders Content OS with defaultTab: 'calendar').
+ */
+async function renderCalendarPage(req, res) {
+    req.query.tab = "calendar";
+    return renderPage(req, res);
+}
+
 module.exports = {
     renderPage,
+    renderCalendarPage,
     listItems,
     getItemById,
     createItem,
     updateItem,
     deleteItem,
     convertItem,
+    rescheduleItem,
+    updatePerformance,
+    addComment,
+    deleteComment,
     generateAiSuggestions,
     listFolders,
     createFolder,

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "npm run build:css && node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check model/notification.js && node --check controller/smartNotificationController.js && node --check routes/smartNotificationRoutes.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js",
+    "build": "npm run build:css && node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check model/notification.js && node --check controller/smartNotificationController.js && node --check routes/smartNotificationRoutes.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js && node --check controller/meetingController.js && node --check routes/meetingRoutes.js && node --check model/eventType.js && node --check model/meetingBooking.js && node --check services/googleCalendarService.js",
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
