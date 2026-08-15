@@ -13,6 +13,8 @@
   <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/PRs-Welcome-orange?style=for-the-badge&logo=github" />
+  <a href="https://github.com/Rakshak05/CreatorOs/actions/workflows/criticality-score.yml"><img src="https://img.shields.io/badge/OpenSSF%20Criticality-%E2%89%A5%200.40-blueviolet?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Criticality Score" /></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/Rakshak05/CreatorOs"><img src="https://img.shields.io/badge/OpenSSF%20Scorecard-Supply--Chain%20Security-success?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Scorecard" /></a>
 </p>
 
 <br/>
@@ -47,6 +49,7 @@
 - [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [📁 Project Structure](#-project-structure)
+- [📈 Observability & Monitoring](#-observability--monitoring)
 - [🎯 Who Is This For?](#-who-is-this-for)
 - [💰 Pricing Model](#-pricing-model)
 - [🗺️ Roadmap](#%EF%B8%8F-roadmap)
@@ -184,7 +187,7 @@ cd CreatorOS
 npm install
 
 # Copy environment variables
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 ### Environment Setup
@@ -192,136 +195,73 @@ cp .env.example .env.local
 > [!IMPORTANT]
 > The following variables are required for the application to function correctly:
 >
-> 1. **`MONGODB_URI`** → Required for persistent database storage
-> 2. **`JWT_SECRET`** → Required for authentication and session security
-> 3. **`CLERK_SECRET_KEY`** → Required for Clerk authentication
-> 4. **`DATABASE_URL`** → Required for database connectivity
+> 1. **`MONGODB_URI`** → Required for persistent MongoDB database storage
+> 2. **`JWT_SECRET`** → Required for JWT token signature and authentication security
+> 3. **`SESSION_SECRET`** → Required for Express session security
 >
 > Missing these variables may cause authentication failures, API errors, or application crashes.
 
-Create a `.env.local` file in the project root:
+Create a `.env` file in the project root:
 
 ```env id="r9tjlwm"
 # -------------------------------------------------------
-# Clerk Authentication
-# dashboard.clerk.com → API Keys
-
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-
-# -------------------------------------------------------
 # Database Configuration
-
-# Primary SQL database connection string
-# Example providers:
-# - Neon
-# - PostgreSQL
-# - Supabase
-
-DATABASE_URL=your_database_connection_url
-
 # MongoDB Atlas connection string
-# mongodb.com/cloud/atlas
-
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
 
 # -------------------------------------------------------
-# Instagram Public Profile Fetching
-INSTAGRAM_PUBLIC_PROVIDER=public_html
-INSTAGRAM_PYTHON_PATH=python
-INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
+# Primary JWT Authentication & Express Sessions (Required)
+JWT_SECRET=your_jwt_secret_key
+SESSION_SECRET=your_session_secret_key
 
 # -------------------------------------------------------
-# Instagram Graph API
-# developers.facebook.com -> My Apps -> Instagram Graph API
-
-INSTAGRAM_APP_ID=your_instagram_app_id
-INSTAGRAM_APP_SECRET=your_instagram_app_secret
+# Google OAuth Configuration (Optional SSO via Passport.js)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 # -------------------------------------------------------
 # AI Providers
-
-# platform.openai.com → API Keys
-
 OPENAI_API_KEY=sk-...
-
-# openrouter.ai → Keys
-
-OPENROUTER_API_KEY=sk-or-...
+SUGGESTIONS_TEMPLATE_MODE=false
 
 # -------------------------------------------------------
-# Application URL
-
-# Base URL where the app is running
-
-NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
+# Application Configuration
+APP_URL=http://localhost:3000
+PORT=3000
+NODE_ENV=development
 
 # -------------------------------------------------------
 # Email Configuration
-
-> [!IMPORTANT]
-> Hosted deployments must configure working email delivery for verification and password reset.
-> Set `EMAIL_USER` and `EMAIL_PASSWORD`, plus either `EMAIL_SERVICE` or `EMAIL_HOST`/`EMAIL_PORT`, and keep `APP_URL` pointed at the deployed site so verification links resolve correctly.
-
-# Supported values may include:
-# smtp, gmail, resend, sendgrid, etc.
-
 EMAIL_SERVICE=smtp
-
-# Sender email credentials
-
 EMAIL_USER=your_email_address
 EMAIL_PASSWORD=your_email_password
-
-# Default sender information
-
 EMAIL_FROM="CreatorOS <no-reply@creatoros.com>"
-EMAIL_FROM_NAME=CreatorOS
-
-# Support / reply-to address
-
-EMAIL_REPLY_TO=support@creatoros.com
-
-# SMTP Configuration
-
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_SECURE=false
 
 # -------------------------------------------------------
-# JWT Configuration
-
-# Generate with: openssl rand -base64 32
-
-JWT_SECRET=your_jwt_secret
-
-# -------------------------------------------------------
-# Application Configuration
-
-# Backend application URL
-
-APP_URL=http://localhost:3000 # Replace with your deployed URL in production
-
-# Development server port
-
-PORT=3000
-
-# Environment mode
-# Supported values:
-# development, production, test
-
-NODE_ENV=development
-
-# Enable verbose debugging logs
-
-DEBUG=false
+# Instagram Graph API & Public Profile Fetching
+INSTAGRAM_APP_SECRET=your_instagram_app_secret
+INSTAGRAM_PUBLIC_PROVIDER=public_html
+INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
 ```
 
 ### Copy Environment File
 
 ```bash id="z2g5lm"
-cp .env.example .env.local
+cp .env.example .env
 ```
+
+### 🔐 Authentication
+
+CreatorOS uses a **Custom JWT Authentication System** (via HTTP-only cookie or Bearer tokens) as its primary auth mechanism, supported by an optional **Google OAuth 2.0** integration via Passport.js.
+
+- **Primary Auth**: Requires `JWT_SECRET` and `SESSION_SECRET`.
+- **Google SSO**: Optional via `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`.
+
+For full details on authentication flows, token handling, and role-based access control, see [Authentication Documentation (`docs/AUTH.md`)](file:///d:/GSSoC/CreatorOs/CreatorOs/docs/AUTH.md).
 
 ### Instagram Profile Fetching
 
@@ -334,7 +274,7 @@ Supported providers:
 
 Required setup:
 
-1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env.local`.
+1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env`.
 2. If using `python_public`, ensure Python 3 is installed and set `INSTAGRAM_PYTHON_PATH` if needed.
 3. Optionally adjust `INSTAGRAM_LOOKUP_COOLDOWN_SECONDS` for per-user cooldown.
 
@@ -357,6 +297,32 @@ Then open:
 ```text id="m4p8xc"
 http://localhost:3000
 ```
+
+### Run with Docker Compose (Development Environment)
+
+For local development with live code reloading (`nodemon`), background worker, and database services:
+
+```bash
+# Start dev services
+npm run docker:dev
+# OR directly using Docker Compose:
+docker compose -f docker-compose.dev.yml up --build
+
+# Stop dev services
+npm run docker:dev:down
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+> **Note on Docker Compose environments:**
+> - `docker-compose.dev.yml`: Used for local development with hot reloading and worker support (`http://localhost:3000`).
+> - `docker-compose.yml`: Used for production-like load-balanced deployments behind Nginx (`http://localhost`). See [NGINX_LOAD_BALANCING.md](NGINX_LOAD_BALANCING.md).
+
+
 
 ## ❓ FAQ
 
@@ -405,6 +371,59 @@ CreatorOS/
 ├── 📂 utils/                  # Utility functions & helpers
 ├── 📂 public/                 # Static assets (CSS, JS, images)
 └── 📂 tests/                  # Test suites
+```
+
+---
+
+## 📈 Observability & Monitoring
+
+CreatorOS includes dedicated endpoints for production health checks, container probes, load balancers, and metrics scrapers.
+
+### Health Endpoint (`/health`)
+
+Used by Railway health probes, Nginx passive health checks, Docker healthcheck stanzas, and external uptime monitors (e.g., UptimeRobot, BetterStack).
+
+- **Endpoint**: `GET /health`
+- **Authentication**: Unauthenticated (bypasses CSRF & session auth)
+- **Status Codes**:
+  - `200 OK`: Database connected (or running in mock DB mode)
+  - `503 Service Unavailable`: Database disconnected or degraded
+
+**Sample Response (`200 OK`)**:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-08-14T15:30:00.000Z",
+  "uptime": 3600,
+  "database": "connected",
+  "redis": "connected",
+  "version": "1.0.0",
+  "memory": {
+    "rssMb": 45.2,
+    "heapTotalMb": 32.1,
+    "heapUsedMb": 24.5
+  }
+}
+```
+
+### Metrics Endpoint (`/metrics`)
+
+Exposes process, system, and database operational metrics for monitoring tools (e.g., Prometheus, Grafana, Datadog).
+
+- **Endpoint**: `GET /metrics`
+- **Formats**:
+  - **Prometheus Text Format (Default)**: `text/plain; version=0.0.4`
+  - **JSON Format**: Send `Accept: application/json` or append `?format=json`
+
+**Sample Prometheus Text Output**:
+```text
+# HELP process_uptime_seconds Process uptime in seconds.
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 3600
+
+# HELP creatoros_database_connected Database connection status (1 = connected, 0 = disconnected).
+# TYPE creatoros_database_connected gauge
+creatoros_database_connected 1
 ```
 
 ---
@@ -516,6 +535,15 @@ Every contribution, no matter how small, helps us build something amazing for cr
 **Special Recognition:** This project is part of **[GSSoC (Girl Script Summer of Code) 2026](https://www.gssoc.girlscript.tech/)** — helping beginners and experienced developers contribute to open source.
 
 </div>
+
+## Security
+
+CreatorOS implements a multi-layered rate limiting middleware strategy using `express-rate-limit` to prevent API key abuse, credential stuffing, and denial-of-service conditions:
+
+- **General API Limiter (`generalLimiter`)**: Applied globally to all `/api` routes (100 requests per 15-minute window).
+- **Instagram & DM Automation Limiter (`instagramLimiter`)**: Applied to high-value Instagram Graph API proxies, analytics snapshots, and DM automation trigger endpoints (5 requests per 1-minute window per user/IP).
+- **Authentication Protection (`authLimiter`)**: Applied to login and contributor authentication endpoints to prevent brute-force attacks (10 failed attempts per 15-minute window, skipping successful logins).
+- **Store Persistence**: Automatically utilizes MongoStore (`rate-limit-mongo`) when `MONGODB_URI` is configured in non-mock environments for multi-instance deployments.
 
 ---
 

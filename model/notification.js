@@ -41,13 +41,24 @@ const notificationSchema = new mongoose.Schema(
         ],
         status: {
             type: String,
-            enum: ["pending", "scheduled", "sent", "delivered", "read", "archived", "suppressed"],
+            enum: [
+                "pending",
+                "scheduled",
+                "sending",
+                "sent",
+                "delivered",
+                "failed",
+                "read",
+                "archived",
+                "suppressed",
+            ],
             default: "pending",
             index: true,
         },
         scheduledFor: {
             type: Date,
             default: Date.now,
+            index: true,
         },
         sentAt: {
             type: Date,
@@ -69,7 +80,7 @@ const notificationSchema = new mongoose.Schema(
         deliveryLogs: [
             {
                 channel: { type: String, enum: ["in_app", "email", "sms", "push"] },
-                status: { type: String, enum: ["success", "failed", "delayed", "skipped"] },
+                status: { type: String, enum: ["success", "failed", "delayed", "skipped", "unavailable"] },
                 timestamp: { type: Date, default: Date.now },
                 error: { type: String },
             },

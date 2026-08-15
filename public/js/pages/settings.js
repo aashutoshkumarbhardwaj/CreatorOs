@@ -8,50 +8,7 @@
     let toastStart;
     let remainingTime = 4000;
 
-    function initTopbar() {
-        const layout = document.getElementById('dashboardLayout');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const themeToggle = document.getElementById('theme-toggle');
-        const iconLight = themeToggle ? themeToggle.querySelector('.icon-light') : null;
-        const iconDark = themeToggle ? themeToggle.querySelector('.icon-dark') : null;
 
-        if (layout && sidebarToggle) {
-            const sidebarState = localStorage.getItem('creatorosSidebarCollapsed');
-            if (sidebarState === 'true') {
-                layout.classList.add('sidebar-collapsed');
-                sidebarToggle.setAttribute('aria-expanded', 'false');
-            }
-
-            sidebarToggle.addEventListener('click', () => {
-                const isCollapsed = layout.classList.toggle('sidebar-collapsed');
-                sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
-                localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
-            });
-        }
-
-        if (themeToggle) {
-            themeToggle.addEventListener('click', async () => {
-                const nextMode = body.classList.contains('appearance-dark') ? 'light' : 'dark';
-                document.querySelectorAll('#appearance-group .radio-btn').forEach((btn) => {
-                    btn.classList.toggle('active', btn.dataset.val === nextMode);
-                });
-                try {
-                    await updatePreferences({ appearanceMode: nextMode });
-                } catch (err) {
-                    showToast(err.message, true);
-                }
-            });
-        }
-
-        function syncThemeIcon() {
-            const isDark = body.classList.contains('appearance-dark');
-            if (iconLight) iconLight.style.display = isDark ? 'none' : 'block';
-            if (iconDark) iconDark.style.display = isDark ? 'block' : 'none';
-        }
-
-        window.addEventListener('creatorosSettingsAppearanceChanged', syncThemeIcon);
-        syncThemeIcon();
-    }
 
     function startToastTimer() {
         toastStart = Date.now();
@@ -149,6 +106,22 @@
         body.classList.add(`density-${prefs.interfaceDensity || 'tactile'}`);
         const resolved = resolveAppearance(prefs.appearanceMode || 'light');
         body.classList.add(`appearance-${resolved}`);
+        
+        if (resolved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            const iconLight = document.querySelector('#theme-toggle .icon-light');
+            const iconDark = document.querySelector('#theme-toggle .icon-dark');
+            if(iconLight) iconLight.style.display = 'none';
+            if(iconDark) iconDark.style.display = 'block';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            const iconLight = document.querySelector('#theme-toggle .icon-light');
+            const iconDark = document.querySelector('#theme-toggle .icon-dark');
+            if(iconLight) iconLight.style.display = 'block';
+            if(iconDark) iconDark.style.display = 'none';
+        }
         if (!prefs.motionEffects) body.classList.add('no-motion');
         localStorage.setItem('creatorosAppearance', prefs.appearanceMode || 'light');
         localStorage.setItem('creatorosDensity', prefs.interfaceDensity || 'tactile');
@@ -178,7 +151,7 @@
             const id = anchor.getAttribute('href').slice(1);
             const el = document.getElementById(id);
             if (el) {
-                el.scrollIntoView({ behavior: userData.preferences?.motionEffects ! ? 'auto' : 'smooth' });
+                el.scrollIntoView({ behavior: !userData.preferences?.motionEffects ? 'auto' : 'smooth' });
                 subNavItems.forEach((a) => a.classList.remove('active'));
                 anchor.classList.add('active');
             }
@@ -430,25 +403,64 @@
     });
 
     // Billing
+    function isSafeHttpUrl(value) {
+        if (!value || typeof value !== 'string') return false;
+        try {
+            const parsed = new URL(value);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    }
+
     async function refreshBilling() {
         try {
             const billing = await apiRequest('/api/settings/billing');
-            document.getElementById('plan-name').textContent = billing.planName;
-            document.getElementById('plan-price').textContent = billing.priceMonthly;
-            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel;
-            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal}`;
-            document.getElementById('card-info-text').textContent = `${billing.cardBrand} ending in ${billing.cardLast4}`;
+            document.getElementById('plan-name').textContent = billing.planName || 'Free';
+            document.getElementById('plan-price').textContent = billing.priceMonthly ?? 0;
+            document.getElementById('next-invoice-date').textContent = billing.nextInvoiceLabel || 'No upcoming invoice';
+            document.getElementById('invoice-est').textContent = `Estimated: ${billing.estimatedTotal || '$0.00 USD'}`;
+            document.getElementById('card-info-text').textContent = (billing.cardBrand && billing.cardLast4)
+                ? `${billing.cardBrand} ending in ${billing.cardLast4}`
+                : 'No payment method saved';
             const tbody = document.querySelector('#invoices-table tbody');
-            tbody.innerHTML = billing.invoices
-                .map(
-                    (inv) => `<tr data-invoice-id="${inv.invoiceId}">
-                        <td>${inv.date}</td>
-                        <td>${inv.invoiceId}</td>
-                        <td>${inv.amount}</td>
-                        <td><span class="badge-paid">${inv.status}</span></td>
-                    </tr>`
-                )
-                .join('');
+            tbody.replaceChildren();
+            if (billing.invoices && billing.invoices.length > 0) {
+                billing.invoices.forEach((inv) => {
+                    const tr = document.createElement('tr');
+                    const safeUrl = isSafeHttpUrl(inv.url || inv.receiptUrl)
+                        ? (inv.url || inv.receiptUrl)
+                        : '';
+                    tr.dataset.invoiceId = String(inv.invoiceId || '');
+                    tr.dataset.invoiceUrl = safeUrl;
+
+                    const dateTd = document.createElement('td');
+                    dateTd.textContent = inv.date || '';
+                    const idTd = document.createElement('td');
+                    idTd.textContent = inv.invoiceId || '';
+                    const amountTd = document.createElement('td');
+                    amountTd.textContent = inv.amount || '';
+                    const statusTd = document.createElement('td');
+                    const badge = document.createElement('span');
+                    badge.className = 'badge-paid';
+                    badge.textContent = inv.status || '';
+                    statusTd.appendChild(badge);
+
+                    tr.append(dateTd, idTd, amountTd, statusTd);
+                    tbody.appendChild(tr);
+                });
+            } else {
+                const tr = document.createElement('tr');
+                tr.className = 'no-invoices-row';
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.style.textAlign = 'center';
+                td.style.color = 'var(--color-text-muted, #666)';
+                td.style.padding = '1.5rem';
+                td.textContent = 'No invoices found.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
             bindInvoiceRows();
         } catch (_) {
             /* server-rendered fallback */
@@ -474,7 +486,7 @@
 
     const invoiceModal = document.getElementById('invoice-modal');
     function bindInvoiceRows() {
-        document.querySelectorAll('#invoices-table tbody tr').forEach((row) => {
+        document.querySelectorAll('#invoices-table tbody tr:not(.no-invoices-row)').forEach((row) => {
             row.onclick = () => {
                 const cells = row.querySelectorAll('td');
                 document.getElementById('invoice-modal-body').textContent =
@@ -482,6 +494,9 @@
                 invoiceModal.classList.add('open');
                 invoiceModal.setAttribute('aria-hidden', 'false');
                 invoiceModal.dataset.invoiceId = row.dataset.invoiceId || cells[1].textContent;
+                invoiceModal.dataset.invoiceUrl = isSafeHttpUrl(row.dataset.invoiceUrl)
+                    ? row.dataset.invoiceUrl
+                    : '';
                 playSoundCue();
             };
         });
@@ -493,16 +508,13 @@
         invoiceModal.setAttribute('aria-hidden', 'true');
     });
     document.getElementById('invoice-download-btn').addEventListener('click', () => {
-        const id = invoiceModal.dataset.invoiceId || 'invoice';
-        const blob = new Blob([`CreatorOS Invoice ${id}\nGenerated: ${new Date().toISOString()}`], {
-            type: 'text/plain',
-        });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `${id.replace('#', '')}.txt`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('Invoice downloaded');
+        const url = invoiceModal.dataset.invoiceUrl;
+        if (isSafeHttpUrl(url)) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+            showToast('Opening invoice receipt');
+        } else {
+            showToast('Invoice receipt link is not available', true);
+        }
     });
 
     const upgradePlanBtn = document.getElementById('upgrade-plan-btn');
@@ -521,7 +533,7 @@
     });
 
     applyPreferences();
-    initTopbar();
+    // Topbar is initialized via layout scripts.ejs
     refreshBilling();
 
     const urlParams = new URLSearchParams(window.location.search);

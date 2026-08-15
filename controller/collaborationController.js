@@ -28,6 +28,12 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   };
 }
 
+const CrmBrand = require('../model/crmBrand');
+const CrmDeal = require('../model/crmDeal');
+const CrmInvoice = require('../model/crmInvoice');
+const CrmMediaKit = require('../model/crmMediaKit');
+const { seedInitialCrmData } = require('./creatorCrmController');
+
 const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
   const userDoc = await User.findById(req.user.id).select('name email').lean();
   const invites = await Invite.find({ inviter: req.user.id })
@@ -35,9 +41,37 @@ const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
     .limit(12)
     .lean();
 
+  await seedInitialCrmData(req.user.id);
+
+  const [deals, brands, invoices, mediaKit] = await Promise.all([
+    CrmDeal.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmBrand.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmInvoice.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmMediaKit.findOne({ creatorId: req.user.id }).lean(),
+  ]);
+
+  const totalPipelineValue = deals.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const totalUnpaidInvoices = invoices
+    .filter((inv) => inv.status === 'pending' || inv.status === 'overdue')
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const crmData = {
+    deals,
+    brands,
+    invoices,
+    mediaKit,
+    summary: {
+      totalPipelineValue,
+      activeDealsCount: deals.length,
+      totalUnpaidInvoices,
+      totalBrandsCount: brands.length,
+    },
+  };
+
   res.render('creator-crm', {
     user: buildAccountViewModel(userDoc, req.user),
     invites,
+    crmData,
     success: null,
     error: null,
   });
@@ -170,6 +204,17 @@ const acceptInvite = asyncHandler(async (req, res, next) => {
   if (invite.status === 'accepted') {
     return res.render('invite-accept', {
       status: 'accepted',
+      invite,
+    });
+  }
+
+  if (invite.status === 'expired' || (invite.expiresAt && invite.expiresAt < new Date())) {
+    if (invite.status !== 'expired') {
+      await Invite.updateOne({ _id: invite._id }, { $set: { status: 'expired' } });
+      invite.status = 'expired';
+    }
+    return res.render('invite-accept', {
+      status: 'expired',
       invite,
     });
   }

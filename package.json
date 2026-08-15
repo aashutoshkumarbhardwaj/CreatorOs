@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js",
+    "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "npm run build:css && node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check model/notification.js && node --check controller/smartNotificationController.js && node --check routes/smartNotificationRoutes.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js",
+    "build": "npm run build:css && node --check index.js && node --check controller/auth.js && node --check routes/auth.js && node --check model/user.js && node --check model/notification.js && node --check controller/smartNotificationController.js && node --check routes/smartNotificationRoutes.js && node --check workers/contentPublishWorker.js && node --check services/dmQueueService.js && node --check controller/meetingController.js && node --check routes/meetingRoutes.js && node --check model/eventType.js && node --check model/meetingBooking.js && node --check services/googleCalendarService.js && node --check routes/health.js",
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up --build",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "test": "jest"
   },
   "keywords": [],
@@ -17,6 +19,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@huggingface/hub": "^2.15.0",
     "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "brace-expansion": "^2.1.2",
@@ -29,6 +32,7 @@
     "express-async-handler": "^1.2.0",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
@@ -49,6 +53,7 @@
     "shortid": "^2.2.17",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
+    "ua-parser-js": "^2.0.10",
     "zod": "^3.25.0"
   },
   "devDependencies": {

@@ -3,6 +3,9 @@ dotenv.config();
 if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env.local", override: true });
 }
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "dev_secret_key_creatoros_2026";
+}
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
 const express = require("express");
@@ -10,7 +13,9 @@ const helmet = require("helmet");
 const cors = require("cors");
 const passport = require("passport");
 const path = require("path");
+const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
+const { generalLimiter } = require("./middleware/rateLimiters");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
 const {
   getProfileFromCache,
@@ -68,6 +73,11 @@ const authRoutes = require("./routes/auth");
 const instagramRoutes = require("./routes/instagram");
 const billingRoute = require("./routes/billing");
 const { handleWebhook: handleBillingWebhook } = require("./controller/billing");
+const {
+  verifyWebhook,
+  verifyWebhookSignature,
+  handleWebhook: handleInstagramWebhook,
+} = require("./controller/instagramWebhookController");
 const domainRoute = require("./routes/domain");
 const sponsorRoute = require("./routes/sponsor");
 const settingsRoutes = require("./routes/settings");
@@ -75,12 +85,41 @@ const contentRoutes = require("./routes/content");
 const suggestionRoutes = require("./routes/suggestionRoutes");
 const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
-
+const contentOsRoutes = require("./routes/contentOsRoutes");
+const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
+const healthRoutes = require("./routes/health");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
+
+// Generate a per-request nonce before Helmet so early exits (CSRF/validation)
+// still receive CSP headers that reference res.locals.nonce.
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString("base64");
+  next();
+});
 
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disabling CSP by default so we don't break existing inline scripts/styles without testing
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          (req, res) => `'nonce-${res.locals.nonce}'`,
+          "https://cdn.jsdelivr.net",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https:"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+      },
+    },
     crossOriginEmbedderPolicy: false,
   }),
 );
@@ -120,6 +159,17 @@ app.use((req, res, next) => {
   });
   next();
 });
+// Observability endpoints (/health, /metrics) must be mounted before CSRF middleware
+app.use("/", healthRoutes);
+
+// Instagram webhook must be mounted before the global CSRF middleware so Meta
+// callbacks (which carry no _csrf cookie) are verified by HMAC signature only.
+app.get("/api/instagram/webhook", verifyWebhook);
+app.post(
+  "/api/instagram/webhook",
+  verifyWebhookSignature,
+  handleInstagramWebhook,
+);
 app.use(generateCsrf);
 app.use(verifyCsrf);
 app.use(passport.initialize());
@@ -127,28 +177,6 @@ app.use(passport.initialize());
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "view"));
 app.locals.BRAND = BRAND;
-
-// Generate a per-request nonce for inline scripts (used by CSP below and
-// exposed to views via res.locals.nonce)
-const crypto = require("crypto");
-app.use((req, res, next) => {
-  res.locals.nonce = crypto.randomBytes(16).toString("base64");
-  next();
-});
-
-// Content Security Policy (CSP) header - defense-in-depth against XSS
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${res.locals.nonce}' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; frame-src 'none';`,
-  );
-  next();
-});
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: { error: "Upload limit reached, please try again later." },
-});
 
 const urlShortenerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -164,16 +192,15 @@ const {
   redirectIfAuthenticated,
 } = require("./middleware/auth");
 
-const fs = require("fs");
 app.use(express.static(path.join(__dirname, "public")));
 const shortid = require("shortid");
-const multer = require("multer");
 const services = require("./services.config");
 const User = require("./model/user");
 const Creator = require("./model/creator");
 const Invite = require("./model/invite");
 const BioProfile = require("./model/bioProfile");
 const Url = require("./model/url");
+const UploadFile = require("./model/upload");
 const port = process.env.PORT || 3000;
 const asyncHandler = require("./utils/asyncHandler");
 
@@ -182,11 +209,17 @@ const {
   acceptInviteFromDashboard,
 } = require("./controller/collaborationController");
 const { getDashboardData } = require("./utils/dashboardHelper");
+const { renderCalendarPage } = require("./controller/contentOsController");
 
 app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
+app.use("/services/content-os", protect, contentOsRoutes);
+app.use("/services/ai-assistant", aiAssistantRoutes);
+app.get("/services/content-calendar", protect, renderCalendarPage);
 app.use("/", smartNotificationRoutes);
+app.use("/", taskRoutes);
+app.use("/", meetingRoutes);
 app.post(
   "/dashboard/accept-invite",
   protect,
@@ -198,12 +231,13 @@ app.get("/invites/accept/:token", acceptInvite);
 // Billing & Domain Routes
 
 // API Routes
+app.use("/api", generalLimiter);
 app.use("/api/billing", billingRoute);
 app.use("/api/domain", domainRoute);
 app.use("/api/sponsors", sponsorRoute);
+app.use("/api/crm", creatorCrmRoutes);
 app.use("/api/settings", protect, settingsRoutes);
 app.use("/api/content", protect, contentRoutes);
-
 app.use("/api/urls", protect, urlRoutes);
 app.use("/api/ai", aiRoute);
 app.use("/api/analytics", protect, analyticsRoutes);
@@ -221,100 +255,6 @@ app.use(
       "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
   }),
 );
-
-const os = require("os");
-const uploadDir = os.tmpdir();
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    let sanitizedFilename = path.basename(file.originalname);
-    sanitizedFilename = sanitizedFilename
-      .replace(/[/\\?%*:|"<>]/g, "-")
-      .replace(/^\.+/, "");
-    cb(null, Date.now() + "-" + sanitizedFilename);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  const ALLOWED_MIME_TYPES = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-  ];
-  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-
-  const fileExtension = path.extname(file.originalname).toLowerCase();
-
-  if (
-    !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
-    !ALLOWED_EXTENSIONS.includes(fileExtension)
-  ) {
-    return cb(
-      new Error("Only image files (JPEG, PNG, WebP, GIF) are allowed."),
-      false,
-    );
-  }
-
-  cb(null, true);
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: fileFilter,
-});
-
-const sharp = require('sharp');
-
-async function compressImage(filePath, mimetype) {
-    // GIFs are skipped — sharp's default pipeline doesn't preserve animation
-    if (mimetype === 'image/gif') {
-        return { compressed: false };
-    }
-
-    const tempOutputPath = filePath + '.compressed';
-    const originalStats = fs.statSync(filePath);
-
-    try {
-        const pipeline = sharp(filePath).resize({
-            width: 1920,
-            height: 1920,
-            fit: 'inside',
-            withoutEnlargement: true,
-        });
-
-        if (mimetype === 'image/jpeg') {
-            pipeline.jpeg({ quality: 80 });
-        } else if (mimetype === 'image/png') {
-            pipeline.png({ quality: 80, compressionLevel: 8 });
-        } else if (mimetype === 'image/webp') {
-            pipeline.webp({ quality: 80 });
-        }
-
-        await pipeline.toFile(tempOutputPath);
-
-        const compressedStats = fs.statSync(tempOutputPath);
-
-        // Only keep the compressed version if it's actually smaller
-        if (compressedStats.size < originalStats.size) {
-            fs.renameSync(tempOutputPath, filePath);
-            return { compressed: true, originalSize: originalStats.size, newSize: compressedStats.size };
-        } else {
-            fs.unlinkSync(tempOutputPath);
-            return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
-        }
-    } catch (err) {
-        console.error('[compress] Failed to compress image:', err);
-        if (fs.existsSync(tempOutputPath)) {
-            fs.unlinkSync(tempOutputPath);
-        }
-        return { compressed: false, originalSize: originalStats.size, newSize: originalStats.size };
-    }
-}
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -360,12 +300,7 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   const sub = userDoc?.subscription || {};
   const nextInvoice = sub.nextInvoiceDate
     ? new Date(sub.nextInvoiceDate)
-    : (() => {
-        const d = new Date();
-        d.setMonth(d.getMonth() + 1);
-        d.setDate(24);
-        return d;
-      })();
+    : null;
 
   return {
     id: fallbackUser.id,
@@ -383,30 +318,22 @@ function buildAccountViewModel(userDoc, fallbackUser) {
     },
     passwordAgeDays,
     billing: {
-      planName: sub.planName || "Pro Individual",
-      priceMonthly: sub.priceMonthly ?? 29,
-      nextInvoiceLabel: nextInvoice.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      estimatedTotal: `$${(sub.priceMonthly ?? 29).toFixed(2)} USD`,
-      cardBrand: sub.cardBrand || "VISA",
-      cardLast4: sub.cardLast4 || "4242",
-      invoices: [
-        {
-          date: "Sep 24, 2023",
-          invoiceId: "#INV-88219",
-          amount: "$29.00",
-          status: "PAID",
-        },
-        {
-          date: "Aug 24, 2023",
-          invoiceId: "#INV-87112",
-          amount: "$29.00",
-          status: "PAID",
-        },
-      ],
+      status: sub.status || "free",
+      planName: sub.planName || "Free",
+      priceMonthly: sub.priceMonthly ?? 0,
+      nextInvoiceLabel: nextInvoice
+        ? nextInvoice.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "No upcoming invoice",
+      estimatedTotal: sub.priceMonthly
+        ? `$${sub.priceMonthly.toFixed(2)} USD`
+        : "$0.00 USD",
+      cardBrand: sub.cardBrand || null,
+      cardLast4: sub.cardLast4 || null,
+      invoices: sub.invoices || [],
     },
     initials,
     scheduledDeletionAt: userDoc?.scheduledDeletionAt || null,
@@ -414,97 +341,9 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   };
 }
 
-async function buildAnalyticsViewModel(userId, shortLinkId = null) {
-  const Url = require("./model/url");
-
-  let query = { userId };
-  if (shortLinkId) {
-    query.shortId = shortLinkId;
-  }
-
-  let userUrls = await Url.find(query).lean();
-  if (
-    (!userUrls || userUrls.length === 0) &&
-    process.env.USE_MOCK_DB === "true"
-  ) {
-    userUrls = await Url.find(
-      shortLinkId ? { shortId: shortLinkId } : {},
-    ).lean();
-  }
-
-  // Group visitHistory by day
-  const labels = [];
-  const followers = [];
-  const engagement = [];
-
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    labels.push(
-      d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    );
-    followers.push(0);
-    engagement.push(0);
-  }
-
-  userUrls.forEach((url) => {
-    if (url.visitHistory) {
-      url.visitHistory.forEach((visit) => {
-        const visitDate = new Date(visit.timestamp || visit.date || new Date());
-        const diffTime = Math.abs(new Date() - visitDate);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays < 30) {
-          const idx = 29 - diffDays;
-          if (idx >= 0 && idx < 30) {
-            followers[idx]++;
-            if (visit.source === "direct" || !visit.source) {
-              engagement[idx]++;
-            }
-          }
-        }
-      });
-    }
-  });
-
-  const linkPosts = (userUrls || [])
-    .map((u) => ({
-      title: u.title || u.redirectUrl?.slice(0, 50) || "Shortlink",
-      type: u.tag ? u.tag.toUpperCase() : "LINK",
-      likes: "—",
-      comments: "—",
-      views: u.totalClicks || 0,
-      engagement: `${u.totalClicks || 0} clicks`,
-      date: u.createdAt
-        ? new Date(u.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        : "Today",
-    }))
-    .sort((a, b) => (b.views || 0) - (a.views || 0))
-    .slice(0, 10);
-
-  return {
-    isLoading: false,
-    isEmpty: userUrls.length === 0,
-    selectedRange: "Last 30 days",
-    lastUpdated: new Date().toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }),
-    metrics: [],
-    charts: {
-      labels,
-      followers,
-      engagement,
-      posts: linkPosts.map((p) => p.title),
-      postPerformance: linkPosts.map((p) => p.views),
-    },
-    topPosts: linkPosts,
-  };
+async function buildAnalyticsViewModel(userId, shortLinkId = null, range = "30", creatorId = null) {
+  const { buildUnifiedAnalyticsData } = require("./utils/analyticsHelper");
+  return await buildUnifiedAnalyticsData(userId, { shortLinkId, range, creatorId });
 }
 
 function isGuestContributor(user) {
@@ -800,24 +639,6 @@ const clickCooldownsSweepInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
-// Periodic cleanup every 5 minutes to prevent unbounded memory growth
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [linkId, linkCooldowns] of clickCooldowns) {
-      for (const [ip, timestamp] of linkCooldowns) {
-        if (now - timestamp > CLICK_COOLDOWN_MS) {
-          linkCooldowns.delete(ip);
-        }
-      }
-      if (linkCooldowns.size === 0) {
-        clickCooldowns.delete(linkId);
-      }
-    }
-  },
-  5 * 60 * 1000,
-);
-
 app.post(
   "/bio/track/:linkId",
   clickTrackerLimiter,
@@ -943,6 +764,10 @@ app.get(
       return res.redirect("/services/creator-crm");
     }
 
+    if (service.key === "content-os") {
+      return res.redirect("/services/content-os");
+    }
+
     if (service.key === "analytics-dashboard") {
       const userDoc = await User.findById(req.user.id)
         .select("name email")
@@ -956,6 +781,8 @@ app.get(
       const analytics = await buildAnalyticsViewModel(
         req.user.id,
         req.query.link,
+        req.query.range || "30",
+        selectedCreatorId,
       );
       return res.render("analytics-dashboard", {
         service,
@@ -991,6 +818,7 @@ app.get(
 
 const { isValidUrl } = require("./utils/validators");
 const { parseVisitCoordinates } = require("./utils/visitTelemetry");
+const { parseVisitMeta } = require("./utils/deviceParser");
 
 const { handleGenerateShortUrlRender } = require("./controller/url");
 const { handleQrRedirect } = require("./controller/qrCodeController");
@@ -1002,10 +830,10 @@ app.post(
   handleGenerateShortUrlRender,
 );
 
-// ── FILE UPLOAD POST ──
-
-app.post(
-  "/services/file-upload/upload",
+// ── FILE UPLOAD (VAULT) ROUTES ──
+const fileUploadRoutes = require("./routes/fileUpload");
+app.use(
+  "/services/file-upload",
   protect,
   preventContributorWrites,
   uploadLimiter,
@@ -1014,9 +842,10 @@ app.post(
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
+  fileUploadRoutes,
+);
 
-    const compressionResult = await compressImage(req.file.path, req.file.mimetype);
-    const finalStats = fs.statSync(req.file.path);
+// ── SHORT URL REDIRECT ──
 
     res.json({
       filename: req.file.originalname,
@@ -1025,36 +854,47 @@ app.post(
       path: req.file.filename,
     });
 }));
+const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
 
-    // Clean up temporary file to prevent DoS via disk exhaustion
-    try {
-      fs.unlink(req.file.path, (err) => {
-        if (err)
-          console.error(
-            `[upload] Failed to delete temp file ${req.file.path}:`,
-            err,
-          );
-      });
-    } catch (e) {
-      console.error(`[upload] Error deleting temp file:`, e);
-    }
-  },
-);
+async function recordClickAndRedirect(req, res, entry) {
+  const coordinates = parseVisitCoordinates(req.query);
+  const visitData = { timestamp: new Date(), source: "direct" };
+  if (coordinates) {
+    visitData.x = coordinates.x;
+    visitData.y = coordinates.y;
+  }
 
-// ── SHORT URL REDIRECT ──
+  await Url.findOneAndUpdate(
+    { shortId: entry.shortId },
+    {
+      $inc: { totalClicks: 1 },
+      $push: {
+        visitHistory: {
+          $each: [visitData],
+          $sort: { timestamp: -1 },
+          $slice: 1000,
+        },
+      },
+    },
+  );
+
+  return res.redirect(entry.redirectUrl);
+}
 
 app.get(
   "/u/:shortId",
   asyncHandler(async (req, res) => {
     const shortId = req.params.shortId;
-    const coordinates = parseVisitCoordinates(req.query);
 
     try {
-      const visitData = { timestamp: new Date(), source: "direct" };
-      if (coordinates) {
-        visitData.x = coordinates.x;
-        visitData.y = coordinates.y;
+      const entry = await Url.findOne({ shortId });
+      if (!entry)
+        return res.status(404).render("404", { url: req.originalUrl });
+
+      if (entry.archived) {
+        return res.status(404).render("404", { url: req.originalUrl });
       }
+      Object.assign(visitData, parseVisitMeta(req));
 
       const entry = await Url.findOneAndUpdate(
         { shortId },
@@ -1071,12 +911,63 @@ app.get(
         { new: true },
       );
 
-      if (!entry) return res.status(404).send("URL not found");
-      return res.redirect(entry.redirectUrl);
+      if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+        return res.status(410).render("link-expired", { shortId });
+      }
+
+      if (entry.password) {
+        return res.render("link-password", { shortId, error: null });
+      }
+      return await recordClickAndRedirect(req, res, entry);
     } catch (err) {
       console.error("[redirect]", err);
       return res.status(500).send("Server error");
     }
+  }),
+);
+
+// Password-protected link: verify submitted password, then redirect.
+// A POST (not a query param) so the password never lands in the URL,
+// browser history, server access logs, or the Referer header.
+const linkPasswordAttemptLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: "Too many attempts, please try again later.",
+});
+
+app.post(
+  "/u/:shortId",
+  linkPasswordAttemptLimiter,
+  asyncHandler(async (req, res) => {
+    const shortId = req.params.shortId;
+    const { password } = req.body;
+
+    const entry = await Url.findOne({ shortId });
+    if (!entry) return res.status(404).render("404", { url: req.originalUrl });
+
+    if (entry.archived) {
+      return res.status(404).render("404", { url: req.originalUrl });
+    }
+
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+      return res.status(410).render("link-expired", { shortId });
+    }
+
+    if (!entry.password) {
+      // No password set (e.g. removed between page load and submit) — just proceed.
+      return await recordClickAndRedirect(req, res, entry);
+    }
+
+    const isMatch =
+      password && (await bcrypt.compare(String(password), entry.password));
+    if (!isMatch) {
+      return res.status(401).render("link-password", {
+        shortId,
+        error: "Incorrect password. Please try again.",
+      });
+    }
+
+    return await recordClickAndRedirect(req, res, entry);
   }),
 );
 
@@ -1149,6 +1040,8 @@ async function startServer() {
     // Initialize background workers after the database is ready
     require("./workers/analyticsRefreshWorker");
     require("./workers/contentPublishWorker").startContentPublishWorker();
+    require("./workers/scheduledNotificationWorker").startScheduledNotificationWorker();
+    require("./workers/taskReminderWorker").startTaskReminderWorker();
   } catch (error) {
     console.error("❌ Failed to start the application:", error);
     process.exit(1);
