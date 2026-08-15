@@ -1011,6 +1011,22 @@ app.get(
       if (entry.archived) {
         return res.status(404).render("404", { url: req.originalUrl });
       }
+      Object.assign(visitData, parseVisitMeta(req));
+
+      const entry = await Url.findOneAndUpdate(
+        { shortId },
+        {
+          $inc: { totalClicks: 1 },
+          $push: {
+            visitHistory: {
+              $each: [visitData],
+              $sort: { timestamp: -1 },
+              $slice: 1000,
+            },
+          },
+        },
+        { new: true },
+      );
 
       if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
         return res.status(410).render("link-expired", { shortId });
