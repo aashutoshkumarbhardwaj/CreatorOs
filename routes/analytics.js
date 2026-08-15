@@ -12,6 +12,7 @@ const {
     exportAnalyticsCsv,
 } = require("../controller/analytics");
 const { validate, objectIdParamSchema } = require("../middleware/validators");
+const { instagramLimiter } = require("../middleware/rateLimiters");
 
 const validateCreatorId = validate(objectIdParamSchema, 'params');
 
@@ -25,9 +26,9 @@ router.get("/summary", getAnalyticsSummary);
 router.get("/live-count", getLiveCount);
 router.get("/export", exportAnalyticsCsv);
 router.get("/creators", getCreatorsByUser);
-router.get("/:creatorId/snapshots", validateCreatorId, getSnapshots);
-router.get("/:creatorId/snapshots/latest", validateCreatorId, getLatestSnapshot);
-router.get("/:creatorId/engagement-history", validateCreatorId, getEngagementHistory);
-router.post("/:creatorId/refresh", validateCreatorId, refreshLimiter, triggerRefresh);
+router.get("/:creatorId/snapshots", validateCreatorId, instagramLimiter, getSnapshots);
+router.get("/:creatorId/snapshots/latest", validateCreatorId, instagramLimiter, getLatestSnapshot);
+router.get("/:creatorId/engagement-history", validateCreatorId, instagramLimiter, getEngagementHistory);
+router.post("/:creatorId/refresh", validateCreatorId, refreshLimiter, instagramLimiter, triggerRefresh);
 
 module.exports = router;

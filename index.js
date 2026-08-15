@@ -15,6 +15,7 @@ const passport = require("passport");
 const path = require("path");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
+const { generalLimiter } = require("./middleware/rateLimiters");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
 const {
   getProfileFromCache,
@@ -226,6 +227,7 @@ app.get("/invites/accept/:token", acceptInvite);
 // Billing & Domain Routes
 
 // API Routes
+app.use("/api", generalLimiter);
 app.use("/api/billing", billingRoute);
 app.use("/api/domain", domainRoute);
 app.use("/api/sponsors", sponsorRoute);
