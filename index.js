@@ -1157,6 +1157,7 @@ async function startServer() {
     // Initialize background workers after the database is ready
     require("./workers/analyticsRefreshWorker");
     require("./workers/contentPublishWorker").startContentPublishWorker();
+    require("./workers/scheduledNotificationWorker").startScheduledNotificationWorker();
     require("./workers/taskReminderWorker").startTaskReminderWorker();
   } catch (error) {
     console.error("❌ Failed to start the application:", error);

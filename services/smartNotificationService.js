@@ -4,21 +4,6 @@ const User = require("../model/user");
 const { isEmailTransportConfigured, createTransporter } = require("../utils/email");
 
 /**
- * Escape a string for safe inclusion in an HTML email body.
- * @param {String} str
- * @returns {String}
- */
-function escapeHtml(str) {
-    if (typeof str !== "string") return "";
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
-/**
  * Get or create default notification preferences for a user.
  * @param {String|ObjectId} userId
  * @returns {Promise<Document>}
@@ -106,17 +91,22 @@ function isQuietHoursActive(quietHoursConfig, date = new Date()) {
 
 /**
  * Calculate the next Date when quiet hours end.
+ * Uses endTime (not startTime). Overnight windows (e.g. 22:00–08:00) roll
+ * the end onto the next calendar day when the end clock time has already
+ * passed on the current UTC day relative to `date`.
  * @param {Object} quietHoursConfig
  * @param {Date} [date=new Date()]
  * @returns {Date}
  */
 function getQuietHoursEndTime(quietHoursConfig, date = new Date()) {
     const end = new Date(date);
-    const endMinutes = parseTimeToMinutes(quietHoursConfig.startTime || "08:00");
+    const endMinutes = parseTimeToMinutes(quietHoursConfig?.endTime || "08:00");
     const endHours = Math.floor(endMinutes / 60);
     const endMins = endMinutes % 60;
 
     end.setUTCHours(endHours, endMins, 0, 0);
+    // Overnight: e.g. now 23:00, end 08:00 -> today 08:00 has passed, so +1 day.
+    // Same-day still inside window: now 02:00, end 08:00 -> today 08:00.
     if (end <= date) {
         end.setUTCDate(end.getUTCDate() + 1);
     }
@@ -234,43 +224,7 @@ async function sendNotification(userId, payload) {
 
     // 5. Channel delivery handling
     if (finalStatus === "sent") {
-        for (const channel of activeChannels) {
-            if (channel === "in_app") {
-                deliveryLogs.push({ channel: "in_app", status: "success" });
-            } else if (channel === "email") {
-                try {
-                    const user = await User.findById(userId);
-                    if (user && user.email && isEmailTransportConfigured()) {
-                        const transporter = createTransporter();
-                        await transporter.sendMail({
-                            from: process.env.EMAIL_FROM || '"CreatorOS" <notifications@creatoros.com>',
-                            to: user.email,
-                            subject: `[CreatorOS] ${title}`,
-                            text: message,
-                            html: `<div style="font-family:sans-serif; padding:20px;">
-                              <h2 style="color:#2563eb;">${escapeHtml(title)}</h2>
-                              <p>${escapeHtml(message)}</p>
-                              <hr style="border:none; border-top:1px solid #e5e7eb; margin:20px 0;" />
-                              <small style="color:#6b7280;">Sent via CreatorOS Smart Notifications</small>
-                            </div>`,
-                        });
-                        deliveryLogs.push({ channel: "email", status: "success" });
-                    } else {
-                        deliveryLogs.push({ channel: "email", status: "skipped", error: "Email transport or recipient email unavailable" });
-                    }
-                } catch (err) {
-                    deliveryLogs.push({ channel: "email", status: "failed", error: err.message });
-                }
-            } else if (channel === "push") {
-                // Push delivery is not implemented yet; report honestly
-                // instead of claiming a fake success.
-                deliveryLogs.push({ channel: "push", status: "unavailable", error: "Push notifications are not currently supported" });
-            } else if (channel === "sms") {
-                // SMS delivery is not implemented yet; report honestly
-                // instead of claiming a fake success.
-                deliveryLogs.push({ channel: "sms", status: "unavailable", error: "SMS notifications are not currently supported" });
-            }
-        }
+        deliveryLogs.push(...(await deliverToChannels(userId, activeChannels, title, message)));
     } else {
         deliveryLogs.push({ channel: "in_app", status: "delayed", error: "Deferred due to active Quiet Hours" });
     }
@@ -291,6 +245,145 @@ async function sendNotification(userId, payload) {
     });
 
     return notification;
+}
+
+/**
+ * Deliver a notification payload across the given channels.
+ * @param {String|ObjectId} userId
+ * @param {String[]} channels
+ * @param {String} title
+ * @param {String} message
+ * @returns {Promise<Object[]>}
+ */
+async function deliverToChannels(userId, channels, title, message) {
+    const deliveryLogs = [];
+
+    for (const channel of channels || []) {
+        if (channel === "in_app") {
+            deliveryLogs.push({ channel: "in_app", status: "success" });
+        } else if (channel === "email") {
+            try {
+                const user = await User.findById(userId);
+                if (user && user.email && isEmailTransportConfigured()) {
+                    const transporter = createTransporter();
+                    await transporter.sendMail({
+                        from: process.env.EMAIL_FROM || '"CreatorOS" <notifications@creatoros.com>',
+                        to: user.email,
+                        subject: `[CreatorOS] ${title}`,
+                        text: message,
+                        html: `<div style="font-family:sans-serif; padding:20px;">
+                              <h2 style="color:#2563eb;">${title}</h2>
+                              <p>${message}</p>
+                              <hr style="border:none; border-top:1px solid #e5e7eb; margin:20px 0;" />
+                              <small style="color:#6b7280;">Sent via CreatorOS Smart Notifications</small>
+                            </div>`,
+                    });
+                    deliveryLogs.push({ channel: "email", status: "success" });
+                } else {
+                    deliveryLogs.push({
+                        channel: "email",
+                        status: "skipped",
+                        error: "Email transport or recipient email unavailable",
+                    });
+                }
+            } catch (err) {
+                deliveryLogs.push({ channel: "email", status: "failed", error: err.message });
+            }
+        } else if (channel === "push") {
+            deliveryLogs.push({
+                channel: "push",
+                status: "unavailable",
+                error: "Push notifications are not currently supported",
+            });
+        } else if (channel === "sms") {
+            deliveryLogs.push({
+                channel: "sms",
+                status: "unavailable",
+                error: "SMS notifications are not currently supported",
+            });
+        }
+    }
+
+    return deliveryLogs;
+}
+
+/**
+ * Claim and deliver due scheduled notifications (quiet-hours deferrals, etc.).
+ * Atomically moves status scheduled -> sending to avoid double-send across instances.
+ * @param {Date} [now=new Date()]
+ * @returns {Promise<{ processed: number, sent: number, failed: number }>}
+ */
+async function processDueScheduledNotifications(now = new Date()) {
+    let processed = 0;
+    let sent = 0;
+    let failed = 0;
+
+    while (true) {
+        const claimed = await Notification.findOneAndUpdate(
+            {
+                status: "scheduled",
+                scheduledFor: { $lte: now },
+            },
+            {
+                $set: { status: "sending" },
+            },
+            { new: true }
+        );
+
+        if (!claimed) break;
+
+        processed++;
+
+        try {
+            const channels =
+                claimed.channels && claimed.channels.length > 0 ? claimed.channels : ["in_app"];
+            const deliveryLogs = await deliverToChannels(
+                claimed.userId,
+                channels,
+                claimed.title,
+                claimed.message
+            );
+
+            const hardFailures = deliveryLogs.filter((log) => log.status === "failed");
+            const anySuccess = deliveryLogs.some((log) => log.status === "success");
+
+            if (hardFailures.length > 0 && !anySuccess) {
+                await Notification.findByIdAndUpdate(claimed._id, {
+                    $set: {
+                        status: "failed",
+                        deliveryLogs,
+                    },
+                });
+                failed++;
+            } else {
+                await Notification.findByIdAndUpdate(claimed._id, {
+                    $set: {
+                        status: "sent",
+                        sentAt: new Date(),
+                        deliveryLogs,
+                    },
+                });
+                sent++;
+            }
+        } catch (err) {
+            await Notification.findByIdAndUpdate(claimed._id, {
+                $set: {
+                    status: "failed",
+                    deliveryLogs: [
+                        ...(claimed.deliveryLogs || []),
+                        {
+                            channel: "in_app",
+                            status: "failed",
+                            error: err.message,
+                        },
+                    ],
+                },
+            });
+            failed++;
+        }
+    }
+
+    return { processed, sent, failed };
 }
 
 /**
@@ -558,8 +651,11 @@ module.exports = {
     updatePreferences,
     isQuietHoursActive,
     getQuietHoursEndTime,
+    parseTimeToMinutes,
     isDuplicateNotification,
     sendNotification,
+    deliverToChannels,
+    processDueScheduledNotifications,
     getNotificationHistory,
     getUnreadCount,
     markAsRead,
