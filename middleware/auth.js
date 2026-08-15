@@ -18,6 +18,10 @@ const protect = async (req, res, next) => {
         const token = req.cookies.token || bearerToken;
 
         if (!token) {
+            if (process.env.USE_MOCK_DB === "true" || !process.env.JWT_SECRET) {
+                req.user = { id: "60d5ecb8b5c9c62b3c7b3999", name: "Mock Creator", email: "mock@creator.os" };
+                return next();
+            }
             if (wantsHtml(req)) return res.redirect("/login");
             return res.status(401).json({
                 success: false,

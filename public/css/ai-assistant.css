@@ -1,0 +1,495 @@
+/* AI Creator Assistant Workspace Styling */
+.ai-assistant-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header & Banner */
+.assistant-header-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    padding: 1.75rem;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+.assistant-header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.assistant-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.assistant-header-title h1 {
+    font-size: 1.875rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-color, #0f172a);
+}
+
+.assistant-header-title p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+}
+
+/* Studio Layout (Sidebar History + Main Content) */
+.assistant-studio-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    min-height: 720px;
+}
+
+@media (max-width: 1024px) {
+    .assistant-studio-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Sidebar History Panel */
+.assistant-history-panel {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-color, #0f172a);
+}
+
+.btn-new-chat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: #6366f1;
+    color: #ffffff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn-new-chat:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-item:hover, .history-item.active {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+}
+
+.history-item-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.btn-delete-chat {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.btn-delete-chat:hover {
+    color: #ef4444;
+}
+
+/* Main Workspace Tabs (Chat Workspace vs Studio Power Tools) */
+.workspace-container {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.workspace-nav-tabs {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+}
+
+.tab-btn {
+    padding: 0.6rem 1.25rem;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #64748b;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: #ffffff;
+    color: #6366f1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Chat Area */
+.chat-window {
+    display: flex;
+    flex-direction: column;
+    height: 640px;
+}
+
+.chat-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.control-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.control-select {
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.messages-thread {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.chat-bubble {
+    display: flex;
+    gap: 1rem;
+    max-width: 85%;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-bubble.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.chat-bubble.assistant {
+    align-self: flex-start;
+}
+
+.avatar-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.chat-bubble.user .avatar-badge {
+    background: #6366f1;
+    color: #ffffff;
+}
+
+.chat-bubble.assistant .avatar-badge {
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+    color: #ffffff;
+}
+
+.bubble-content {
+    background: #f1f5f9;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.chat-bubble.user .bubble-content {
+    background: #6366f1;
+    color: #ffffff;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.chat-bubble.assistant .bubble-content {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 0.25rem;
+}
+
+/* Structured AI Response Widgets */
+.structured-widget {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.widget-metrics-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.metric-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.action-buttons-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-action-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action-sm:hover {
+    background: #f1f5f9;
+    color: #6366f1;
+    border-color: #818cf8;
+}
+
+.btn-action-sm.primary {
+    background: #6366f1;
+    color: #ffffff;
+    border-color: #6366f1;
+}
+
+.btn-action-sm.primary:hover {
+    background: #4f46e5;
+}
+
+/* Prompt Chips Bar */
+.chips-container {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    overflow-x: auto;
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+}
+
+.chip-btn {
+    white-space: nowrap;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chip-btn:hover {
+    background: #e0e7ff;
+    color: #4338ca;
+    border-color: #a5b4fc;
+}
+
+/* Input Bar */
+.chat-input-bar {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+}
+
+.chat-input-field {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 0.9375rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.chat-input-field:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.btn-send {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.btn-send:hover {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Power Tools Studio Section */
+.studio-tools-grid {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.tool-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.tool-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.tool-input-textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    resize: vertical;
+}
+
+.tool-output-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.85rem;
+    font-size: 0.875rem;
+    color: #334155;
+    min-height: 80px;
+}

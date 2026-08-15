@@ -165,7 +165,7 @@ function formatClicks(count) {
  */
 function serializeLink(entry, hostBase) {
   const linkedAt =
-    entry.linkedAt || entry.createdAt?.[0]?.timeStamp || new Date();
+    entry.linkedAt || entry.createdAt || new Date();
   return {
     shortId: entry.shortId,
     redirectUrl: entry.redirectUrl,
