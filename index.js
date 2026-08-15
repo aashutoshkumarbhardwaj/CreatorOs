@@ -87,6 +87,7 @@ const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
+const taskRoutes = require("./routes/taskRoutes");
 const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const healthRoutes = require("./routes/health");
@@ -217,6 +218,7 @@ app.use("/services/content-os", protect, contentOsRoutes);
 app.use("/services/ai-assistant", aiAssistantRoutes);
 app.get("/services/content-calendar", protect, renderCalendarPage);
 app.use("/", smartNotificationRoutes);
+app.use("/", taskRoutes);
 app.use("/", meetingRoutes);
 app.post(
   "/dashboard/accept-invite",
@@ -1139,6 +1141,7 @@ async function startServer() {
     // Initialize background workers after the database is ready
     require("./workers/analyticsRefreshWorker");
     require("./workers/contentPublishWorker").startContentPublishWorker();
+    require("./workers/taskReminderWorker").startTaskReminderWorker();
   } catch (error) {
     console.error("❌ Failed to start the application:", error);
     process.exit(1);
