@@ -290,9 +290,17 @@ async function deliverToChannels(userId, channels, title, message) {
                 deliveryLogs.push({ channel: "email", status: "failed", error: err.message });
             }
         } else if (channel === "push") {
-            deliveryLogs.push({ channel: "push", status: "success" });
+            deliveryLogs.push({
+                channel: "push",
+                status: "unavailable",
+                error: "Push notifications are not currently supported",
+            });
         } else if (channel === "sms") {
-            deliveryLogs.push({ channel: "sms", status: "success" });
+            deliveryLogs.push({
+                channel: "sms",
+                status: "unavailable",
+                error: "SMS notifications are not currently supported",
+            });
         }
     }
 

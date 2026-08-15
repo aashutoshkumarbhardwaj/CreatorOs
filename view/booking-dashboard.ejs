@@ -1,0 +1,411 @@
+<%- include('partials/layout/header', {
+    activeNav: 'meetings',
+    title: 'Meeting & Call Scheduler',
+    extraHead: '<link rel="stylesheet" href="/css/booking.css"><link rel="stylesheet" href="/css/crm.css">'
+}) %>
+
+<div class="content" style="padding: 24px; max-width: 1200px; margin: 0 auto;">
+
+  <!-- DASHBOARD HEAD & ACTIONS -->
+  <div class="dashboard-head" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px;">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 800; margin: 0 0 6px 0;">📅 Meetings & Call Scheduling</h1>
+      <p style="color: #64748b; margin: 0;">Create meeting event types, share public booking links, and sync calls with Google Calendar & Google Meet.</p>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <div id="gcal-status-badge" style="padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #e2e8f0; color: #475569;">
+        Checking Google Cal...
+      </div>
+      <button type="button" class="crm-btn-primary" onclick="openEventTypeModal()" style="background: #6366f1; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        + New Event Type
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div style="display: flex; gap: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px;">
+    <button type="button" class="tab-btn active" id="tab-event-types" onclick="switchTab('event-types')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; border-bottom: 3px solid #6366f1; color: #6366f1; cursor: pointer;">
+      Event Types
+    </button>
+    <button type="button" class="tab-btn" id="tab-bookings" onclick="switchTab('bookings')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
+      Booked Calls (<span id="upcoming-count">0</span>)
+    </button>
+    <button type="button" class="tab-btn" id="tab-settings" onclick="switchTab('settings')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
+      Google Calendar & Settings
+    </button>
+  </div>
+
+  <!-- TAB 1: EVENT TYPES -->
+  <div id="sec-event-types">
+    <div id="event-types-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+      <!-- Dynamic Event Types render here -->
+    </div>
+  </div>
+
+  <!-- TAB 2: BOOKED CALLS -->
+  <div id="sec-bookings" style="display: none;">
+    <h3 style="font-size: 18px; margin-bottom: 16px;">Upcoming Booked Calls</h3>
+    <div id="upcoming-bookings-list" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px;">
+      <!-- Dynamic Upcoming Bookings -->
+    </div>
+
+    <h3 style="font-size: 18px; margin-bottom: 16px;">Past & Cancelled Calls</h3>
+    <div id="past-bookings-list" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- Dynamic Past Bookings -->
+    </div>
+  </div>
+
+  <!-- TAB 3: GOOGLE CALENDAR & SETTINGS -->
+  <div id="sec-settings" style="display: none;">
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; max-width: 650px;">
+      <h3 style="margin-top: 0;">Google Calendar Integration</h3>
+      <p style="color: #64748b; font-size: 14px; line-height: 1.5;">
+        Connect your Google Calendar to automatically create Google Meet conference links for booked calls and prevent double-booking.
+      </p>
+
+      <div id="gcal-info-box" style="margin: 20px 0; padding: 16px; border-radius: 8px; background: #f8fafc; border: 1px solid #cbd5e1;">
+        <!-- Status text dynamically injected -->
+      </div>
+
+      <div id="gcal-action-container">
+        <a id="btn-connect-gcal" href="/api/meetings/google/connect" class="crm-btn-primary" style="display: inline-block; text-decoration: none; padding: 12px 20px; background: #4285f4; color: white; border-radius: 8px; font-weight: 600;">
+          Sync with Google Calendar
+        </a>
+        <button id="btn-disconnect-gcal" onclick="disconnectGCal()" style="display: none; padding: 12px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+          Disconnect Google Calendar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CREATE / EDIT EVENT TYPE MODAL -->
+<div id="event-type-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+  <div style="background: white; border-radius: 16px; width: 100%; max-width: 540px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 id="modal-title" style="margin: 0; font-size: 20px;">New Event Type</h2>
+      <button onclick="closeEventTypeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+    </div>
+
+    <form id="event-type-form" onsubmit="saveEventType(event)">
+      <input type="hidden" id="event-type-id" value="">
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Title *</label>
+        <input type="text" id="et-title" required placeholder="e.g. 30 Min Discovery Call" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Description</label>
+        <textarea id="et-description" rows="3" placeholder="Briefly describe what this call is about..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;"></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Duration (Minutes) *</label>
+          <select id="et-duration" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+            <option value="15">15 Minutes</option>
+            <option value="30" selected>30 Minutes</option>
+            <option value="45">45 Minutes</option>
+            <option value="60">60 Minutes (1 Hour)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Location</label>
+          <select id="et-location" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+            <option value="google_meet" selected>Google Meet Video Call</option>
+            <option value="phone">Phone Call</option>
+            <option value="custom">Custom Link / Venue</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Price (USD)</label>
+          <input type="number" id="et-price" value="0" min="0" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px;">Badge Accent Color</label>
+          <input type="color" id="et-color" value="#6366f1" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" onclick="closeEventTypeModal()" style="padding: 10px 18px; background: #e2e8f0; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="submit" style="padding: 10px 18px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Save Event Type</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let eventTypes = [];
+let bookingsData = { upcoming: [], past: [] };
+let currentUserAlias = '<%= typeof user !== "undefined" && (user.alias || user.name) ? (user.alias || user.name.toLowerCase().replace(/\s+/g, "-")) : "creator" %>';
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadEventTypes();
+  loadBookings();
+  loadGoogleStatus();
+});
+
+function switchTab(tabName) {
+  document.getElementById('sec-event-types').style.display = tabName === 'event-types' ? 'block' : 'none';
+  document.getElementById('sec-bookings').style.display = tabName === 'bookings' ? 'block' : 'none';
+  document.getElementById('sec-settings').style.display = tabName === 'settings' ? 'block' : 'none';
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.style.borderBottom = 'none';
+    btn.style.color = '#64748b';
+  });
+
+  const activeBtn = document.getElementById(`tab-${tabName}`);
+  if (activeBtn) {
+    activeBtn.style.borderBottom = '3px solid #6366f1';
+    activeBtn.style.color = '#6366f1';
+  }
+}
+
+async function loadEventTypes() {
+  try {
+    const res = await fetch('/api/meetings/event-types');
+    const data = await res.json();
+    if (data.success) {
+      eventTypes = data.data;
+      renderEventTypes();
+    }
+  } catch (err) {
+    console.error('Error loading event types:', err);
+  }
+}
+
+function renderEventTypes() {
+  const container = document.getElementById('event-types-grid');
+  if (!eventTypes || eventTypes.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: white; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <p style="color: #64748b; font-size: 16px; margin-bottom: 16px;">You haven't created any event types yet.</p>
+        <button onclick="openEventTypeModal()" style="padding: 10px 18px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+          + Create First Event Type
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = eventTypes.map(et => {
+    const bookingUrl = `${window.location.origin}/book/${currentUserAlias}/${et.slug}`;
+    return `
+      <div style="background: white; border: 1px solid #e2e8f0; border-top: 4px solid ${et.color || '#6366f1'}; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700;">${et.title}</h3>
+            <span style="font-size: 12px; font-weight: 700; background: ${et.price > 0 ? '#dcfce7' : '#f1f5f9'}; color: ${et.price > 0 ? '#15803d' : '#475569'}; padding: 4px 8px; border-radius: 6px;">
+              ${et.price > 0 ? '$' + et.price : 'FREE'}
+            </span>
+          </div>
+          <p style="color: #64748b; font-size: 14px; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+            ⏱ ${et.duration} mins • 📹 ${et.locationType === 'google_meet' ? 'Google Meet' : et.locationType}
+          </p>
+          <p style="color: #475569; font-size: 13px; line-height: 1.4; height: 36px; overflow: hidden; text-overflow: ellipsis;">
+            ${et.description || 'No description provided.'}
+          </p>
+        </div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 14px; display: flex; gap: 8px;">
+          <button onclick="copyBookingLink('${bookingUrl}')" style="flex: 1; padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            📋 Copy Link
+          </button>
+          <a href="${bookingUrl}" target="_blank" style="padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; text-decoration: none; color: #334155; font-weight: 600;">
+            🔗 View
+          </a>
+          <button onclick="deleteEventType('${et._id}')" style="padding: 8px; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 6px; cursor: pointer;">
+            🗑
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadBookings() {
+  try {
+    const res = await fetch('/api/meetings/bookings');
+    const data = await res.json();
+    if (data.success) {
+      bookingsData = data;
+      document.getElementById('upcoming-count').innerText = data.upcoming.length;
+      renderBookings();
+    }
+  } catch (err) {
+    console.error('Error loading bookings:', err);
+  }
+}
+
+function renderBookings() {
+  const upContainer = document.getElementById('upcoming-bookings-list');
+  const pastContainer = document.getElementById('past-bookings-list');
+
+  if (bookingsData.upcoming.length === 0) {
+    upContainer.innerHTML = `<div style="padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b;">No upcoming bookings.</div>`;
+  } else {
+    upContainer.innerHTML = bookingsData.upcoming.map(b => renderBookingCard(b, true)).join('');
+  }
+
+  if (bookingsData.past.length === 0) {
+    pastContainer.innerHTML = `<div style="padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b;">No past or cancelled bookings.</div>`;
+  } else {
+    pastContainer.innerHTML = bookingsData.past.map(b => renderBookingCard(b, false)).join('');
+  }
+}
+
+function renderBookingCard(b, isUpcoming) {
+  const start = new Date(b.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  const title = b.eventTypeId?.title || 'Meeting';
+  return `
+    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+      <div>
+        <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">
+          ${b.attendeeName} <span style="font-weight: 400; color: #64748b; font-size: 14px;">(${b.attendeeEmail})</span>
+        </div>
+        <div style="color: #4338ca; font-size: 14px; font-weight: 600; margin-bottom: 4px;">
+          📅 ${title} • ${start}
+        </div>
+        ${b.attendeeNotes ? `<div style="font-size: 13px; color: #64748b;">Notes: ${b.attendeeNotes}</div>` : ''}
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        ${b.meetingLink ? `
+          <a href="${b.meetingLink}" target="_blank" style="padding: 8px 16px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
+            🎥 Join Call
+          </a>
+        ` : ''}
+        ${isUpcoming ? `
+          <button onclick="cancelBooking('${b._id}')" style="padding: 8px 14px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            Cancel
+          </button>
+        ` : `<span style="font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #f1f5f9; color: #64748b;">${b.status.toUpperCase()}</span>`}
+      </div>
+    </div>
+  `;
+}
+
+async function loadGoogleStatus() {
+  try {
+    const res = await fetch('/api/meetings/google/status');
+    const data = await res.json();
+    const badge = document.getElementById('gcal-status-badge');
+    const infoBox = document.getElementById('gcal-info-box');
+    const btnConnect = document.getElementById('btn-connect-gcal');
+    const btnDisconnect = document.getElementById('btn-disconnect-gcal');
+
+    if (data.isConnected) {
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+      badge.innerText = '✓ Google Calendar Connected';
+
+      infoBox.innerHTML = `<strong style="color: #15803d;">Status: Connected</strong><br>Your Google Calendar is active and creating real Google Meet links for booked calls.`;
+      btnConnect.style.display = 'none';
+      btnDisconnect.style.display = 'inline-block';
+    } else {
+      badge.style.background = '#fee2e2';
+      badge.style.color = '#b91c1c';
+      badge.innerText = '⚡ Google Calendar Disconnected';
+
+      infoBox.innerHTML = `<strong>Status: Not Connected</strong><br>Connect Google Calendar to sync availability & generate Google Meet video links automatically.`;
+      btnConnect.style.display = 'inline-block';
+      btnDisconnect.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Error fetching Google status:', err);
+  }
+}
+
+async function disconnectGCal() {
+  if (!confirm('Disconnect Google Calendar sync?')) return;
+  try {
+    await fetch('/api/meetings/google/disconnect', { method: 'POST' });
+    loadGoogleStatus();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function openEventTypeModal(id = null) {
+  document.getElementById('event-type-form').reset();
+  document.getElementById('event-type-id').value = '';
+  document.getElementById('modal-title').innerText = 'New Event Type';
+  document.getElementById('event-type-modal').style.display = 'flex';
+}
+
+function closeEventTypeModal() {
+  document.getElementById('event-type-modal').style.display = 'none';
+}
+
+async function saveEventType(e) {
+  e.preventDefault();
+  const id = document.getElementById('event-type-id').value;
+  const payload = {
+    title: document.getElementById('et-title').value,
+    description: document.getElementById('et-description').value,
+    duration: Number(document.getElementById('et-duration').value),
+    locationType: document.getElementById('et-location').value,
+    price: Number(document.getElementById('et-price').value),
+    color: document.getElementById('et-color').value,
+  };
+
+  const url = id ? `/api/meetings/event-types/${id}` : '/api/meetings/event-types';
+  const method = id ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeEventTypeModal();
+      loadEventTypes();
+    } else {
+      alert(data.message || 'Failed to save event type');
+    }
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function deleteEventType(id) {
+  if (!confirm('Delete this event type?')) return;
+  try {
+    await fetch(`/api/meetings/event-types/${id}`, { method: 'DELETE' });
+    loadEventTypes();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function cancelBooking(id) {
+  const reason = prompt('Reason for cancelling meeting (optional):');
+  if (reason === null) return;
+  try {
+    await fetch(`/api/meetings/bookings/${id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cancelReason: reason })
+    });
+    loadBookings();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function copyBookingLink(url) {
+  navigator.clipboard.writeText(url);
+  alert('Public booking link copied to clipboard!');
+}
+</script>
+
+<%- include('partials/layout/footer') %>

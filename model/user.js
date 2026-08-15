@@ -121,6 +121,14 @@ const userSchema = new mongoose.Schema(
             ref: "User",
         }],
 
+        googleCalendarTokens: {
+            accessToken: { type: String, default: null },
+            refreshToken: { type: String, default: null },
+            expiryDate: { type: Date, default: null },
+            calendarId: { type: String, default: "primary" },
+            isConnected: { type: Boolean, default: false },
+        },
+
         isVerified: {
             type: Boolean,
             default: false,
@@ -230,8 +238,24 @@ class MockUserModel {
         return user;
     }
 
-    static async findOne(query = {}) {
-        return mockUsers.find((user) => matchesQuery(user, query)) || null;
+    static findOne(query = {}) {
+        const getUser = () => mockUsers.find((user) => matchesQuery(user, query)) || null;
+        const chain = {
+            select() {
+                return chain;
+            },
+            lean() {
+                const user = getUser();
+                return user ? { ...user } : null;
+            },
+            then(resolve, reject) {
+                return Promise.resolve(getUser()).then(resolve, reject);
+            },
+            catch(reject) {
+                return Promise.resolve(getUser()).catch(reject);
+            },
+        };
+        return chain;
     }
 
     static findById(id) {

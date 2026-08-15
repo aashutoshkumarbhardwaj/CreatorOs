@@ -1624,6 +1624,57 @@
     color: #111111;
 }
 
+/* ── Filter Tab Buttons ── */
+.tab-btn {
+    font-weight: 700;
+    border: 1.5px solid var(--border);
+}
+.tab-btn.active {
+    background-color: var(--accent-teal);
+    color: #111111;
+}
+
+/* ── Duplicate Link Warning Banner ── */
+#duplicate-banner {
+    border-color: var(--border);
+}
+#duplicate-banner span {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* ── Bulk Import Panel ── */
+#bulk-import-panel textarea,
+#bulk-import-panel input[type="file"] {
+    width: 100%;
+}
+#bulk-import-result ul {
+    color: var(--muted-2);
+    font-size: 0.8rem;
+    max-height: 160px;
+    overflow-y: auto;
+}
+#bulk-import-result li {
+    margin-bottom: 0.2rem;
+    word-break: break-all;
+}
+
+/* ── Link Card Extras (favorite star, password/expiry badges) ── */
+.fav-btn {
+    color: var(--accent-yellow);
+    padding: 0 0.15rem;
+}
+.fav-btn:hover {
+    transform: scale(1.15);
+}
+
+/* ── Edit Modal ── */
+#edit-modal input:focus,
+#edit-modal select:focus {
+    box-shadow: 2px 2px 0px var(--border);
+    outline: none;
+}
+
 /* ── Link Card Styles ── */
 .link-card {
     display: flex;
@@ -1662,6 +1713,9 @@
     font-family: 'Space Grotesk', sans-serif;
     font-size: 1rem;
     margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 .link-short {
     font-size: 0.85rem;
