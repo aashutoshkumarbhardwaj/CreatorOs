@@ -8,50 +8,7 @@
     let toastStart;
     let remainingTime = 4000;
 
-    function initTopbar() {
-        const layout = document.getElementById('dashboardLayout');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const themeToggle = document.getElementById('theme-toggle');
-        const iconLight = themeToggle ? themeToggle.querySelector('.icon-light') : null;
-        const iconDark = themeToggle ? themeToggle.querySelector('.icon-dark') : null;
 
-        if (layout && sidebarToggle) {
-            const sidebarState = localStorage.getItem('creatorosSidebarCollapsed');
-            if (sidebarState === 'true') {
-                layout.classList.add('sidebar-collapsed');
-                sidebarToggle.setAttribute('aria-expanded', 'false');
-            }
-
-            sidebarToggle.addEventListener('click', () => {
-                const isCollapsed = layout.classList.toggle('sidebar-collapsed');
-                sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
-                localStorage.setItem('creatorosSidebarCollapsed', String(isCollapsed));
-            });
-        }
-
-        if (themeToggle) {
-            themeToggle.addEventListener('click', async () => {
-                const nextMode = body.classList.contains('appearance-dark') ? 'light' : 'dark';
-                document.querySelectorAll('#appearance-group .radio-btn').forEach((btn) => {
-                    btn.classList.toggle('active', btn.dataset.val === nextMode);
-                });
-                try {
-                    await updatePreferences({ appearanceMode: nextMode });
-                } catch (err) {
-                    showToast(err.message, true);
-                }
-            });
-        }
-
-        function syncThemeIcon() {
-            const isDark = body.classList.contains('appearance-dark');
-            if (iconLight) iconLight.style.display = isDark ? 'none' : 'block';
-            if (iconDark) iconDark.style.display = isDark ? 'block' : 'none';
-        }
-
-        window.addEventListener('creatorosSettingsAppearanceChanged', syncThemeIcon);
-        syncThemeIcon();
-    }
 
     function startToastTimer() {
         toastStart = Date.now();
@@ -149,6 +106,22 @@
         body.classList.add(`density-${prefs.interfaceDensity || 'tactile'}`);
         const resolved = resolveAppearance(prefs.appearanceMode || 'light');
         body.classList.add(`appearance-${resolved}`);
+        
+        if (resolved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            const iconLight = document.querySelector('#theme-toggle .icon-light');
+            const iconDark = document.querySelector('#theme-toggle .icon-dark');
+            if(iconLight) iconLight.style.display = 'none';
+            if(iconDark) iconDark.style.display = 'block';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            const iconLight = document.querySelector('#theme-toggle .icon-light');
+            const iconDark = document.querySelector('#theme-toggle .icon-dark');
+            if(iconLight) iconLight.style.display = 'block';
+            if(iconDark) iconDark.style.display = 'none';
+        }
         if (!prefs.motionEffects) body.classList.add('no-motion');
         localStorage.setItem('creatorosAppearance', prefs.appearanceMode || 'light');
         localStorage.setItem('creatorosDensity', prefs.interfaceDensity || 'tactile');
@@ -560,7 +533,7 @@
     });
 
     applyPreferences();
-    initTopbar();
+    // Topbar is initialized via layout scripts.ejs
     refreshBilling();
 
     const urlParams = new URLSearchParams(window.location.search);

@@ -56,6 +56,15 @@ links: [
             enum: ["instagram", "youtube", "twitter", "tiktok"],
             required: true,
         },
+        platformId: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        accessToken: {
+            type: String,
+            default: "",
+        },
         profileUrl: {
             type: String,
         },
@@ -79,6 +88,8 @@ class MockCreatorModel {
         this.userId = data.userId;
         this.username = data.username || "creator";
         this.platform = data.platform || "instagram";
+        this.platformId = data.platformId || "";
+        this.accessToken = data.accessToken || "";
         this.profileUrl = data.profileUrl || "";
         this.avatar = data.avatar || "";
         this.bio = data.bio || "";

@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 let mongod;
 
 beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    process.env.MONGODB_URI = mongod.getUri();
-    process.env.JWT_SECRET = 'test_secret_key';
+    if (!process.env.MONGODB_URI) {
+        mongod = await MongoMemoryServer.create();
+        process.env.MONGODB_URI = mongod.getUri();
+    }
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_secret_key';
     
     await mongoose.connect(process.env.MONGODB_URI);
 });

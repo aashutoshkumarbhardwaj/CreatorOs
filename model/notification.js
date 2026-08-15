@@ -69,7 +69,7 @@ const notificationSchema = new mongoose.Schema(
         deliveryLogs: [
             {
                 channel: { type: String, enum: ["in_app", "email", "sms", "push"] },
-                status: { type: String, enum: ["success", "failed", "delayed", "skipped"] },
+                status: { type: String, enum: ["success", "failed", "delayed", "skipped", "unavailable"] },
                 timestamp: { type: Date, default: Date.now },
                 error: { type: String },
             },

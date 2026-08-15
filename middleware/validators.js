@@ -55,6 +55,12 @@ const urlQRColorsSchema = z.object({
 
 const suggestionSchema = z.object({
   topic: z.string().trim().min(1, 'Topic is required'),
+  platform: z.enum(['instagram', 'linkedin', 'twitter', 'threads', 'facebook', 'youtube', 'tiktok']).optional().default('instagram'),
+  tone: z.string().trim().optional().default('energetic'),
+  length: z.enum(['short', 'medium', 'long']).optional().default('medium'),
+  language: z.string().trim().optional().default('english'),
+  includeEmojis: z.boolean().optional().default(true),
+  includeCta: z.boolean().optional().default(true),
 });
 
 const updateProfileSchema = z.object({
@@ -71,6 +77,43 @@ const objectIdParamSchema = z.object({
 
 const shortIdParamSchema = z.object({
   shortId: z.string().min(1, 'Short ID is required'),
+});
+
+const contentOsItemSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title must be at most 200 characters'),
+  description: z.string().max(2000).optional().or(z.literal('')),
+  type: z.enum(['idea', 'script', 'post', 'template', 'draft']).optional(),
+  status: z.enum(['idea', 'scripting', 'filming', 'editing', 'ready', 'scheduled', 'published']).optional(),
+  platform: z.enum(['instagram', 'youtube', 'twitter', 'tiktok', 'linkedin', 'blog', 'general']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  folderId: z.string().optional().nullable().or(z.literal('')),
+  tags: z.union([z.array(z.string()), z.string()]).optional(),
+  scriptDetails: z.object({
+    hook: z.string().optional(),
+    body: z.string().optional(),
+    cta: z.string().optional(),
+    teleprompterNotes: z.string().optional(),
+  }).optional(),
+  mediaAssets: z.array(z.object({
+    url: z.string(),
+    type: z.string().optional(),
+    name: z.string().optional(),
+  })).optional(),
+  scheduledAt: z.string().optional().nullable().or(z.literal('')),
+  aiGenerated: z.boolean().optional(),
+});
+
+const contentOsFolderSchema = z.object({
+  name: z.string().trim().min(1, 'Folder name is required').max(100, 'Folder name must be at most 100 characters'),
+  color: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Invalid hex color').optional(),
+  description: z.string().max(500).optional().or(z.literal('')),
+});
+
+const contentOsAiSchema = z.object({
+  prompt: z.string().trim().min(1, 'Prompt is required'),
+  mode: z.enum(['idea', 'hook', 'script', 'caption']).optional(),
+  niche: z.string().optional(),
+  platform: z.enum(['instagram', 'youtube', 'twitter', 'tiktok', 'linkedin', 'blog', 'general']).optional(),
 });
 
 function validate(schema, source = 'body', viewName, buildLocals = () => ({})) {
@@ -104,6 +147,9 @@ module.exports = {
     updateProfileSchema,
     objectIdParamSchema,
     shortIdParamSchema,
+    contentOsItemSchema,
+    contentOsFolderSchema,
+    contentOsAiSchema,
     validate,
     signupValidator: validate(signupSchema, 'body', 'signup'),
     loginValidator: validate(loginSchema, 'body', 'login', () => ({
@@ -114,5 +160,8 @@ module.exports = {
     shortenUrlValidator: validate(urlShortenSchema, 'body'),
     updateQrColorsValidator: validate(urlQRColorsSchema, 'body'),
     inviteCollaboratorValidator: validate(collaborationInviteSchema, 'body'),
-    generateSuggestionValidator: validate(suggestionSchema, 'body')
+    generateSuggestionValidator: validate(suggestionSchema, 'body'),
+    contentOsItemValidator: validate(contentOsItemSchema, 'body'),
+    contentOsFolderValidator: validate(contentOsFolderSchema, 'body'),
+    contentOsAiValidator: validate(contentOsAiSchema, 'body'),
 };
