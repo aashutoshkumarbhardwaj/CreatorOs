@@ -6,6 +6,111 @@ const { suggestionSchema } = require('../middleware/validators');
 const OPENAI_TIMEOUT_MS = 20000;
 const TEMPLATE_MODE_FLAG = 'SUGGESTIONS_TEMPLATE_MODE';
 
+const STOP_WORDS = new Set([
+  'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'aren\'t', 'as', 'at',
+  'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can', 'can\'t', 'cannot',
+  'could', 'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has',
+  'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in', 'into',
+  'is', 'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on',
+  'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she', 'should', 'so',
+  'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these', 'they',
+  'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what', 'when',
+  'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'would', 'you', 'your', 'yours', 'yourself', 'yourselves'
+]);
+
+/**
+ * Lightweight YAKE/KeyBERT inspired keyword extraction algorithm.
+ * Removes stopwords and scores terms by frequency, position, and word length.
+ * @param {string} text
+ * @param {number} count
+ * @returns {string[]}
+ */
+function extractKeywords(text, count = 6) {
+  if (!text || typeof text !== 'string') return ['content', 'strategy', 'creator', 'trending'];
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+
+  if (words.length === 0) return ['content', 'strategy', 'creator', 'trending'];
+
+  const freqMap = {};
+  const posMap = {};
+  words.forEach((w, idx) => {
+    freqMap[w] = (freqMap[w] || 0) + 1;
+    if (!(w in posMap)) posMap[w] = idx;
+  });
+
+  const scored = Object.keys(freqMap).map((w) => {
+    const score = freqMap[w] * (1 / (1 + posMap[w] * 0.1)) * (w.length > 5 ? 1.2 : 1.0);
+    return { word: w, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, count).map((item) => item.word);
+}
+
+function getDefaultCtas(platform) {
+  const ctasByPlatform = {
+    instagram: [
+      'Save this post for later! 📌',
+      'Drop a comment below 👇',
+      'Link in bio for full details 🔗',
+      'Share this with a friend who needs it! 🚀'
+    ],
+    linkedin: [
+      'What are your thoughts on this? Let\'s connect in the comments. 🤝',
+      'Repost to share with your professional network 🔁',
+      'Follow for more insights on this topic 💡',
+      'Share your experience below 👇'
+    ],
+    twitter: [
+      'Retweet if you agree! 🔄',
+      'Quote tweet with your thoughts 💬',
+      'Bookmark this thread for later 🔖',
+      'Follow for daily updates ⚡'
+    ],
+    threads: [
+      'Reply below with your thoughts 💬',
+      'Share your experience with us 👇',
+      'Repost to your thread 🧵',
+      'Follow for more daily content ✨'
+    ],
+    facebook: [
+      'Share this post with someone who needs to see it! 📢',
+      'Leave a comment and join the discussion 👇',
+      'Tag a friend below 👥',
+      'Like and follow our page for more updates 👍'
+    ],
+    youtube: [
+      'Subscribe to the channel and turn on notifications! 🔔',
+      'Drop your questions in the comments below 👇',
+      'Check the description box for links and resources 📥',
+      'Smash the like button if this was helpful! 👍'
+    ],
+    tiktok: [
+      'Follow for part 2! 🎬',
+      'Comment your favorite tip below 👇',
+      'Save this video for later 📌',
+      'Share with a friend 🚀'
+    ]
+  };
+  return ctasByPlatform[platform] || ctasByPlatform.instagram;
+}
+
+function getDefaultEmojis(tone) {
+  const emojiMap = {
+    energetic: ['🔥', '⚡', '🚀', '💥', '✨'],
+    professional: ['📊', '🎯', '💼', '💡', '📈'],
+    witty: ['😏', '🧠', '💡', '🎭', '😜'],
+    minimalist: ['▪️', '🌱', '☕', '💭', '▫️'],
+    persuasive: ['🏆', '👉', '🔥', '💯', '🚀'],
+    educational: ['📚', '🎓', '💡', '🔍', '📝']
+  };
+  return emojiMap[tone] || ['🔥', '✨', '💡', '🚀', '📌'];
+}
+
 /**
  * Typed error for AI suggestion provider failures.
  */
@@ -23,35 +128,73 @@ function isTemplateModeEnabled() {
   return String(process.env[TEMPLATE_MODE_FLAG] || '').toLowerCase() === 'true';
 }
 
+function parseOptions(input) {
+  if (typeof input === 'string') {
+    return {
+      topic: input,
+      platform: 'instagram',
+      tone: 'energetic',
+      length: 'medium',
+      language: 'english',
+      includeEmojis: true,
+      includeCta: true
+    };
+  }
+  return {
+    topic: input.topic || '',
+    platform: input.platform || 'instagram',
+    tone: input.tone || 'energetic',
+    length: input.length || 'medium',
+    language: input.language || 'english',
+    includeEmojis: input.includeEmojis !== false,
+    includeCta: input.includeCta !== false
+  };
+}
+
 /**
  * Offline template captions/hashtags. Never invents song titles.
- * @param {string} topic
- * @returns {{ captions: string[], hashtags: string[], songs: [], source: 'template' }}
+ * @param {string|object} input
+ * @returns {{ captions: string[], hashtags: string[], keywords: string[], ctas: string[], emojis: string[], songs: [], source: 'template' }}
  */
-function generateTemplateSuggestions(topic) {
+function generateTemplateSuggestions(input) {
+  const opts = parseOptions(input);
+  const topic = opts.topic;
   const words = topic.split(' ').filter((w) => w.length > 2);
   const mainWord = words.length > 0 ? words[0].toLowerCase() : 'vibes';
   const capWord = mainWord.charAt(0).toUpperCase() + mainWord.slice(1);
+  const keywords = extractKeywords(topic);
+  const ctas = getDefaultCtas(opts.platform);
+  const emojis = getDefaultEmojis(opts.tone);
+
+  const emojiPrefix = opts.includeEmojis ? `${emojis[0]} ` : '';
+  const ctaSuffix = opts.includeCta ? `\n\n${ctas[0]}` : '';
+
+  const captions = [
+    `${emojiPrefix}Embracing the ${mainWord} state of mind on ${opts.platform}.${ctaSuffix}`,
+    `${emojiPrefix}Nothing beats great ${mainWord} and strategic consistency.${opts.includeCta ? `\n\n${ctas[1]}` : ''}`,
+    `${emojiPrefix}${capWord} breakdown: Here's what you need to know today.${opts.includeCta ? `\n\n${ctas[2]}` : ''}`,
+    `${emojiPrefix}Living for these ${mainWord} moments in our creator journey.${ctaSuffix}`,
+    `${emojiPrefix}Just another day enjoying the power of ${mainWord}.${opts.includeCta ? `\n\n${ctas[3]}` : ''}`
+  ];
+
+  const hashtags = [
+    `#${mainWord}`, `#${mainWord}vibes`, `#${mainWord}life`,
+    `#${opts.platform}creator`, `#explore`, `#trending`,
+    `#${mainWord}goals`, `#seo`, `#creatoros`
+  ];
 
   return {
-    captions: [
-      `Embracing the ${mainWord} today`,
-      `Nothing beats good ${mainWord} and great company`,
-      `${capWord} state of mind`,
-      `Living for these ${mainWord} moments`,
-      `Just another day enjoying the ${mainWord}`
-    ],
-    hashtags: [
-      `#${mainWord}`, `#${mainWord}vibes`, `#${mainWord}life`,
-      `#instadaily`, `#explore`, `#trending`,
-      `#${mainWord}goals`, `#foryou`, `#creator`
-    ],
+    captions,
+    hashtags,
+    keywords,
+    ctas,
+    emojis,
     songs: [],
     source: 'template'
   };
 }
 
-function normalizeProviderPayload(parsed) {
+function normalizeProviderPayload(parsed, opts = {}) {
   if (!parsed || typeof parsed !== 'object') {
     throw new SuggestionProviderError('AI returned an invalid response. Please try again.', {
       code: 'INVALID_RESPONSE'
@@ -70,9 +213,24 @@ function normalizeProviderPayload(parsed) {
     });
   }
 
+  const keywords = Array.isArray(parsed.keywords) && parsed.keywords.length > 0
+    ? parsed.keywords.filter((k) => typeof k === 'string')
+    : extractKeywords(opts.topic || '');
+
+  const ctas = Array.isArray(parsed.ctas) && parsed.ctas.length > 0
+    ? parsed.ctas.filter((c) => typeof c === 'string')
+    : getDefaultCtas(opts.platform || 'instagram');
+
+  const emojis = Array.isArray(parsed.emojis) && parsed.emojis.length > 0
+    ? parsed.emojis.filter((e) => typeof e === 'string')
+    : getDefaultEmojis(opts.tone || 'energetic');
+
   return {
     captions,
     hashtags,
+    keywords,
+    ctas,
+    emojis,
     songs,
     source: 'openai'
   };
@@ -81,13 +239,15 @@ function normalizeProviderPayload(parsed) {
 /**
  * @function generateAISuggestions
  * @description Generates AI-powered content suggestions, or labelled templates when explicitly enabled.
- * @param {string} topic
- * @returns {Promise<{captions: string[], hashtags: string[], songs: Array, source: string}>}
+ * @param {string|object} input
+ * @returns {Promise<{captions: string[], hashtags: string[], keywords: string[], ctas: string[], emojis: string[], songs: Array, source: string}>}
  */
-async function generateAISuggestions(topic) {
+async function generateAISuggestions(input) {
+  const opts = parseOptions(input);
+
   if (!process.env.OPENAI_API_KEY) {
     if (isTemplateModeEnabled()) {
-      return generateTemplateSuggestions(topic);
+      return generateTemplateSuggestions(opts);
     }
     throw new SuggestionProviderError(
       'AI suggestions are unavailable because no provider is configured. Set OPENAI_API_KEY or enable SUGGESTIONS_TEMPLATE_MODE.',
@@ -112,11 +272,11 @@ async function generateAISuggestions(topic) {
           {
             role: 'system',
             content:
-              'You are an expert social media manager. Generate exactly 5 captions, 9 hashtags, and 5 song recommendations (with title and mood) for the given topic. Return ONLY a raw JSON object with keys: "captions" (array of strings), "hashtags" (array of strings), "songs" (array of objects with "title" and "mood").'
+              `You are an expert social media manager and AI copywriter. Generate tailored content for ${opts.platform} in ${opts.language} language. Tone: ${opts.tone}, Length: ${opts.length}. Include Emojis: ${opts.includeEmojis}, Include CTAs: ${opts.includeCta}. Return ONLY a raw JSON object with keys: "captions" (array of 5 strings), "hashtags" (array of 9 strings mixing niche & trending), "keywords" (array of 6 extracted SEO keywords), "ctas" (array of 4 CTA suggestions), "emojis" (array of 5 emojis), "songs" (array of objects with "title" and "mood").`
           },
           {
             role: 'user',
-            content: `Topic: ${topic}`
+            content: `Topic / Details: ${opts.topic}`
           }
         ]
       })
@@ -150,12 +310,12 @@ async function generateAISuggestions(topic) {
       );
     }
 
-    return normalizeProviderPayload(parsed);
+    return normalizeProviderPayload(parsed, opts);
   } catch (err) {
     if (err instanceof SuggestionProviderError) {
       if (isTemplateModeEnabled()) {
         console.error('AI generation failed; serving labelled template mode:', err.message);
-        return generateTemplateSuggestions(topic);
+        return generateTemplateSuggestions(opts);
       }
       throw err;
     }
@@ -167,7 +327,7 @@ async function generateAISuggestions(topic) {
       );
       if (isTemplateModeEnabled()) {
         console.error('AI generation timed out; serving labelled template mode');
-        return generateTemplateSuggestions(topic);
+        return generateTemplateSuggestions(opts);
       }
       throw timeoutError;
     }
@@ -178,7 +338,7 @@ async function generateAISuggestions(topic) {
       { code: 'PROVIDER_ERROR' }
     );
     if (isTemplateModeEnabled()) {
-      return generateTemplateSuggestions(topic);
+      return generateTemplateSuggestions(opts);
     }
     throw providerError;
   } finally {
@@ -194,11 +354,12 @@ function renderSuggestionsPage(res, status, locals) {
   });
 }
 
-function buildErrorLocals(topic, err) {
+function buildErrorLocals(topic, err, options = {}) {
   const isProviderError = err instanceof SuggestionProviderError;
   return {
     result: null,
     selected: topic || null,
+    options: options,
     source: null,
     error: isProviderError
       ? err.message
@@ -212,6 +373,14 @@ exports.getPage = (req, res) => {
   renderSuggestionsPage(res, 200, {
     result: null,
     selected: null,
+    options: {
+      platform: 'instagram',
+      tone: 'energetic',
+      length: 'medium',
+      language: 'english',
+      includeEmojis: true,
+      includeCta: true
+    },
     source: null,
     error: null,
     errorCode: null,
@@ -234,7 +403,8 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
     }
     return renderSuggestionsPage(res, 400, {
       result: null,
-      selected: null,
+      selected: req.body?.topic || null,
+      options: req.body || {},
       source: null,
       error: errorMsg,
       errorCode: 'VALIDATION_ERROR',
@@ -242,19 +412,24 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
     });
   }
 
-  const { topic } = validationResult.data;
+  const options = validationResult.data;
+  const { topic } = options;
 
   try {
-    const result = await generateAISuggestions(topic);
+    const result = await generateAISuggestions(options);
 
     if (!wantsHtml(req)) {
       return res.json({
         success: true,
         source: result.source,
         selected: topic,
+        options: options,
         result: {
           captions: result.captions,
           hashtags: result.hashtags,
+          keywords: result.keywords,
+          ctas: result.ctas,
+          emojis: result.emojis,
           songs: result.songs
         },
         isTemplate: result.source === 'template'
@@ -264,6 +439,7 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
     return renderSuggestionsPage(res, 200, {
       result,
       selected: topic,
+      options: options,
       source: result.source,
       error: null,
       errorCode: null,
@@ -271,7 +447,7 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
     });
   } catch (err) {
     console.error('Error generating suggestions:', err);
-    const locals = buildErrorLocals(topic, err);
+    const locals = buildErrorLocals(topic, err, options);
     const status = err instanceof SuggestionProviderError ? err.statusCode : 500;
 
     if (!wantsHtml(req)) {
@@ -281,7 +457,8 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
         error: locals.error,
         code: locals.errorCode,
         retryable: locals.retryable,
-        selected: topic
+        selected: topic,
+        options: options
       });
     }
 
@@ -291,5 +468,6 @@ exports.getSuggestions = asyncHandler(async (req, res) => {
 
 exports.generateAISuggestions = generateAISuggestions;
 exports.generateTemplateSuggestions = generateTemplateSuggestions;
+exports.extractKeywords = extractKeywords;
 exports.SuggestionProviderError = SuggestionProviderError;
 exports.TEMPLATE_MODE_FLAG = TEMPLATE_MODE_FLAG;

@@ -63,15 +63,50 @@
                                             <option value="general">General</option>
                                         </select>
                                     </div>
+                                    <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                                        <label for="link-tags" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Tags (comma-separated, optional)</label>
+                                        <input type="text" id="link-tags" placeholder="launch, q3, partner" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                    </div>
+                                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                                        <div style="display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:180px;">
+                                            <label for="link-expiry" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Expires (optional)</label>
+                                            <input type="datetime-local" id="link-expiry" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; gap:0.25rem; flex:1; min-width:180px;">
+                                            <label for="link-password" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Password (optional)</label>
+                                            <input type="password" id="link-password" placeholder="min. 4 characters" autocomplete="new-password" style="border:2px solid var(--border); padding:0.5rem; background:var(--card-bg); color:var(--text);">
+                                        </div>
+                                    </div>
                                 </div>
-                                
-                                    
+
+                                <div id="duplicate-banner" style="display:none; flex-direction:column; gap:0.6rem; background:#FFF3CD; color:#111; padding:0.85rem 1rem; border:2px solid var(--border); box-shadow:2px 2px 0px var(--border); font-weight:700; margin-top:0.5rem;">
+                                    <span id="duplicate-text">You already have a link pointing to this URL.</span>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <button type="button" id="duplicate-use-btn" style="background:var(--card-bg); border:2px solid var(--border); padding:0.4rem 0.8rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Use existing</button>
+                                        <button type="button" id="duplicate-force-btn" style="background:var(--accent-yellow); border:2px solid var(--border); padding:0.4rem 0.8rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Create anyway</button>
+                                    </div>
+                                </div>
 
                                 <div id="result-banner" style="display:none; justify-content:space-between; align-items:center; background:var(--success); color:var(--text); padding:0.75rem 1rem; border:2px solid var(--border); box-shadow:2px 2px 0px var(--border); font-weight:700; margin-top:0.5rem;">
                                     <span id="result-text"></span>
                                     <button type="button" id="copy-result-btn" style="background:var(--card-bg); color:var(--text); border:2px solid var(--border); padding:0.35rem 0.75rem; cursor:pointer; font-weight:700; font-size:0.8rem;">Copy</button>
                                 </div>
                             </form>
+                        </section>
+
+                        <!-- Bulk Import -->
+                        <section class="panel-retro accent-blue" id="bulk-import-section">
+                            <div class="panel-retro-title-row">
+                                <h2>Bulk Import</h2>
+                                <button type="button" id="bulk-import-toggle" style="background:none; border:none; text-decoration:underline; cursor:pointer; font-weight:700; color:var(--text); font-size:0.8rem;">Show</button>
+                            </div>
+                            <div id="bulk-import-panel" style="display:none; flex-direction:column; gap:0.75rem; margin-top:0.75rem;">
+                                <p style="font-size:0.8rem; color:var(--muted-2);">One per line: <code>https://example.com</code> or <code>https://example.com, my-slug, campaign</code>. Paste text and/or upload a .csv with the same format — both are combined.</p>
+                                <textarea id="bulk-urls" rows="5" placeholder="https://example.com/page-one&#10;https://example.com/page-two, custom-slug, social" style="border:2px solid var(--border); padding:0.6rem; background:var(--card-bg); color:var(--text); font-family:inherit; resize:vertical;"></textarea>
+                                <input type="file" id="bulk-file" accept=".csv,text/csv,text/plain" style="font-size:0.85rem;">
+                                <button type="button" id="bulk-import-submit" style="align-self:flex-start; background:var(--accent-yellow); border:2px solid var(--border); padding:0.6rem 1.2rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px var(--border);">Import Links</button>
+                                <div id="bulk-import-result" style="display:none; font-size:0.85rem; padding:0.75rem; border:2px solid var(--border); background:var(--bg-secondary);"></div>
+                            </div>
                         </section>
 
                         <!-- Recent Links -->
@@ -83,7 +118,13 @@
                                     <button type="button" id="sort-clicks" class="badge-retro" style="cursor:pointer; background:var(--bg-secondary);" title="Sort by clicks">Clicks</button>
                                 </div>
                             </div>
-                            
+
+                            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                                <button type="button" id="tab-active" class="badge-retro tab-btn active" style="cursor:pointer;">Active</button>
+                                <button type="button" id="tab-favorites" class="badge-retro tab-btn" style="cursor:pointer; background:var(--bg-secondary);">★ Favorites</button>
+                                <button type="button" id="tab-archived" class="badge-retro tab-btn" style="cursor:pointer; background:var(--bg-secondary);">Archived</button>
+                            </div>
+
                             <div style="margin-bottom: 1rem;">
                                 <input type="text" id="link-search" placeholder="Search shortlinks by title, tag, or URL..." style="width: 100%; border: 2px solid var(--border); padding: 0.6rem 0.8rem; font-size: 0.9rem; background: var(--card-bg); color: var(--text); outline: none; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.05);" />
                             </div>
@@ -142,6 +183,51 @@
 
     
     <div class="toast" id="toast" role="status" aria-live="polite" style="display:none; position:fixed; bottom:20px; right:20px; background:var(--card-bg); border:var(--border-thick); padding:1rem; box-shadow:var(--shadow-retro); z-index:1000; font-weight:700;"></div>
+
+    <div id="edit-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1100; align-items:center; justify-content:center; padding:1rem;">
+        <div id="edit-modal" style="background:var(--card-bg); color:var(--text); border:2px solid var(--border); box-shadow:6px 6px 0px var(--border); padding:1.5rem; width:100%; max-width:440px; display:flex; flex-direction:column; gap:0.9rem; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-family:'Space Grotesk',sans-serif; margin:0;">Edit Link</h3>
+                <button type="button" id="edit-modal-close" style="background:none; border:none; font-size:1.3rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+            <form id="edit-form" style="display:flex; flex-direction:column; gap:0.85rem;">
+                <input type="hidden" id="edit-shortId">
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-redirect-url" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Destination URL</label>
+                    <input type="url" id="edit-redirect-url" required style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-title" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Title</label>
+                    <input type="text" id="edit-title" style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-tag" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Tag</label>
+                    <select id="edit-tag" style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                        <option value="active">Active</option>
+                        <option value="social">Social</option>
+                        <option value="campaign">Campaign</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-tags" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Tags (comma-separated)</label>
+                    <input type="text" id="edit-tags" style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-expiry" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Expires</label>
+                    <input type="datetime-local" id="edit-expiry" style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                    <label for="edit-password" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">New password (leave blank to keep current)</label>
+                    <input type="password" id="edit-password" autocomplete="new-password" style="border:2px solid var(--border); padding:0.5rem; background:var(--bg-secondary); color:var(--text);">
+                </div>
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; font-weight:700;">
+                    <input type="checkbox" id="edit-remove-password"> Remove password protection
+                </label>
+                <button type="submit" style="background:var(--accent-yellow); border:2px solid var(--border); padding:0.65rem; font-weight:700; cursor:pointer; box-shadow:2px 2px 0px var(--border);">Save Changes</button>
+            </form>
+        </div>
+    </div>
 
     <script src="/js/pages/my-links.js"></script>
     <script nonce="<%= nonce %>">

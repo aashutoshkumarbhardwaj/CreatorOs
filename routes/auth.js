@@ -4,7 +4,7 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const { signup, login, verifyLogin2FA, handleGoogleCallback, loginAsContributor, verifyEmail, resendVerificationEmail, requestPasswordReset, resetPassword } = require("../controller/auth");
 const { signupValidator, loginValidator, contributorLoginValidator, resendVerificationValidator } = require("../middleware/validators");
 const connectDB = require("../connect");
-const { loginLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
+const { loginLimiter, authLimiter, signupLimiter, emailVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } = require("../middleware/rateLimiters");
 const { redirectIfAuthenticated } = require("../middleware/auth");
 const { resolveGoogleOAuthUser } = require("../utils/resolveGoogleOAuthUser");
 
