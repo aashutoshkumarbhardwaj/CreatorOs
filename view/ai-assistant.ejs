@@ -1,0 +1,185 @@
+<%- include('partials/layout/header', {
+    activeNav: 'ai-assistant',
+    title: '🤖 AI Creator Assistant - CreatorOS',
+    extraHead: `
+        <meta name="csrf-token" content="${typeof csrfToken !== 'undefined' ? csrfToken : ''}">
+        <link rel="stylesheet" href="/css/ai-assistant.css">
+    `
+}) %>
+
+<div class="content">
+    <div class="ai-assistant-wrapper">
+
+        <!-- Top Header & Banner -->
+        <header class="assistant-header-card">
+            <div class="assistant-header-main">
+                <div class="assistant-header-title">
+                    <span class="assistant-badge">v2.0 AI CREATOR STUDIO</span>
+                    <h1 class="font-display">🤖 AI Creator Assistant</h1>
+                    <p class="font-sans">Intelligent co-pilot for content ideas, copywriting, SEO discoverability, performance predictions, and personalized creator growth insights.</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Studio Main Layout Grid -->
+        <div class="assistant-studio-grid">
+
+            <!-- Sidebar Chat History -->
+            <aside class="assistant-history-panel" aria-label="Conversation history">
+                <div class="history-header">
+                    <h3>💬 Recent Chats</h3>
+                    <button type="button" class="btn-new-chat" id="btn-new-chat">
+                        <span>+ New Chat</span>
+                    </button>
+                </div>
+                <div class="history-list" id="history-list">
+                    <% if (chats && chats.length > 0) { %>
+                        <% chats.forEach(function(chat) { %>
+                            <div class="history-item" data-id="<%= chat._id %>">
+                                <span class="history-item-title"><%= chat.title %></span>
+                                <button type="button" class="btn-delete-chat" data-id="<%= chat._id %>" title="Delete conversation">🗑️</button>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p style="color: #94a3b8; font-size: 0.85rem; text-align: center; margin-top: 1rem;">No previous conversations yet.</p>
+                    <% } %>
+                </div>
+            </aside>
+
+            <!-- Main Workspace Area -->
+            <main class="workspace-container">
+
+                <!-- Navigation Tabs -->
+                <nav class="workspace-nav-tabs" aria-label="AI Studio Views">
+                    <button type="button" class="tab-btn active" data-tab="chat">
+                        <span>💬 Conversational Assistant</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="tools">
+                        <span>⚡ AI Power Tools</span>
+                    </button>
+                </nav>
+
+                <!-- TAB 1: Conversational Chat Studio -->
+                <div class="tab-content" id="tab-chat">
+                    <div class="chat-window">
+
+                        <!-- Context Filters -->
+                        <div class="chat-controls-bar">
+                            <div class="control-group">
+                                <label for="select-platform" class="control-label">Platform:</label>
+                                <select id="select-platform" class="control-select">
+                                    <option value="general">🌐 General / Multi-platform</option>
+                                    <option value="instagram">📸 Instagram</option>
+                                    <option value="youtube">🎥 YouTube</option>
+                                    <option value="twitter">🐦 Twitter / X</option>
+                                    <option value="tiktok">🎵 TikTok</option>
+                                    <option value="linkedin">💼 LinkedIn</option>
+                                </select>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="select-tone" class="control-label">Tone:</label>
+                                <select id="select-tone" class="control-select">
+                                    <option value="energetic">🔥 Energetic & Hype</option>
+                                    <option value="professional">💼 Professional & Clean</option>
+                                    <option value="witty">😏 Witty & Humorous</option>
+                                    <option value="persuasive">🏆 Persuasive & Bold</option>
+                                    <option value="educational">💡 Educational & Informative</option>
+                                    <option value="minimalist">▪️ Minimalist</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Messages Thread -->
+                        <div class="messages-thread" id="messages-thread">
+                            <div class="chat-bubble assistant">
+                                <div class="avatar-badge">AI</div>
+                                <div class="bubble-content">
+                                    Welcome back, <strong><%= user.name || 'Creator' %></strong>! 👋 I am your AI Creator Assistant. Ask me for content hooks, caption rewrites, SEO optimization tips, or hashtag strategies.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prompt Chips Bar -->
+                        <div class="chips-container">
+                            <button type="button" class="chip-btn" data-prompt="Brainstorm 5 viral Reel hooks for tech content.">💡 5 Reel Hooks</button>
+                            <button type="button" class="chip-btn" data-prompt="Optimize my caption for SEO discoverability and engagement.">🔍 Optimize Caption SEO</button>
+                            <button type="button" class="chip-btn" data-prompt="Predict the virality and performance of my upcoming YouTube video.">📈 Predict Virality</button>
+                            <button type="button" class="chip-btn" data-prompt="Generate high-converting CTAs for digital products.">🎯 High-Converting CTAs</button>
+                            <button type="button" class="chip-btn" data-prompt="Give me personalized growth tips for my channel.">✨ Creator Insights</button>
+                        </div>
+
+                        <!-- Chat Input Bar -->
+                        <div class="chat-input-bar">
+                            <input type="text" id="chat-input" class="chat-input-field" placeholder="Ask AI Assistant anything or select a prompt shortcut above..." autocomplete="off" />
+                            <button type="button" id="btn-send-chat" class="btn-send">
+                                <span>Send ✨</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TAB 2: AI Power Tools Studio -->
+                <div class="tab-content" id="tab-tools" style="display: none;">
+                    <div class="studio-tools-grid">
+
+                        <!-- Tool 1: SEO Discoverability Radar -->
+                        <div class="tool-card">
+                            <div class="tool-card-title">
+                                <span>🔍 SEO & Discoverability Radar</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Analyze your title or caption text to get real-time SEO discoverability scoring, keyword density, and search title recommendations.</p>
+                            <textarea id="seo-input-text" class="tool-input-textarea" placeholder="Paste your caption or video description here..."></textarea>
+                            <button type="button" id="btn-run-seo" class="btn-action-sm primary" style="align-self: flex-start;">Run SEO Analysis ✨</button>
+                            <div id="seo-output" class="tool-output-box">
+                                <span style="color: #94a3b8; font-style: italic;">SEO results will appear here...</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 2: Content Performance Predictor -->
+                        <div class="tool-card">
+                            <div class="tool-card-title">
+                                <span>📈 Virality & Performance Predictor</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Algorithmic predictor estimating virality potential, readability index, engagement level, and peak posting windows.</p>
+                            <textarea id="predictor-input-text" class="tool-input-textarea" placeholder="Paste planned post copy or script draft..."></textarea>
+                            <button type="button" id="btn-run-predictor" class="btn-action-sm primary" style="align-self: flex-start;">Calculate Performance ✨</button>
+                            <div id="predictor-output" class="tool-output-box">
+                                <span style="color: #94a3b8; font-style: italic;">Performance metrics will appear here...</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 3: Personalized Creator Growth Insights -->
+                        <div class="tool-card" style="grid-column: 1 / -1;">
+                            <div class="tool-card-title">
+                                <span>💡 Personalized Creator Insights</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                                <% if (initialInsights && initialInsights.length > 0) { %>
+                                    <% initialInsights.forEach(function(item) { %>
+                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: #6366f1; background: #e0e7ff; padding: 0.15rem 0.5rem; border-radius: 0.25rem;"><%= item.category %></span>
+                                                <span style="font-weight: 700; font-size: 0.8rem; color: #10b981;">Impact: <%= item.impactScore %>/100</span>
+                                            </div>
+                                            <p style="font-size: 0.875rem; color: #334155; margin: 0; line-height: 1.5;"><%= item.tip %></p>
+                                            <div style="font-size: 0.8rem; font-weight: 600; color: #475569; margin-top: 0.25rem;"><strong>Action:</strong> <%= item.actionItem %></div>
+                                        </div>
+                                    <% }); %>
+                                <% } %>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </main>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/ai-assistant.js"></script>
+<%- include('partials/layout/footer') %>

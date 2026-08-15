@@ -15,6 +15,7 @@ const passport = require("passport");
 const path = require("path");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
+const { generalLimiter } = require("./middleware/rateLimiters");
 const cacheHeadersMiddleware = require("./middleware/cacheHeaders");
 const {
   getProfileFromCache,
@@ -87,7 +88,9 @@ const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
 const creatorCrmRoutes = require("./routes/creatorCrmRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
+const healthRoutes = require("./routes/health");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
 // Generate a per-request nonce before Helmet so early exits (CSRF/validation)
@@ -156,6 +159,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+// Observability endpoints (/health, /metrics) must be mounted before CSRF middleware
+app.use("/", healthRoutes);
+
 // Instagram webhook must be mounted before the global CSRF middleware so Meta
 // callbacks (which carry no _csrf cookie) are verified by HMAC signature only.
 app.get("/api/instagram/webhook", verifyWebhook);
@@ -209,6 +215,7 @@ app.use("/suggestions", protect, suggestionRoutes);
 app.use("/services/creator-crm", protect, collaborationRoutes);
 app.use("/services/qr-code-generator", qrCodeRoutes);
 app.use("/services/content-os", protect, contentOsRoutes);
+app.use("/services/ai-assistant", aiAssistantRoutes);
 app.get("/services/content-calendar", protect, renderCalendarPage);
 app.use("/", smartNotificationRoutes);
 app.use("/", taskRoutes);
@@ -224,6 +231,7 @@ app.get("/invites/accept/:token", acceptInvite);
 // Billing & Domain Routes
 
 // API Routes
+app.use("/api", generalLimiter);
 app.use("/api/billing", billingRoute);
 app.use("/api/domain", domainRoute);
 app.use("/api/sponsors", sponsorRoute);
