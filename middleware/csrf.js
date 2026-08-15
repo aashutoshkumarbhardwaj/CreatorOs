@@ -60,6 +60,11 @@ const CSRF_EXEMPT_PATHS = new Set([
  * Validates that the request includes a valid CSRF token matching the one in the secure cookie.
  * Blocks requests with missing or mismatched tokens with a 403 Forbidden response.
  */
+const CSRF_EXEMPT_PATHS = new Set([
+    '/api/instagram/webhook',
+    '/api/billing/webhook',
+]);
+
 function verifyCsrf(req, res, next) {
     const safeMethods = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
 
@@ -68,6 +73,7 @@ function verifyCsrf(req, res, next) {
         return next();
     }
 
+    // Exempt external webhook endpoints that cannot include CSRF tokens
     // Skip verification for exempt external webhook endpoints, which are
     // authenticated separately (e.g. via HMAC signature verification)
     if (CSRF_EXEMPT_PATHS.has(req.path)) {

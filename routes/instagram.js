@@ -26,14 +26,14 @@ router.get('/profile', protect, instagramProfileLimiter, getInstagramProfile);
 
 const DmTrigger = require('../model/dmTrigger');
 const asyncHandler = require('../utils/asyncHandler');
-
+const { validateDmTrigger } = require('../middleware/validators/instagramValidator');
 
 router.get('/triggers', protect, instagramLimiter, asyncHandler(async (req, res) => {
     const triggers = await DmTrigger.find({ creatorId: req.user.id });
     res.json({ success: true, data: triggers });
 }));
 
-router.post('/triggers', protect, instagramLimiter, asyncHandler(async (req, res) => {
+router.post('/triggers', protect, validateDmTrigger, asyncHandler(async (req, res) => {
     const { user_id, userId, ...safeBody } = req.body;
     const trigger = await DmTrigger.create({ ...safeBody, creatorId: req.user.id });
     res.status(201).json({ success: true, data: trigger });
