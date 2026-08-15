@@ -66,7 +66,9 @@ function daysSince(date) {
  *       500:
  *         description: Internal server error
  */
-router.put('/profile', preventContributorWrites, validate(updateProfileSchema, 'body'), asyncHandler(async (req, res) => {
+const { validateProfile } = require('../middleware/validators/creatorBioValidator');
+
+router.put('/profile', preventContributorWrites, validate(updateProfileSchema, 'body'), validateProfile, asyncHandler(async (req, res) => {
     const { name, alias, bio } = req.body;
     
     const user = await User.findById(req.user.id);
