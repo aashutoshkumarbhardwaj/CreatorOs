@@ -187,7 +187,7 @@ cd CreatorOS
 npm install
 
 # Copy environment variables
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 ### Environment Setup
@@ -195,136 +195,73 @@ cp .env.example .env.local
 > [!IMPORTANT]
 > The following variables are required for the application to function correctly:
 >
-> 1. **`MONGODB_URI`** → Required for persistent database storage
-> 2. **`JWT_SECRET`** → Required for authentication and session security
-> 3. **`CLERK_SECRET_KEY`** → Required for Clerk authentication
-> 4. **`DATABASE_URL`** → Required for database connectivity
+> 1. **`MONGODB_URI`** → Required for persistent MongoDB database storage
+> 2. **`JWT_SECRET`** → Required for JWT token signature and authentication security
+> 3. **`SESSION_SECRET`** → Required for Express session security
 >
 > Missing these variables may cause authentication failures, API errors, or application crashes.
 
-Create a `.env.local` file in the project root:
+Create a `.env` file in the project root:
 
 ```env id="r9tjlwm"
 # -------------------------------------------------------
-# Clerk Authentication
-# dashboard.clerk.com → API Keys
-
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
-
-# -------------------------------------------------------
 # Database Configuration
-
-# Primary SQL database connection string
-# Example providers:
-# - Neon
-# - PostgreSQL
-# - Supabase
-
-DATABASE_URL=your_database_connection_url
-
 # MongoDB Atlas connection string
-# mongodb.com/cloud/atlas
-
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
 
 # -------------------------------------------------------
-# Instagram Public Profile Fetching
-INSTAGRAM_PUBLIC_PROVIDER=public_html
-INSTAGRAM_PYTHON_PATH=python
-INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
+# Primary JWT Authentication & Express Sessions (Required)
+JWT_SECRET=your_jwt_secret_key
+SESSION_SECRET=your_session_secret_key
 
 # -------------------------------------------------------
-# Instagram Graph API
-# developers.facebook.com -> My Apps -> Instagram Graph API
-
-INSTAGRAM_APP_ID=your_instagram_app_id
-INSTAGRAM_APP_SECRET=your_instagram_app_secret
+# Google OAuth Configuration (Optional SSO via Passport.js)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 # -------------------------------------------------------
 # AI Providers
-
-# platform.openai.com → API Keys
-
 OPENAI_API_KEY=sk-...
-
-# openrouter.ai → Keys
-
-OPENROUTER_API_KEY=sk-or-...
+SUGGESTIONS_TEMPLATE_MODE=false
 
 # -------------------------------------------------------
-# Application URL
-
-# Base URL where the app is running
-
-NEXT_PUBLIC_APP_URL=http://localhost:3000 # Replace with production URL when deployed
+# Application Configuration
+APP_URL=http://localhost:3000
+PORT=3000
+NODE_ENV=development
 
 # -------------------------------------------------------
 # Email Configuration
-
-> [!IMPORTANT]
-> Hosted deployments must configure working email delivery for verification and password reset.
-> Set `EMAIL_USER` and `EMAIL_PASSWORD`, plus either `EMAIL_SERVICE` or `EMAIL_HOST`/`EMAIL_PORT`, and keep `APP_URL` pointed at the deployed site so verification links resolve correctly.
-
-# Supported values may include:
-# smtp, gmail, resend, sendgrid, etc.
-
 EMAIL_SERVICE=smtp
-
-# Sender email credentials
-
 EMAIL_USER=your_email_address
 EMAIL_PASSWORD=your_email_password
-
-# Default sender information
-
 EMAIL_FROM="CreatorOS <no-reply@creatoros.com>"
-EMAIL_FROM_NAME=CreatorOS
-
-# Support / reply-to address
-
-EMAIL_REPLY_TO=support@creatoros.com
-
-# SMTP Configuration
-
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_SECURE=false
 
 # -------------------------------------------------------
-# JWT Configuration
-
-# Generate with: openssl rand -base64 32
-
-JWT_SECRET=your_jwt_secret
-
-# -------------------------------------------------------
-# Application Configuration
-
-# Backend application URL
-
-APP_URL=http://localhost:3000 # Replace with your deployed URL in production
-
-# Development server port
-
-PORT=3000
-
-# Environment mode
-# Supported values:
-# development, production, test
-
-NODE_ENV=development
-
-# Enable verbose debugging logs
-
-DEBUG=false
+# Instagram Graph API & Public Profile Fetching
+INSTAGRAM_APP_SECRET=your_instagram_app_secret
+INSTAGRAM_PUBLIC_PROVIDER=public_html
+INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
 ```
 
 ### Copy Environment File
 
 ```bash id="z2g5lm"
-cp .env.example .env.local
+cp .env.example .env
 ```
+
+### 🔐 Authentication
+
+CreatorOS uses a **Custom JWT Authentication System** (via HTTP-only cookie or Bearer tokens) as its primary auth mechanism, supported by an optional **Google OAuth 2.0** integration via Passport.js.
+
+- **Primary Auth**: Requires `JWT_SECRET` and `SESSION_SECRET`.
+- **Google SSO**: Optional via `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`.
+
+For full details on authentication flows, token handling, and role-based access control, see [Authentication Documentation (`docs/AUTH.md`)](file:///d:/GSSoC/CreatorOs/CreatorOs/docs/AUTH.md).
 
 ### Instagram Profile Fetching
 
@@ -337,7 +274,7 @@ Supported providers:
 
 Required setup:
 
-1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env.local`.
+1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env`.
 2. If using `python_public`, ensure Python 3 is installed and set `INSTAGRAM_PYTHON_PATH` if needed.
 3. Optionally adjust `INSTAGRAM_LOOKUP_COOLDOWN_SECONDS` for per-user cooldown.
 
