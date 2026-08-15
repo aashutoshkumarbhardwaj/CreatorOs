@@ -121,6 +121,14 @@ const userSchema = new mongoose.Schema(
             ref: "User",
         }],
 
+        googleCalendarTokens: {
+            accessToken: { type: String, default: null },
+            refreshToken: { type: String, default: null },
+            expiryDate: { type: Date, default: null },
+            calendarId: { type: String, default: "primary" },
+            isConnected: { type: Boolean, default: false },
+        },
+
         isVerified: {
             type: Boolean,
             default: false,

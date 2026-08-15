@@ -13,6 +13,8 @@
   <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/PRs-Welcome-orange?style=for-the-badge&logo=github" />
+  <a href="https://github.com/Rakshak05/CreatorOs/actions/workflows/criticality-score.yml"><img src="https://img.shields.io/badge/OpenSSF%20Criticality-%E2%89%A5%200.40-blueviolet?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Criticality Score" /></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/Rakshak05/CreatorOs"><img src="https://img.shields.io/badge/OpenSSF%20Scorecard-Supply--Chain%20Security-success?style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Scorecard" /></a>
 </p>
 
 <br/>
@@ -47,6 +49,7 @@
 - [🛠️ Tech Stack](#%EF%B8%8F-tech-stack)
 - [🚀 Getting Started](#-getting-started)
 - [📁 Project Structure](#-project-structure)
+- [📈 Observability & Monitoring](#-observability--monitoring)
 - [🎯 Who Is This For?](#-who-is-this-for)
 - [💰 Pricing Model](#-pricing-model)
 - [🗺️ Roadmap](#%EF%B8%8F-roadmap)
@@ -435,6 +438,59 @@ CreatorOS/
 
 ---
 
+## 📈 Observability & Monitoring
+
+CreatorOS includes dedicated endpoints for production health checks, container probes, load balancers, and metrics scrapers.
+
+### Health Endpoint (`/health`)
+
+Used by Railway health probes, Nginx passive health checks, Docker healthcheck stanzas, and external uptime monitors (e.g., UptimeRobot, BetterStack).
+
+- **Endpoint**: `GET /health`
+- **Authentication**: Unauthenticated (bypasses CSRF & session auth)
+- **Status Codes**:
+  - `200 OK`: Database connected (or running in mock DB mode)
+  - `503 Service Unavailable`: Database disconnected or degraded
+
+**Sample Response (`200 OK`)**:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-08-14T15:30:00.000Z",
+  "uptime": 3600,
+  "database": "connected",
+  "redis": "connected",
+  "version": "1.0.0",
+  "memory": {
+    "rssMb": 45.2,
+    "heapTotalMb": 32.1,
+    "heapUsedMb": 24.5
+  }
+}
+```
+
+### Metrics Endpoint (`/metrics`)
+
+Exposes process, system, and database operational metrics for monitoring tools (e.g., Prometheus, Grafana, Datadog).
+
+- **Endpoint**: `GET /metrics`
+- **Formats**:
+  - **Prometheus Text Format (Default)**: `text/plain; version=0.0.4`
+  - **JSON Format**: Send `Accept: application/json` or append `?format=json`
+
+**Sample Prometheus Text Output**:
+```text
+# HELP process_uptime_seconds Process uptime in seconds.
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 3600
+
+# HELP creatoros_database_connected Database connection status (1 = connected, 0 = disconnected).
+# TYPE creatoros_database_connected gauge
+creatoros_database_connected 1
+```
+
+---
+
 ## 🎯 Who Is This For?
 
 <div align="center">
@@ -542,6 +598,15 @@ Every contribution, no matter how small, helps us build something amazing for cr
 **Special Recognition:** This project is part of **[GSSoC (Girl Script Summer of Code) 2026](https://www.gssoc.girlscript.tech/)** — helping beginners and experienced developers contribute to open source.
 
 </div>
+
+## Security
+
+CreatorOS implements a multi-layered rate limiting middleware strategy using `express-rate-limit` to prevent API key abuse, credential stuffing, and denial-of-service conditions:
+
+- **General API Limiter (`generalLimiter`)**: Applied globally to all `/api` routes (100 requests per 15-minute window).
+- **Instagram & DM Automation Limiter (`instagramLimiter`)**: Applied to high-value Instagram Graph API proxies, analytics snapshots, and DM automation trigger endpoints (5 requests per 1-minute window per user/IP).
+- **Authentication Protection (`authLimiter`)**: Applied to login and contributor authentication endpoints to prevent brute-force attacks (10 failed attempts per 15-minute window, skipping successful logins).
+- **Store Persistence**: Automatically utilizes MongoStore (`rate-limit-mongo`) when `MONGODB_URI` is configured in non-mock environments for multi-instance deployments.
 
 ---
 

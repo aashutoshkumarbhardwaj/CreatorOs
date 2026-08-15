@@ -13,6 +13,26 @@ function parseListLimit(value) {
     return Math.min(parsed, MAX_LIST_LIMIT);
 }
 
+function parseCSVLine(line) {
+    const fields = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            fields.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    fields.push(current.trim());
+    return fields;
+}
+
 /**
  * @function scheduleContent
  * @description Creates a piece of content scheduled to auto-publish at a future UTC time.
@@ -150,4 +170,65 @@ const cancelScheduledContent = asyncHandler(async (req, res) => {
     return res.json({ success: true, content });
 });
 
-module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent };
+const bulkScheduleContent = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'CSV file is required' });
+    }
+
+    const content = req.file.buffer.toString('utf-8');
+    const lines = content.split(/\r?\n/).filter(line => line.trim());
+
+    if (lines.length < 2) {
+        return res.status(400).json({ success: false, message: 'CSV must have a header row and at least one data row' });
+    }
+
+    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+    const captionIdx = header.indexOf('caption');
+    const mediaUrlIdx = header.indexOf('mediaurl');
+    const scheduledAtIdx = header.indexOf('scheduledat');
+    const accountIdIdx = header.indexOf('accountid');
+    const platformIdx = header.indexOf('platform');
+
+    if (captionIdx === -1 || scheduledAtIdx === -1) {
+        return res.status(400).json({ success: false, message: 'CSV must contain "caption" and "scheduledAt" columns' });
+    }
+
+    const results = { created: 0, errors: [] };
+
+    for (let i = 1; i < lines.length; i++) {
+        const fields = parseCSVLine(lines[i]);
+        const caption = fields[captionIdx];
+        const scheduledAt = fields[scheduledAtIdx];
+
+        if (!caption || !scheduledAt) {
+            results.errors.push({ row: i + 1, reason: 'Missing caption or scheduledAt' });
+            continue;
+        }
+
+        const scheduledDate = new Date(scheduledAt);
+        if (Number.isNaN(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()) {
+            results.errors.push({ row: i + 1, reason: 'Invalid or past scheduledAt date' });
+            continue;
+        }
+
+        try {
+            await ScheduledContent.create({
+                userId: req.user.id,
+                caption: caption.trim(),
+                mediaUrl: mediaUrlIdx !== -1 ? fields[mediaUrlIdx] : undefined,
+                timezone: 'UTC',
+                scheduledAt: scheduledDate,
+                accountId: accountIdIdx !== -1 && fields[accountIdIdx] ? fields[accountIdIdx] : undefined,
+                platform: platformIdx !== -1 && fields[platformIdx] ? fields[platformIdx] : undefined,
+                status: 'scheduled',
+            });
+            results.created++;
+        } catch (err) {
+            results.errors.push({ row: i + 1, reason: err.message });
+        }
+    }
+
+    return res.status(201).json({ success: true, ...results });
+});
+
+module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent, bulkScheduleContent };
