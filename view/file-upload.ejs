@@ -1,54 +1,63 @@
 <%- include('partials/layout/header', {
     activeNav: 'file-upload',
     title: 'File Upload',
-    extraHead: '<link rel="stylesheet" href="/css/file-upload.css">\n    <link href="/css/style.css" rel="stylesheet">'
+    extraHead: '<link rel="stylesheet" href="/css/dashboard.css">'
 }) %>
 
-<div class="bg-[#06101f] text-white font-[Inter] min-h-screen w-full">
-    <div class="mx-auto max-w-2xl px-4 py-12">
-        <a href="/" class="mb-6 inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">&larr; Back to services</a>
-        <h1 class="text-3xl font-bold mb-2">File Upload</h1>
-        <p class="mb-8 text-slate-400">Drag & drop a file or click to browse. Works in all modern browsers.</p>
-
-        <!-- Drop Zone -->
-        <div id="drop-zone" class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-12 text-center transition-all duration-200 cursor-pointer">
-            <div id="upload-icon" class="mb-4 text-5xl">📁</div>
-            <p id="drop-text" class="text-lg font-medium text-slate-300">Drag & drop a file here</p>
-            <p id="drop-sub" class="mt-1 text-sm text-slate-500">or click to browse files</p>
-            <label for="file-input" class="sr-only">Upload File</label>
-            <input id="file-input" type="file" class="hidden" />
+<section class="content">
+    <div class="dashboard-head">
+        <div>
+            <a href="/" style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.85rem; margin-bottom:1rem; font-weight:700;">&larr; Back to services</a>
+            <h1>File Upload</h1>
+            <p>Drag & drop a file or click to browse. Works in all modern browsers.</p>
         </div>
-
-        <!-- File Info -->
-        <div id="file-info" class="mt-6 hidden rounded-xl border border-slate-700 bg-slate-900/50 p-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p id="file-name" class="font-medium text-slate-200"></p>
-                    <p id="file-size" class="text-sm text-slate-500"></p>
-                </div>
-                <button type="button" id="remove-file" class="rounded-lg bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/30 transition-colors">Remove</button>
-            </div>
-        </div>
-
-        <!-- Upload Button -->
-        <button type="button" id="upload-btn" class="mt-6 w-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 font-bold text-slate-900 opacity-50 cursor-not-allowed transition-all duration-200" disabled>Select a file to upload</button>
-
-        <!-- Progress -->
-        <div id="progress-area" class="mt-6 hidden">
-            <div class="mb-2 flex items-center justify-between text-sm">
-                <span id="progress-label" class="text-slate-400">Uploading...</span>
-                <span id="progress-pct" class="font-mono text-cyan-400">0%</span>
-            </div>
-            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-700">
-                <div id="progress-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300"></div>
-            </div>
-        </div>
-
-        <!-- Status -->
-        <div id="status" class="mt-4 hidden rounded-xl border p-4 text-sm"></div>
     </div>
 
-    <script src="/js/pages/file-upload.js"></script>
-</div>
+    <div style="max-width: 800px; margin: 0 auto; width: 100%;">
+        <!-- Drop Zone -->
+        <section class="panel-retro" id="drop-zone" style="cursor:pointer; align-items:center; justify-content:center; padding: 4rem 2rem; border-style: dashed; border-width: 3px; background-color: var(--bg-secondary); transition: all 0.2s;">
+            <div id="upload-icon" style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+            <h2 id="drop-text" style="margin-bottom: 0.5rem;">Drag & drop a file here</h2>
+            <p id="drop-sub" style="color: var(--muted-2); font-size: 0.9rem;">or click to browse files</p>
+            <label for="file-input" style="display:none;">Upload File</label>
+            <input id="file-input" type="file" style="display:none;" />
+        </section>
+
+        <!-- File Info -->
+        <section id="file-info" class="panel-retro bg-blue" style="display:none; flex-direction:row; justify-content:space-between; align-items:center; padding: 1rem 1.5rem; margin-top: 1.5rem; background-color: var(--accent-blue);">
+            <div>
+                <p id="file-name" style="font-weight:700; color:#111; margin-bottom: 0.2rem;"></p>
+                <p id="file-size" style="font-size:0.8rem; color:#333; font-family:'Space Grotesk', monospace;"></p>
+            </div>
+            <button type="button" id="remove-file" class="primary-action-btn" style="background-color: var(--accent-red); color: white;">Remove</button>
+        </section>
+
+        <!-- Upload Button -->
+        <button type="button" id="upload-btn" class="primary-action-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem; opacity: 0.5; cursor: not-allowed;" disabled>Select a file to upload</button>
+
+        <!-- Progress -->
+        <section id="progress-area" class="panel-retro" style="display:none; padding: 1.5rem; margin-top: 1.5rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-weight:700;">
+                <span id="progress-label">Uploading...</span>
+                <span id="progress-pct" style="font-family:'Space Grotesk', monospace;">0%</span>
+            </div>
+            <div style="width:100%; height:12px; background-color:var(--bg); border:var(--border-thick);">
+                <div id="progress-bar" style="width:0%; height:100%; background-color:var(--accent-teal); transition:width 0.3s;"></div>
+            </div>
+        </section>
+
+        <!-- Storage Usage -->
+        <p id="storage-usage" style="text-align:center; font-size:0.85rem; color:var(--muted-2); margin-top:1rem;"></p>
+
+        <!-- Status -->
+        <div id="status" class="message-box" style="display:none; margin-top: 1.5rem;"></div>
+    </div>
+</section>
+
+<script src="/js/pages/file-upload.js"></script>
 
 <%- include('partials/layout/footer') %>
+<div id="drop-zone" class="drop-zone">
+  <p>Drag & drop files here, or click to select</p>
+  <input type="file" id="file-input" multiple hidden />
+</div>

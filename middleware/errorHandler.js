@@ -40,16 +40,16 @@ function sanitizeClientErrorMessage(message) {
 function errorHandler(err, req, res, next) {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Handle crypto timing-safe-equal length mismatch as a clean 403
-  if (err.code === 'ERR_CRYPTO_TIMINGSAFEEQUAL_LENGTH') {
-    if (wantsHtml(req)) {
-      return res.status(403).render('error', { error: 'Invalid CSRF token. Request blocked.' });
-    }
-    return res.status(403).json({
-      success: false,
-      message: 'Invalid CSRF token. Request blocked.',
-      error: 'CSRF token mismatch',
-    });
+  if (err.name === 'CastError') {
+    err.status = 400;
+    err.message = `Invalid ${err.path || 'format'}`;
+  } else if (err.name === 'ValidationError') {
+    err.status = 400;
+    const messages = err.errors ? Object.values(err.errors).map(val => val.message) : [];
+    err.message = messages.join(', ') || 'Validation Error';
+  } else if (err.code === 11000) {
+    err.status = 409;
+    err.message = 'Duplicate field value entered';
   }
 
   console.error('[ERROR]', {

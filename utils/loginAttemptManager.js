@@ -8,11 +8,11 @@ const RESET_LOCKOUT_DURATION = 60 * 60; // 1 hour in seconds
 const redisClient = createRedisClient();
 
 function getLoginAttemptKey(identifier) {
-    return `login_attempts:${identifier.toLowerCase()}`;
+    return `login_attempts:${(identifier || '').toString().toLowerCase()}`;
 }
 
 function getResetAttemptKey(identifier) {
-    return `reset_attempts:${identifier.toLowerCase()}`;
+    return `reset_attempts:${(identifier || '').toString().toLowerCase()}`;
 }
 
 async function getFailedLoginAttempts(identifier) {
@@ -23,7 +23,7 @@ async function getFailedLoginAttempts(identifier) {
 
     try {
         const key = getLoginAttemptKey(identifier);
-        const attempts = parseInt(await redisClient.get(key) || '0');
+        const attempts = parseInt(await redisClient.get(key, 10) || '0');
         return attempts;
     } catch (error) {
         console.error('[LoginAttempts] Error fetching failed attempts:', error);
@@ -149,6 +149,8 @@ async function clearResetAttempts(identifier) {
 }
 
 module.exports = {
+    getLoginAttemptKey,
+    getResetAttemptKey,
     checkIfLoginLocked,
     recordFailedLoginAttempt,
     clearLoginAttempts,

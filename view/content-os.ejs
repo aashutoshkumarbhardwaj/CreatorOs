@@ -1,0 +1,560 @@
+<%- include('partials/layout/header', {
+    activeNav: 'content-os',
+    title: '🧠 Content OS - CreatorOS',
+    extraHead: '<link rel="stylesheet" href="/css/content-os.css">'
+}) %>
+
+<div class="content">
+    <div class="content-os-wrapper">
+
+        <!-- Top Header & Banner -->
+        <header class="os-header-card">
+            <div class="os-header-main">
+                <div class="os-header-title">
+                    <span class="os-badge font-label">v2.0 MASTER WORKFLOW</span>
+                    <h1 class="font-display">🧠 Content OS</h1>
+                    <p class="font-sans">Manage your end-to-end creator workflow: ideas, scripts, calendars, task boards, and AI suggestions in one high-velocity studio.</p>
+                </div>
+                <div class="os-header-actions">
+                    <button type="button" class="neo-btn primary" id="btn-open-new-item">
+                        <span>⚡ NEW ITEM</span>
+                    </button>
+                    <button type="button" class="neo-btn warning" id="btn-open-ai-modal">
+                        <span>✨ AI ASSISTANT</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Ribbon -->
+            <div class="os-stats-grid">
+                <div class="os-stat-card">
+                    <span class="stat-label font-label">💡 IDEAS</span>
+                    <span class="stat-value font-display" id="stat-ideas"><%= stats.totalIdeas || 0 %></span>
+                </div>
+                <div class="os-stat-card">
+                    <span class="stat-label font-label">✍️ SCRIPTS IN PROGRESS</span>
+                    <span class="stat-value font-display" id="stat-scripts"><%= stats.activeScripts || 0 %></span>
+                </div>
+                <div class="os-stat-card">
+                    <span class="stat-label font-label">✅ READY TO PUBLISH</span>
+                    <span class="stat-value font-display" id="stat-ready"><%= stats.readyToPublish || 0 %></span>
+                </div>
+                <div class="os-stat-card">
+                    <span class="stat-label font-label">📅 SCHEDULED POSTS</span>
+                    <span class="stat-value font-display" id="stat-scheduled"><%= stats.scheduledPosts || 0 %></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="os-nav-tabs" aria-label="Content OS Views">
+            <button type="button" class="os-tab-btn active" data-tab="kanban">
+                <span class="tab-icon">📋</span> Kanban Board
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="calendar">
+                <span class="tab-icon">📅</span> Content Calendar
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="ideas">
+                <span class="tab-icon">💡</span> Idea Vault
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="script">
+                <span class="tab-icon">✍️</span> Script Studio
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="folders">
+                <span class="tab-icon">📁</span> Folders & Assets
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="ai">
+                <span class="tab-icon">🤖</span> AI Suggestions
+            </button>
+            <button type="button" class="os-tab-btn" data-tab="integrations">
+                <span class="tab-icon">🔌</span> Integrations
+            </button>
+        </nav>
+
+        <!-- Control & Filter Bar -->
+        <div class="os-filter-bar">
+            <div class="search-box">
+                <input type="text" id="os-search-input" placeholder="🔍 Search ideas, scripts, tags..." class="neo-input" />
+            </div>
+            <div class="filter-controls">
+                <select id="os-filter-platform" class="neo-select">
+                    <option value="">All Platforms</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="twitter">Twitter / X</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="blog">Blog</option>
+                    <option value="general">General</option>
+                </select>
+
+                <select id="os-filter-folder" class="neo-select">
+                    <option value="">All Folders</option>
+                    <% folders.forEach(f => { %>
+                        <option value="<%= f._id %>"><%= f.name %></option>
+                    <% }) %>
+                </select>
+            </div>
+        </div>
+
+        <!-- VIEW 1: KANBAN BOARD -->
+        <section class="os-view-section active" id="view-kanban">
+            <div class="kanban-grid">
+                <!-- Column: Ideas -->
+                <div class="kanban-col" data-col-status="idea">
+                    <div class="col-header bg-yellow">
+                        <span class="font-label">💡 IDEAS (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-ideas"></div>
+                </div>
+
+                <!-- Column: Scripting -->
+                <div class="kanban-col" data-col-status="scripting">
+                    <div class="col-header bg-indigo">
+                        <span class="font-label">✍️ SCRIPTING (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-scripting"></div>
+                </div>
+
+                <!-- Column: Filming -->
+                <div class="kanban-col" data-col-status="filming">
+                    <div class="col-header bg-pink">
+                        <span class="font-label">🎥 FILMING (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-filming"></div>
+                </div>
+
+                <!-- Column: Editing -->
+                <div class="kanban-col" data-col-status="editing">
+                    <div class="col-header bg-purple">
+                        <span class="font-label">✂️ EDITING (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-editing"></div>
+                </div>
+
+                <!-- Column: Ready -->
+                <div class="kanban-col" data-col-status="ready">
+                    <div class="col-header bg-green">
+                        <span class="font-label">✅ READY (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-ready"></div>
+                </div>
+
+                <!-- Column: Scheduled / Published -->
+                <div class="kanban-col" data-col-status="scheduled">
+                    <div class="col-header bg-blue">
+                        <span class="font-label">🚀 SCHEDULED (<span class="col-count">0</span>)</span>
+                    </div>
+                    <div class="col-body" id="col-scheduled"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: CONTENT CALENDAR -->
+        <section class="os-view-section" id="view-calendar">
+            <div class="calendar-card neo-box">
+                <div class="calendar-header">
+                    <div class="cal-title-area">
+                        <h2 class="font-display" id="cal-month-title">August 2026</h2>
+                        <span class="cal-subtitle font-sans" id="cal-view-subtitle">Month View Schedule</span>
+                    </div>
+                    <div class="cal-controls-group">
+                        <div class="cal-view-switcher" role="radiogroup" aria-label="Calendar View Option">
+                            <button type="button" class="cal-view-btn active" data-cal-view="month">📅 Month</button>
+                            <button type="button" class="cal-view-btn" data-cal-view="week">📆 Week</button>
+                            <button type="button" class="cal-view-btn" data-cal-view="day">⏱️ Day</button>
+                        </div>
+                        <div class="cal-nav-buttons">
+                            <button type="button" class="neo-btn sm" id="cal-prev-month">◀ Prev</button>
+                            <button type="button" class="neo-btn sm" id="cal-today">Today</button>
+                            <button type="button" class="neo-btn sm" id="cal-next-month">Next ▶</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Sub-Filter Bar -->
+                <div class="cal-filter-toolbar">
+                    <div class="cal-legend">
+                        <span class="legend-item"><span class="legend-dot status-scheduled"></span> Scheduled</span>
+                        <span class="legend-item"><span class="legend-dot status-ready"></span> Ready</span>
+                        <span class="legend-item"><span class="legend-dot status-published"></span> Published</span>
+                        <span class="legend-item"><span class="legend-dot status-deadline"></span> Deadline</span>
+                    </div>
+                    <button type="button" class="neo-btn sm primary" id="btn-cal-quick-create">+ Schedule Content</button>
+                </div>
+
+                <div class="calendar-grid-header font-label" id="cal-grid-header">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div class="calendar-grid-body" id="calendar-days-container"></div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: IDEA VAULT -->
+        <section class="os-view-section" id="view-ideas">
+            <div class="vault-toolbar">
+                <h2 class="font-display">💡 Idea Vault</h2>
+                <div class="tag-pills" id="vault-tag-filters">
+                    <button class="tag-pill active" data-tag="">All Tags</button>
+                    <button class="tag-pill" data-tag="AI">#AI</button>
+                    <button class="tag-pill" data-tag="Tutorial">#Tutorial</button>
+                    <button class="tag-pill" data-tag="Tools">#Tools</button>
+                    <button class="tag-pill" data-tag="Workflow">#Workflow</button>
+                </div>
+            </div>
+            <div class="ideas-grid" id="ideas-grid-container"></div>
+        </section>
+
+        <!-- VIEW 4: SCRIPT STUDIO -->
+        <section class="os-view-section" id="view-script">
+            <div class="script-studio-grid">
+                <!-- Left: Selector -->
+                <div class="script-sidebar neo-box">
+                    <div class="script-sidebar-header">
+                        <span class="font-label">📜 SCRIPTS & DRAFTS</span>
+                        <button type="button" class="neo-btn sm primary" id="btn-new-script">+ New Script</button>
+                    </div>
+                    <ul class="script-list" id="script-items-list"></ul>
+                </div>
+
+                <!-- Right: Dual Pane Script Editor -->
+                <div class="script-editor-pane neo-box">
+                    <div class="script-editor-header">
+                        <input type="text" id="script-title-input" class="script-title-field font-display" placeholder="Untitled Script..." />
+                        <div class="script-meta-bar font-label">
+                            <span id="script-word-count">0 words</span> | 
+                            <span id="script-read-time">~0s speech duration</span>
+                            <button type="button" class="neo-btn sm warning" id="btn-load-templates">📋 Templates</button>
+                            <button type="button" class="neo-btn sm success" id="btn-save-script">💾 Save Script</button>
+                        </div>
+                    </div>
+
+                    <div class="script-fields-container">
+                        <div class="script-field-group">
+                            <label class="font-label">🎣 THE HOOK (First 3 Seconds)</label>
+                            <textarea id="script-hook-input" class="neo-textarea" placeholder="Hook your audience immediately..."></textarea>
+                        </div>
+
+                        <div class="script-field-group">
+                            <label class="font-label">📝 MAIN BODY & POINTS</label>
+                            <textarea id="script-body-input" class="neo-textarea body-textarea" placeholder="Write main points, storytelling arc, or screen directions..."></textarea>
+                        </div>
+
+                        <div class="script-field-group">
+                            <label class="font-label">📢 CALL TO ACTION (CTA)</label>
+                            <textarea id="script-cta-input" class="neo-textarea" placeholder="What should viewers do next? (e.g. Save, comment, visit link)"></textarea>
+                        </div>
+
+                        <div class="script-field-group">
+                            <label class="font-label">🎙️ TELEPROMPTER & PRODUCTION NOTES</label>
+                            <textarea id="script-teleprompter-input" class="neo-textarea" placeholder="Visual cues, camera angles, sound effects..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 5: FOLDERS & ASSET MANAGER -->
+        <section class="os-view-section" id="view-folders">
+            <div class="folders-workspace">
+                <div class="folders-header">
+                    <h2 class="font-display">📁 Folders & Media Assets</h2>
+                    <button type="button" class="neo-btn primary" id="btn-create-folder-modal">+ New Folder</button>
+                </div>
+                <div class="folders-grid" id="folders-grid-container"></div>
+
+                <div class="assets-section neo-box" style="margin-top: 2rem;">
+                    <div class="assets-header">
+                        <h3 class="font-display">🖼️ Uploaded Asset Shortcuts</h3>
+                        <a href="/services/file-upload" class="neo-btn sm secondary">📁 Go to File Upload Service ➔</a>
+                    </div>
+                    <p class="font-sans" style="margin-top: 0.5rem;">Quickly attach thumbnail drafts, brand logos, or video clips stored in your workspace.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 6: AI SUGGESTIONS -->
+        <section class="os-view-section" id="view-ai">
+            <div class="ai-studio-container neo-box">
+                <div class="ai-studio-header">
+                    <h2 class="font-display">🤖 AI Content Generator</h2>
+                    <p class="font-sans">Prompt CreatorOS AI to brainstorm ideas, write viral hooks, structure script outlines, or craft optimized captions.</p>
+                </div>
+
+                <form id="ai-generate-form" class="ai-form">
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label class="font-label">TOPIC / KEYWORD PROMPT</label>
+                            <input type="text" id="ai-prompt-input" class="neo-input" placeholder="e.g. Building an automated link-in-bio app with Node.js" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-label">GENERATION MODE</label>
+                            <select id="ai-mode-select" class="neo-select">
+                                <option value="idea">💡 Brainstorm Ideas</option>
+                                <option value="hook">🎣 Viral Video Hooks</option>
+                                <option value="script">✍️ Script Outline</option>
+                                <option value="caption">🎨 Caption & Hashtags</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-label">TARGET PLATFORM</label>
+                            <select id="ai-platform-select" class="neo-select">
+                                <option value="general">General</option>
+                                <option value="instagram">Instagram Reel</option>
+                                <option value="youtube">YouTube Short / Video</option>
+                                <option value="twitter">Twitter / X Thread</option>
+                                <option value="tiktok">TikTok</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="neo-btn warning full-width" id="btn-submit-ai">⚡ GENERATE WITH AI</button>
+                </form>
+
+                <div class="ai-output-box" id="ai-output-result" style="display: none;">
+                    <div class="ai-output-header font-label">
+                        <span>✨ GENERATED AI RESULT</span>
+                        <button type="button" class="neo-btn sm success" id="btn-ai-create-item">+ Save as Content Item</button>
+                    </div>
+                    <div class="ai-output-body" id="ai-output-content"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 7: INTEGRATIONS HUB -->
+        <section class="os-view-section" id="view-integrations">
+            <div class="integrations-grid">
+                <!-- Notion Card -->
+                <div class="integration-card neo-box">
+                    <div class="int-card-header">
+                        <span class="int-logo font-display">📝 Notion</span>
+                        <span class="int-badge active font-label">CONNECTED</span>
+                    </div>
+                    <p class="font-sans">Sync content items, scripts, and publishing status directly with your Notion workspace databases.</p>
+                    <button type="button" class="neo-btn sm secondary btn-export-int" data-int="notion">Export to Notion ➔</button>
+                </div>
+
+                <!-- Google Docs Card -->
+                <div class="integration-card neo-box">
+                    <div class="int-card-header">
+                        <span class="int-logo font-display">📄 Google Docs</span>
+                        <span class="int-badge active font-label">READY</span>
+                    </div>
+                    <p class="font-sans">Export long-form script outlines and video specs into formatted Google Docs documents.</p>
+                    <button type="button" class="neo-btn sm secondary btn-export-int" data-int="gdocs">Export to Docs ➔</button>
+                </div>
+
+                <!-- Canva Card -->
+                <div class="integration-card neo-box">
+                    <div class="int-card-header">
+                        <span class="int-logo font-display">🎨 Canva</span>
+                        <span class="int-badge font-label">READY</span>
+                    </div>
+                    <p class="font-sans">Send video titles, hooks, and thumbnail text overlays directly to Canva design templates.</p>
+                    <button type="button" class="neo-btn sm secondary btn-export-int" data-int="canva">Send to Canva ➔</button>
+                </div>
+
+                <!-- ChatGPT Card -->
+                <div class="integration-card neo-box">
+                    <div class="int-card-header">
+                        <span class="int-logo font-display">🤖 ChatGPT</span>
+                        <span class="int-badge active font-label">CONNECTED</span>
+                    </div>
+                    <p class="font-sans">Extract prompts and video variations for ChatGPT / Claude long-form script polishing.</p>
+                    <button type="button" class="neo-btn sm secondary btn-export-int" data-int="chatgpt">Generate ChatGPT Prompt ➔</button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- MODAL: NEW / EDIT ITEM -->
+<div class="neo-modal-backdrop" id="modal-item-backdrop" style="display: none;">
+    <div class="neo-modal-box">
+        <div class="modal-header">
+            <h3 class="font-display" id="modal-item-title">⚡ Create Content Item</h3>
+            <button type="button" class="modal-close" id="modal-item-close">&times;</button>
+        </div>
+        <form id="form-item-save">
+            <input type="hidden" id="modal-item-id" value="" />
+            <div class="form-group">
+                <label class="font-label">TITLE</label>
+                <input type="text" id="modal-input-title" class="neo-input" placeholder="e.g. 5 AI Hacks for Creators" required />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="font-label">TYPE</label>
+                    <select id="modal-input-type" class="neo-select">
+                        <option value="idea">Idea</option>
+                        <option value="script">Script</option>
+                        <option value="post">Post</option>
+                        <option value="template">Template</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-label">STATUS</label>
+                    <select id="modal-input-status" class="neo-select">
+                        <option value="idea">💡 Idea</option>
+                        <option value="scripting">✍️ Scripting</option>
+                        <option value="filming">🎥 Filming</option>
+                        <option value="editing">✂️ Editing</option>
+                        <option value="ready">✅ Ready</option>
+                        <option value="scheduled">🚀 Scheduled</option>
+                        <option value="published">🎉 Published</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="font-label">PRIMARY PLATFORM</label>
+                    <select id="modal-input-platform" class="neo-select">
+                        <option value="general">General</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="twitter">Twitter / X</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="blog">Blog</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Multi-Platform Distribution Checkboxes -->
+            <div class="form-group">
+                <label class="font-label">TARGET DISTRIBUTION PLATFORMS</label>
+                <div class="platforms-checkbox-group font-sans" id="modal-platforms-checkboxes">
+                    <label class="platform-check-pill"><input type="checkbox" value="instagram" class="platform-checkbox"> 📸 Instagram</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="youtube" class="platform-checkbox"> 📺 YouTube</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="twitter" class="platform-checkbox"> 🐦 Twitter/X</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="tiktok" class="platform-checkbox"> 🎵 TikTok</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="linkedin" class="platform-checkbox"> 💼 LinkedIn</label>
+                    <label class="platform-check-pill"><input type="checkbox" value="blog" class="platform-checkbox"> 📝 Blog</label>
+                </div>
+            </div>
+
+            <!-- Platform Formatting Advice Box -->
+            <div class="platform-format-box neo-box" id="platform-format-hint" style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; font-size: 0.85rem;">
+                <span class="font-label" style="display:block; font-weight: bold; margin-bottom: 0.2rem;">💡 PLATFORM FORMATTING TIP</span>
+                <span id="platform-format-text" class="font-sans">Select target platforms above to view length limits and video spec recommendations.</span>
+            </div>
+
+            <div class="form-group">
+                <label class="font-label">DESCRIPTION / CAPTION SUMMARY</label>
+                <textarea id="modal-input-description" class="neo-textarea" placeholder="Brief outline, caption draft, or context..."></textarea>
+                <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem;" id="caption-char-count">0 characters</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="font-label">TAGS (Comma Separated)</label>
+                    <input type="text" id="modal-input-tags" class="neo-input" placeholder="AI, Tutorial, Reels" />
+                </div>
+                <div class="form-group">
+                    <label class="font-label">SCHEDULED DATE & TIME</label>
+                    <input type="datetime-local" id="modal-input-scheduled" class="neo-input" />
+                </div>
+                <div class="form-group">
+                    <label class="font-label">DEADLINE DATE & TIME ⏰</label>
+                    <input type="datetime-local" id="modal-input-deadline" class="neo-input" />
+                </div>
+            </div>
+
+            <!-- Performance Metrics Section -->
+            <div class="modal-section-box neo-box" style="margin-top: 1rem; padding: 1rem;">
+                <h4 class="font-display" style="margin-bottom: 0.5rem; font-size: 1rem;">📊 Performance Integration</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="font-label">VIEWS</label>
+                        <input type="number" id="modal-input-views" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">ENGAGEMENT RATE (%)</label>
+                        <input type="number" step="0.1" id="modal-input-er" class="neo-input" placeholder="0.0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">CLICKS</label>
+                        <input type="number" id="modal-input-clicks" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="font-label">LIKES</label>
+                        <input type="number" id="modal-input-likes" class="neo-input" placeholder="0" min="0" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Collaboration & Commenting Section -->
+            <div class="modal-section-box neo-box" id="modal-comments-section" style="margin-top: 1rem; padding: 1rem; display: none;">
+                <h4 class="font-display" style="margin-bottom: 0.5rem; font-size: 1rem;">💬 Team Collaboration & Comments</h4>
+                <div class="comments-thread-container" id="comments-thread-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+                <div class="comment-input-row" style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="modal-comment-text" class="neo-input" placeholder="Write a feedback note or review comment..." style="flex: 1;" />
+                    <button type="button" class="neo-btn sm primary" id="btn-post-comment">Send</button>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 1.5rem;">
+                <button type="button" class="neo-btn secondary" id="modal-item-cancel">Cancel</button>
+                <button type="submit" class="neo-btn primary">Save Content Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: SCRIPT TEMPLATES -->
+<div class="neo-modal-backdrop" id="modal-templates-backdrop" style="display: none;">
+    <div class="neo-modal-box">
+        <div class="modal-header">
+            <h3 class="font-display">📋 Choose Script Template</h3>
+            <button type="button" class="modal-close" id="modal-templates-close">&times;</button>
+        </div>
+        <div class="templates-list">
+            <div class="template-item neo-box" data-tpl="viral_reel">
+                <h4>🔥 Viral Reel / Short Outline</h4>
+                <p>3s Pattern Interrupt Hook ➔ 15s Core Value / Demonstration ➔ Strong CTA.</p>
+                <button type="button" class="neo-btn sm warning btn-apply-tpl">Apply Template</button>
+            </div>
+            <div class="template-item neo-box" data-tpl="tutorial">
+                <h4>🎓 Educational How-To</h4>
+                <p>Problem statement ➔ 3 Step solution ➔ Resource link callout.</p>
+                <button type="button" class="neo-btn sm warning btn-apply-tpl">Apply Template</button>
+            </div>
+            <div class="template-item neo-box" data-tpl="thread">
+                <h4>🧵 Twitter/X Thread Blueprint</h4>
+                <p>Bold promise hook ➔ 5 bulleted breakdown tweets ➔ Retweet CTA.</p>
+                <button type="button" class="neo-btn sm warning btn-apply-tpl">Apply Template</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CREATE FOLDER -->
+<div class="neo-modal-backdrop" id="modal-folder-backdrop" style="display: none;">
+    <div class="neo-modal-box">
+        <div class="modal-header">
+            <h3 class="font-display">📁 Create Project Folder</h3>
+            <button type="button" class="modal-close" id="modal-folder-close">&times;</button>
+        </div>
+        <form id="form-folder-save">
+            <div class="form-group">
+                <label class="font-label">FOLDER NAME</label>
+                <input type="text" id="folder-input-name" class="neo-input" placeholder="e.g. Summer AI Series 2026" required />
+            </div>
+            <div class="form-group">
+                <label class="font-label">ACCENT COLOR</label>
+                <input type="color" id="folder-input-color" value="#4338CA" class="neo-input color-picker" />
+            </div>
+            <div class="form-group">
+                <label class="font-label">DESCRIPTION</label>
+                <textarea id="folder-input-desc" class="neo-textarea" placeholder="Campaign notes..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="neo-btn secondary" id="modal-folder-cancel">Cancel</button>
+                <button type="submit" class="neo-btn primary">Create Folder</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/content-os.js"></script>
+
+<%- include('partials/layout/footer') %>

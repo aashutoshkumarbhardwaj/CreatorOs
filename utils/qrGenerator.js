@@ -1,6 +1,7 @@
 const QRCode = require('qrcode');
 const PDFDocument = require('pdfkit');
 const sharp = require('sharp');
+const { assertSafePublicHttpUrl } = require('./ssrf');
 
 /**
  * Pattern presets map to visual module styles.
@@ -166,8 +167,10 @@ async function compositeLogo(pngBuffer, logoUrl) {
     if (!logoUrl) return pngBuffer;
 
     try {
+        await assertSafePublicHttpUrl(logoUrl);
         const response = await fetch(logoUrl, {
             signal: AbortSignal.timeout(5000),
+            redirect: 'error',
         });
         if (!response.ok) return pngBuffer;
 

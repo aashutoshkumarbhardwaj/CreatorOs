@@ -168,7 +168,7 @@ const statObserver = new IntersectionObserver(entries=>{
   entries.forEach(entry=>{
     if(entry.isIntersecting){
       const el=entry.target;
-      const target=parseInt(el.dataset.target);
+      const target=parseInt(el.dataset.target, 10);
       const suffix=target>3?'+':'';
       let current=0;
       const step=Math.max(1,Math.ceil(target/30));

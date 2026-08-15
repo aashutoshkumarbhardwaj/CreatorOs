@@ -10,6 +10,7 @@ jest.mock("../../controller/auth", () => ({
   signup: jest.fn(),
   login: jest.fn(),
   handleGoogleCallback: jest.fn(),
+  verifyLogin2FA: jest.fn(),
   loginAsContributor: jest.fn(),
   verifyEmail: jest.fn(),
   resendVerificationEmail: jest.fn(),
@@ -32,6 +33,12 @@ jest.mock("../../middleware/rateLimiters", () => ({
 }));
 
 jest.mock("../../connect", () => jest.fn());
+jest.mock("../../model/passwordResetToken", () => ({
+  findOne: jest.fn().mockResolvedValue({ token: "abc123", used: false }),
+}));
+jest.mock("../../model/user", () => ({
+  findOne: jest.fn().mockResolvedValue(null),
+}));
 
 const authRoutes = require("../../routes/auth");
 
@@ -52,7 +59,7 @@ describe("auth routes", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({
       view: "reset-password",
-      locals: { token: "abc123", error: null },
+      locals: { token: "abc123", error: null, formHidden: false },
     });
   });
 });
