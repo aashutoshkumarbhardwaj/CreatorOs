@@ -88,5 +88,14 @@ module.exports = [
         route: '/services/suggestion-tool',
         // Sparkles / pen icon
         svgPath: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+    },
+    {
+        key: 'ai-assistant',
+        name: '🤖 AI Creator Assistant',
+        description: 'Intelligent conversational assistant, performance predictions, copy optimization, and SEO tools.',
+        route: '/services/ai-assistant',
+        status: 'available',
+        // Bot / AI spark icon
+        svgPath: '<path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><line x1="9" y1="17" x2="15" y2="17"/>',
     }
 ];
