@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book a Call | CreatorOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/booking.css">
+</head>
+<body class="booking-page">
+
+  <div class="booking-container">
+    <div class="booking-card" id="booking-main-card">
+
+      <!-- LEFT SIDEBAR: HOST & EVENT DETAILS -->
+      <div class="booking-sidebar">
+        <div id="host-avatar-box">
+          <div class="host-avatar-placeholder" id="host-initials">CR</div>
+        </div>
+
+        <div style="font-size: 14px; font-weight: 600; color: var(--booking-text-muted);" id="host-name">
+          Loading Creator...
+        </div>
+
+        <h1 class="event-title" id="event-title">Loading Event...</h1>
+
+        <div class="event-meta-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="event-duration">30 mins</span>
+        </div>
+
+        <div class="event-meta-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <span id="event-location">Google Meet Video Call</span>
+        </div>
+
+        <div class="event-meta-item" id="event-price-box" style="display: none;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span id="event-price">Free</span>
+        </div>
+
+        <div class="event-description" id="event-description"></div>
+      </div>
+
+      <!-- RIGHT CONTENT: CALENDAR, SLOTS & FORM -->
+      <div class="booking-content">
+
+        <!-- STEP 1: DATE & SLOT SELECTOR -->
+        <div id="step-date-slots">
+          <h2 class="section-title">Select a Date & Time</h2>
+
+          <div class="booking-grid">
+            <div class="date-picker-group">
+              <label for="booking-date">Select Date</label>
+              <input type="date" id="booking-date" class="date-picker-input">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 14px; color: var(--booking-text-muted); margin-bottom: 8px;">
+                Available Time Slots
+              </label>
+              <div id="slots-container" class="slot-list">
+                <div class="slot-empty">Please pick a date to view open slots.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: ATTENDEE FORM (Hidden initially) -->
+        <div id="step-attendee-form" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <h2 class="section-title" style="margin: 0;">Enter Your Details</h2>
+            <button onclick="goBackToSlots()" style="background: none; border: none; color: var(--booking-accent); font-weight: 600; cursor: pointer;">
+              ← Change Slot
+            </button>
+          </div>
+
+          <div style="background: #0f172a; padding: 12px 16px; border-radius: 8px; font-size: 14px; color: var(--booking-text-muted); margin-bottom: 20px;" id="selected-slot-banner">
+            <!-- Dynamically injected selected slot text -->
+          </div>
+
+          <form class="booking-form" onsubmit="submitBooking(event)">
+            <div class="form-group">
+              <label for="attendee-name">Your Full Name *</label>
+              <input type="text" id="attendee-name" class="form-input" required placeholder="John Doe">
+            </div>
+
+            <div class="form-group">
+              <label for="attendee-email">Your Email Address *</label>
+              <input type="email" id="attendee-email" class="form-input" required placeholder="john@example.com">
+            </div>
+
+            <div class="form-group">
+              <label for="attendee-notes">Additional Notes / Agenda</label>
+              <textarea id="attendee-notes" class="form-textarea" rows="3" placeholder="Please share anything that will help prepare for our call..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary-booking" id="btn-submit-booking">
+              Confirm & Book Meeting
+            </button>
+          </form>
+        </div>
+
+        <!-- STEP 3: CONFIRMATION SUCCESS (Hidden initially) -->
+        <div id="step-confirmation" style="display: none;" class="confirmation-box">
+          <div class="success-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">Meeting Scheduled!</h2>
+          <p style="color: var(--booking-text-muted); font-size: 15px; margin-bottom: 20px;" id="confirm-summary-text">
+            A calendar invitation and video call details have been sent to your email.
+          </p>
+
+          <div id="confirm-meet-box" style="margin-top: 24px;">
+            <!-- Meet Link render -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const alias = '<%= alias %>';
+    const slug = '<%= slug %>';
+
+    let eventData = null;
+    let selectedSlot = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default date to today or tomorrow
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const dateInput = document.getElementById('booking-date');
+      dateInput.min = `${yyyy}-${mm}-${dd}`;
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+
+      dateInput.addEventListener('change', () => fetchAvailableSlots(dateInput.value));
+
+      fetchEventDetails();
+      fetchAvailableSlots(dateInput.value);
+    });
+
+    async function fetchEventDetails() {
+      try {
+        const res = await fetch(`/api/public/meetings/${alias}/${slug}`);
+        const data = await res.json();
+        if (data.success) {
+          eventData = data;
+          renderHeaderInfo();
+        } else {
+          document.getElementById('booking-main-card').innerHTML = `
+            <div style="padding: 40px; text-align: center; width: 100%;">
+              <h2>Event Not Found</h2>
+              <p style="color: var(--booking-text-muted);">${data.message || 'This booking page does not exist or has been disabled.'}</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error fetching event details:', err);
+      }
+    }
+
+    function renderHeaderInfo() {
+      const { creator, eventType } = eventData;
+      document.getElementById('host-name').innerText = creator.name;
+      document.getElementById('event-title').innerText = eventType.title;
+      document.getElementById('event-duration').innerText = `${eventType.duration} mins`;
+      document.getElementById('event-description').innerText = eventType.description || '';
+
+      const locationText = eventType.locationType === 'google_meet' ? 'Google Meet Video Call' : (eventType.locationDetails || eventType.locationType);
+      document.getElementById('event-location').innerText = locationText;
+
+      if (eventType.price > 0) {
+        document.getElementById('event-price-box').style.display = 'flex';
+        document.getElementById('event-price').innerText = `$${eventType.price} ${eventType.currency || 'USD'}`;
+      }
+
+      if (creator.avatar) {
+        document.getElementById('host-avatar-box').innerHTML = `<img src="${creator.avatar}" class="host-avatar" alt="${creator.name}">`;
+      } else {
+        const initials = creator.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('host-initials').innerText = initials;
+      }
+    }
+
+    async function fetchAvailableSlots(dateStr) {
+      const slotsContainer = document.getElementById('slots-container');
+      slotsContainer.innerHTML = '<div class="slot-empty">Checking open slots...</div>';
+
+      try {
+        const res = await fetch(`/api/public/meetings/${alias}/${slug}/slots?date=${dateStr}`);
+        const data = await res.json();
+
+        if (data.success && data.slots.length > 0) {
+          slotsContainer.innerHTML = data.slots.map(s => `
+            <button class="slot-btn" onclick="selectSlot('${s.startTime}', '${s.endTime}', '${s.formattedTime}')">
+              ${s.formattedTime} UTC
+            </button>
+          `).join('');
+        } else {
+          slotsContainer.innerHTML = `<div class="slot-empty">${data.message || 'No available time slots on this date.'}</div>`;
+        }
+      } catch (err) {
+        slotsContainer.innerHTML = '<div class="slot-empty">Failed to load time slots.</div>';
+      }
+    }
+
+    function selectSlot(startTime, endTime, formattedTime) {
+      selectedSlot = { startTime, endTime, formattedTime };
+      const dateObj = new Date(startTime);
+      const fullDateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+      document.getElementById('selected-slot-banner').innerHTML = `
+        📅 <strong>${fullDateStr}</strong> at <strong>${formattedTime} UTC</strong> (${eventData.eventType.duration} mins)
+      `;
+
+      document.getElementById('step-date-slots').style.display = 'none';
+      document.getElementById('step-attendee-form').style.display = 'block';
+    }
+
+    function goBackToSlots() {
+      document.getElementById('step-attendee-form').style.display = 'none';
+      document.getElementById('step-date-slots').style.display = 'block';
+    }
+
+    async function submitBooking(e) {
+      e.preventDefault();
+      if (!selectedSlot) return;
+
+      const btn = document.getElementById('btn-submit-booking');
+      btn.innerText = 'Scheduling Meeting...';
+      btn.disabled = true;
+
+      const payload = {
+        attendeeName: document.getElementById('attendee-name').value,
+        attendeeEmail: document.getElementById('attendee-email').value,
+        attendeeNotes: document.getElementById('attendee-notes').value,
+        startTime: selectedSlot.startTime,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      };
+
+      try {
+        const res = await fetch(`/api/public/meetings/${alias}/${slug}/book`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('step-attendee-form').style.display = 'none';
+          document.getElementById('step-confirmation').style.display = 'block';
+
+          document.getElementById('confirm-summary-text').innerText = `
+            Your ${eventData.eventType.title} with ${eventData.creator.name} is confirmed for ${new Date(selectedSlot.startTime).toLocaleString()}.
+          `;
+
+          if (data.booking.meetingLink) {
+            document.getElementById('confirm-meet-box').innerHTML = `
+              <a href="${data.booking.meetingLink}" target="_blank" class="meet-link-btn">
+                🎥 Join Google Meet Video Call
+              </a>
+            `;
+          }
+        } else {
+          alert(data.message || 'Failed to complete booking. Please try another slot.');
+          btn.innerText = 'Confirm & Book Meeting';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert(err.message || 'Booking failed');
+        btn.innerText = 'Confirm & Book Meeting';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ describe('Auth Controller Endpoints', () => {
     beforeEach(async () => {
         await User.deleteMany({});
 
-        const verifiedPassword = await bcrypt.hash('Password123!', 10);
+        const verifiedPassword = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Verified User',
             email: 'test@local.com',
@@ -19,7 +19,7 @@ describe('Auth Controller Endpoints', () => {
             isVerified: true,
         });
 
-        const unverifiedPassword = await bcrypt.hash('Password123!', 10);
+        const unverifiedPassword = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Unverified User',
             email: 'unverified@local.com',
@@ -92,13 +92,15 @@ describe('Auth Controller Endpoints', () => {
     });
 
     it('should redirect unverified users to resend verification when email verification is configured', async () => {
-        const originalEmailEnv = {
+        const originalEnv = {
+            NODE_ENV: process.env.NODE_ENV,
             EMAIL_USER: process.env.EMAIL_USER,
             EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
             EMAIL_SERVICE: process.env.EMAIL_SERVICE,
             EMAIL_HOST: process.env.EMAIL_HOST,
         };
 
+        process.env.NODE_ENV = 'production';
         process.env.EMAIL_USER = 'tester@example.com';
         process.env.EMAIL_PASSWORD = 'password';
         process.env.EMAIL_SERVICE = 'smtp';
@@ -114,21 +116,24 @@ describe('Auth Controller Endpoints', () => {
             expect(res.statusCode).toBe(302);
             expect(res.headers.location).toContain('/resend-verification');
         } finally {
-            process.env.EMAIL_USER = originalEmailEnv.EMAIL_USER;
-            process.env.EMAIL_PASSWORD = originalEmailEnv.EMAIL_PASSWORD;
-            process.env.EMAIL_SERVICE = originalEmailEnv.EMAIL_SERVICE;
-            process.env.EMAIL_HOST = originalEmailEnv.EMAIL_HOST;
+            process.env.NODE_ENV = originalEnv.NODE_ENV;
+            process.env.EMAIL_USER = originalEnv.EMAIL_USER;
+            process.env.EMAIL_PASSWORD = originalEnv.EMAIL_PASSWORD;
+            process.env.EMAIL_SERVICE = originalEnv.EMAIL_SERVICE;
+            process.env.EMAIL_HOST = originalEnv.EMAIL_HOST;
         }
     });
 
     it('should redirect unverified users to resend verification when email verification is not configured', async () => {
-        const originalEmailEnv = {
+        const originalEnv = {
+            NODE_ENV: process.env.NODE_ENV,
             EMAIL_USER: process.env.EMAIL_USER,
             EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
             EMAIL_SERVICE: process.env.EMAIL_SERVICE,
             EMAIL_HOST: process.env.EMAIL_HOST,
         };
 
+        process.env.NODE_ENV = 'production';
         delete process.env.EMAIL_USER;
         delete process.env.EMAIL_PASSWORD;
         delete process.env.EMAIL_SERVICE;
@@ -144,10 +149,11 @@ describe('Auth Controller Endpoints', () => {
             expect(res.statusCode).toBe(302);
             expect(res.headers.location).toContain('/resend-verification');
         } finally {
-            process.env.EMAIL_USER = originalEmailEnv.EMAIL_USER;
-            process.env.EMAIL_PASSWORD = originalEmailEnv.EMAIL_PASSWORD;
-            process.env.EMAIL_SERVICE = originalEmailEnv.EMAIL_SERVICE;
-            process.env.EMAIL_HOST = originalEmailEnv.EMAIL_HOST;
+            process.env.NODE_ENV = originalEnv.NODE_ENV;
+            process.env.EMAIL_USER = originalEnv.EMAIL_USER;
+            process.env.EMAIL_PASSWORD = originalEnv.EMAIL_PASSWORD;
+            process.env.EMAIL_SERVICE = originalEnv.EMAIL_SERVICE;
+            process.env.EMAIL_HOST = originalEnv.EMAIL_HOST;
         }
     });
 

@@ -6,6 +6,7 @@ const User = require('../model/user');
 const services = require('../services.config');
 const asyncHandler = require('../utils/asyncHandler');
 const { isValidUrl } = require('../utils/validators');
+const { assertSafePublicHttpUrl } = require('../utils/ssrf');
 const {
     resolveErrorCorrection,
     buildEncodedUrl,
@@ -70,10 +71,11 @@ function getBaseUrl(req) {
 /**
  * @function normalizeDesign
  * @description Sanitizes design payload from the client.
+ * Rejects logoUrl values that fail SSRF checks (private/link-local/ULA/etc).
  * @param {object} raw
- * @returns {object}
+ * @returns {Promise<object>}
  */
-function normalizeDesign(raw = {}) {
+async function normalizeDesign(raw = {}) {
     const foregroundColor = typeof raw.foregroundColor === 'string' && /^#[0-9A-Fa-f]{6}$/.test(raw.foregroundColor)
         ? raw.foregroundColor
         : '#000000';
@@ -81,7 +83,24 @@ function normalizeDesign(raw = {}) {
         ? raw.backgroundColor
         : '#FFFFFF';
     const patternPreset = PATTERN_PRESETS.includes(raw.patternPreset) ? raw.patternPreset : 'A';
-    const logoUrl = typeof raw.logoUrl === 'string' && isValidUrl(raw.logoUrl) ? raw.logoUrl : null;
+
+    let logoUrl = null;
+    if (typeof raw.logoUrl === 'string' && raw.logoUrl.trim()) {
+        const candidate = raw.logoUrl.trim();
+        if (!isValidUrl(candidate)) {
+            const err = new Error('logoUrl must be a valid HTTP or HTTPS URL');
+            err.statusCode = 400;
+            throw err;
+        }
+        try {
+            await assertSafePublicHttpUrl(candidate);
+        } catch (ssrfErr) {
+            const err = new Error(ssrfErr.message || 'logoUrl is not allowed');
+            err.statusCode = 400;
+            throw err;
+        }
+        logoUrl = candidate;
+    }
 
     return {
         foregroundColor,
@@ -318,7 +337,17 @@ const createQrCode = asyncHandler(async (req, res) => {
     }
 
     const dynamic = inputType === 'url' && isDynamic !== false && autoShortLink !== false;
-    const design = normalizeDesign(rawDesign || {});
+    let design;
+    try {
+        design = await normalizeDesign(rawDesign || {});
+    } catch (err) {
+        const message = err.message || 'Invalid QR design';
+        return res.status(err.statusCode || 400).json({
+            success: false,
+            message,
+            error: message,
+        });
+    }
     const doc = await createQrDocument({
         userId: req.user.id,
         targetUrl: encodedContent,
@@ -363,7 +392,17 @@ const batchCreateQrCodes = asyncHandler(async (req, res) => {
         });
     }
 
-    const design = normalizeDesign(rawDesign || {});
+    let design;
+    try {
+        design = await normalizeDesign(rawDesign || {});
+    } catch (err) {
+        const message = err.message || 'Invalid QR design';
+        return res.status(err.statusCode || 400).json({
+            success: false,
+            message,
+            error: message,
+        });
+    }
     const batchId = new mongoose.Types.ObjectId();
     const baseUrl = getBaseUrl(req);
     const created = [];
@@ -540,7 +579,16 @@ const updateQrCode = asyncHandler(async (req, res) => {
     }
 
     if (rawDesign && typeof rawDesign === 'object') {
-        doc.design = normalizeDesign({ ...doc.design?.toObject?.() || doc.design || {}, ...rawDesign });
+        try {
+            doc.design = await normalizeDesign({ ...doc.design?.toObject?.() || doc.design || {}, ...rawDesign });
+        } catch (err) {
+            const message = err.message || 'Invalid QR design';
+            return res.status(err.statusCode || 400).json({
+                success: false,
+                message,
+                error: message,
+            });
+        }
     }
 
     await doc.save();

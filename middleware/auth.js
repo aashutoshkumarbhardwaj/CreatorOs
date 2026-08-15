@@ -43,12 +43,16 @@ const protect = async (req, res, next) => {
                 });
             }
         } else {
-            // For regular users, check if email is verified
             const User = require("../model/user");
             const user = await User.findOne({ email: decoded.email });
 
             if (!user) {
-                return res.redirect("/login");
+                if (wantsHtml(req)) return res.redirect("/login");
+                return res.status(401).json({
+                    success: false,
+                    message: "User not found",
+                    error: "User not found",
+                });
             }
 
             // Check if password was changed after token was issued
@@ -67,8 +71,8 @@ const protect = async (req, res, next) => {
             }
 
             const isProduction = process.env.NODE_ENV === "production";
-            const isTest = process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined || process.env.USE_MOCK_DB === "true";
-            if ((isProduction || isTest) && !user.isVerified && user.authProvider !== 'google' && (isEmailTransportConfigured() || isTest)) {
+            const isMock = process.env.USE_MOCK_DB === "true";
+            if (isProduction && !isMock && !user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
                 const query = new URLSearchParams({
                     email: decoded.email,
                     delivery: isEmailTransportConfigured() ? 'configured' : 'unavailable',
@@ -100,7 +104,7 @@ const protect = async (req, res, next) => {
  * @returns {Promise<void>|void}
  */
 const requireAdmin = (req, res, next) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({
             success: false,
             message: "Admin access required",
@@ -120,7 +124,7 @@ const requireAdmin = (req, res, next) => {
  * @returns {Promise<void>|void}
  */
 const preventContributorWrites = (req, res, next) => {
-    if (req.user.role === "contributor" || req.user.role === "guest_contributor") {
+    if (!req.user || req.user.role === "contributor" || req.user.role === "guest_contributor") {
         return res.status(403).json({
             success: false,
             message: "Contributor accounts do not have permission to modify data.",

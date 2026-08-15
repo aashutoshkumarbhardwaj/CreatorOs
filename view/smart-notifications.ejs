@@ -1,0 +1,390 @@
+<%- include('partials/layout/header', {
+    activeNav: 'smart-notifications',
+    title: 'Smart Notifications',
+    extraHead: '<link rel="stylesheet" href="/css/smart-notifications.css">'
+}) %>
+
+<section class="content">
+    <div class="notifications-container">
+        
+        <!-- Header Section -->
+        <div class="notifications-header">
+            <div class="notifications-title">
+                <h1>🔔 Smart Notifications</h1>
+                <p>Manage multi-channel notifications, quiet hours, scheduling, and view delivery analytics.</p>
+            </div>
+            <div class="header-actions">
+                <button id="send-test-notification-btn" class="badge-retro" style="cursor: pointer; background: #2563eb; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600;">🧪 Send Test Notification</button>
+                <button id="mark-all-read-btn" class="badge-retro" style="cursor: pointer; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600;">✓ Mark All as Read</button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="notifications-tabs">
+            <button class="tab-btn active" data-tab="feed">📥 Notification Feed & History</button>
+            <button class="tab-btn" data-tab="prefs">⚙️ Preference & Quiet Hours</button>
+            <button class="tab-btn" data-tab="analytics">📊 Delivery & Engagement Analytics</button>
+        </div>
+
+        <!-- Tab 1: Notification Feed & History -->
+        <div id="feed-tab" class="tab-content active">
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #64748b; margin-right: 4px;">Status:</span>
+                    <button class="filter-chip active" data-status="all">All</button>
+                    <button class="filter-chip" data-status="unread">Unread (<%= typeof unreadCount !== 'undefined' ? unreadCount : 0 %>)</button>
+                    <button class="filter-chip" data-status="read">Read</button>
+                    <button class="filter-chip" data-status="archived">Archived</button>
+                </div>
+                <div class="filter-group">
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #64748b; margin-right: 4px;">Category:</span>
+                    <button class="filter-chip active" data-category="all">All</button>
+                    <button class="filter-chip" data-category="system">⚙️ System</button>
+                    <button class="filter-chip" data-category="engagement">💬 Engagement</button>
+                    <button class="filter-chip" data-category="content">📝 Content</button>
+                    <button class="filter-chip" data-category="analytics">📊 Analytics</button>
+                    <button class="filter-chip" data-category="marketing">📣 Marketing</button>
+                </div>
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="notification-search" placeholder="Search notifications..." />
+                </div>
+            </div>
+
+            <div id="notifications-list-container" class="notifications-list">
+                <% if (typeof initialNotifications !== 'undefined' && initialNotifications.length > 0) { %>
+                    <% initialNotifications.forEach(function(item) { %>
+                        <% var isUnread = !item.readAt && item.status !== 'archived'; %>
+                        <div class="notification-card <%= isUnread ? 'unread' : '' %> <%= item.status %>" data-id="<%= item._id %>">
+                            <div class="category-icon-wrapper cat-<%= item.category || 'system' %>">
+                                <% if (item.category === 'engagement') { %>💬<% } else if (item.category === 'content') { %>📝<% } else if (item.category === 'analytics') { %>📊<% } else if (item.category === 'marketing') { %>📣<% } else { %>⚙️<% } %>
+                            </div>
+                            <div class="notification-main">
+                                <div class="notification-top-row">
+                                    <span class="notification-title-text"><%= item.title %></span>
+                                    <div class="notification-meta">
+                                        <span class="badge-tag priority-<%= item.priority || 'normal' %>"><%= item.priority %></span>
+                                        <span><%= new Date(item.createdAt).toLocaleString() %></span>
+                                    </div>
+                                </div>
+                                <div class="notification-body">
+                                    <%= item.message %>
+                                </div>
+                                <div class="notification-channels-row">
+                                    <span>Channels:</span>
+                                    <% (item.channels || ['in_app']).forEach(function(ch) { %>
+                                        <span class="channel-pill"><%= ch.toUpperCase() %></span>
+                                    <% }); %>
+                                    <% if (item.status === 'scheduled') { %>
+                                        <span style="color: #d97706; font-weight:600; margin-left: 8px;">⏰ Scheduled for <%= new Date(item.scheduledFor).toLocaleTimeString() %></span>
+                                    <% } %>
+                                    <% if (item.status === 'suppressed') { %>
+                                        <span style="color: #64748b; margin-left: 8px;">🚫 Suppressed (<%= item.metadata && item.metadata.suppressionReason ? item.metadata.suppressionReason : 'Preference' %>)</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="notification-actions">
+                                <% if (isUnread) { %>
+                                    <button class="btn-icon-action btn-mark-read" data-id="<%= item._id %>" title="Mark as Read">✓</button>
+                                <% } %>
+                                <% if (item.status !== 'archived') { %>
+                                    <button class="btn-icon-action btn-archive" data-id="<%= item._id %>" title="Archive">📥</button>
+                                <% } %>
+                                <button class="btn-icon-action btn-delete" data-id="<%= item._id %>" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <h3>No Notifications Yet</h3>
+                        <p style="color: #64748b; font-size: 0.9rem;">You are all caught up! Send a test notification to see it in action.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Tab 2: Preferences & Quiet Hours -->
+        <div id="prefs-tab" class="tab-content">
+            <form id="prefs-form">
+                <div class="prefs-grid">
+                    
+                    <!-- Channel Preferences -->
+                    <div class="prefs-card">
+                        <h3>📱 Delivery Channels</h3>
+                        <p>Select which channels you want to receive smart notifications on.</p>
+                        
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">In-App Notifications</span>
+                                <span class="toggle-desc">Display notifications directly inside CreatorOS.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-inapp" <%= preferences && preferences.channels && preferences.channels.inApp ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Email Alerts</span>
+                                <span class="toggle-desc">Receive email summaries for key creator events.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-email" <%= preferences && preferences.channels && preferences.channels.email ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Push Notifications</span>
+                                <span class="toggle-desc">Browser web push alerts for time-sensitive updates.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-push" <%= preferences && preferences.channels && preferences.channels.push ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">SMS Notifications</span>
+                                <span class="toggle-desc">Receive instant text alerts for urgent updates.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-sms" <%= preferences && preferences.channels && preferences.channels.sms ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Category Preferences -->
+                    <div class="prefs-card">
+                        <h3>🏷️ Notification Categories</h3>
+                        <p>Customize notifications by category topic.</p>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">⚙️ System & Account Alerts</span>
+                                <span class="toggle-desc">Security, password, and system maintenance.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-cat-system" <%= preferences && preferences.categories && preferences.categories.system ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">💬 Engagement & Inbound DMs</span>
+                                <span class="toggle-desc">Comments, creator DMs, and collaborations.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-cat-engagement" <%= preferences && preferences.categories && preferences.categories.engagement ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">📝 Content Publishing</span>
+                                <span class="toggle-desc">Scheduled post statuses and content logs.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-cat-content" <%= preferences && preferences.categories && preferences.categories.content ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">📊 Performance & Analytics</span>
+                                <span class="toggle-desc">Link click milestones and traffic spikes.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-cat-analytics" <%= preferences && preferences.categories && preferences.categories.analytics ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">📣 Marketing & Product News</span>
+                                <span class="toggle-desc">New features and promotional opportunities.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-cat-marketing" <%= preferences && preferences.categories && preferences.categories.marketing ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Quiet Hours & Do-Not-Disturb -->
+                    <div class="prefs-card">
+                        <h3>🌙 Quiet Hours & Do-Not-Disturb</h3>
+                        <p>Pause non-urgent notifications during your focus or sleep hours.</p>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Enable Quiet Hours</span>
+                                <span class="toggle-desc">Non-urgent notifications will be queued automatically.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-qh-enabled" <%= preferences && preferences.quietHours && preferences.quietHours.enabled ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="time-inputs">
+                            <div class="form-group-time">
+                                <label for="qh-start-time">Quiet Start Time</label>
+                                <input type="time" id="qh-start-time" value="<%= preferences && preferences.quietHours ? preferences.quietHours.startTime : '22:00' %>">
+                            </div>
+                            <div class="form-group-time">
+                                <label for="qh-end-time">Quiet End Time</label>
+                                <input type="time" id="qh-end-time" value="<%= preferences && preferences.quietHours ? preferences.quietHours.endTime : '08:00' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-group-time" style="margin-top: 1rem;">
+                            <label for="qh-timezone">Timezone</label>
+                            <select id="qh-timezone">
+                                <option value="UTC" <%= preferences && preferences.quietHours && preferences.quietHours.timezone === 'UTC' ? 'selected' : '' %>>UTC (Coordinated Universal Time)</option>
+                                <option value="America/New_York" <%= preferences && preferences.quietHours && preferences.quietHours.timezone === 'America/New_York' ? 'selected' : '' %>>Eastern Time (ET)</option>
+                                <option value="America/Los_Angeles" <%= preferences && preferences.quietHours && preferences.quietHours.timezone === 'America/Los_Angeles' ? 'selected' : '' %>>Pacific Time (PT)</option>
+                                <option value="Europe/London" <%= preferences && preferences.quietHours && preferences.quietHours.timezone === 'Europe/London' ? 'selected' : '' %>>London (GMT/BST)</option>
+                                <option value="Asia/Kolkata" <%= preferences && preferences.quietHours && preferences.quietHours.timezone === 'Asia/Kolkata' ? 'selected' : '' %>>India (IST)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Intelligent Scheduling & Deduplication -->
+                    <div class="prefs-card">
+                        <h3>🧠 Intelligent Scheduling & Deduplication</h3>
+                        <p>Minimize notification fatigue through smart timing and deduplication logic.</p>
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Smart Timing Optimization</span>
+                                <span class="toggle-desc">Schedule non-urgent alerts during peak creator activity windows.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-intel-enabled" <%= preferences && preferences.intelligentScheduling && preferences.intelligentScheduling.enabled ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group-time" style="margin-top: 0.75rem;">
+                            <label for="intel-window">Preferred Delivery Window</label>
+                            <select id="intel-window">
+                                <option value="optimal" <%= preferences && preferences.intelligentScheduling && preferences.intelligentScheduling.preferredWindow === 'optimal' ? 'selected' : '' %>>AI Optimal Window</option>
+                                <option value="morning" <%= preferences && preferences.intelligentScheduling && preferences.intelligentScheduling.preferredWindow === 'morning' ? 'selected' : '' %>>Morning (09:00 - 12:00)</option>
+                                <option value="afternoon" <%= preferences && preferences.intelligentScheduling && preferences.intelligentScheduling.preferredWindow === 'afternoon' ? 'selected' : '' %>>Afternoon (12:00 - 17:00)</option>
+                                <option value="evening" <%= preferences && preferences.intelligentScheduling && preferences.intelligentScheduling.preferredWindow === 'evening' ? 'selected' : '' %>>Evening (17:00 - 21:00)</option>
+                            </select>
+                        </div>
+
+                        <hr style="border:none; border-top:1px solid #f1f5f9; margin: 1rem 0;">
+
+                        <div class="toggle-item">
+                            <div class="toggle-label">
+                                <span class="toggle-title">Notification Deduplication</span>
+                                <span class="toggle-desc">Suppress duplicate alerts occurring within a short window.</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-dedup-enabled" <%= preferences && preferences.deduplication && preferences.deduplication.enabled ? 'checked' : '' %>>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group-time" style="margin-top: 0.75rem;">
+                            <label for="dedup-window">Deduplication Window (Minutes)</label>
+                            <input type="number" id="dedup-window" min="1" max="1440" value="<%= preferences && preferences.deduplication ? preferences.deduplication.windowMinutes : 15 %>">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 1.5rem; text-align: right;">
+                    <button type="submit" style="background: #2563eb; color: white; border: none; padding: 0.75rem 1.75rem; font-weight: 700; border-radius: 8px; cursor: pointer; font-size: 1rem;">💾 Save Preferences</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tab 3: Analytics -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="analytics-metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Total Sent</div>
+                    <div class="metric-value" id="stat-total-sent"><%= analytics ? analytics.totalNotifications : 0 %></div>
+                    <div class="metric-trend">Across all channels</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-card-title">Delivery Rate</div>
+                    <div class="metric-value" id="stat-delivery-rate"><%= analytics ? analytics.deliveryRate : 100 %>%</div>
+                    <div class="metric-trend">Successful dispatch rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-card-title">Open Rate</div>
+                    <div class="metric-value" id="stat-open-rate"><%= analytics ? analytics.openRate : 0 %>%</div>
+                    <div class="metric-trend">Read / View engagement</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-card-title">Click-Through Rate</div>
+                    <div class="metric-value" id="stat-click-rate"><%= analytics ? analytics.clickRate : 0 %>%</div>
+                    <div class="metric-trend">Actionable link clicks</div>
+                </div>
+            </div>
+
+            <div class="analytics-charts-grid">
+                <div class="chart-card">
+                    <h4>🏷️ Category Distribution</h4>
+                    <div id="cat-breakdown-bars" class="progress-bar-group">
+                        <% if (analytics && analytics.categoryStats) { %>
+                            <% Object.keys(analytics.categoryStats).forEach(function(cat) { %>
+                                <% var count = analytics.categoryStats[cat]; %>
+                                <% var totalCat = analytics.totalNotifications || 1; %>
+                                <% var pct = Math.round((count / totalCat) * 100); %>
+                                <div class="bar-row">
+                                    <div class="bar-label">
+                                        <span style="text-transform: capitalize;"><%= cat %></span>
+                                        <span><%= count %> (<%= pct %>%)</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width: <%= pct %>%;"></div>
+                                    </div>ll
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h4>📡 Multi-Channel Performance</h4>
+                    <div class="progress-bar-group">
+                        <% var channelMap = analytics && analytics.channelStats ? analytics.channelStats : { in_app: { total: 0, success: 0 }, email: { total: 0, success: 0 }, push: { total: 0, success: 0 }, sms: { total: 0, success: 0 } }; %>
+                        <% Object.keys(channelMap).forEach(function(chKey) { %>
+                            <% var chData = channelMap[chKey]; %>
+                            <% var chPct = chData.total > 0 ? Math.round((chData.success / chData.total) * 100) : 100; %>
+                            <div class="bar-row">
+                                <div class="bar-label">
+                                    <span style="text-transform: uppercase;"><%= chKey %> Channel</span>
+                                    <span><%= chData.success %> / <%= chData.total %> Delivered (<%= chPct %>%)</span>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: <%= chPct %>%; background: #10b981;"></div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="/js/pages/smart-notifications.js"></script>
+
+<%- include('partials/layout/footer') %>

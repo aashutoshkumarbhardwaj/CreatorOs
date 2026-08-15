@@ -1,85 +1,158 @@
 <%- include('partials/layout/header', {
     activeNav: 'suggestion-tool',
-    title: 'Caption & Hashtag Generator',
+    title: '🎨 AI Caption & Hashtag Studio - CreatorOS',
     extraHead: `
-        <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Petrona:ital,wght@0,600;0,700;0,800;1,600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Azeret+Mono:wght@400;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="/css/suggestions.css">
     `
 }) %>
 
-<div class="suggestions-page">
-<!-- page content begins -->
+<div class="suggestions-page" data-csrf="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <!-- Main content area -->
   <div class="main-content">
 
     <!-- Breadcrumb -->
     <div class="breadcrumb">
-      <span class="breadcrumb-tag">AI Toolkit</span>
+      <span class="breadcrumb-tag">AI Studio</span>
       <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-page">Caption Tool</span>
+      <span class="breadcrumb-page">Caption & Hashtag Studio</span>
     </div>
 
-    <!-- Page title -->
+    <!-- Page title header -->
     <div class="page-head">
-      <h1 class="page-title">Caption & Hashtag Generator</h1>
+      <div>
+        <h1 class="page-title">🎨 AI Caption & Hashtag Studio</h1>
+        <p class="page-sub">Generate captions, hashtags, SEO keywords, emoji suggestions, and CTAs tailored for every platform.</p>
+      </div>
     </div>
 
-    <!-- Three columns -->
+    <!-- Status / provenance banner -->
+    <div id="statusBanner" class="status-banner<%= (typeof error !== 'undefined' && error) ? ' show error' : (typeof source !== 'undefined' && source === 'template' ? ' show template' : '') %>" role="status" aria-live="polite"<%= (typeof error !== 'undefined' && error) || (typeof source !== 'undefined' && source === 'template') ? '' : ' hidden' %>>
+      <div class="status-banner-copy">
+        <strong id="statusBannerTitle"><%= (typeof error !== 'undefined' && error) ? 'Suggestions unavailable' : (typeof source !== 'undefined' && source === 'template' ? 'Template mode' : '') %></strong>
+        <span id="statusBannerMessage"><%= (typeof error !== 'undefined' && error) ? error : (typeof source !== 'undefined' && source === 'template' ? 'These captions and hashtags are offline templates, not AI-generated results. Music recommendations are omitted.' : '') %></span>
+      </div>
+      <button type="button" class="status-retry-btn" id="statusRetryBtn"<%= (typeof retryable !== 'undefined' && retryable) ? '' : ' hidden' %>>Retry</button>
+    </div>
+
+    <!-- Three column tool grid -->
     <div class="tool-grid">
 
-      <!-- ── COL 1: INPUT ── -->
+      <!-- ── COL 1: INPUT CONTROLS ── -->
       <div class="col-input">
-        <span class="col-label">01. Content Details</span>
+        <span class="col-label">01. Studio Controls</span>
         <div class="input-section">
 
-          <!-- Topic -->
+          <!-- Topic / Details -->
           <div>
-            <div class="field-label">Topic / Concept</div>
-            <textarea class="field-textarea" id="topicInput"
-              placeholder="e.g. My morning desk setup and creative routine..."></textarea>
+            <div class="field-label">
+              <span>Content Concept / Topic</span>
+              <span class="char-count" id="charCount">0 / 500</span>
+            </div>
+            <textarea class="field-textarea" id="topicInput" maxlength="500"
+              placeholder="e.g. 5 productivity habits for remote software developers in 2026..."><%= typeof selected !== 'undefined' && selected ? selected : '' %></textarea>
           </div>
 
-          <!-- Platform -->
+          <!-- Platform Presets -->
           <div>
-            <div class="field-label">Platform Target</div>
-            <div class="platform-chips">
-              <div class="platform-chip selected" data-platform="instagram" onclick="togglePlatform(this)">
+            <div class="field-label">Platform Preset</div>
+            <div class="platform-grid" id="platformGrid">
+              <div class="platform-chip selected" data-platform="instagram" onclick="selectPlatform(this)">
                 <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
                 Instagram
               </div>
-              <div class="platform-chip" data-platform="tiktok" onclick="togglePlatform(this)">
-                <svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
-                TikTok
+              <div class="platform-chip" data-platform="linkedin" onclick="selectPlatform(this)">
+                <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                LinkedIn
               </div>
-              <div class="platform-chip" data-platform="youtube" onclick="togglePlatform(this)">
+              <div class="platform-chip" data-platform="twitter" onclick="selectPlatform(this)">
+                <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+                Twitter / X
+              </div>
+              <div class="platform-chip" data-platform="threads" onclick="selectPlatform(this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c-2.48 0-4.5-1.79-4.5-4s2.02-4 4.5-4 4.5 1.79 4.5 4-2.02 4-4.5 4z"/></svg>
+                Threads
+              </div>
+              <div class="platform-chip" data-platform="facebook" onclick="selectPlatform(this)">
+                <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                Facebook
+              </div>
+              <div class="platform-chip" data-platform="youtube" onclick="selectPlatform(this)">
                 <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
                 YouTube
               </div>
             </div>
           </div>
 
-          <!-- Mood -->
+          <!-- Tone Selection -->
           <div>
-            <div class="field-label">Vibe & Mood</div>
-            <div class="mood-chips">
-              <div class="mood-chip selected" onclick="toggleMood(this)">Energetic</div>
-              <div class="mood-chip" onclick="toggleMood(this)">Professional</div>
-              <div class="mood-chip" onclick="toggleMood(this)">Witty</div>
-              <div class="mood-chip" onclick="toggleMood(this)">Minimalist</div>
+            <div class="field-label">Tone & Voice</div>
+            <div class="tone-grid" id="toneGrid">
+              <div class="tone-chip selected" data-tone="energetic" onclick="selectTone(this)">🔥 Energetic</div>
+              <div class="tone-chip" data-tone="professional" onclick="selectTone(this)">💼 Professional</div>
+              <div class="tone-chip" data-tone="witty" onclick="selectTone(this)">😏 Witty</div>
+              <div class="tone-chip" data-tone="minimalist" onclick="selectTone(this)">▪️ Minimalist</div>
+              <div class="tone-chip" data-tone="persuasive" onclick="selectTone(this)">🏆 Persuasive</div>
+              <div class="tone-chip" data-tone="educational" onclick="selectTone(this)">📚 Educational</div>
+            </div>
+          </div>
+
+          <!-- Length Selection -->
+          <div>
+            <div class="field-label">Caption Length</div>
+            <div class="length-group" id="lengthGroup">
+              <button type="button" class="length-btn" data-length="short" onclick="selectLength(this)">Short</button>
+              <button type="button" class="length-btn selected" data-length="medium" onclick="selectLength(this)">Medium</button>
+              <button type="button" class="length-btn" data-length="long" onclick="selectLength(this)">Long</button>
+            </div>
+          </div>
+
+          <!-- Language Support -->
+          <div>
+            <div class="field-label">Language</div>
+            <select class="field-select" id="languageSelect">
+              <option value="english" selected>🇺🇸 English</option>
+              <option value="spanish">🇪🇸 Spanish</option>
+              <option value="french">🇫🇷 French</option>
+              <option value="german">🇩🇪 German</option>
+              <option value="hindi">🇮🇳 Hindi</option>
+              <option value="portuguese">🇧🇷 Portuguese</option>
+              <option value="japanese">🇯🇵 Japanese</option>
+            </select>
+          </div>
+
+          <!-- Output Options Toggles -->
+          <div>
+            <div class="field-label">Studio Features</div>
+            <div class="toggles-list">
+              <label class="toggle-item">
+                <input type="checkbox" id="toggleEmojis" checked>
+                <span>Include Emoji Suggestions</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggleCta" checked>
+                <span>Include Call-To-Actions (CTAs)</span>
+              </label>
+              <label class="toggle-item">
+                <input type="checkbox" id="toggleSeo" checked>
+                <span>SEO Keyword Extraction</span>
+              </label>
             </div>
           </div>
 
         </div>
 
-        <!-- Generate -->
+        <!-- Generate Button -->
         <button type="button" class="generate-btn" id="generateBtn" onclick="generateCaptions()">
           <div class="spinner"></div>
-          <span class="btn-text">✦ Generate Captions</span>
+          <span class="btn-text">Generate Studio Suggestions</span>
+          <span class="shortcut-hint">(Ctrl + Enter)</span>
         </button>
 
-        <!-- Usage -->
+        <!-- Usage Box -->
         <div class="usage-box">
           <div class="usage-header">
-            <span class="usage-label">Usage Limit</span>
+            <span class="usage-label">Monthly AI Requests</span>
             <span class="usage-pct" id="usagePct">82%</span>
           </div>
           <div class="usage-bar-bg">
@@ -89,115 +162,95 @@
         </div>
       </div>
 
-      <!-- ── COL 2: OUTPUT ── -->
+      <!-- ── COL 2: GENERATED CAPTIONS ── -->
       <div class="col-output">
         <div class="output-header">
           <span class="output-title">Generated Captions</span>
           <div class="output-actions">
-            <button type="button" class="output-action-btn" title="Filter" onclick="showToast('Filter coming soon')">
-              <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <button type="button" class="output-action-btn" title="Copy top caption" onclick="copyCaption(0)">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy #1
             </button>
             <button type="button" class="output-action-btn" title="Regenerate" onclick="generateCaptions()">
               <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Regenerate
             </button>
           </div>
         </div>
 
-        <!-- Captions will be injected here -->
         <div class="captions-list" id="captionsList">
           <div class="empty-state" id="emptyState">
             <div class="empty-icon">
               <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <div class="empty-title">No captions yet</div>
-            <div class="empty-sub">Fill in your content details and hit Generate.</div>
+            <div class="empty-title">No captions generated yet</div>
+            <div class="empty-sub">Fill in your content details and click Generate Studio Suggestions.</div>
           </div>
         </div>
       </div>
 
-      <!-- ── COL 3: RIGHT PANEL ── -->
+      <!-- ── COL 3: HASHTAGS, SEO, CTAS & HISTORY ── -->
       <div class="col-right">
 
-        <!-- Trending Hashtags -->
+        <!-- Hashtags Panel -->
         <div class="right-panel">
-          <div class="right-panel-head">02. Trending Hashtags</div>
+          <div class="right-panel-head">
+            <span>02. Hashtags</span>
+            <span class="right-panel-action" onclick="copyAllHashtags()">Copy All</span>
+          </div>
           <div class="hashtag-list" id="hashtagList">
-            <div class="hashtag-row" onclick="copyHashtag('#CREATORECONOMY')">
-              <span class="hashtag-name">#CREATORECONOMY</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">98/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:98%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#AIGENERATED')">
-              <span class="hashtag-name">#AIGENERATED</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">85/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:85%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#PRODUCTIVITYHACKS')">
-              <span class="hashtag-name">#PRODUCTIVITYHACKS</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">72/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:72%"></div></div>
-              </div>
-            </div>
-            <div class="hashtag-row" onclick="copyHashtag('#DESKSETUP')">
-              <span class="hashtag-name">#DESKSETUP</span>
-              <div class="hashtag-score-wrap">
-                <span class="hashtag-score">64/100</span>
-                <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:64%"></div></div>
-              </div>
-            </div>
+            <div class="panel-empty" id="hashtagEmpty">Generate suggestions to view hashtags.</div>
           </div>
-          <button type="button" class="see-more-btn" onclick="showToast('Loading more trends...')">See more trends</button>
         </div>
 
-        <!-- Recommended Audio -->
+        <!-- SEO Keywords Panel -->
         <div class="right-panel">
-          <div class="right-panel-head">03. Recommended Audio</div>
-          <div class="audio-list">
-            <div class="audio-row">
-              <div class="audio-play">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Lofi M...</div>
-                <div class="audio-sub">High Growth Track</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
-            <div class="audio-row">
-              <div class="audio-play">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Tech R...</div>
-                <div class="audio-sub">Trending Globally</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
-            <div class="audio-row">
-              <div class="audio-play teal">
-                <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#111"/></svg>
-              </div>
-              <div class="audio-info">
-                <div class="audio-name">Hyper...</div>
-                <div class="audio-sub">8.2k usages today</div>
-              </div>
-              <button type="button" class="audio-add" onclick="showToast('Added to project!')">+</button>
-            </div>
+          <div class="right-panel-head">
+            <span>03. SEO Keywords (YAKE NLP)</span>
+          </div>
+          <div class="keywords-list" id="keywordsList">
+            <div class="panel-empty" id="keywordsEmpty">SEO keywords will be extracted from your topic.</div>
           </div>
         </div>
 
-      </div>
+        <!-- CTAs & Emojis Panel -->
+        <div class="right-panel">
+          <div class="right-panel-head">
+            <span>04. CTA & Emoji Suggestions</span>
+          </div>
+          <div class="cta-list" id="ctaList">
+            <div class="panel-empty" id="ctaEmpty">Recommended CTAs will appear here.</div>
+          </div>
+          <div class="emoji-palette" id="emojiPalette"></div>
+        </div>
+
+        <!-- Generation History Panel -->
+        <div class="right-panel">
+          <div class="right-panel-head">
+            <span>05. History</span>
+            <span class="right-panel-action" onclick="clearHistory()">Clear</span>
+          </div>
+          <div class="history-list" id="historyList">
+            <div class="panel-empty" id="historyEmpty">No past generations saved yet.</div>
+          </div>
+        </div>
+
+        <!-- Audio Panel -->
+        <div class="right-panel">
+          <div class="right-panel-head">06. Recommended Audio</div>
+          <div class="audio-list" id="audioList">
+            <div class="panel-empty" id="audioEmpty">Music recommendations appear from successful AI responses.</div>
+          </div>
+        </div>
+
+      </div><!-- /col-right -->
+
     </div><!-- /tool-grid -->
 
   </div><!-- /main-content -->
 </div><!-- /suggestions-page -->
 
-<!-- Mobile bottom nav -->
+<!-- Mobile Navigation Bar -->
 <nav class="mobile-nav">
   <div class="mobile-nav-inner">
     <a href="/dashboard" class="mobile-nav-item">
@@ -205,7 +258,7 @@
       Home
     </a>
     <a href="/dashboard" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
       Dashboard
     </a>
     <a href="/services/url-shortener" class="mobile-nav-item">
@@ -214,221 +267,441 @@
     </a>
     <a href="/suggestions" class="mobile-nav-item active">
       <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      Modules
+      Studio
     </a>
   </div>
 </nav>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<% if (typeof error !== 'undefined' && error) { %>
 <script nonce="<%= nonce %>">
-  document.addEventListener('DOMContentLoaded', () => {
+  const initialResult = <%- typeof result !== 'undefined' && result ? JSON.stringify({
+    captions: result.captions || [],
+    hashtags: result.hashtags || [],
+    keywords: result.keywords || [],
+    ctas: result.ctas || [],
+    emojis: result.emojis || [],
+    songs: result.songs || [],
+    source: typeof source !== 'undefined' ? source : (result.source || null)
+  }).replace(/</g, '\\u003c') : 'null' %>;
+
+  const initialOptions = <%- typeof options !== 'undefined' && options ? JSON.stringify(options).replace(/</g, '\\u003c') : 'null' %>;
+
+  const initialError = <%- typeof error !== 'undefined' && error ? JSON.stringify({
+    message: error,
+    code: typeof errorCode !== 'undefined' ? errorCode : null,
+    retryable: typeof retryable !== 'undefined' ? !!retryable : false
+  }).replace(/</g, '\\u003c') : 'null' %>;
+
+  let currentResultData = null;
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getCsrfToken() {
+    const page = document.querySelector('.suggestions-page');
+    return page ? page.getAttribute('data-csrf') || '' : '';
+  }
+
+  function showToast(msg) {
     const t = document.getElementById('toast');
-    if (t) {
-      t.textContent = "<%= error %>";
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3500);
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function selectPlatform(el) {
+    document.querySelectorAll('#platformGrid .platform-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectTone(el) {
+    document.querySelectorAll('#toneGrid .tone-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectLength(el) {
+    document.querySelectorAll('#lengthGroup .length-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function getSelectedOptions() {
+    const activePlatformEl = document.querySelector('#platformGrid .platform-chip.selected');
+    const activeToneEl = document.querySelector('#toneGrid .tone-chip.selected');
+    const activeLengthEl = document.querySelector('#lengthGroup .length-btn.selected');
+
+    return {
+      topic: document.getElementById('topicInput').value.trim(),
+      platform: activePlatformEl ? activePlatformEl.getAttribute('data-platform') : 'instagram',
+      tone: activeToneEl ? activeToneEl.getAttribute('data-tone') : 'energetic',
+      length: activeLengthEl ? activeLengthEl.getAttribute('data-length') : 'medium',
+      language: document.getElementById('languageSelect').value || 'english',
+      includeEmojis: document.getElementById('toggleEmojis').checked,
+      includeCta: document.getElementById('toggleCta').checked
+    };
+  }
+
+  function setStatusBanner({ type, title, message, retryable }) {
+    const banner = document.getElementById('statusBanner');
+    const titleEl = document.getElementById('statusBannerTitle');
+    const messageEl = document.getElementById('statusBannerMessage');
+    const retryBtn = document.getElementById('statusRetryBtn');
+
+    banner.hidden = false;
+    banner.classList.add('show');
+    banner.classList.toggle('error', type === 'error');
+    banner.classList.toggle('template', type === 'template');
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    retryBtn.hidden = !retryable;
+  }
+
+  function clearStatusBanner() {
+    const banner = document.getElementById('statusBanner');
+    banner.hidden = true;
+    banner.classList.remove('show', 'error', 'template');
+    document.getElementById('statusRetryBtn').hidden = true;
+  }
+
+  function showUnavailableState(message, retryable) {
+    const list = document.getElementById('captionsList');
+    list.innerHTML = `
+      <div class="empty-state unavailable-state" id="emptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="empty-title">Suggestions unavailable</div>
+        <div class="empty-sub">${escapeHtml(message || 'Generation failed. Please try again.')}</div>
+        ${retryable ? '<button type="button" class="status-retry-btn" onclick="generateCaptions()">Retry</button>' : ''}
+      </div>
+    `;
+    document.getElementById('hashtagList').innerHTML = '<div class="panel-empty">Hashtags unavailable.</div>';
+    document.getElementById('keywordsList').innerHTML = '<div class="panel-empty">SEO keywords unavailable.</div>';
+    document.getElementById('ctaList').innerHTML = '<div class="panel-empty">CTAs unavailable.</div>';
+    document.getElementById('audioList').innerHTML = '<div class="panel-empty">Music recommendations hidden.</div>';
+    setStatusBanner({
+      type: 'error',
+      title: 'Suggestions unavailable',
+      message: message || 'Generation failed. Please try again.',
+      retryable: !!retryable
+    });
+  }
+
+  function renderCaptions(captions, hashtags, source, opts) {
+    const list = document.getElementById('captionsList');
+    if (!captions || captions.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No captions generated.</div>';
+      return;
     }
-  });
-</script>
-<% } %>
 
-<script nonce="<%= nonce %>">
-  // ── PLATFORM TOGGLE ──
-  function togglePlatform(el) {
-    el.classList.toggle('selected');
+    const platform = opts?.platform || 'instagram';
+    const tone = opts?.tone || 'energetic';
+
+    list.innerHTML = captions.map((text, i) => {
+      const words = text.split(/\s+/).filter(Boolean).length;
+      const chars = text.length;
+
+      return `
+        <div class="caption-card" style="animation-delay:${i * 0.08}s">
+          <div class="caption-card-meta">
+            <span class="caption-option-badge">OPTION ${String(i + 1).padStart(2, '0')}${source === 'template' ? ' · TEMPLATE' : ''}</span>
+            <span class="caption-meta-stats">${words} words · ${chars} chars</span>
+          </div>
+          <p class="caption-text">${escapeHtml(text)}</p>
+          <div class="caption-tags">
+            <span class="caption-tag" style="background:#e0e7ff; color:#3730a3;">#${platform}</span>
+            <span class="caption-tag" style="background:#fef3c7; color:#92400e;">${tone}</span>
+            ${hashtags.slice(0, 3).map((t) =>
+              `<span class="caption-tag" onclick="copyText('${escapeHtml(t)}')">${escapeHtml(t)}</span>`
+            ).join('')}
+          </div>
+          <div class="caption-actions">
+            <button type="button" class="caption-btn" onclick="copyCaption(${i})">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Caption
+            </button>
+            <button type="button" class="caption-btn secondary" onclick="copyCaptionWithHashtags(${i})">
+              <svg viewBox="0 0 24 24"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>
+              Copy + Tags
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  // ── MOOD TOGGLE ──
-  function toggleMood(el) {
-    el.classList.toggle('selected');
+  function renderHashtags(hashtags) {
+    const list = document.getElementById('hashtagList');
+    if (!hashtags || hashtags.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No hashtags returned.</div>';
+      return;
+    }
+    list.innerHTML = hashtags.map((tag) => `
+      <div class="hashtag-chip" onclick="copyText('${escapeHtml(tag)}')">
+        <span>${escapeHtml(tag)}</span>
+      </div>
+    `).join('');
   }
 
-  // ── CAPTION DATA ──
-  const captionTemplates = {
-    witty: [
-      {
-        label: 'OPTION 01: WITTY',
-        text: "My morning routine: 5% actual work, 95% making sure my desk looks like a Pinterest board. 🖥️✨ Who else is guilty of the 'productive aesthetic'? #CreatorLife #WorkspaceVibes",
-        tags: ['#CreatorEconomy', '#MorningRoutine', '#ProductivityHacks']
-      },
-      {
-        label: 'OPTION 02: WITTY ALT',
-        text: "POV: You've rearranged your desk 4 times but only moved the plant. 🌿 The real productivity hack nobody talks about. Drop a 🖥️ if you relate.",
-        tags: ['#DeskSetup', '#CreatorLife', '#WorkFromHome']
-      }
-    ],
-    professional: [
-      {
-        label: 'OPTION 01: PROFESSIONAL',
-        text: "Efficiency starts with environment. 🧠 Optimizing my physical workspace has led to a 40% increase in deep work hours this month. Here's a breakdown of the tools keeping me focused.",
-        tags: ['#WorkspaceOptimization', '#DeepWork']
-      },
-      {
-        label: 'OPTION 02: PROFESSIONAL ALT',
-        text: "Your environment shapes your output. I spent 30 days redesigning my workspace — here's what changed about my productivity, creativity, and focus. The results surprised me.",
-        tags: ['#ProductivitySystem', '#CreatorWorkspace', '#FocusMode']
-      }
-    ],
-    energetic: [
-      {
-        label: 'OPTION 01: ENERGETIC',
-        text: "NEW SETUP DROP! 🚀⚡ I finally built the workspace of my dreams and I'm obsessed. Swipe to see the full tour and drop your fave element in the comments!",
-        tags: ['#SetupTour', '#NewSetup', '#CreatorSpace']
-      },
-      {
-        label: 'OPTION 02: ENERGETIC ALT',
-        text: "This desk setup is SENDING me 🔥 Spent the whole weekend on this and I have zero regrets. Would you work here? Tell me in the comments 👇",
-        tags: ['#DeskGoals', '#WorkspaceInspo', '#CreatorVibes']
-      }
-    ],
-    minimalist: [
-      {
-        label: 'OPTION 01: MINIMALIST',
-        text: "Less clutter. More clarity. A clean space for clear thinking.",
-        tags: ['#Minimalism', '#MinimalDesk', '#CleanSetup']
-      },
-      {
-        label: 'OPTION 02: MINIMALIST ALT',
-        text: "The desk. The work. Nothing else needed.",
-        tags: ['#MinimalWorkspace', '#SimpleLiving', '#Focus']
-      }
-    ]
-  };
+  function renderKeywords(keywords) {
+    const list = document.getElementById('keywordsList');
+    if (!keywords || keywords.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No SEO keywords extracted.</div>';
+      return;
+    }
+    list.innerHTML = keywords.map((word) => `
+      <div class="keyword-chip" onclick="copyText('${escapeHtml(word)}')">
+        🔑 ${escapeHtml(word)}
+      </div>
+    `).join('');
+  }
 
-  const trendingHashtags = {
-    instagram: [
-      { tag: '#CREATORECONOMY', score: 98 },
-      { tag: '#AIGENERATED', score: 85 },
-      { tag: '#PRODUCTIVITYHACKS', score: 72 },
-      { tag: '#DESKSETUP', score: 64 },
-    ],
-    tiktok: [
-      { tag: '#FYPAGE', score: 99 },
-      { tag: '#TIKTOKCREATOR', score: 91 },
-      { tag: '#VIRAL2026', score: 88 },
-      { tag: '#CONTENTCREATOR', score: 76 },
-    ],
-    youtube: [
-      { tag: '#YOUTUBER', score: 95 },
-      { tag: '#SHORTS', score: 90 },
-      { tag: '#VLOG', score: 82 },
-      { tag: '#SUBSCRIBE', score: 70 },
-    ]
-  };
+  function renderCtas(ctas) {
+    const list = document.getElementById('ctaList');
+    if (!ctas || ctas.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No CTAs generated.</div>';
+      return;
+    }
+    list.innerHTML = ctas.map((cta) => `
+      <div class="cta-card" onclick="copyText('${escapeHtml(cta)}')">
+        <span>${escapeHtml(cta)}</span>
+        <svg style="width:12px;height:12px;" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </div>
+    `).join('');
+  }
 
-  // ── GENERATE ──
-  function generateCaptions() {
-    const topic = document.getElementById('topicInput').value.trim();
-    if (!topic) {
-      showToast('Please enter a topic first!');
+  function renderEmojis(emojis) {
+    const palette = document.getElementById('emojiPalette');
+    if (!emojis || emojis.length === 0) {
+      palette.innerHTML = '';
+      return;
+    }
+    palette.innerHTML = emojis.map((emoji) => `
+      <div class="emoji-chip" onclick="copyText('${escapeHtml(emoji)}')">${escapeHtml(emoji)}</div>
+    `).join('');
+  }
+
+  function renderSongs(songs, source) {
+    const list = document.getElementById('audioList');
+    if (source === 'template' || !songs || songs.length === 0) {
+      list.innerHTML = '<div class="panel-empty">No verified music recommendations for this result.</div>';
+      return;
+    }
+    list.innerHTML = songs.map((song) => `
+      <div class="audio-row">
+        <div class="audio-play">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="#fff"/></svg>
+        </div>
+        <div class="audio-info">
+          <div class="audio-name">${escapeHtml(song.title)}</div>
+          <div class="audio-sub">${escapeHtml(song.mood || 'AI suggestion')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function saveToHistory(topic, platform, captions, hashtags) {
+    try {
+      let history = JSON.parse(localStorage.getItem('creatoros_studio_history') || '[]');
+      history.unshift({
+        id: Date.now(),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        topic,
+        platform,
+        topCaption: captions[0] || '',
+        hashtags: hashtags || []
+      });
+      history = history.slice(0, 10); // Keep last 10
+      localStorage.setItem('creatoros_studio_history', JSON.stringify(history));
+      renderHistory();
+    } catch (e) {
+      console.warn('Could not save history to localStorage', e);
+    }
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    try {
+      const history = JSON.parse(localStorage.getItem('creatoros_studio_history') || '[]');
+      if (history.length === 0) {
+        list.innerHTML = '<div class="panel-empty">No past generations saved yet.</div>';
+        return;
+      }
+      list.innerHTML = history.map((item) => `
+        <div class="history-item" onclick="restoreHistory(${item.id})">
+          <div class="history-item-top">
+            <span>${escapeHtml(item.platform)} · ${item.timestamp}</span>
+          </div>
+          <div class="history-item-topic">${escapeHtml(item.topic)}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="panel-empty">No past generations saved.</div>';
+    }
+  }
+
+  function restoreHistory(id) {
+    try {
+      const history = JSON.parse(localStorage.getItem('creatoros_studio_history') || '[]');
+      const item = history.find(h => h.id === id);
+      if (item) {
+        document.getElementById('topicInput').value = item.topic;
+        navigator.clipboard.writeText(item.topCaption).catch(() => {});
+        showToast(`Restored "${item.topic.slice(0, 20)}..." & top caption copied!`);
+      }
+    } catch (e) {}
+  }
+
+  function clearHistory() {
+    localStorage.removeItem('creatoros_studio_history');
+    renderHistory();
+    showToast('History cleared');
+  }
+
+  function applyResult(payload, opts = {}) {
+    const source = payload.source || (payload.isTemplate ? 'template' : 'openai');
+    const result = payload.result || payload;
+    currentResultData = result;
+
+    renderCaptions(result.captions || [], result.hashtags || [], source, opts);
+    renderHashtags(result.hashtags || []);
+    renderKeywords(result.keywords || []);
+    renderCtas(result.ctas || []);
+    renderEmojis(result.emojis || []);
+    renderSongs(result.songs || [], source);
+
+    if (opts.topic && result.captions && result.captions.length > 0) {
+      saveToHistory(opts.topic, opts.platform || 'instagram', result.captions, result.hashtags);
+    }
+
+    if (source === 'template') {
+      setStatusBanner({
+        type: 'template',
+        title: 'Template mode',
+        message: 'These captions, hashtags, and keywords are offline templates, not AI-generated results.',
+        retryable: false
+      });
+    } else {
+      clearStatusBanner();
+    }
+  }
+
+  async function generateCaptions() {
+    const options = getSelectedOptions();
+    if (!options.topic) {
+      showToast('Please enter a topic or concept first!');
+      document.getElementById('topicInput').focus();
       return;
     }
 
     const btn = document.getElementById('generateBtn');
     btn.classList.add('loading');
+    btn.disabled = true;
 
-    // Get selected mood
-    const selectedMood = document.querySelector('.mood-chip.selected');
-    const mood = selectedMood ? selectedMood.textContent.toLowerCase() : 'energetic';
+    try {
+      const response = await fetch('/suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify(options)
+      });
 
-    // Get selected platforms
-    const selectedPlatforms = [...document.querySelectorAll('.platform-chip.selected')]
-      .map(el => el.dataset.platform);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        showUnavailableState(
+          data.message || data.error || 'AI suggestions are temporarily unavailable.',
+          data.retryable !== false
+        );
+        return;
+      }
 
-    setTimeout(() => {
-      btn.classList.remove('loading');
-      renderCaptions(mood, topic, selectedPlatforms);
-      updateHashtags(selectedPlatforms[0] || 'instagram');
+      applyResult(data, options);
       updateUsage();
-    }, 1200);
-  }
-
-  function renderCaptions(mood, topic, platforms) {
-    const list = document.getElementById('captionsList');
-    const empty = document.getElementById('emptyState');
-    if (empty) empty.remove();
-
-    const captions = captionTemplates[mood] || captionTemplates.energetic;
-
-    list.innerHTML = captions.map((c, i) => `
-      <div class="caption-card" style="animation-delay:${i*0.08}s">
-        <span class="caption-option-label">${c.label}</span>
-        <p class="caption-text">${c.text}</p>
-        <div class="caption-tags">
-          ${c.tags.map(t => `<span class="caption-tag" onclick="copyText('${t}')">${t}</span>`).join('')}
-        </div>
-        <div class="caption-actions">
-          <button type="button" class="caption-btn" onclick="copyCaption(${i})">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            COPY
-          </button>
-          <button type="button" class="caption-btn" onclick="showToast('Edit mode coming soon!')">
-            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            EDIT
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function updateHashtags(platform) {
-    const hashtags = trendingHashtags[platform] || trendingHashtags.instagram;
-    const list = document.getElementById('hashtagList');
-    list.innerHTML = hashtags.map(h => `
-      <div class="hashtag-row" onclick="copyHashtag('${h.tag}')">
-        <span class="hashtag-name">${h.tag}</span>
-        <div class="hashtag-score-wrap">
-          <span class="hashtag-score">${h.score}/100</span>
-          <div class="hashtag-bar-bg"><div class="hashtag-bar" style="width:${h.score}%"></div></div>
-        </div>
-      </div>
-    `).join('');
+    } catch (err) {
+      showUnavailableState('Could not reach the suggestions service. Please try again.', true);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
   }
 
   function updateUsage() {
-    const used = Math.min(95, parseInt(document.getElementById('usagePct').textContent) + 1);
+    const used = Math.min(95, parseInt(document.getElementById('usagePct').textContent, 10) + 1);
     document.getElementById('usagePct').textContent = used + '%';
     document.getElementById('usageBar').style.width = used + '%';
     const remaining = Math.max(0, 150 - Math.round(150 * used / 100));
     document.getElementById('usageSub').textContent = `${remaining} / 150 requests remaining this month.`;
   }
 
-  // ── COPY HELPERS ──
-  const captionTexts = [];
+  function copyText(text) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    showToast(`Copied: ${text.slice(0, 25)}${text.length > 25 ? '...' : ''}`);
+  }
 
   function copyCaption(index) {
-    const cards = document.querySelectorAll('.caption-card');
-    if (cards[index]) {
-      const text = cards[index].querySelector('.caption-text').textContent;
-      navigator.clipboard.writeText(text).catch(() => {});
-      showToast('Caption copied!');
+    if (currentResultData && currentResultData.captions && currentResultData.captions[index]) {
+      copyText(currentResultData.captions[index]);
+    } else {
+      const cards = document.querySelectorAll('.caption-card');
+      if (cards[index]) {
+        copyText(cards[index].querySelector('.caption-text').textContent);
+      }
     }
   }
 
-  function copyText(text) {
-    navigator.clipboard.writeText(text).catch(() => {});
-    showToast(`${text} copied!`);
+  function copyCaptionWithHashtags(index) {
+    let captionText = '';
+    if (currentResultData && currentResultData.captions && currentResultData.captions[index]) {
+      captionText = currentResultData.captions[index];
+    } else {
+      const cards = document.querySelectorAll('.caption-card');
+      if (cards[index]) captionText = cards[index].querySelector('.caption-text').textContent;
+    }
+
+    const tags = (currentResultData && currentResultData.hashtags) ? currentResultData.hashtags.join(' ') : '';
+    const fullContent = `${captionText}\n\n${tags}`;
+    navigator.clipboard.writeText(fullContent).catch(() => {});
+    showToast('Caption + Hashtags copied!');
   }
 
-  function copyHashtag(tag) {
-    navigator.clipboard.writeText(tag).catch(() => {});
-    showToast(`${tag} copied!`);
+  function copyAllHashtags() {
+    if (currentResultData && currentResultData.hashtags && currentResultData.hashtags.length > 0) {
+      const tags = currentResultData.hashtags.join(' ');
+      navigator.clipboard.writeText(tags).catch(() => {});
+      showToast('All hashtags copied!');
+    } else {
+      showToast('No hashtags to copy!');
+    }
   }
 
-  // ── TOAST ──
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
+  // Input char counter
+  document.getElementById('topicInput').addEventListener('input', (e) => {
+    document.getElementById('charCount').textContent = `${e.target.value.length} / 500`;
+  });
 
-  // ── ENTER TO GENERATE ──
-  document.getElementById('topicInput').addEventListener('keydown', e => {
+  // Ctrl + Enter shortcut
+  document.getElementById('topicInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.ctrlKey) generateCaptions();
+  });
+
+  document.getElementById('statusRetryBtn').addEventListener('click', () => generateCaptions());
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderHistory();
+    if (initialResult) {
+      applyResult(initialResult, initialOptions || getSelectedOptions());
+    } else if (initialError) {
+      showUnavailableState(initialError.message, initialError.retryable);
+    }
   });
 </script>
 
