@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const {
     scheduleContent,
     listScheduledContent,
     cancelScheduledContent,
+    bulkScheduleContent,
 } = require('../controller/contentController');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 } });
 
 /**
  * @swagger
@@ -51,5 +55,7 @@ router.get('/scheduled', listScheduledContent);
  *         description: Not found
  */
 router.delete('/scheduled/:id', cancelScheduledContent);
+
+router.post('/schedule/bulk', upload.single('file'), bulkScheduleContent);
 
 module.exports = router;

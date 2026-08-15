@@ -20,7 +20,28 @@ Runs every 12 hours.
 
 **Script**: `scripts/remind-issues.js`
 
+### 3. **OpenSSF Criticality Score** (`.github/workflows/criticality-score.yml`)
+Runs weekly on Sunday and on `main` push / manual trigger.
+- Evaluates repository criticality metric using Rob Pike logarithmic algorithm
+- Target threshold: `>= 0.40`
+- Generates detailed step summary reports
+
+**Script**: `.github/scripts/calculate-criticality-score.js`
+
+### 4. **OpenSSF Scorecard Analysis** (`.github/workflows/scorecard.yml`)
+Runs weekly to check repository supply-chain security best practices.
+- Evaluates code reviews, vulnerability scanning, and branch protection
+- Publishes SARIF reports to GitHub Code Scanning
+
 ## Local Testing
+
+### Test OpenSSF Criticality Score
+```bash
+export GITHUB_TOKEN="your_token" # optional
+export GITHUB_REPOSITORY="owner/repo"
+
+node .github/scripts/calculate-criticality-score.js
+```
 
 ### Test Auto-Label
 ```bash
@@ -29,7 +50,7 @@ export GITHUB_REPOSITORY_OWNER="your_username"
 export GITHUB_REPOSITORY="your_username/repo"
 export GITHUB_EVENT_ISSUE_NUMBER="123"
 
-node scripts/auto-label.js
+node .github/scripts/auto-label.js
 ```
 
 ### Test Reminders
@@ -38,7 +59,7 @@ export GITHUB_TOKEN="your_token"
 export GITHUB_REPOSITORY_OWNER="your_username"
 export GITHUB_REPOSITORY="your_username/repo"
 
-node scripts/remind-issues.js
+node .github/scripts/remind-issues.js
 ```
 
 ## Setup
@@ -55,14 +76,16 @@ node scripts/remind-issues.js
 ```
 .github/
   workflows/
-    auto-label.yml        # Labels issues automatically
-    issue-reminder.yml    # Reminds assignees
-  ISSUE_TEMPLATE/         # Issue templates (optional)
+    auto-label.yml         # Labels issues automatically
+    issue-reminder.yml     # Reminds assignees
+    criticality-score.yml  # Calculates OpenSSF Criticality Score
+    scorecard.yml          # Runs OpenSSF Scorecard supply-chain security analysis
+  scripts/
+    auto-label.js          # Labeling logic
+    remind-issues.mjs      # Reminder logic
+    calculate-criticality-score.js # OpenSSF Criticality calculation logic
+  ISSUE_TEMPLATE/          # Issue templates (optional)
   pull_request_template.md
-
-scripts/
-  auto-label.js           # Labeling logic
-  remind-issues.js        # Reminder logic
 ```
 
 ## Design Philosophy

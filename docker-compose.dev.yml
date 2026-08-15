@@ -1,0 +1,111 @@
+services:
+  # MongoDB database service for development
+  mongodb:
+    image: mongo:6.0
+    container_name: creatoros_mongodb_dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_dev_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Redis caching & queue service for development
+  redis:
+    image: redis:7.0-alpine
+    container_name: creatoros_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Node.js Express web application service with live reload
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creatoros_web_dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/creatoros
+      - REDIS_URI=redis://redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - SESSION_SECRET=dev_session_secret_key
+      - INSTAGRAM_WEBHOOK_VERIFY_TOKEN=creatoros-verify-token
+      - INSTAGRAM_APP_SECRET=creatoros_dev_app_secret
+      - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app-network
+
+  # Background worker process for processing BullMQ jobs
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: creatoros_worker_dev
+    command: node worker.js
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/creatoros
+      - REDIS_URI=redis://redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - SESSION_SECRET=dev_session_secret_key
+      - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - path: .env
+        required: false
+      - path: .env.local
+        required: false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  mongodb_dev_data:
+  redis_dev_data:
+
+networks:
+  app-network:
+    driver: bridge

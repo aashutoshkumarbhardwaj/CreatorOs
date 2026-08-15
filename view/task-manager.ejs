@@ -1,0 +1,339 @@
+<%- include('partials/layout/header', {
+    activeNav: 'task-manager',
+    title: '✅ Task Manager - CreatorOS',
+    extraHead: '<link rel="stylesheet" href="/css/task-manager.css">'
+}) %>
+
+<div class="content">
+    <div class="task-manager-wrapper">
+
+        <!-- Top Header & Banner -->
+        <header class="tm-header-card">
+            <div class="tm-header-main">
+                <div class="tm-header-title">
+                    <span class="tm-badge font-label">v2.0 MASTER TASK STUDIO</span>
+                    <h1 class="font-display">✅ Task Manager</h1>
+                    <p class="font-sans">Organize, track, prioritize, and delegate work tasks with interactive Kanban boards, Gantt charts, subtask checklists, and time tracking.</p>
+                </div>
+                <div class="tm-header-actions">
+                    <button type="button" class="neo-btn primary" id="btn-open-new-task">
+                        <span>⚡ NEW TASK</span>
+                    </button>
+                    <a href="/api/tasks/export/calendar" target="_blank" class="neo-btn secondary">
+                        <span>📥 EXPORT CALENDAR</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Active Live Timer Widget -->
+            <div id="tm-active-timer-widget" class="tm-timer-widget" style="display: none;">
+                <div>
+                    <span class="font-label" style="display: block; font-size: 0.75rem; color: #111;">LIVE TIME TRACKER</span>
+                    <span id="tm-timer-title" style="font-weight: 700;">Tracking task...</span>
+                </div>
+                <div class="tm-timer-display" id="tm-timer-display">00:00</div>
+                <button type="button" class="neo-btn danger sm" id="btn-stop-timer">⏹️ STOP & LOG</button>
+            </div>
+
+            <!-- Stats Ribbon -->
+            <div class="tm-stats-grid">
+                <div class="tm-stat-card">
+                    <span class="stat-label font-label">📋 TOTAL TASKS</span>
+                    <span class="stat-value font-display" id="stat-total-tasks"><%= stats.totalTasks || 0 %></span>
+                </div>
+                <div class="tm-stat-card">
+                    <span class="stat-label font-label">⚡ ACTIVE TASKS</span>
+                    <span class="stat-value font-display" id="stat-active-tasks"><%= stats.activeTasks || 0 %></span>
+                </div>
+                <div class="tm-stat-card">
+                    <span class="stat-label font-label">✅ COMPLETED</span>
+                    <span class="stat-value font-display" id="stat-completed-tasks"><%= stats.completedTasks || 0 %></span>
+                </div>
+                <div class="tm-stat-card">
+                    <span class="stat-label font-label">⚠️ OVERDUE</span>
+                    <span class="stat-value font-display" id="stat-overdue-tasks"><%= stats.overdueTasks || 0 %></span>
+                </div>
+                <div class="tm-stat-card">
+                    <span class="stat-label font-label">⏱️ TOTAL SPENT</span>
+                    <span class="stat-value font-display" id="stat-spent-hours"><%= stats.totalSpentHours || 0 %>h</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tm-nav-tabs" aria-label="Task Manager Views">
+            <button type="button" class="tm-tab-btn active" data-tab="kanban">
+                <span>📋</span> Kanban Board
+            </button>
+            <button type="button" class="tm-tab-btn" data-tab="list">
+                <span>📑</span> List View
+            </button>
+            <button type="button" class="tm-tab-btn" data-tab="gantt">
+                <span>📊</span> Gantt Timeline
+            </button>
+            <button type="button" class="tm-tab-btn" data-tab="calendar">
+                <span>📅</span> Calendar View
+            </button>
+            <button type="button" class="tm-tab-btn" data-tab="archive">
+                <span>🗃️</span> Archive Vault
+            </button>
+        </nav>
+
+        <!-- Control & Filter Bar -->
+        <div class="tm-filter-bar">
+            <div class="tm-search-box">
+                <input type="text" id="tm-search-input" placeholder="🔍 Search tasks, tags, descriptions..." class="neo-input" />
+            </div>
+            <div class="tm-filter-controls">
+                <select id="tm-filter-status" class="neo-select">
+                    <option value="">All Statuses</option>
+                    <option value="todo">Todo</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="review">Review</option>
+                    <option value="completed">Completed</option>
+                </select>
+
+                <select id="tm-filter-category" class="neo-select">
+                    <option value="">All Categories</option>
+                    <option value="content">Content Production</option>
+                    <option value="editing">Editing & Post</option>
+                    <option value="sponsorship">Sponsorships</option>
+                    <option value="admin">Admin & Ops</option>
+                    <option value="growth">Growth & Analytics</option>
+                    <option value="personal">Personal</option>
+                    <option value="other">Other</option>
+                </select>
+
+                <select id="tm-filter-priority" class="neo-select">
+                    <option value="">All Priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- VIEW 1: KANBAN BOARD -->
+        <section id="view-kanban" class="tm-view-section active">
+            <div class="tm-kanban-board">
+                <!-- Column 1: TODO -->
+                <div class="tm-kanban-column">
+                    <div class="tm-column-header">
+                        <div class="tm-column-title">
+                            <span>📌</span> TODO
+                        </div>
+                        <span class="tm-column-count" id="col-count-todo">0</span>
+                    </div>
+                    <div class="tm-column-cards" id="col-cards-todo" data-status="todo"></div>
+                </div>
+
+                <!-- Column 2: IN PROGRESS -->
+                <div class="tm-kanban-column">
+                    <div class="tm-column-header">
+                        <div class="tm-column-title">
+                            <span>⚡</span> IN PROGRESS
+                        </div>
+                        <span class="tm-column-count" id="col-count-in_progress">0</span>
+                    </div>
+                    <div class="tm-column-cards" id="col-cards-in_progress" data-status="in_progress"></div>
+                </div>
+
+                <!-- Column 3: REVIEW -->
+                <div class="tm-kanban-column">
+                    <div class="tm-column-header">
+                        <div class="tm-column-title">
+                            <span>🔍</span> REVIEW
+                        </div>
+                        <span class="tm-column-count" id="col-count-review">0</span>
+                    </div>
+                    <div class="tm-column-cards" id="col-cards-review" data-status="review"></div>
+                </div>
+
+                <!-- Column 4: COMPLETED -->
+                <div class="tm-kanban-column">
+                    <div class="tm-column-header">
+                        <div class="tm-column-title">
+                            <span>✅</span> COMPLETED
+                        </div>
+                        <span class="tm-column-count" id="col-count-completed">0</span>
+                    </div>
+                    <div class="tm-column-cards" id="col-cards-completed" data-status="completed"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: LIST VIEW -->
+        <section id="view-list" class="tm-view-section">
+            <div class="tm-list-container">
+                <table class="tm-list-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"></th>
+                            <th>Task Title</th>
+                            <th>Priority</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tm-list-tbody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VIEW 3: GANTT TIMELINE -->
+        <section id="view-gantt" class="tm-view-section">
+            <div class="tm-gantt-container">
+                <div class="tm-gantt-header">
+                    <h3 class="font-display" style="margin: 0;">📊 Task Timeline & Dependencies</h3>
+                    <span class="font-label" style="font-size: 0.8rem;">START DATE TO DUE DATE VISUALIZER</span>
+                </div>
+                <div class="tm-gantt-chart" id="tm-gantt-chart-body">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: CALENDAR VIEW -->
+        <section id="view-calendar" class="tm-view-section">
+            <div class="tm-calendar-container">
+                <div class="tm-calendar-header">
+                    <h3 class="font-display" id="tm-cal-month-title" style="margin: 0;">Calendar Overview</h3>
+                    <span class="font-label" style="font-size: 0.8rem;">SCHEDULED DEADLINES</span>
+                </div>
+                <div class="tm-calendar-grid" id="tm-calendar-grid">
+                    <!-- Calendar cells generated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 5: ARCHIVE VAULT -->
+        <section id="view-archive" class="tm-view-section">
+            <div class="tm-list-container">
+                <table class="tm-list-table">
+                    <thead>
+                        <tr>
+                            <th>Task Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Archived Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tm-archive-tbody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- Task Create/Edit Modal Drawer -->
+<div class="tm-modal-backdrop" id="tm-modal-backdrop">
+    <div class="tm-modal-box">
+        <div class="tm-modal-header">
+            <h2 class="font-display" id="tm-modal-title">⚡ CREATE TASK</h2>
+            <button type="button" class="tm-modal-close" id="tm-modal-close">✕</button>
+        </div>
+        <form id="tm-task-form">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>" />
+            
+            <div class="tm-form-grid">
+                <div class="tm-form-group full">
+                    <label class="font-label">TASK TITLE *</label>
+                    <input type="text" id="tm-input-title" class="neo-input" placeholder="e.g. Edit YouTube Intro & Sponsor Segment" required />
+                </div>
+
+                <div class="tm-form-group full">
+                    <label class="font-label">DESCRIPTION / NOTES</label>
+                    <textarea id="tm-input-desc" class="neo-textarea" rows="3" placeholder="Task breakdown, requirements, link to assets..."></textarea>
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">PRIORITY</label>
+                    <select id="tm-input-priority" class="neo-select">
+                        <option value="urgent">🔴 Urgent</option>
+                        <option value="high">🟠 High</option>
+                        <option value="medium" selected>🟡 Medium</option>
+                        <option value="low">🟢 Low</option>
+                    </select>
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">CATEGORY</label>
+                    <select id="tm-input-category" class="neo-select">
+                        <option value="content" selected>🎬 Content Production</option>
+                        <option value="editing">✂️ Editing & Post</option>
+                        <option value="sponsorship">🤝 Sponsorships</option>
+                        <option value="admin">⚙️ Admin & Ops</option>
+                        <option value="growth">📈 Growth & Analytics</option>
+                        <option value="personal">👤 Personal</option>
+                        <option value="other">📌 Other</option>
+                    </select>
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">STATUS</label>
+                    <select id="tm-input-status" class="neo-select">
+                        <option value="todo" selected>Todo</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="review">Review</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">ESTIMATED HOURS</label>
+                    <input type="number" id="tm-input-estimated-hours" class="neo-input" min="0" step="0.5" value="0" />
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">START DATE</label>
+                    <input type="datetime-local" id="tm-input-start-date" class="neo-input" />
+                </div>
+
+                <div class="tm-form-group">
+                    <label class="font-label">DUE DATE (DEADLINE)</label>
+                    <input type="datetime-local" id="tm-input-due-date" class="neo-input" />
+                </div>
+
+                <div class="tm-form-group full">
+                    <label class="font-label">TAGS (COMMA SEPARATED)</label>
+                    <input type="text" id="tm-input-tags" class="neo-input" placeholder="youtube, sponsor, intro" />
+                </div>
+
+                <div class="tm-form-group full">
+                    <label class="font-label">PREREQUISITE DEPENDENCY TASK</label>
+                    <select id="tm-input-dependencies" class="neo-select">
+                        <option value="">None (No prerequisite tasks)</option>
+                    </select>
+                </div>
+
+                <!-- Subtasks Section -->
+                <div class="tm-form-group full">
+                    <label class="font-label">SUBTASK CHECKLIST</label>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="tm-input-subtask" class="neo-input" placeholder="Add a subtask item..." />
+                        <button type="button" class="neo-btn secondary" id="btn-add-subtask">+ ADD</button>
+                    </div>
+                    <div id="tm-subtask-list"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #111;">
+                <button type="button" class="neo-btn secondary" id="tm-modal-cancel">Cancel</button>
+                <button type="submit" class="neo-btn primary">SAVE TASK</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/task-manager.js"></script>
+
+<%- include('partials/layout/footer') %>

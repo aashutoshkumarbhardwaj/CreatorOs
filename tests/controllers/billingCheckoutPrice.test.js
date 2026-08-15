@@ -67,7 +67,7 @@ describe('createCheckoutSession price validation', () => {
                     quantity: 1,
                 },
             ],
-        }));
+        }), expect.objectContaining({ idempotencyKey: 'checkout:user-1:price_allowed' }));
         expect(res.json).toHaveBeenCalledWith({ success: true, url: 'https://checkout.test/session' });
     });
 });

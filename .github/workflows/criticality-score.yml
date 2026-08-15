@@ -1,0 +1,31 @@
+name: 📊 OpenSSF Criticality Score
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  calculate-score:
+    name: Calculate & Monitor OpenSSF Criticality Score
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Calculate OpenSSF Criticality Score
+        run: node .github/scripts/calculate-criticality-score.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

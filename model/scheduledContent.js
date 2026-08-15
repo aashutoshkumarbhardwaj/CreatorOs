@@ -46,17 +46,35 @@ const scheduledContentSchema = new mongoose.Schema(
             enum: ["scheduled", "publishing", "published", "failed", "cancelled"],
             default: "scheduled",
         },
+        accountId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Creator",
+        },
+        platform: {
+            type: String,
+            enum: ["instagram", "youtube", "twitter", "tiktok"],
+        },
         publishedAt: {
             type: Date,
         },
         publishedBy: {
             type: String,
         },
+        publishingStartedAt: {
+            type: Date,
+            default: null,
+        },
+        publishAttempts: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     { timestamps: true }
 );
 
 scheduledContentSchema.index({ status: 1, scheduledAt: 1 });
+scheduledContentSchema.index({ status: 1, publishingStartedAt: 1 });
 
 const ScheduledContentModel =
     mongoose.models.ScheduledContent || mongoose.model("ScheduledContent", scheduledContentSchema);
