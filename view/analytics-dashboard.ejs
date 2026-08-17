@@ -1,235 +1,619 @@
 <%- include('partials/layout/header', {
     activeNav: 'analytics',
-    title: 'Analytics Dashboard',
-    
-    
+    title: 'Unified Analytics Dashboard',
     extraHead: '<link rel="stylesheet" href="/css/analytics.css">'
 }) %>
 
-            <section class="content">
-                <!-- Dashboard Head -->
-                <div class="dashboard-head">
-                    <div>
-                        <h1>Analytics Overview</h1>
-                        <p>Track your audience growth and content performance.</p>
-                    </div>
-                </div>
-
-                <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <% analytics.metrics.forEach((metric, index) => { %>
-                        <article class="stat-card-retro <%= index === 0 ? 'accent-blue' : '' %>">
-                            <span class="label"><%= metric.label %></span>
-                            <span class="card-id">METRIC_0<%= index + 1 %></span>
-                            <span class="value"><%= metric.value %></span>
-                            <span class="subtext"><span class="trend"><%= metric.change %></span></span>
-                        </article>
+<section class="content" style="padding-bottom: 3rem;">
+    <!-- Dashboard Head Header -->
+    <div class="dashboard-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="display:flex; align-items:center; gap:0.5rem; margin:0; font-size:1.8rem; font-weight:800;">
+                📊 Unified CreatorOS Analytics
+            </h1>
+            <p style="margin:0.25rem 0 0; color:var(--muted); font-size:0.95rem;">
+                Central dashboard aggregating metrics across Smart Bio, Short Links, Vault, CRM, DM Automation & Content OS.
+            </p>
+        </div>
+        
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+            <!-- Creator Account Selector -->
+            <% if (typeof creators !== 'undefined' && creators.length > 1) { %>
+            <div>
+                <select id="accountSelector" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.55rem 0.8rem; font-family:'Space Grotesk', monospace; font-size:0.88rem; font-weight:700;">
+                    <% creators.forEach(creator => { %>
+                        <option value="<%= creator._id %>" <%= creator._id.toString() === selectedCreatorId ? 'selected' : '' %>>
+                            <%= creator.username %> (<%= creator.platform %>)
+                        </option>
                     <% }) %>
+                </select>
+            </div>
+            <% } %>
+
+            <!-- Global Date Filter Dropdown -->
+            <div>
+                <select id="globalDateRangeSelect" class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--accent-yellow); padding:0.55rem 0.8rem; font-family:'Space Grotesk', monospace; font-size:0.88rem; font-weight:800; color:var(--black);">
+                    <option value="7" <%= analytics.selectedRange === '7' ? 'selected' : '' %>>📅 Last 7 Days</option>
+                    <option value="30" <%= analytics.selectedRange === '30' || !analytics.selectedRange ? 'selected' : '' %>>📅 Last 30 Days</option>
+                    <option value="90" <%= analytics.selectedRange === '90' ? 'selected' : '' %>>📅 Last 90 Days</option>
+                    <option value="all" <%= analytics.selectedRange === 'all' ? 'selected' : '' %>>📅 All Time</option>
+                </select>
+            </div>
+
+            <!-- Live Status Ticker -->
+            <span id="liveClickCounter" class="badge-retro" style="background:#FFDE59; border:2px solid var(--black); padding:0.55rem 0.9rem; font-weight:800; font-size:0.88rem; box-shadow: 2px 2px 0 var(--black);">
+                🔴 Live: <strong id="liveClicksVal"><%= analytics.summaryCards.clicks.value || 0 %></strong> clicks
+            </span>
+
+            <!-- CSV Export Button -->
+            <a id="exportCsvBtn" href="/api/analytics/export?range=<%= analytics.selectedRange || '30' %>" class="btn-retro" style="background:var(--white); border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); padding:0.55rem 1rem; font-weight:800; text-decoration:none; color:var(--black); font-size:0.88rem; display:inline-flex; align-items:center; gap:0.4rem;">
+                ⬇️ Export CSV
+            </a>
+
+            <!-- Refresh Button -->
+            <button id="refreshStatsBtn" class="btn-retro" style="background:#37D6C8; border:2px solid var(--black); box-shadow: 3px 3px 0 var(--black); cursor:pointer; font-weight:800; padding:0.55rem 1rem; font-size:0.88rem;">
+                🔄 Refresh Stats
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. OVERVIEW STAT CARDS (STITCH DASHBOARD STYLE) -->
+    <div style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem;">
+        <!-- Total Traffic Card -->
+        <div class="panel-retro" style="padding:1.1rem; border:2px solid var(--black); box-shadow:3px 3px 0 var(--black); background:var(--card-bg, #fff);">
+            <div style="display:flex; justify-space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Traffic</span>
+                <span class="badge-retro" style="background:#37D6C8; font-size:0.75rem; padding:0.15rem 0.4rem; font-weight:800;">
+                    <%= analytics.summaryCards.traffic.growth >= 0 ? '+' : '' %><%= analytics.summaryCards.traffic.growth %>%
+                </span>
+            </div>
+            <div id="statTrafficVal" style="font-size:1.8rem; font-weight:900; margin:0.4rem 0 0.1rem; letter-spacing:-0.5px;">
+                <%= analytics.summaryCards.traffic.value.toLocaleString() %>
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);">Combined visits & clicks</div>
+        </div>
+
+        <!-- Total Clicks Card -->
+        <div class="panel-retro" style="padding:1.1rem; border:2px solid var(--black); box-shadow:3px 3px 0 var(--black); background:var(--card-bg, #fff);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Clicks</span>
+                <span class="badge-retro" style="background:#FFDE59; font-size:0.75rem; padding:0.15rem 0.4rem; font-weight:800;">
+                    +<%= analytics.summaryCards.clicks.growth %>%
+                </span>
+            </div>
+            <div id="statClicksVal" style="font-size:1.8rem; font-weight:900; margin:0.4rem 0 0.1rem; letter-spacing:-0.5px;">
+                <%= analytics.summaryCards.clicks.value.toLocaleString() %>
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);">Shortlinks + Smart Bio</div>
+        </div>
+
+        <!-- Vault Downloads Card -->
+        <div class="panel-retro" style="padding:1.1rem; border:2px solid var(--black); box-shadow:3px 3px 0 var(--black); background:var(--card-bg, #fff);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Vault Downloads</span>
+                <span class="badge-retro" style="background:#76A9FA; font-size:0.75rem; padding:0.15rem 0.4rem; font-weight:800; color:#fff;">
+                    <%= analytics.summaryCards.uploads.storageMB %> MB
+                </span>
+            </div>
+            <div id="statDownloadsVal" style="font-size:1.8rem; font-weight:900; margin:0.4rem 0 0.1rem; letter-spacing:-0.5px;">
+                <%= analytics.summaryCards.downloads.value.toLocaleString() %>
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);"><%= analytics.summaryCards.uploads.value %> files stored</div>
+        </div>
+
+        <!-- CRM Revenue Card -->
+        <div class="panel-retro" style="padding:1.1rem; border:2px solid var(--black); box-shadow:3px 3px 0 var(--black); background:var(--card-bg, #fff);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Total Revenue</span>
+                <span class="badge-retro" style="background:#2BB673; font-size:0.75rem; padding:0.15rem 0.4rem; font-weight:800; color:#fff;">
+                    <%= analytics.summaryCards.conversions.rate %>% Conv
+                </span>
+            </div>
+            <div id="statRevenueVal" style="font-size:1.8rem; font-weight:900; margin:0.4rem 0 0.1rem; letter-spacing:-0.5px; color:#2BB673;">
+                $<%= analytics.summaryCards.revenue.value.toLocaleString() %>
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);"><%= analytics.summaryCards.conversions.value %> deals closed won</div>
+        </div>
+
+        <!-- Avg Engagement Rate Card -->
+        <div class="panel-retro" style="padding:1.1rem; border:2px solid var(--black); box-shadow:3px 3px 0 var(--black); background:var(--card-bg, #fff);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.82rem; font-weight:800; text-transform:uppercase; color:var(--muted);">Engagement</span>
+                <span class="badge-retro" style="background:#F472B6; font-size:0.75rem; padding:0.15rem 0.4rem; font-weight:800; color:#fff;">
+                    Avg %
+                </span>
+            </div>
+            <div id="statEngagementVal" style="font-size:1.8rem; font-weight:900; margin:0.4rem 0 0.1rem; letter-spacing:-0.5px;">
+                <%= analytics.summaryCards.engagementRate.value %>%
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted);">Content OS + Social posts</div>
+        </div>
+    </div>
+
+    <!-- 2. MODULE SOURCES QUICK BAR -->
+    <div style="margin-top: 1.5rem;" class="panel-retro">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--black); padding-bottom:0.75rem; margin-bottom:1rem;">
+            <h2 style="font-size:1.15rem; margin:0; font-weight:800;">🔗 CreatorOS Modules Status & Activity</h2>
+            <span class="badge-retro" style="background:var(--accent-yellow);">6 Modules Active</span>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:0.8rem;">
+            <!-- Smart Bio -->
+            <a href="/services/bio-builder" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">📱 Smart Bio</div>
+                    <div id="moduleBioViews" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.smartBio.views %> views</div>
+                    <div style="font-size:0.75rem; color:var(--muted);"><%= analytics.moduleMetrics.smartBio.clicks %> bio clicks</div>
                 </div>
+            </a>
 
-                <div class="analytics-grid" style="margin-top: 1.5rem;">
-                    <!-- Analytics Graph -->
-                    <section class="panel-retro">
-                        <div class="panel-retro-title-row">
-                            <h2>Audience Growth</h2>
-                            <select class="badge-retro" style="cursor:pointer; border:2px solid var(--black); background:var(--white); padding:0.25rem; font-family:'Space Grotesk', monospace;">
-                                <option>Last 7 Days</option>
-                                <option>Last 30 Days</option>
-                                <option>Last 90 Days</option>
-                            </select>
-                        </div>
-                        <div class="chart-wrap" style="height:320px; position:relative;">
-                            <canvas id="followersChart"></canvas>
-                        </div>
-                    </section>
-
-                    <section class="panel-retro">
-                        <div class="panel-retro-title-row">
-                            <h2>Engagement Rate</h2>
-                        </div>
-                        <div class="chart-wrap" style="height:320px; position:relative;">
-                            <canvas id="engagementChart"></canvas>
-                        </div>
-                    </section>
+            <!-- URL Shortener -->
+            <a href="/services/url-shortener" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">⚡ URL Shortener</div>
+                    <div id="moduleUrlClicks" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.urlShortener.totalClicks %> clicks</div>
+                    <div style="font-size:0.75rem; color:var(--muted);"><%= analytics.moduleMetrics.urlShortener.totalLinks %> shortlinks created</div>
                 </div>
+            </a>
 
-                <!-- Top Posts -->
-                <section class="panel-retro" style="margin-top: 1.5rem;">
-                    <div class="panel-retro-title-row">
-                        <h2>Top Performing Content</h2>
-                        <span class="badge-retro">Recent</span>
+            <!-- File Upload -->
+            <a href="/services/file-upload" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">📁 File Vault</div>
+                    <div id="moduleVaultFiles" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.fileUpload.totalFiles %> files</div>
+                    <div style="font-size:0.75rem; color:var(--muted);"><%= analytics.moduleMetrics.fileUpload.downloads %> downloads</div>
+                </div>
+            </a>
+
+            <!-- Creator CRM -->
+            <a href="/services/creator-crm" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">💼 Creator CRM</div>
+                    <div id="moduleCrmDeals" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.creatorCrm.deals %> deals</div>
+                    <div style="font-size:0.75rem; color:var(--muted);">$<%= analytics.moduleMetrics.creatorCrm.revenue.toLocaleString() %> won</div>
+                </div>
+            </a>
+
+            <!-- DM Automation -->
+            <a href="/services/dm-automation" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">💬 DM Automation</div>
+                    <div id="moduleDmTriggers" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.dmAutomation.activeTriggers %> active</div>
+                    <div style="font-size:0.75rem; color:var(--muted);"><%= analytics.moduleMetrics.dmAutomation.executions %> DMs sent</div>
+                </div>
+            </a>
+
+            <!-- Content OS -->
+            <a href="/services/content-os" style="text-decoration:none; color:inherit;">
+                <div style="border:2px solid var(--black); padding:0.8rem; border-radius:6px; background:var(--white); transition:transform 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase;">📝 Content OS</div>
+                    <div id="moduleContentPosts" style="font-size:1.2rem; font-weight:800; margin-top:0.3rem;"><%= analytics.moduleMetrics.contentOs.published %> posts</div>
+                    <div style="font-size:0.75rem; color:var(--muted);"><%= analytics.moduleMetrics.contentOs.ideas %> ideas in pipeline</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. CHARTS GRID SECTION -->
+    <div style="margin-top: 1.5rem; display:grid; grid-template-columns: 2fr 1fr; gap:1.2rem;" class="responsive-grid">
+        <!-- Main Growth & Traffic Chart -->
+        <section class="panel-retro">
+            <div class="panel-retro-title-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.15rem; margin:0;">📈 Audience & Traffic Growth</h2>
+                <span class="badge-retro" style="background:#37D6C8; font-weight:800;">Live Trend</span>
+            </div>
+            <div class="chart-wrap" style="height:320px; position:relative; margin-top:0.8rem;">
+                <canvas id="trafficGrowthChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Module Split Doughnut Chart -->
+        <section class="panel-retro">
+            <div class="panel-retro-title-row">
+                <h2 style="font-size:1.15rem; margin:0;">🍕 Module Distribution</h2>
+            </div>
+            <div class="chart-wrap" style="height:320px; position:relative; margin-top:0.8rem; display:flex; align-items:center; justify-content:center;">
+                <canvas id="moduleSplitChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <!-- Revenue & Deals Chart Row -->
+    <div style="margin-top: 1.5rem; display:grid; grid-template-columns: 1fr 1fr; gap:1.2rem;" class="responsive-grid">
+        <section class="panel-retro">
+            <div class="panel-retro-title-row">
+                <h2 style="font-size:1.15rem; margin:0;">💵 Revenue & Deal Conversions</h2>
+            </div>
+            <div class="chart-wrap" style="height:260px; position:relative; margin-top:0.8rem;">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </section>
+
+        <section class="panel-retro">
+            <div class="panel-retro-title-row">
+                <h2 style="font-size:1.15rem; margin:0;">🔥 Content Engagement Trend</h2>
+            </div>
+            <div class="chart-wrap" style="height:260px; position:relative; margin-top:0.8rem;">
+                <canvas id="engagementTrendChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <!-- 4. WEEKLY / HOURLY ACTIVITY HEATMAP MATRIX -->
+    <section class="panel-retro" style="margin-top: 1.5rem;">
+        <div class="panel-retro-title-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2 style="font-size:1.15rem; margin:0; font-weight:800;">🔥 Weekly Peak Activity Heatmap</h2>
+                <p style="margin:0.2rem 0 0; color:var(--muted); font-size:0.85rem;">
+                    Identifies peak audience activity and creator touchpoints by Day of Week vs Hour of Day (0:00 - 23:00).
+                </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700;">
+                <span>Low</span>
+                <span style="display:inline-block; width:12px; height:12px; background:#e0f2fe; border:1px solid #000;"></span>
+                <span style="display:inline-block; width:12px; height:12px; background:#76a9fa; border:1px solid #000;"></span>
+                <span style="display:inline-block; width:12px; height:12px; background:#37d6c8; border:1px solid #000;"></span>
+                <span style="display:inline-block; width:12px; height:12px; background:#ffde59; border:1px solid #000;"></span>
+                <span>High</span>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto; margin-top:1rem;">
+            <div id="heatmapContainer" style="display:grid; grid-template-columns: 50px repeat(24, minmax(24px, 1fr)); gap: 3px; min-width: 680px;">
+                <!-- Header row for Hours -->
+                <div style="font-size:0.7rem; font-weight:800; color:var(--muted);">Day</div>
+                <% (analytics.heatmap.hours || []).forEach(h => { %>
+                    <div style="font-size:0.65rem; font-weight:700; text-align:center; color:var(--muted);"><%= h.split(':')[0] %>h</div>
+                <% }) %>
+
+                <!-- Day Rows -->
+                <% (analytics.heatmap.matrix || []).forEach((row, dayIdx) => { %>
+                    <div style="font-size:0.75rem; font-weight:800; display:flex; align-items:center;">
+                        <%= analytics.heatmap.days[dayIdx] %>
                     </div>
-                    <div class="table-panel-retro">
-                        <div class="table-scroll">
-                            <table class="recent-links-table">
-                                <thead>
+                    <% row.forEach((val, hourIdx) => { 
+                        let bg = '#e0f2fe';
+                        if (val > 75) bg = '#ffde59';
+                        else if (val > 50) bg = '#37d6c8';
+                        else if (val > 25) bg = '#76a9fa';
+                        else if (val > 10) bg = '#bae6fd';
+                    %>
+                        <div 
+                            title="<%= analytics.heatmap.days[dayIdx] %> <%= hourIdx %>:00 - Intensity: <%= val %>%"
+                            style="height:26px; background:<%= bg %>; border:1px solid var(--black); border-radius:3px; transition:transform 0.1s ease; cursor:pointer;"
+                            onmouseover="this.style.transform='scale(1.25)'; this.style.zIndex='10';"
+                            onmouseout="this.style.transform='none'; this.style.zIndex='1';"
+                        ></div>
+                    <% }) %>
+                <% }) %>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. TOP PERFORMING CONTENT & BREAKDOWN PANELS -->
+    <div style="margin-top: 1.5rem; display:grid; grid-template-columns: 2fr 1fr; gap:1.2rem;" class="responsive-grid">
+        <!-- Top Performing Content Table -->
+        <section class="panel-retro">
+            <div class="panel-retro-title-row" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.15rem; margin:0; font-weight:800;">🏆 Top Performing Items Across CreatorOS</h2>
+                <span class="badge-retro" style="background:var(--accent-yellow);">Top 10</span>
+            </div>
+            <div class="table-panel-retro" style="margin-top:0.8rem;">
+                <div class="table-scroll" style="overflow-x:auto;">
+                    <table class="recent-links-table" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th>Title / Resource</th>
+                                <th>Module Source</th>
+                                <th>Metric Performance</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topContentTbody">
+                            <% if (analytics.topContent && analytics.topContent.length > 0) { %>
+                                <% analytics.topContent.forEach(item => { %>
                                     <tr>
-                                        <th>Title</th>
-                                        <th>Type</th>
-                                        <th>Date</th>
-                                        <th>Likes</th>
-                                        <th>Comments</th>
-                                        <th>Engagement</th>
+                                        <td style="font-weight: 700;">
+                                            <a href="<%= item.url || '#' %>" style="color:inherit; text-decoration:none;">
+                                                <%= item.title %> ↗
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge-retro" style="background:#FFDE59; font-size:0.75rem;">
+                                                <%= item.source %>
+                                            </span>
+                                        </td>
+                                        <td style="font-weight:700; color:#2BB673;"><%= item.metrics %></td>
+                                        <td style="color:var(--muted); font-size:0.85rem;"><%= item.date %></td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <% analytics.topPosts.forEach(post => { %>
-                                        <tr>
-                                            <td style="font-weight: 700;"><%= post.title %></td>
-                                            <td><span class="badge-retro" style="background:var(--accent-yellow);"><%= post.type %></span></td>
-                                            <td><%= post.date %></td>
-                                            <td><%= post.likes %></td>
-                                            <td><%= post.comments %></td>
-                                            <td class="short-url"><%= post.engagement %></td>
-                                        </tr>
-                                    <% }) %>
-                                </tbody>
-                            </table>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" style="text-align:center; padding: 2rem; color: var(--muted);">No content activity recorded for this period.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Device & Geographic Breakdown Grid -->
+        <section class="panel-retro">
+            <div class="panel-retro-title-row">
+                <h2 style="font-size:1.15rem; margin:0;">🌐 Audience Demographics</h2>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:0.8rem; margin-top:0.8rem;">
+                <% ['device','browser','referrer','country'].forEach(key => { %>
+                    <div style="border:1.5px solid var(--black); padding:0.6rem; border-radius:6px; background:var(--white);">
+                        <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--muted); border-bottom:1px solid #ddd; padding-bottom:0.25rem;">
+                            <%= key %> Analytics
                         </div>
+                        <ul style="list-style:none; padding:0; margin:0.4rem 0 0; font-size:0.82rem;">
+                            <% const entries = Object.entries((analytics.breakdown && analytics.breakdown[key]) || {}).sort((a,b)=>b[1]-a[1]).slice(0,3); %>
+                            <% if (entries.length === 0) { %>
+                                <li style="color:var(--muted); font-size:0.78rem;">No breakdown data yet</li>
+                            <% } %>
+                            <% entries.forEach(([label, count]) => { %>
+                                <li style="display:flex; justify-content:space-between; padding:0.15rem 0;">
+                                    <span><%= label %></span><strong><%= count %></strong>
+                                </li>
+                            <% }) %>
+                        </ul>
                     </div>
-                </section>
-            </section>
-        
+                <% }) %>
+            </div>
+        </section>
+    </div>
+</section>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const dashboardLayout = document.getElementById('dashboardLayout');
-        
+<!-- CHART.JS INTEGRATION & DYNAMIC SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
-                dashboardLayout.classList.toggle('sidebar-collapsed');
-            });
-        }
-
-        const themeBtn = document.getElementById('theme-toggle');
-        const root = document.documentElement;
-        const iconLight = themeBtn ? themeBtn.querySelector('.icon-light') : null;
-        const iconDark = themeBtn ? themeBtn.querySelector('.icon-dark') : null;
-        
-        function applyTheme(isDark) {
-            if (isDark) {
-                root.setAttribute('data-theme', 'dark');
-                if (iconLight) iconLight.style.display = 'none';
-                if (iconDark) iconDark.style.display = 'block';
-            } else {
-                root.removeAttribute('data-theme');
-                if (iconLight) iconLight.style.display = 'block';
-                if (iconDark) iconDark.style.display = 'none';
-            }
-        }
-
-        if (themeBtn) {
-            if (localStorage.getItem('theme') === 'dark') {
-                applyTheme(true);
-            } else {
-                applyTheme(false);
-            }
-
-            themeBtn.addEventListener('click', () => {
-                const isDark = root.getAttribute('data-theme') === 'dark';
-                applyTheme(!isDark);
-                localStorage.setItem('theme', !isDark ? 'dark' : 'light');
-                window.dispatchEvent(new Event('themeChanged'));
-            });
-        }
-
-        // Chart.js Setup
-        const chartGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid-color') || 'rgba(0,0,0,0.1)';
-        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#111';
-        const accentTeal = '#37D6C8';
-        const accentBlue = '#76A9FA';
-        
-        Chart.defaults.color = textColor;
-        Chart.defaults.font.family = "'Space Grotesk', monospace";
-
-        const followersCtx = document.getElementById('followersChart');
-        if (followersCtx) {
-            window.followersChart = new Chart(followersCtx, {
-                type: 'line',
-                data: {
-                    labels: <%- JSON.stringify(analytics.charts.labels) %>,
-                    datasets: [{
-                        label: 'Followers',
-                        data: <%- JSON.stringify(analytics.charts.followers) %>,
-                        borderColor: accentTeal,
-                        backgroundColor: 'rgba(55, 214, 200, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: accentTeal,
-                        pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: chartGrid, drawBorder: false } },
-                        y: { grid: { color: chartGrid, drawBorder: false } }
-                    }
-                }
-            });
-        }
-
-        const engagementCtx = document.getElementById('engagementChart');
-        if (engagementCtx) {
-            window.engagementChart = new Chart(engagementCtx, {
-                type: 'line',
-                data: {
-                    labels: <%- JSON.stringify(analytics.charts.labels) %>,
-                    datasets: [{
-                        label: 'Engagement (%)',
-                        data: <%- JSON.stringify(analytics.charts.engagement) %>,
-                        borderColor: accentBlue,
-                        backgroundColor: 'rgba(118, 169, 250, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: accentBlue,
-                        pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: chartGrid, drawBorder: false } },
-                        y: { grid: { color: chartGrid, drawBorder: false } }
-                    }
-                }
-            });
-        }
-    </script>
-    <script>
-        window.addEventListener('themeChanged', () => {
-            const newGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid-color').trim() || 'rgba(0,0,0,0.1)';
-            const newText = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111';
-            
-            Chart.defaults.color = newText;
-            
-            const charts = [window.followersChart, window.engagementChart, window.perfChart].filter(Boolean);
-            charts.forEach(chart => {
-                if (chart.options.scales.x) chart.options.scales.x.grid.color = newGrid;
-                if (chart.options.scales.y) chart.options.scales.y.grid.color = newGrid;
-                
-                chart.data.datasets.forEach(dataset => {
-                    if (dataset.pointBorderColor) dataset.pointBorderColor = newText;
-                });
-                
-                chart.update();
-            });
-        });
-</script>
-
+<script>
+    // Theme & Styling Tokens
+    const chartGrid = getComputedStyle(document.documentElement).getPropertyValue('--chart-grid-color') || 'rgba(0,0,0,0.1)';
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#111';
     
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = "'Space Grotesk', monospace";
 
+    // 1. Audience & Traffic Growth Chart (Line/Area)
+    const trafficCtx = document.getElementById('trafficGrowthChart');
+    if (trafficCtx) {
+        window.trafficGrowthChart = new Chart(trafficCtx, {
+            type: 'line',
+            data: {
+                labels: <%- JSON.stringify(analytics.charts.labels || []) %>,
+                datasets: [
+                    {
+                        label: 'Total Views',
+                        data: <%- JSON.stringify(analytics.charts.views || []) %>,
+                        borderColor: '#37D6C8',
+                        backgroundColor: 'rgba(55, 214, 200, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Clicks',
+                        data: <%- JSON.stringify(analytics.charts.clicks || []) %>,
+                        borderColor: '#FFDE59',
+                        backgroundColor: 'rgba(255, 222, 89, 0.15)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Vault Downloads',
+                        data: <%- JSON.stringify(analytics.charts.downloads || []) %>,
+                        borderColor: '#76A9FA',
+                        borderWidth: 2,
+                        borderDash: [4, 4],
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'top' } },
+                scales: {
+                    x: { grid: { color: chartGrid, drawBorder: false } },
+                    y: { grid: { color: chartGrid, drawBorder: false } }
+                }
+            }
+        });
+    }
+
+    // 2. Module Distribution Split Chart (Doughnut)
+    const splitCtx = document.getElementById('moduleSplitChart');
+    if (splitCtx) {
+        window.moduleSplitChart = new Chart(splitCtx, {
+            type: 'doughnut',
+            data: {
+                labels: <%- JSON.stringify(analytics.moduleSplit.labels || []) %>,
+                datasets: [{
+                    data: <%- JSON.stringify(analytics.moduleSplit.data || []) %>,
+                    backgroundColor: ['#37D6C8', '#FFDE59', '#76A9FA', '#2BB673', '#F472B6', '#A78BFA'],
+                    borderWidth: 2,
+                    borderColor: '#111'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'bottom' } }
+            }
+        });
+    }
+
+    // 3. Revenue & Deals Chart (Bar)
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        window.revenueChart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: <%- JSON.stringify(analytics.charts.labels || []) %>,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: <%- JSON.stringify(analytics.charts.revenue || []) %>,
+                    backgroundColor: '#2BB673',
+                    borderColor: '#111',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: chartGrid } },
+                    y: { grid: { color: chartGrid } }
+                }
+            }
+        });
+    }
+
+    // 4. Content Engagement Trend Chart (Line)
+    const engCtx = document.getElementById('engagementTrendChart');
+    if (engCtx) {
+        window.engagementTrendChart = new Chart(engCtx, {
+            type: 'line',
+            data: {
+                labels: <%- JSON.stringify(analytics.charts.labels || []) %>,
+                datasets: [{
+                    label: 'Avg Engagement Rate (%)',
+                    data: <%- JSON.stringify(analytics.charts.engagement || []) %>,
+                    borderColor: '#F472B6',
+                    backgroundColor: 'rgba(244, 114, 182, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: chartGrid } },
+                    y: { grid: { color: chartGrid } }
+                }
+            }
+        });
+    }
+
+    // Dynamic Date Range Filter Listener
+    const dateRangeSelect = document.getElementById('globalDateRangeSelect');
+    if (dateRangeSelect) {
+        dateRangeSelect.addEventListener('change', async (e) => {
+            const range = e.target.value;
+            const exportBtn = document.getElementById('exportCsvBtn');
+            if (exportBtn) exportBtn.href = `/api/analytics/export?range=${range}`;
+
+            try {
+                const res = await fetch(`/api/analytics/summary?range=${range}`);
+                const resData = await res.json();
+                if (resData.success && resData.data) {
+                    updateDashboardUI(resData.data);
+                }
+            } catch (err) {
+                showAnalyticsToast('Failed to fetch filtered analytics.', true);
+            }
+        });
+    }
+
+    // Account selector listener
+    const accountSelector = document.getElementById('accountSelector');
+    if (accountSelector) {
+        accountSelector.addEventListener('change', function() {
+            const creatorId = this.value;
+            const url = new URL(window.location);
+            url.searchParams.set('creatorId', creatorId);
+            window.location.href = url.toString();
+        });
+    }
+
+    function updateDashboardUI(data) {
+        if (data.summaryCards) {
+            document.getElementById('statTrafficVal').textContent = data.summaryCards.traffic.value.toLocaleString();
+            document.getElementById('statClicksVal').textContent = data.summaryCards.clicks.value.toLocaleString();
+            document.getElementById('statDownloadsVal').textContent = data.summaryCards.downloads.value.toLocaleString();
+            document.getElementById('statRevenueVal').textContent = '$' + data.summaryCards.revenue.value.toLocaleString();
+            document.getElementById('statEngagementVal').textContent = data.summaryCards.engagementRate.value + '%';
+            document.getElementById('liveClicksVal').textContent = data.summaryCards.clicks.value;
+        }
+
+        if (data.charts && window.trafficGrowthChart) {
+            window.trafficGrowthChart.data.labels = data.charts.labels;
+            window.trafficGrowthChart.data.datasets[0].data = data.charts.views;
+            window.trafficGrowthChart.data.datasets[1].data = data.charts.clicks;
+            window.trafficGrowthChart.data.datasets[2].data = data.charts.downloads;
+            window.trafficGrowthChart.update();
+        }
+
+        if (data.charts && window.revenueChart) {
+            window.revenueChart.data.labels = data.charts.labels;
+            window.revenueChart.data.datasets[0].data = data.charts.revenue;
+            window.revenueChart.update();
+        }
+
+        if (data.charts && window.engagementTrendChart) {
+            window.engagementTrendChart.data.labels = data.charts.labels;
+            window.engagementTrendChart.data.datasets[0].data = data.charts.engagement;
+            window.engagementTrendChart.update();
+        }
+
+        showAnalyticsToast(`Analytics range updated: ${data.selectedRange} days 📈`);
+    }
+
+    // Poll live click counter every 15s
+    setInterval(async () => {
+        try {
+            const res = await fetch('/api/analytics/live-count');
+            const data = await res.json();
+            if (data.totalClicks !== undefined) {
+                const liveEl = document.getElementById('liveClicksVal');
+                if (liveEl) liveEl.textContent = data.totalClicks;
+            }
+        } catch (e) {}
+    }, 15000);
+
+    // Refresh button listener
+    const refreshBtn = document.getElementById('refreshStatsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '⌛ Refreshing...';
+            try {
+                await new Promise(r => setTimeout(r, 600));
+                showAnalyticsToast('Analytics refreshed successfully! 📈');
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) {
+                showAnalyticsToast('Failed to refresh analytics.', true);
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '🔄 Refresh Stats';
+            }
+        });
+    }
+
+    function showAnalyticsToast(msg, isErr = false) {
+        let t = document.getElementById('analytics-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'analytics-toast';
+            t.style.cssText = 'position:fixed; bottom:24px; right:24px; padding:12px 20px; border:2px solid #111; box-shadow:4px 4px 0 #111; z-index:9999; font-family:"Space Grotesk",monospace; font-weight:700; transition:all 0.3s ease; border-radius:4px;';
+            document.body.appendChild(t);
+        }
+        t.style.background = isErr ? '#E13B3B' : '#2BB673';
+        t.style.color = isErr ? '#fff' : '#111';
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+</script>
 
 <%- include('partials/layout/footer') %>

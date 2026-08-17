@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
-const connectDB = require('../conect');
+const connectDB = require('../connect');
 const User = require('../model/user');
 const bcrypt = require('bcryptjs');
 
@@ -23,7 +23,7 @@ async function seed() {
       process.exit(0);
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 12);
     const user = new User({ name: 'Test User', email, password: hashed });
     await user.save();
 

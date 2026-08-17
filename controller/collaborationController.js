@@ -28,6 +28,12 @@ function buildAccountViewModel(userDoc, fallbackUser) {
   };
 }
 
+const CrmBrand = require('../model/crmBrand');
+const CrmDeal = require('../model/crmDeal');
+const CrmInvoice = require('../model/crmInvoice');
+const CrmMediaKit = require('../model/crmMediaKit');
+const { seedInitialCrmData } = require('./creatorCrmController');
+
 const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
   const userDoc = await User.findById(req.user.id).select('name email').lean();
   const invites = await Invite.find({ inviter: req.user.id })
@@ -35,9 +41,37 @@ const getCreatorCrmPage = asyncHandler(async (req, res, next) => {
     .limit(12)
     .lean();
 
+  await seedInitialCrmData(req.user.id);
+
+  const [deals, brands, invoices, mediaKit] = await Promise.all([
+    CrmDeal.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmBrand.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmInvoice.find({ creatorId: req.user.id }).sort({ createdAt: -1 }).lean(),
+    CrmMediaKit.findOne({ creatorId: req.user.id }).lean(),
+  ]);
+
+  const totalPipelineValue = deals.reduce((sum, d) => sum + (d.amount || 0), 0);
+  const totalUnpaidInvoices = invoices
+    .filter((inv) => inv.status === 'pending' || inv.status === 'overdue')
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const crmData = {
+    deals,
+    brands,
+    invoices,
+    mediaKit,
+    summary: {
+      totalPipelineValue,
+      activeDealsCount: deals.length,
+      totalUnpaidInvoices,
+      totalBrandsCount: brands.length,
+    },
+  };
+
   res.render('creator-crm', {
     user: buildAccountViewModel(userDoc, req.user),
     invites,
+    crmData,
     success: null,
     error: null,
   });
@@ -60,12 +94,32 @@ const sendCollaboratorInvite = asyncHandler(async (req, res, next) => {
   }
 
   const { email, projectName, message } = result.data;
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedProjectName = projectName?.trim() || 'CreatorOS Collaboration';
+
+  const existingPendingInvite = await Invite.findOne({
+    inviter: req.user.id,
+    email: normalizedEmail,
+    projectName: normalizedProjectName,
+    status: 'pending',
+  });
+
+  if (existingPendingInvite) {
+    const userDoc = await User.findById(req.user.id).select('name email').lean();
+    const invites = await Invite.find({ inviter: req.user.id }).sort({ createdAt: -1 }).limit(12).lean();
+    return res.status(409).render('creator-crm', {
+      user: buildAccountViewModel(userDoc, req.user),
+      invites,
+      success: null,
+      error: `An invite is already pending for ${normalizedEmail}.`,
+    });
+  }
 
   const token = crypto.randomBytes(22).toString('hex');
   const invite = await Invite.create({
     inviter: req.user.id,
-    email: email.trim().toLowerCase(),
-    projectName: projectName?.trim() || 'CreatorOS Collaboration',
+    email: normalizedEmail,
+    projectName: normalizedProjectName,
     message: message?.trim(),
     token,
   });
@@ -154,6 +208,17 @@ const acceptInvite = asyncHandler(async (req, res, next) => {
     });
   }
 
+  if (invite.status === 'expired' || (invite.expiresAt && invite.expiresAt < new Date())) {
+    if (invite.status !== 'expired') {
+      await Invite.updateOne({ _id: invite._id }, { $set: { status: 'expired' } });
+      invite.status = 'expired';
+    }
+    return res.render('invite-accept', {
+      status: 'expired',
+      invite,
+    });
+  }
+
   // Don't auto-accept anymore if unauthenticated.
   // Just render the pending state so they can copy the token and login.
   res.render('invite-accept', {
@@ -203,6 +268,11 @@ const acceptInviteFromDashboard = asyncHandler(async (req, res, next) => {
         (existingInvite.expiresAt && existingInvite.expiresAt < new Date())
       ) {
         return renderDashboard(req, res, { inviteAcceptError: "This invitation has expired." });
+      }
+      if (existingInvite.email?.trim().toLowerCase() !== userDoc.email.trim().toLowerCase()) {
+        return renderDashboard(req, res, {
+          inviteAcceptError: 'This invitation was sent to a different email address.',
+        });
       }
       return renderDashboard(req, res, { inviteAcceptMessage: 'This invitation has already been accepted.' });
     }

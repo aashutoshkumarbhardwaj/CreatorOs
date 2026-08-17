@@ -1584,3 +1584,196 @@
             .profile-name { display:none; }
             .qr-actions { grid-template-columns: 1fr; }
         }
+
+/* ── Slug Panel Toggle ── */
+#slug-panel.open {
+    display: flex !important;
+}
+
+/* ── Toast Notifications ── */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: var(--border-thick);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-retro);
+    z-index: 1000;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transform: translateY(120%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+.toast.visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.toast.error {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+}
+
+/* ── Sort Button Active State ── */
+#sort-date.active,
+#sort-clicks.active {
+    background-color: var(--accent-teal);
+    color: #111111;
+}
+
+/* ── Filter Tab Buttons ── */
+.tab-btn {
+    font-weight: 700;
+    border: 1.5px solid var(--border);
+}
+.tab-btn.active {
+    background-color: var(--accent-teal);
+    color: #111111;
+}
+
+/* ── Duplicate Link Warning Banner ── */
+#duplicate-banner {
+    border-color: var(--border);
+}
+#duplicate-banner span {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* ── Bulk Import Panel ── */
+#bulk-import-panel textarea,
+#bulk-import-panel input[type="file"] {
+    width: 100%;
+}
+#bulk-import-result ul {
+    color: var(--muted-2);
+    font-size: 0.8rem;
+    max-height: 160px;
+    overflow-y: auto;
+}
+#bulk-import-result li {
+    margin-bottom: 0.2rem;
+    word-break: break-all;
+}
+
+/* ── Link Card Extras (favorite star, password/expiry badges) ── */
+.fav-btn {
+    color: var(--accent-yellow);
+    padding: 0 0.15rem;
+}
+.fav-btn:hover {
+    transform: scale(1.15);
+}
+
+/* ── Edit Modal ── */
+#edit-modal input:focus,
+#edit-modal select:focus {
+    box-shadow: 2px 2px 0px var(--border);
+    outline: none;
+}
+
+/* ── Link Card Styles ── */
+.link-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: var(--border-thick);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-retro-btn);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.link-card:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-retro);
+}
+.link-card-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+.link-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.15rem 0.4rem;
+    border: 1.5px solid var(--border);
+    letter-spacing: 0.04em;
+}
+.link-tag.active   { background: var(--accent-teal); color: #111; }
+.link-tag.social   { background: var(--accent-blue); color: #111; }
+.link-tag.campaign { background: var(--accent-yellow); color: #111; }
+.link-tag.general  { background: var(--bg-secondary); }
+.link-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.link-short {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+}
+.link-dest {
+    font-size: 0.78rem;
+    color: var(--muted-2);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    word-break: break-all;
+}
+.link-dest svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+    stroke-width: 2;
+}
+.link-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+.link-action-btn {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border: 1.5px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+.link-action-btn:hover {
+    background: var(--accent-teal);
+    color: #111;
+}
+.link-clicks {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.link-clicks strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+}
+.link-clicks span {
+    font-size: 0.7rem;
+    color: var(--muted-2);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+

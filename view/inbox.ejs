@@ -1,0 +1,176 @@
+<%- include('partials/layout/header', {
+    activeNav: 'inbox',
+    title: 'Unified Inbox',
+    extraHead: '<link rel="stylesheet" href="/css/inbox.css">'
+}) %>
+
+<section class="content">
+
+    <div class="dashboard-head">
+        <div>
+            <h1>📥 Unified Inbox</h1>
+            <p>Manage all your creator conversations in one place.</p>
+        </div>
+    </div>
+
+    <div class="panel-retro inbox-layout">
+
+    <aside class="inbox-sidebar">
+
+        <h3>Filters</h3>
+
+        <button class="badge-retro filter-btn" data-filter="all">All</button>
+        <button class="badge-retro filter-btn" data-filter="unread">Unread</button>
+        <button class="badge-retro filter-btn" data-filter="important">Important</button>
+        <button class="badge-retro filter-btn" data-filter="archived">Archived</button>
+
+        <hr>
+
+        <button class="badge-retro filter-btn" data-filter="email">📧 Email</button>
+        <button class="badge-retro filter-btn" data-filter="instagram">📱 Instagram</button>
+        <button class="badge-retro filter-btn" data-filter="sms">💬 SMS</button>
+        <button class="badge-retro filter-btn" data-filter="x">🐦 X</button>
+
+        <div class="panel-retro notification-panel">
+    <h4>Notification Preferences</h4>
+
+    <label>
+        <input type="checkbox" checked>
+        <span>Enable Inbox Notifications</span>
+    </label>
+
+    <label>
+        <input type="checkbox">
+        <span>Email Alerts</span>
+    </label>
+
+    <label>
+        <input type="checkbox">
+        <span>Push Notifications</span>
+    </label>
+</div>
+
+    </aside>
+
+
+    <section class="message-list">
+
+        <div class="panel-retro">
+
+            <div class="panel-retro-title-row">
+                <h2>Messages</h2>
+            </div>
+
+            <input id="messageSearch"
+                type="text"
+                placeholder="Search messages..."
+                class="inbox-search">
+
+            <div class="message-card"
+            data-channel="email"
+            data-title="Brand Collaboration"
+            data-sender="Nike"
+            data-read="false"
+            data-important="true"
+            data-archived="false">
+
+                <h4>📧 Brand Collaboration <span class="badge-retro">⭐ Important</span></h4>
+
+                <p>Nike <span class="badge-retro">Unread</span> </p>
+
+                <small>2 hours ago</small>
+
+            </div>
+
+            <div class="message-card"
+            data-channel="instagram"
+            data-title="Instagram DM"
+            data-sender="creator_support"
+            data-read="true"
+            data-important="false"
+            data-archived="false">
+
+                <h4>📱 Instagram DM</h4>
+
+                <p>@creator_support</p>
+
+                <small>Yesterday</small>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="message-view">
+
+        <div class="panel-retro">
+
+            <div class="panel-retro-title-row">
+                <h2>Conversation</h2>
+            </div>
+
+            <h3 id="conversationTitle">Brand Collaboration</h3>
+
+            <p>
+                <strong id="conversationSender">Nike</strong>
+            </p>
+
+            <p id="conversationTime">
+                2 hours ago
+            </p>
+
+            <p id="conversationBody">
+                Hi, We'd love to collaborate with you on our next campaign...
+            </p>
+
+            <textarea
+                id="replyBox"
+                rows="6"
+                placeholder="Write your reply...">
+            </textarea>
+
+            <br><br>
+
+            <div class="action-buttons">
+
+                <button
+                    id="replyBtn"
+                    class="badge-retro">
+                    Reply
+                </button>
+
+                <button
+                    id="readBtn"
+                    class="badge-retro">
+                    Mark Read
+                </button>
+
+                <button
+                    id="importantBtn"
+                    class="badge-retro">
+                    ⭐ Important
+                </button>
+
+                <button
+                    id="archiveBtn"
+                    class="badge-retro">
+                    Archive
+                </button>
+
+</div>
+
+        </div>
+
+    </section>
+
+</div>
+
+</section>
+
+
+<script src="/js/pages/inbox.js"></script>
+
+
+<%- include('partials/layout/footer') %>
