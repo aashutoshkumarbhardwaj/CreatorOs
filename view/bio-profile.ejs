@@ -625,7 +625,26 @@
 <div class="toast" id="toast">Link opened!</div>
 
 <script nonce="<%= nonce %>">
-  // Theme
+  const initialTheme = '<%= profile.theme || "light" %>';
+  const initialLayout = '<%= profile.layout || "list" %>';
+
+  // Apply initial theme and layout
+  document.documentElement.setAttribute('data-theme', initialTheme);
+  document.addEventListener('DOMContentLoaded', () => {
+    const activeThemeBtn = Array.from(document.querySelectorAll('.theme-btn')).find(b => b.textContent.toLowerCase().includes(initialTheme));
+    if (activeThemeBtn) {
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      activeThemeBtn.classList.add('active');
+    }
+
+    const activeLayoutBtn = Array.from(document.querySelectorAll('.layout-btn')).find(b => b.textContent.toLowerCase().includes(initialLayout));
+    if (activeLayoutBtn) {
+      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+      activeLayoutBtn.classList.add('active');
+    }
+  });
+
+  // Theme switcher
   function setTheme(theme, btn) {
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
@@ -637,7 +656,7 @@
     }).catch(() => {});
   }
 
-  // Layout
+  // Layout switcher
   function setLayout(layout, btn) {
     document.querySelectorAll('.links-section').forEach(s => {
       s.className = `links-section layout-${layout}`;
@@ -651,7 +670,7 @@
     }).catch(() => {});
   }
 
-  // Track click + toast
+  // Track link click
   function trackClick(id) {
     fetch(`/bio/track/${id}`, { method: 'POST' }).catch(() => {});
   }

@@ -1130,6 +1130,9 @@ ${urls
   res.send(xml);
 });
 
+// Dynamic fallback profile route (e.g. creatoros.com/alex)
+app.get('/:handle', renderPublicBioProfile);
+
 // ── 404 HANDLER ──
 app.use((req, res) => {
   res.status(404).render("404", {

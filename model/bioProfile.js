@@ -18,7 +18,7 @@ const bioProfileSchema = new mongoose.Schema(
     },
     handle: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
-    bio: { type: String },
+    bio: { type: String, default: '' },
     tags: [{ type: String }],
     avatarUrl: { type: String },
     initials: { type: String },

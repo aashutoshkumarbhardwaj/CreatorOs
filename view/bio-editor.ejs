@@ -1,3 +1,11 @@
+<% 
+  const currentProfile = (typeof bioProfile !== 'undefined' && bioProfile) ? bioProfile : {};
+  const currentHandle = currentProfile.handle || user.handle || (user.name ? user.name.toLowerCase().replace(/\s+/g,'-') : 'creator');
+  const currentName = currentProfile.name || user.name || '';
+  const currentBio = currentProfile.bio !== undefined ? currentProfile.bio : (user.bio || '');
+  const currentAvatar = currentProfile.avatarUrl || user.avatar || null;
+%>
+
 <%- include('partials/layout/header', {
     activeNav: 'smart-bio',
     title: 'Smart Bio Editor',
@@ -365,11 +373,16 @@
 
   // ── PREVIEW ──
   function updatePreview() {
-    document.getElementById('prevName').textContent   = document.getElementById('profileName').value || 'Your Name';
-    document.getElementById('prevHandle').textContent = '@' + (document.getElementById('profileHandle').value || 'handle');
-    document.getElementById('prevBio').textContent    = document.getElementById('profileBio').value || 'Your bio goes here...';
-    document.getElementById('prevAvatar').textContent =
-      (document.getElementById('profileName').value || 'U').charAt(0).toUpperCase();
+    const nameVal = document.getElementById('profileName').value || 'Your Name';
+    const handleVal = document.getElementById('profileHandle').value.trim().replace(/^@/, '') || 'handle';
+    const bioVal = document.getElementById('profileBio').value || 'Your bio goes here...';
+
+    document.getElementById('prevName').textContent   = nameVal;
+    document.getElementById('prevHandle').textContent = '@' + handleVal;
+    document.getElementById('prevBio').textContent    = bioVal;
+    if (!avatarDataUrl) {
+      document.getElementById('prevAvatar').textContent = nameVal.charAt(0).toUpperCase();
+    }
 
     const sortedLinks = [...links].sort((a, b) => (b.featured === true) - (a.featured === true));
     const prevLinks = document.getElementById('prevLinks');
@@ -443,7 +456,7 @@
   function saveBio() {
     const data = {
       name:   document.getElementById('profileName').value,
-      handle: document.getElementById('profileHandle').value,
+      handle: document.getElementById('profileHandle').value.trim().replace(/^@/, ''),
       bio:    document.getElementById('profileBio').value,
       tags,
       links,
@@ -466,16 +479,25 @@
       body: JSON.stringify(data),
     })
     .then(r => r.json())
-    .then(() => showToast('✓ Saved successfully!'))
-    .catch(() => showToast('✓ Saved locally!'));
+    .then(res => {
+      if (res.success) {
+        showToast('✓ Saved successfully!');
+        if (res.data && res.data.handle) {
+          document.getElementById('previewLink').href = `/@${res.data.handle}`;
+        }
+      } else {
+        showToast(`❌ Error: ${res.message || 'Failed to save'}`);
+      }
+    })
+    .catch(() => showToast('❌ Saved failed. Check connection.'));
   }
 
   document.getElementById('saveBioBtn').addEventListener('click', saveBio);
 
   // ── COPY URL ──
   function copyUrl() {
-    const handle = document.getElementById('profileHandle').value || 'handle';
-    navigator.clipboard.writeText(`https://creatoros.com/@${handle}`).catch(() => {});
+    const handle = document.getElementById('profileHandle').value.trim().replace(/^@/, '') || 'handle';
+    navigator.clipboard.writeText(`${window.location.origin}/@${handle}`).catch(() => {});
     showToast('Link copied to clipboard!');
   }
 
@@ -496,8 +518,9 @@
     }
     const reader = new FileReader();
     reader.onload = e => {
+      avatarDataUrl = e.target.result;
       const av = document.getElementById('prevAvatar');
-      av.style.backgroundImage = `url(${e.target.result})`;
+      av.style.backgroundImage = `url(${avatarDataUrl})`;
       av.style.backgroundSize = 'cover';
       av.textContent = '';
       document.getElementById('avatarUrlInput').value = e.target.result;
@@ -514,7 +537,7 @@
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    setTimeout(() => t.classList.remove('show'), 3000);
   }
 
   // Init: render seeded links and preview
