@@ -506,11 +506,11 @@
 
   <% if (socialLinks.length) { %>
     <div class="section-label">Social</div>
-    <div class="links-section layout-list" id="linksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="linksContainer">
       <% socialLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -521,11 +521,11 @@
 
   <% if (workLinks.length) { %>
     <div class="section-label">Work</div>
-    <div class="links-section layout-list" id="workLinksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="workLinksContainer">
       <% workLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -536,11 +536,11 @@
 
   <% if (otherLinks.length) { %>
     <div class="section-label">More</div>
-    <div class="links-section layout-list" id="otherLinksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="otherLinksContainer">
       <% otherLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -562,15 +562,33 @@
 <div class="toast" id="toast">Link opened!</div>
 
 <script nonce="<%= nonce %>">
-  // Theme
+  const initialTheme = '<%= profile.theme || "light" %>';
+  const initialLayout = '<%= profile.layout || "list" %>';
+
+  // Apply initial theme and layout
+  document.documentElement.setAttribute('data-theme', initialTheme);
+  document.addEventListener('DOMContentLoaded', () => {
+    const activeThemeBtn = Array.from(document.querySelectorAll('.theme-btn')).find(b => b.textContent.toLowerCase().includes(initialTheme));
+    if (activeThemeBtn) {
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      activeThemeBtn.classList.add('active');
+    }
+
+    const activeLayoutBtn = Array.from(document.querySelectorAll('.layout-btn')).find(b => b.textContent.toLowerCase().includes(initialLayout));
+    if (activeLayoutBtn) {
+      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+      activeLayoutBtn.classList.add('active');
+    }
+  });
+
+  // Theme switcher
   function setTheme(theme, btn) {
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    localStorage.setItem('bio-theme', theme);
   }
 
-  // Layout
+  // Layout switcher
   function setLayout(layout, btn) {
     document.querySelectorAll('.links-section').forEach(s => {
       s.className = `links-section layout-${layout}`;
@@ -579,18 +597,14 @@
     btn.classList.add('active');
   }
 
-  // Track click + toast
+  // Track link click
   function trackClick(id) {
-    fetch(`/bio/track/${id}`, { method: 'POST' }).catch(() => {});
-  }
-
-  // Restore saved theme
-  const saved = localStorage.getItem('bio-theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-    document.querySelectorAll('.theme-btn').forEach(b => {
-      b.classList.toggle('active', b.textContent.toLowerCase().includes(saved));
-    });
+    if (!id) return;
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(`/bio/track/${id}`);
+    } else {
+      fetch(`/bio/track/${id}`, { method: 'POST' }).catch(() => {});
+    }
   }
 
   // Stagger link animations

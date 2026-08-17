@@ -45,6 +45,8 @@ const sponsorRoute = require('./routes/sponsor');
 const settingsRoutes = require('./routes/settings');
 const contentRoutes = require('./routes/content');
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const bioRoutes = require('./routes/bioRoutes');
+const { renderPublicBioProfile } = require('./controller/bioController');
 
 const { generateCsrf, verifyCsrf } = require('./middleware/csrf');
 
@@ -488,148 +490,7 @@ app.get('/file-upload', protect, asyncHandler(async (req, res) => {
 }));
 
 // ── BIO LINK ROUTES ──
-
-// Editor — creator configures their bio page
-app.get('/bio', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email alias bio')
-        .lean();
-
-    return res.render('bio-editor', {
-        services,
-        user: buildAccountViewModel(userDoc, req.user),
-    });
-}));
-
-// Save bio data
-app.post('/bio/save', protect, asyncHandler(async (req, res) => {
-    const BioProfile = require('./model/bioProfile');
-    const userDoc = await User.findById(req.user.id);
-    if (!userDoc) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const { handle, name, bio, tags, avatarUrl, links } = req.body;
-    const userHandle = handle || userDoc.alias;
-    
-    if (!userHandle) {
-         return res.status(400).json({ success: false, message: 'Handle is required' });
-    }
-    
-    if (handle && handle !== userDoc.alias) {
-        userDoc.alias = handle;
-        await userDoc.save();
-    }
-    
-    const updateData = {
-        userId: userDoc._id,
-        handle: userHandle,
-        name: name || userDoc.name,
-        bio: bio || userDoc.bio,
-        tags: tags || [],
-        avatarUrl: avatarUrl || userDoc.avatar,
-        links: links || []
-    };
-    
-    const bioProfile = await BioProfile.findOneAndUpdate(
-        { userId: userDoc._id },
-        updateData,
-        { new: true, upsert: true }
-    );
-    
-    return res.json({ success: true, data: bioProfile });
-}));
-
-// Track link click
-const clickTrackerLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50, // 50 requests per window per IP
-    message: { success: false, message: 'Too many requests' },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// IP-based deduplication map: linkId -> Map<ip, timestamp>
-const clickCooldowns = new Map();
-const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
-
-app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
-    const BioProfile = require('./model/bioProfile');
-    const { linkId } = req.params;
-    const clientIp = req.ip || req.connection.remoteAddress;
-
-    // IP-based deduplication with cooldown
-    if (!clickCooldowns.has(linkId)) {
-        clickCooldowns.set(linkId, new Map());
-    }
-    const linkCooldowns = clickCooldowns.get(linkId);
-    const lastClick = linkCooldowns.get(clientIp);
-
-    if (lastClick && (Date.now() - lastClick) < CLICK_COOLDOWN_MS) {
-        return res.json({ success: true, tracked: false, reason: 'cooldown' });
-    }
-
-    linkCooldowns.set(clientIp, Date.now());
-
-    // Periodically clean up old cooldown entries to prevent memory leak
-    if (linkCooldowns.size > 10000) {
-        const now = Date.now();
-        for (const [ip, timestamp] of linkCooldowns) {
-            if (now - timestamp > CLICK_COOLDOWN_MS) {
-                linkCooldowns.delete(ip);
-            }
-        }
-    }
-    
-    const bioProfile = await BioProfile.findOneAndUpdate(
-        { "links._id": linkId },
-        { $inc: { "stats.clicks": 1 } },
-        { new: true }
-    );
-    
-    if (!bioProfile) {
-        return res.status(404).json({ success: false, message: 'Link not found' });
-    }
-    
-    return res.json({ success: true, tracked: true });
-}));
-
-// Public profile — anyone can visit creatoros.com/@handle
-app.get('/@:handle', asyncHandler(async (req, res) => {
-    const handle = req.params.handle;
-
-    const cachedResult = await getProfileFromCache(handle);
-    if (cachedResult) {
-        res.setCacheStatus('HIT');
-        const { profile, links } = cachedResult.data;
-        return res.render('bio-profile', { profile, links });
-    }
-
-    res.setCacheStatus('MISS');
-
-    const bioProfile = await BioProfile.findOne({ handle }).lean();
-
-    if (!bioProfile) {
-        return res.status(404).render('404', { url: req.originalUrl });
-    }
-
-    const profile = {
-        name: bioProfile.name || handle,
-        handle,
-        bio: bioProfile.bio || '',
-        tags: bioProfile.tags || [],
-        avatarUrl: bioProfile.avatarUrl || null,
-        initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
-        stats: bioProfile.stats || { links: bioProfile.links?.length || 0, views: 0, clicks: 0 },
-    };
-
-    const links = bioProfile.links || [];
-
-    const cacheData = { profile, links };
-    await setProfileInCache(handle, cacheData);
-
-    return res.render('bio-profile', { profile, links });
-}));
+app.use('/', bioRoutes);
 
 // ── SERVICE PAGES ──
 
@@ -800,6 +661,9 @@ ${urls.map(url => `
     res.header('Content-Type', 'application/xml');
     res.send(xml);
 });
+
+// Dynamic fallback profile route (e.g. creatoros.com/alex)
+app.get('/:handle', renderPublicBioProfile);
 
 // ── 404 HANDLER ──
 app.use((req, res) => {

@@ -1,3 +1,11 @@
+<% 
+  const currentProfile = (typeof bioProfile !== 'undefined' && bioProfile) ? bioProfile : {};
+  const currentHandle = currentProfile.handle || user.handle || (user.name ? user.name.toLowerCase().replace(/\s+/g,'-') : 'creator');
+  const currentName = currentProfile.name || user.name || '';
+  const currentBio = currentProfile.bio !== undefined ? currentProfile.bio : (user.bio || '');
+  const currentAvatar = currentProfile.avatarUrl || user.avatar || null;
+%>
+
 <%- include('partials/layout/header', {
     activeNav: 'smart-bio',
     title: 'Smart Bio Editor',
@@ -13,11 +21,11 @@
     <header class="topbar">
       <h2>Smart Bio Editor</h2>
       <div class="share-url">
-        <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
+        <span>creatoros.com/<strong>@<%= currentHandle %></strong></span>
         <button type="button" class="copy-btn" onclick="copyUrl()">Copy</button>
       </div>
       <div class="topbar-actions">
-        <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
+        <a href="/@<%= currentHandle %>" id="previewLink" target="_blank" class="btn-retro">Preview ↗</a>
         <button type="button" class="btn-retro primary" onclick="saveBio()">Save Changes</button>
       </div>
     </header>
@@ -39,16 +47,17 @@
             <div class="field-row">
               <div class="field">
                 <label>Display Name</label>
-                <input type="text" id="profileName" value="<%= user.name %>" placeholder="Your name" oninput="updatePreview()" />
+                <input type="text" id="profileName" value="<%= currentName %>" placeholder="Your name" oninput="updatePreview()" />
               </div>
               <div class="field">
                 <label>Handle</label>
-                <input type="text" id="profileHandle" value="<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %>" placeholder="@handle" oninput="updatePreview()" />
+                <input type="text" id="profileHandle" value="<%= currentHandle %>" placeholder="handle" oninput="handleInputChanged()" />
+                <span id="handleFeedback" style="font-size: 0.72rem; font-family:'DM Mono',monospace; margin-top: 0.2rem; display: block;"></span>
               </div>
             </div>
             <div class="field">
               <label>Bio</label>
-              <textarea id="profileBio" placeholder="Short description about you..." oninput="updatePreview()"><%= user.bio || '' %></textarea>
+              <textarea id="profileBio" placeholder="Short description about you..." oninput="updatePreview()"><%= currentBio %></textarea>
             </div>
             <div class="field">
               <label>Tags (press Enter to add)</label>
@@ -99,18 +108,18 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <button type="button" class="preset-btn active" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
-                <button type="button" class="preset-btn"        id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
-                <button type="button" class="preset-btn"        id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
-                <button type="button" class="preset-btn"        id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
+                <button type="button" class="preset-btn" id="theme-light"   onclick="selectTheme('light',this)">☀ Light</button>
+                <button type="button" class="preset-btn" id="theme-dark"    onclick="selectTheme('dark',this)">● Dark</button>
+                <button type="button" class="preset-btn" id="theme-neon"    onclick="selectTheme('neon',this)">⚡ Neon</button>
+                <button type="button" class="preset-btn" id="theme-gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <button type="button" class="preset-btn active" onclick="selectLayout('list',this)">≡ List</button>
-                <button type="button" class="preset-btn"        onclick="selectLayout('grid',this)">⊞ Grid</button>
-                <button type="button" class="preset-btn"        onclick="selectLayout('cards',this)">▤ Cards</button>
+                <button type="button" class="preset-btn" id="layout-list"  onclick="selectLayout('list',this)">≡ List</button>
+                <button type="button" class="preset-btn" id="layout-grid"  onclick="selectLayout('grid',this)">⊞ Grid</button>
+                <button type="button" class="preset-btn" id="layout-cards" onclick="selectLayout('cards',this)">▤ Cards</button>
               </div>
             </div>
           </div>
@@ -146,10 +155,38 @@
 <div class="toast" id="toast">✓ Saved!</div>
 
 <script nonce="<%= nonce %>">
-  let links = [];
-  let linkIdCounter = 0;
-  let currentTheme = 'light';
-  let currentLayout = 'list';
+  const initialProfile = <%- JSON.stringify(currentProfile) %>;
+  let links = Array.isArray(initialProfile.links) && initialProfile.links.length > 0
+    ? initialProfile.links.map((l, i) => ({ id: i + 1, ...l }))
+    : [];
+  let linkIdCounter = links.length;
+  let currentTheme = initialProfile.theme || 'light';
+  let currentLayout = initialProfile.layout || 'list';
+  let tags = Array.isArray(initialProfile.tags) ? [...initialProfile.tags] : [];
+  let avatarDataUrl = initialProfile.avatarUrl || null;
+
+  // Initialize theme & layout buttons
+  document.addEventListener('DOMContentLoaded', () => {
+    const themeBtn = document.getElementById('theme-' + currentTheme) || document.getElementById('theme-light');
+    if (themeBtn) selectTheme(currentTheme, themeBtn);
+
+    const layoutBtn = document.getElementById('layout-' + currentLayout) || document.getElementById('layout-list');
+    if (layoutBtn) selectLayout(currentLayout, layoutBtn);
+
+    // Initialize tags UI
+    tags.forEach(t => renderTagChip(t));
+
+    // Initialize avatar if present
+    if (avatarDataUrl) {
+      const av = document.getElementById('prevAvatar');
+      av.style.backgroundImage = `url(${avatarDataUrl})`;
+      av.style.backgroundSize = 'cover';
+      av.textContent = '';
+    }
+
+    renderLinks();
+    updatePreview();
+  });
 
   // ── LINKS ──
   function addPreset(type, icon, label, urlPrefix, category) {
@@ -178,11 +215,11 @@
     document.getElementById('linkCount').textContent = `${links.length} link${links.length !== 1 ? 's' : ''}`;
     list.innerHTML = links.map(link => `
       <div class="link-row" id="link-row-${link.id}">
-        <div class="link-row-icon">${link.icon}</div>
-        <input type="text" value="${link.label}"
+        <div class="link-row-icon">${link.icon || '🔗'}</div>
+        <input type="text" value="${link.label || ''}"
                onchange="updateLinkField(${link.id},'label',this.value)"
                placeholder="Label" />
-        <input type="text" value="${link.url}"
+        <input type="text" value="${link.url || ''}"
                onchange="updateLinkField(${link.id},'url',this.value)"
                placeholder="https://..." />
         <button type="button" class="link-row-del" onclick="removeLink(${link.id})" title="Remove">×</button>
@@ -196,38 +233,81 @@
   }
 
   // ── TAGS ──
-  const tags = [];
   function handleTagKey(e) {
     if (e.key === 'Enter' && e.target.value.trim()) {
       e.preventDefault();
-      addTag(e.target.value.trim());
+      const text = e.target.value.trim();
+      if (!tags.includes(text)) {
+        tags.push(text);
+        renderTagChip(text);
+      }
       e.target.value = '';
     }
   }
 
-  function addTag(text) {
-    tags.push(text);
+  function renderTagChip(text) {
     const wrap = document.getElementById('tagsWrap');
     const input = document.getElementById('tagInput');
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
-    chip.innerHTML = `${text} <button type="button" onclick="this.parentElement.remove()">×</button>`;
+    chip.innerHTML = `${text} <button type="button" onclick="removeTag('${text}', this)">×</button>`;
     wrap.insertBefore(chip, input);
+  }
+
+  function removeTag(text, btn) {
+    tags = tags.filter(t => t !== text);
+    btn.parentElement.remove();
+  }
+
+  // ── HANDLE AVAILABILITY ──
+  let handleCheckTimeout = null;
+  function handleInputChanged() {
+    updatePreview();
+    const handleInput = document.getElementById('profileHandle');
+    const feedback = document.getElementById('handleFeedback');
+    const rawVal = handleInput.value.trim().toLowerCase().replace(/^@/, '');
+    
+    if (handleCheckTimeout) clearTimeout(handleCheckTimeout);
+    if (!rawVal) {
+      feedback.textContent = '';
+      return;
+    }
+
+    handleCheckTimeout = setTimeout(() => {
+      fetch(`/bio/check-handle/${encodeURIComponent(rawVal)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.available) {
+            feedback.style.color = 'var(--accent, #37D6C8)';
+            feedback.textContent = '✓ Available';
+            document.getElementById('previewLink').href = `/@${res.handle}`;
+          } else {
+            feedback.style.color = '#ff4757';
+            feedback.textContent = `✗ ${res.reason}`;
+          }
+        })
+        .catch(() => {});
+    }, 400);
   }
 
   // ── PREVIEW ──
   function updatePreview() {
-    document.getElementById('prevName').textContent   = document.getElementById('profileName').value || 'Your Name';
-    document.getElementById('prevHandle').textContent = '@' + (document.getElementById('profileHandle').value || 'handle');
-    document.getElementById('prevBio').textContent    = document.getElementById('profileBio').value || 'Your bio goes here...';
-    document.getElementById('prevAvatar').textContent =
-      (document.getElementById('profileName').value || 'U').charAt(0).toUpperCase();
+    const nameVal = document.getElementById('profileName').value || 'Your Name';
+    const handleVal = document.getElementById('profileHandle').value.trim().replace(/^@/, '') || 'handle';
+    const bioVal = document.getElementById('profileBio').value || 'Your bio goes here...';
+
+    document.getElementById('prevName').textContent   = nameVal;
+    document.getElementById('prevHandle').textContent = '@' + handleVal;
+    document.getElementById('prevBio').textContent    = bioVal;
+    if (!avatarDataUrl) {
+      document.getElementById('prevAvatar').textContent = nameVal.charAt(0).toUpperCase();
+    }
 
     const prevLinks = document.getElementById('prevLinks');
-    prevLinks.innerHTML = links.slice(0,6).map(l => `
+    prevLinks.innerHTML = links.slice(0, 8).map(l => `
       <div class="prev-link">
-        <span class="prev-link-icon">${l.icon}</span>
-        <span>${l.label}</span>
+        <span class="prev-link-icon">${l.icon || '🔗'}</span>
+        <span>${l.label || 'Link'}</span>
       </div>
     `).join('');
   }
@@ -236,30 +316,28 @@
   function selectTheme(theme, btn) {
     currentTheme = theme;
     document.querySelectorAll('[id^="theme-"]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Apply to preview
+    if (btn) btn.classList.add('active');
     document.getElementById('previewInner').setAttribute('data-theme-preview', theme);
   }
 
   // ── LAYOUT ──
   function selectLayout(layout, btn) {
     currentLayout = layout;
-    document.querySelectorAll('.panel-body .presets .preset-btn').forEach(b => {
-      if (['≡ List','⊞ Grid','▤ Cards'].includes(b.textContent)) b.classList.remove('active');
-    });
-    btn.classList.add('active');
+    document.querySelectorAll('[id^="layout-"]').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
   }
 
   // ── SAVE ──
   function saveBio() {
     const data = {
       name:   document.getElementById('profileName').value,
-      handle: document.getElementById('profileHandle').value,
+      handle: document.getElementById('profileHandle').value.trim().replace(/^@/, ''),
       bio:    document.getElementById('profileBio').value,
       tags,
       links,
       theme:  currentTheme,
       layout: currentLayout,
+      avatarUrl: avatarDataUrl
     };
 
     fetch('/bio/save', {
@@ -268,14 +346,23 @@
       body: JSON.stringify(data),
     })
     .then(r => r.json())
-    .then(() => showToast('✓ Saved successfully!'))
-    .catch(() => showToast('✓ Saved locally!'));
+    .then(res => {
+      if (res.success) {
+        showToast('✓ Saved successfully!');
+        if (res.data && res.data.handle) {
+          document.getElementById('previewLink').href = `/@${res.data.handle}`;
+        }
+      } else {
+        showToast(`❌ Error: ${res.message || 'Failed to save'}`);
+      }
+    })
+    .catch(() => showToast('❌ Saved failed. Check connection.'));
   }
 
   // ── COPY URL ──
   function copyUrl() {
-    const handle = document.getElementById('profileHandle').value || 'handle';
-    navigator.clipboard.writeText(`https://creatoros.com/@${handle}`).catch(() => {});
+    const handle = document.getElementById('profileHandle').value.trim().replace(/^@/, '') || 'handle';
+    navigator.clipboard.writeText(`${window.location.origin}/@${handle}`).catch(() => {});
     showToast('Link copied to clipboard!');
   }
 
@@ -285,8 +372,9 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
+      avatarDataUrl = e.target.result;
       const av = document.getElementById('prevAvatar');
-      av.style.backgroundImage = `url(${e.target.result})`;
+      av.style.backgroundImage = `url(${avatarDataUrl})`;
       av.style.backgroundSize = 'cover';
       av.textContent = '';
     };
@@ -298,10 +386,8 @@
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    setTimeout(() => t.classList.remove('show'), 3000);
   }
-
-  // Init preview
-  updatePreview();
 </script>
 <%- include('partials/layout/footer') %>
+
