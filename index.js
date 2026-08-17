@@ -567,7 +567,7 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
 // ── FILE UPLOAD POST ──
 
-app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
+app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -603,7 +603,7 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             visitData.y = y;
         }
         
-        const entry = await Url.findOneAndUpdate(
+        const urlEntry = await Url.findOneAndUpdate(
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
@@ -618,8 +618,8 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             { new: true }
         );
 
-        if (!entry) return res.status(404).send('URL not found');
-        return res.redirect(entry.redirectUrl);
+        if (!urlEntry) return res.status(404).send('URL not found');
+        return res.redirect(urlEntry.redirectUrl);
     } catch (err) {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
