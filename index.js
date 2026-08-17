@@ -528,65 +528,10 @@ app.get(
       .select("name email alias bio")
       .lean();
 
-    const bioProfile = userDoc?.alias
-      ? await BioProfile.findOne({ userId: req.user.id }).lean()
-      : null;
-
     return res.render("bio-editor", {
       services,
       user: buildAccountViewModel(userDoc, req.user),
-      bioProfile: bioProfile || null,
     });
-  }),
-);
-
-// Preview — creator's own bio page, rendered the same as the public view
-app.get(
-  "/bio/preview",
-  protect,
-  asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-      .select("name email alias")
-      .lean();
-
-    const handle = userDoc?.alias;
-    if (!handle) {
-      return res.redirect("/bio");
-    }
-
-    const bioProfile = await BioProfile.findOne({ handle }).lean();
-
-    if (!bioProfile) {
-      return res.redirect("/bio");
-    }
-
-    const profile = {
-      name: bioProfile.name || handle,
-      handle,
-      bio: bioProfile.bio || "",
-      tags: bioProfile.tags || [],
-      avatarUrl: bioProfile.avatarUrl || null,
-      initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
-      stats: bioProfile.stats || {
-        links: bioProfile.links?.length || 0,
-        views: 0,
-        clicks: 0,
-      },
-      theme: bioProfile.theme || "light",
-      layout: bioProfile.layout || "list",
-      background: bioProfile.background || null,
-      contactButton: bioProfile.contactButton?.url
-        ? bioProfile.contactButton
-        : null,
-      seo: {
-        title: bioProfile.seo?.title || bioProfile.name || handle,
-        description: bioProfile.seo?.description || bioProfile.bio || "",
-      },
-    };
-
-    const links = bioProfile.links || [];
-
-    return res.render("bio-profile", { profile, links });
   }),
 );
 
@@ -647,14 +592,6 @@ app.post(
       tags: tags || [],
       avatarUrl: avatarUrl || userDoc.avatar,
       links: links || [],
-      ...(theme !== undefined && { theme }),
-      ...(layout !== undefined && { layout }),
-      ...(background !== undefined && { background }),
-      ...(contactButton !== undefined && { contactButton }),
-      ...(customDomain !== undefined && { customDomain }),
-      ...(seoTitle !== undefined || seoDescription !== undefined
-        ? { seo: { title: seoTitle, description: seoDescription } }
-        : {}),
     };
 
     const bioProfile = await BioProfile.findOneAndUpdate(
@@ -666,67 +603,6 @@ app.post(
     await invalidateProfileCache(userHandle);
 
     return res.json({ success: true, data: bioProfile });
-  }),
-);
-
-// Save theme/layout preference only (lightweight, used by the theme/layout switcher buttons)
-app.post(
-  "/bio/preferences",
-  protect,
-  asyncHandler(async (req, res) => {
-    const { theme, layout } = req.body;
-    const validThemes = ["light", "dark", "neon", "gradient"];
-    const validLayouts = ["list", "grid", "cards"];
-
-    const updates = {};
-    if (theme !== undefined) {
-      if (!validThemes.includes(theme)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid theme" });
-      }
-      updates.theme = theme;
-    }
-    if (layout !== undefined) {
-      if (!validLayouts.includes(layout)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid layout" });
-      }
-      updates.layout = layout;
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No valid fields provided" });
-    }
-
-    const userDoc = await User.findById(req.user.id).select("alias").lean();
-    if (!userDoc || !userDoc.alias) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Profile not found" });
-    }
-
-    const bioProfile = await BioProfile.findOneAndUpdate(
-      { userId: req.user.id },
-      { $set: updates },
-      { new: true },
-    );
-
-    if (!bioProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Profile not found" });
-    }
-
-    await invalidateProfileCache(userDoc.alias);
-
-    return res.json({
-      success: true,
-      data: { theme: bioProfile.theme, layout: bioProfile.layout },
-    });
   }),
 );
 
@@ -833,16 +709,6 @@ app.get(
         views: 0,
         clicks: 0,
       },
-      theme: bioProfile.theme || "light",
-      layout: bioProfile.layout || "list",
-      background: bioProfile.background || null,
-      contactButton: bioProfile.contactButton?.url
-        ? bioProfile.contactButton
-        : null,
-      seo: {
-        title: bioProfile.seo?.title || bioProfile.name || handle,
-        description: bioProfile.seo?.description || bioProfile.bio || "",
-      },
     };
 
     const links = bioProfile.links || [];
@@ -860,7 +726,16 @@ app.get(
   "/services/:serviceKey",
   protect,
   asyncHandler(async (req, res) => {
-    const service = findServiceByKey(req.params.serviceKey);
+    // Defense-in-depth: reject anything that isn't a simple slug before the
+    // param ever reaches findServiceByKey/services.config. This blocks path
+    // traversal sequences (../, url-encoded variants, null bytes) at the
+    // edge, regardless of how findServiceByKey is implemented today or later.
+    const rawServiceKey = req.params.serviceKey;
+    const isSafeSlug =
+      typeof rawServiceKey === "string" &&
+      /^[a-zA-Z0-9_-]{1,64}$/.test(rawServiceKey);
+
+    const service = isSafeSlug ? findServiceByKey(rawServiceKey) : null;
 
     if (!service) {
       return res.status(404).render("coming-soon", {
@@ -924,15 +799,10 @@ app.get(
         .select("name email alias bio")
         .lean();
 
-      const bioProfile = userDoc?.alias
-        ? await BioProfile.findOne({ userId: req.user.id }).lean()
-        : null;
-
       return res.render("bio-editor", {
         service,
         services,
         user: buildAccountViewModel(userDoc, req.user),
-        bioProfile: bioProfile || null,
       });
     }
 
@@ -966,11 +836,24 @@ app.use(
   "/services/file-upload",
   protect,
   preventContributorWrites,
+  uploadLimiter,
+  upload.single("file"),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
   fileUploadRoutes,
 );
 
 // ── SHORT URL REDIRECT ──
 
+    res.json({
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      path: req.file.filename,
+    });
+}));
 const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
 
 async function recordClickAndRedirect(req, res, entry) {
