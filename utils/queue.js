@@ -1,26 +1,40 @@
 const { Queue } = require('bullmq');
 const Redis = require('ioredis');
 
-// Connect to Redis (defaults to localhost:6379, or REDIS_URL if provided)
-const redisOptions = {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379,
-    maxRetriesPerRequest: null,
-};
+const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 
-const redisConnection = new Redis(redisOptions);
+function createFallbackQueue(name) {
+    return {
+        async add(jobName, jobData) {
+            console.warn(`[Queue] Redis is not configured, skipping job "${jobName}" on queue "${name}".`);
+            return { id: null, name: jobName, data: jobData };
+        },
+    };
+}
 
-// Check if Redis is reachable, if not, handle it gracefully
-redisConnection.on('error', (err) => {
-    console.error('Redis connection error:', err);
-});
+let emailQueue = createFallbackQueue('emailQueue');
+let aiTaskQueue = createFallbackQueue('aiTaskQueue');
+let redisConnection = null;
 
-// Create queues
-const emailQueue = new Queue('emailQueue', { connection: redisConnection });
-const aiTaskQueue = new Queue('aiTaskQueue', { connection: redisConnection });
+if (REDIS_URI) {
+    redisConnection = new Redis(REDIS_URI, {
+        maxRetriesPerRequest: null,
+        connectTimeout: 5000,
+        lazyConnect: true,
+    });
+
+    redisConnection.on('error', (err) => {
+        console.error('Redis connection error:', err);
+    });
+
+    emailQueue = new Queue('emailQueue', { connection: redisConnection });
+    aiTaskQueue = new Queue('aiTaskQueue', { connection: redisConnection });
+} else {
+    console.warn('📦 BullMQ email/AI task queues disabled: REDIS_URI/REDIS_URL is not set.');
+}
 
 module.exports = {
     emailQueue,
     aiTaskQueue,
-    redisConnection
+    redisConnection,
 };

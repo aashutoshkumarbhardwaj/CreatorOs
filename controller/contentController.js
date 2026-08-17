@@ -1,6 +1,37 @@
 const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
+const { isValidUrl } = require('../utils/validators');
+
+const DEFAULT_LIST_LIMIT = 20;
+const MAX_LIST_LIMIT = 100;
+const VALID_STATUSES = new Set(['scheduled', 'published', 'cancelled']);
+
+function parseListLimit(value) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIST_LIMIT;
+    return Math.min(parsed, MAX_LIST_LIMIT);
+}
+
+function parseCSVLine(line) {
+    const fields = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            fields.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    fields.push(current.trim());
+    return fields;
+}
 
 /**
  * @function scheduleContent
@@ -33,10 +64,15 @@ const scheduleContent = asyncHandler(async (req, res) => {
         return res.status(400).json({ success: false, message: 'scheduledAt must be in the future' });
     }
 
+    const normalizedMediaUrl = typeof mediaUrl === 'string' ? mediaUrl.trim() : mediaUrl;
+    if (normalizedMediaUrl && (typeof normalizedMediaUrl !== 'string' || !isValidUrl(normalizedMediaUrl))) {
+        return res.status(400).json({ success: false, message: 'mediaUrl must be a valid HTTP or HTTPS URL' });
+    }
+
     const content = await ScheduledContent.create({
         userId: req.user.id,
         caption: caption.trim(),
-        mediaUrl: mediaUrl || undefined,
+        mediaUrl: normalizedMediaUrl || undefined,
         timezone: timezone || 'UTC',
         scheduledAt: scheduledDate,
         status: 'scheduled',
@@ -53,11 +89,57 @@ const scheduleContent = asyncHandler(async (req, res) => {
  * @returns {Promise<void>}
  */
 const listScheduledContent = asyncHandler(async (req, res) => {
-    const items = await ScheduledContent.find({ userId: req.user.id })
-        .sort({ scheduledAt: -1 })
+    const limit = parseListLimit(req.query?.limit);
+    const { status, cursor } = req.query || {};
+
+    if (status && !VALID_STATUSES.has(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status filter' });
+    }
+
+    if (cursor && !mongoose.Types.ObjectId.isValid(cursor)) {
+        return res.status(400).json({ success: false, message: 'Invalid cursor' });
+    }
+
+    let cursorItem = null;
+    if (cursor) {
+        cursorItem = await ScheduledContent.findOne({ _id: cursor, userId: req.user.id })
+            .select('scheduledAt')
+            .lean();
+
+        if (!cursorItem) {
+            return res.status(400).json({ success: false, message: 'Invalid cursor' });
+        }
+    }
+
+    const query = {
+        userId: req.user.id,
+        ...(status && { status }),
+        ...(cursorItem && {
+            $or: [
+                { scheduledAt: { $lt: cursorItem.scheduledAt } },
+                { scheduledAt: cursorItem.scheduledAt, _id: { $lt: cursor } },
+            ],
+        }),
+    };
+
+    const results = await ScheduledContent.find(query)
+        .sort({ scheduledAt: -1, _id: -1 })
+        .limit(limit + 1)
         .lean();
 
-    return res.json({ success: true, items });
+    const hasMore = results.length > limit;
+    const items = hasMore ? results.slice(0, limit) : results;
+    const nextCursor = hasMore ? items[items.length - 1]?._id?.toString() || null : null;
+
+    return res.json({
+        success: true,
+        items,
+        pagination: {
+            limit,
+            hasMore,
+            nextCursor,
+        },
+    });
 });
 
 /**
@@ -88,4 +170,65 @@ const cancelScheduledContent = asyncHandler(async (req, res) => {
     return res.json({ success: true, content });
 });
 
-module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent };
+const bulkScheduleContent = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'CSV file is required' });
+    }
+
+    const content = req.file.buffer.toString('utf-8');
+    const lines = content.split(/\r?\n/).filter(line => line.trim());
+
+    if (lines.length < 2) {
+        return res.status(400).json({ success: false, message: 'CSV must have a header row and at least one data row' });
+    }
+
+    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+    const captionIdx = header.indexOf('caption');
+    const mediaUrlIdx = header.indexOf('mediaurl');
+    const scheduledAtIdx = header.indexOf('scheduledat');
+    const accountIdIdx = header.indexOf('accountid');
+    const platformIdx = header.indexOf('platform');
+
+    if (captionIdx === -1 || scheduledAtIdx === -1) {
+        return res.status(400).json({ success: false, message: 'CSV must contain "caption" and "scheduledAt" columns' });
+    }
+
+    const results = { created: 0, errors: [] };
+
+    for (let i = 1; i < lines.length; i++) {
+        const fields = parseCSVLine(lines[i]);
+        const caption = fields[captionIdx];
+        const scheduledAt = fields[scheduledAtIdx];
+
+        if (!caption || !scheduledAt) {
+            results.errors.push({ row: i + 1, reason: 'Missing caption or scheduledAt' });
+            continue;
+        }
+
+        const scheduledDate = new Date(scheduledAt);
+        if (Number.isNaN(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()) {
+            results.errors.push({ row: i + 1, reason: 'Invalid or past scheduledAt date' });
+            continue;
+        }
+
+        try {
+            await ScheduledContent.create({
+                userId: req.user.id,
+                caption: caption.trim(),
+                mediaUrl: mediaUrlIdx !== -1 ? fields[mediaUrlIdx] : undefined,
+                timezone: 'UTC',
+                scheduledAt: scheduledDate,
+                accountId: accountIdIdx !== -1 && fields[accountIdIdx] ? fields[accountIdIdx] : undefined,
+                platform: platformIdx !== -1 && fields[platformIdx] ? fields[platformIdx] : undefined,
+                status: 'scheduled',
+            });
+            results.created++;
+        } catch (err) {
+            results.errors.push({ row: i + 1, reason: err.message });
+        }
+    }
+
+    return res.status(201).json({ success: true, ...results });
+});
+
+module.exports = { scheduleContent, listScheduledContent, cancelScheduledContent, bulkScheduleContent };

@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<%= profile.theme || 'light' %>">
 <head>
 
   <!-- SEO meta tags -->
   <%- include('./partials/_seo', {
-    title: profile.name,
-    description: profile.bio || (profile.name + '\'s CreatorOS profile'),
-    canonical: 'https://creatoros.com/' + profile.username
+    title: profile.seo?.title || profile.name,
+    description: profile.seo?.description || profile.bio || (profile.name + '\'s CreatorOS profile'),
+    canonical: 'https://creatoros.com/' + profile.handle
   }) %>
   
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <%- include('./partials/_brand_head') %>
-  <meta name="description" content="<%= profile.bio %>" />
+  <meta name="description" content="<%= profile.seo?.description || profile.bio %>" />
   <!-- Google Fonts: common fonts via shared partial -->
   <%- include('./partials/_fonts') %>
   <!-- Page-specific font: DM Mono (bio profile only) -->
@@ -82,6 +82,10 @@
     body[data-theme="gradient"] {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
+
+    <% if (profile.background) { %>
+    body { background: <%= profile.background %> !important; }
+    <% } %>
 
     .page-wrap {
       width: 100%;
@@ -281,7 +285,7 @@
       text-decoration: none;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .link-btn:hover {
@@ -330,6 +334,30 @@
       transform: translateX(3px);
     }
 
+    /* ── FEATURED LINK ── */
+    .link-featured {
+      border-width: 3px;
+      box-shadow: var(--shadow-hover);
+    }
+    .link-featured::before {
+      background: var(--accent-2);
+      width: 6px;
+    }
+    .featured-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 22px;
+      height: 22px;
+      background: var(--accent-2);
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.7rem;
+      color: #111;
+    }
+
     /* Grid layout adjustments */
     .layout-grid .link-btn {
       flex-direction: column;
@@ -347,6 +375,30 @@
     .layout-cards .link-btn {
       padding: 1rem 1.25rem;
       border-radius: 0;
+    }
+
+    /* ── CONTACT BUTTON ── */
+    .contact-btn {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.55rem 1.4rem;
+      background: var(--accent);
+      color: #111;
+      border: 2px solid var(--border);
+      box-shadow: var(--shadow);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .contact-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: var(--shadow-hover);
+    }
+    .contact-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px var(--border);
     }
 
     /* ── SECTION DIVIDER ── */
@@ -482,21 +534,29 @@
         <div class="stat-lbl">Clicks</div>
       </div>
     </div>
+
+    <% if (profile.contactButton && profile.contactButton.url) { %>
+      <a href="<%= profile.contactButton.url %>" class="contact-btn">
+        <%= profile.contactButton.label || 'Contact Me' %>
+      </a>
+    <% } %>
   </div>
 
   <!-- THEME SWITCHER -->
+  <% const currentTheme = profile.theme || 'light'; %>
   <div class="theme-switcher">
-    <button type="button" class="theme-btn active" onclick="setTheme('light', this)">☀ Light</button>
-    <button type="button" class="theme-btn" onclick="setTheme('dark', this)">● Dark</button>
-    <button type="button" class="theme-btn" onclick="setTheme('neon', this)">⚡ Neon</button>
-    <button type="button" class="theme-btn" onclick="setTheme('gradient', this)">◈ Gradient</button>
+    <button type="button" class="theme-btn <%= currentTheme === 'light' ? 'active' : '' %>" onclick="setTheme('light', this)">☀ Light</button>
+    <button type="button" class="theme-btn <%= currentTheme === 'dark' ? 'active' : '' %>" onclick="setTheme('dark', this)">● Dark</button>
+    <button type="button" class="theme-btn <%= currentTheme === 'neon' ? 'active' : '' %>" onclick="setTheme('neon', this)">⚡ Neon</button>
+    <button type="button" class="theme-btn <%= currentTheme === 'gradient' ? 'active' : '' %>" onclick="setTheme('gradient', this)">◈ Gradient</button>
   </div>
 
   <!-- LAYOUT SWITCHER -->
+  <% const currentLayout = profile.layout || 'list'; %>
   <div class="layout-switcher">
-    <button type="button" class="layout-btn active" onclick="setLayout('list', this)">≡ List</button>
-    <button type="button" class="layout-btn" onclick="setLayout('grid', this)">⊞ Grid</button>
-    <button type="button" class="layout-btn" onclick="setLayout('cards', this)">▤ Cards</button>
+    <button type="button" class="layout-btn <%= currentLayout === 'list' ? 'active' : '' %>" onclick="setLayout('list', this)">≡ List</button>
+    <button type="button" class="layout-btn <%= currentLayout === 'grid' ? 'active' : '' %>" onclick="setLayout('grid', this)">⊞ Grid</button>
+    <button type="button" class="layout-btn <%= currentLayout === 'cards' ? 'active' : '' %>" onclick="setLayout('cards', this)">▤ Cards</button>
   </div>
 
   <!-- LINKS -->
@@ -509,8 +569,9 @@
     <div class="links-section layout-<%= profile.layout || 'list' %>" id="linksContainer">
       <% socialLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
-           class="link-btn link-<%= link.type %>"
+           class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
            onclick="trackClick('<%= link._id || link.id %>')">
+          <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -524,8 +585,9 @@
     <div class="links-section layout-<%= profile.layout || 'list' %>" id="workLinksContainer">
       <% workLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
-           class="link-btn link-<%= link.type %>"
+           class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
            onclick="trackClick('<%= link._id || link.id %>')">
+          <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -539,8 +601,9 @@
     <div class="links-section layout-<%= profile.layout || 'list' %>" id="otherLinksContainer">
       <% otherLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
-           class="link-btn link-<%= link.type %>"
+           class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
            onclick="trackClick('<%= link._id || link.id %>')">
+          <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
           <svg class="link-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -586,6 +649,11 @@
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    fetch('/bio/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme })
+    }).catch(() => {});
   }
 
   // Layout switcher
@@ -595,6 +663,11 @@
     });
     document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    fetch('/bio/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ layout })
+    }).catch(() => {});
   }
 
   // Track link click

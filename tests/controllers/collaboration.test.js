@@ -15,7 +15,7 @@ describe('Collaboration Controller Endpoints', () => {
 
     beforeAll(async () => {
         await User.deleteMany({});
-        const password = await bcrypt.hash('Password123!', 10);
+        const password = await bcrypt.hash('Password123!', 12);
         await User.create({
             name: 'Verified User',
             email: 'test@local.com',

@@ -40,6 +40,18 @@ function sanitizeClientErrorMessage(message) {
 function errorHandler(err, req, res, next) {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  if (err.name === 'CastError') {
+    err.status = 400;
+    err.message = `Invalid ${err.path || 'format'}`;
+  } else if (err.name === 'ValidationError') {
+    err.status = 400;
+    const messages = err.errors ? Object.values(err.errors).map(val => val.message) : [];
+    err.message = messages.join(', ') || 'Validation Error';
+  } else if (err.code === 11000) {
+    err.status = 409;
+    err.message = 'Duplicate field value entered';
+  }
+
   console.error('[ERROR]', {
     status: err.status || 500,
     message: err.message,

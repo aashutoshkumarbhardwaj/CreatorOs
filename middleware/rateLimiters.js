@@ -1,13 +1,29 @@
 const { ipKeyGenerator, rateLimit } = require('express-rate-limit');
 const { wantsHtml } = require('../utils/requestType');
 const { buildShortenerViewModel } = require('../utils/viewModels');
+const { getInstagramLookupCooldownSeconds } = require('../utils/instagramCooldown');
 const MongoStore = require('rate-limit-mongo');
 
-const loginLimiter = rateLimit({
+function shouldUseMongoStore() {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) return false;
+    if (uri.includes("<user_name>") || uri.includes("<password>") || uri.includes("7udof89w.mongodb.net")) return false;
+    return process.env.USE_MOCK_DB !== 'true';
+}
+
+const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 15,
+    max: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
+    store: shouldUseMongoStore() ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 15 * 60 * 1000,
+    }) : undefined,
     handler: (req, res) => {
-        const message = 'Too many login attempts, please try again later.';
+        const message = 'Too many login attempts. Please try again in 15 minutes.';
         if (wantsHtml(req)) {
             return res.status(429).render('login', {
                 error: message,
@@ -17,6 +33,8 @@ const loginLimiter = rateLimit({
         return res.status(429).json({ success: false, message, error: message });
     }
 });
+
+const loginLimiter = authLimiter;
 
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
@@ -48,8 +66,10 @@ const urlShortenerApiLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5,
+    standardHeaders: true,
+    legacyHeaders: true,
     keyGenerator: (req) => ipKeyGenerator(req.ip),
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 60 * 60 * 1000,
     }) : undefined,
@@ -83,6 +103,15 @@ const forgotPasswordLimiter = rateLimit({
     }
 });
 
+const resetPasswordLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        const message = 'Too many password reset attempts. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
 
 
 function keyByUserOrIp(req) {
@@ -93,7 +122,7 @@ const aiGenerationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // 5 requests per 15 minutes
     keyGenerator: keyByUserOrIp,
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
         expireTimeMs: 15 * 60 * 1000,
     }) : undefined,
@@ -105,22 +134,70 @@ const aiGenerationLimiter = rateLimit({
         return res.status(429).json({ success: false, message, error: message });
     }
 });
+const instagramLookupCooldownSeconds = getInstagramLookupCooldownSeconds();
+
 const instagramProfileLimiter = rateLimit({
-    windowMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+    windowMs: instagramLookupCooldownSeconds * 1000,
     max: 1,
     keyGenerator: keyByUserOrIp,
-    store: process.env.MONGODB_URI ? new MongoStore({
+    store: shouldUseMongoStore() ? new MongoStore({
         uri: process.env.MONGODB_URI,
-        expireTimeMs: (process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30) * 1000,
+        expireTimeMs: instagramLookupCooldownSeconds * 1000,
     }) : undefined,
     handler: (req, res) => {
         return res.status(429).json({
             success: false,
             error: {
                 code: 'RATE_LIMITED',
-                message: `Please wait ${process.env.INSTAGRAM_LOOKUP_COOLDOWN_SECONDS || 30} seconds before fetching another Instagram profile.`,
+                message: `Please wait ${instagramLookupCooldownSeconds} seconds before fetching another Instagram profile.`,
             }
         });
+    }
+});
+
+const billingCheckoutLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 checkout session creations per 15 minutes per user
+    keyGenerator: keyByUserOrIp,
+    store: shouldUseMongoStore() ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 15 * 60 * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        const message = 'Too many checkout requests. Please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: keyByUserOrIp,
+    store: shouldUseMongoStore() ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 15 * 60 * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        const message = 'Too many requests, please try again later.';
+        return res.status(429).json({ success: false, message, error: message });
+    }
+});
+
+const instagramLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: keyByUserOrIp,
+    store: shouldUseMongoStore() ? new MongoStore({
+        uri: process.env.MONGODB_URI,
+        expireTimeMs: 60 * 1000,
+    }) : undefined,
+    handler: (req, res) => {
+        const message = 'Instagram API rate limit reached. Please wait.';
+        return res.status(429).json({ success: false, message, error: message });
     }
 });
 
@@ -133,5 +210,10 @@ module.exports = {
     emailVerificationLimiter,
     aiGenerationLimiter,
     instagramProfileLimiter,
-    forgotPasswordLimiter
+    billingCheckoutLimiter,
+    forgotPasswordLimiter,
+    resetPasswordLimiter,
+    generalLimiter,
+    instagramLimiter,
+    authLimiter
 };

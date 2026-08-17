@@ -1,6 +1,7 @@
 const express = require("express");
-const { createCheckoutSession, handleWebhook } = require("../controller/billing");
+const { createCheckoutSession } = require("../controller/billing");
 const { protect } = require("../middleware/auth");
+const { billingCheckoutLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -17,19 +18,9 @@ const router = express.Router();
  *         description: Checkout session created successfully
  *       401:
  *         description: Unauthorized
+ *       429:
+ *         description: Too many requests
  */
-router.post("/checkout", protect, createCheckoutSession);
-
-/**
- * @swagger
- * /api/billing/webhook:
- *   post:
- *     summary: Stripe webhook receiver
- *     description: Handles incoming Stripe events like checkout.session.completed.
- *     responses:
- *       200:
- *         description: Event received
- */
-router.post("/webhook", express.raw({ type: 'application/json' }), handleWebhook);
+router.post("/checkout", protect, billingCheckoutLimiter, createCheckoutSession);
 
 module.exports = router;

@@ -868,9 +868,14 @@ async function startServer() {
     // Connect to the database. `connectDB` will handle exit on failure.
     await connectDB();
 
-    // Initialize background workers after the database is ready
-    require("./workers/analyticsRefreshWorker");
-    require("./workers/contentPublishWorker").startContentPublishWorker();
+        // Initialize background workers after the database is ready
+        require("./workers/analyticsRefreshWorker");
+        require("./workers/contentPublishWorker").startContentPublishWorker();
+        require("./workers/scheduledNotificationWorker").startScheduledNotificationWorker();
+    } catch (error) {
+        console.error('❌ Failed to start the application:', error);
+        process.exit(1);
+    }
 }
 
 startServer();

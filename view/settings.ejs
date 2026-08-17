@@ -110,7 +110,13 @@
                                 <div class="invoice-est" id="invoice-est">Estimated: <%= user.billing.estimatedTotal %></div>
                                 <div class="card-info">
                                     <svg width="24" height="16" viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="1" y="2" width="22" height="12" rx="2"></rect><line x1="1" y1="7" x2="23" y2="7"></line></svg>
-                                    <span id="card-info-text"><%= user.billing.cardBrand %> ending in <%= user.billing.cardLast4 %></span>
+                                    <span id="card-info-text">
+                                        <% if (user.billing.cardBrand && user.billing.cardLast4) { %>
+                                            <%= user.billing.cardBrand %> ending in <%= user.billing.cardLast4 %>
+                                        <% } else { %>
+                                            No payment method saved
+                                        <% } %>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -124,14 +130,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <% user.billing.invoices.forEach(function(inv) { %>
-                                    <tr data-invoice-id="<%= inv.invoiceId %>">
-                                        <td><%= inv.date %></td>
-                                        <td><%= inv.invoiceId %></td>
-                                        <td><%= inv.amount %></td>
-                                        <td><span class="badge-paid"><%= inv.status %></span></td>
+                                <% if (user.billing.invoices && user.billing.invoices.length > 0) { %>
+                                    <% user.billing.invoices.forEach(function(inv) { %>
+                                        <tr data-invoice-id="<%= inv.invoiceId %>" data-invoice-url="<%= inv.url || inv.receiptUrl || '' %>">
+                                            <td><%= inv.date %></td>
+                                            <td><%= inv.invoiceId %></td>
+                                            <td><%= inv.amount %></td>
+                                            <td><span class="badge-paid"><%= inv.status %></span></td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr class="no-invoices-row">
+                                        <td colspan="4" style="text-align: center; color: var(--color-text-muted, #666); padding: 1.5rem;">No invoices found.</td>
                                     </tr>
-                                <% }); %>
+                                <% } %>
                             </tbody>
                         </table>
                     </section>
@@ -244,4 +256,5 @@
     </div>
 
     <script src="/js/pages/settings.js"></script>
+    <%- include('partials/layout/scripts') %>
 <%- include('partials/layout/footer') %>
