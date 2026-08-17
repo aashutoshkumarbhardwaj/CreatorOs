@@ -510,14 +510,7 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
-
-    return res.render('analytics', {
-        services,
-        user: buildAccountViewModel(userDoc, req.user),
-    });
+    return res.redirect('/services/analytics-dashboard');
 }));
 
 // Vault redirect to new File Upload page
@@ -866,24 +859,18 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 async function startServer() {
-    try {
-        // Start the HTTP server immediately
-        const server = app.listen(port, () => {
-            const url = process.env.APP_URL || `http://localhost:${port}`;
-            console.log(`🚀 Server is running on ${url}`);
-        });
+    // Start the HTTP server immediately
+    app.listen(port, () => {
+        const url = process.env.APP_URL || `http://localhost:${port}`;
+        console.log(`🚀 Server is running on ${url}`);
+    });
 
-        // Connect to the database in the background
-        await connectDB();
-        console.log('✅ Database connected successfully.');
+    // Connect to the database. `connectDB` will handle exit on failure.
+    await connectDB();
 
-        // Initialize background workers after the database is ready
-        require("./workers/analyticsRefreshWorker");
-        require("./workers/contentPublishWorker").startContentPublishWorker();
-    } catch (error) {
-        console.error('❌ Failed to start the application:', error);
-        process.exit(1);
-    }
+    // Initialize background workers after the database is ready
+    require("./workers/analyticsRefreshWorker");
+    require("./workers/contentPublishWorker").startContentPublishWorker();
 }
 
 startServer();

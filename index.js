@@ -490,6 +490,88 @@ app.get('/file-upload', protect, asyncHandler(async (req, res) => {
 }));
 
 // ── BIO LINK ROUTES ──
+// Editor — creator configures their bio page
+app.get('/bio', protect, asyncHandler(async (req, res) => {
+    const userDoc = await User.findById(req.user.id)
+        .select('name email alias bio')
+        .lean();
+
+    return res.render('bio-editor', {
+        services,
+        user: buildAccountViewModel(userDoc, req.user),
+    });
+}));
+
+// Save bio data
+app.post('/bio/save', protect, asyncHandler(async (req, res) => {
+    const BioProfile = require('./model/bioProfile');
+    const userDoc = await User.findById(req.user.id);
+    if (!userDoc) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { handle, name, bio, tags, avatarUrl, links } = req.body;
+    const userHandle = handle || userDoc.alias;
+    
+    if (!userHandle) {
+         return res.status(400).json({ success: false, message: 'Handle is required' });
+    }
+    
+    if (handle && handle !== userDoc.alias) {
+        userDoc.alias = handle;
+        await userDoc.save();
+    }
+    
+    const updateData = {
+        userId: userDoc._id,
+        handle: userHandle,
+        name: name || userDoc.name,
+        bio: bio || userDoc.bio,
+        tags: tags || [],
+        avatarUrl: avatarUrl || userDoc.avatar,
+        links: links || []
+    };
+    
+    const bioProfile = await BioProfile.findOneAndUpdate(
+        { userId: userDoc._id },
+        updateData,
+        { new: true, upsert: true }
+    );
+    
+    return res.json({ success: true, data: bioProfile });
+}));
+
+// Track link click
+const clickTrackerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // 50 requests per window per IP
+    message: { success: false, message: 'Too many requests' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// IP-based deduplication map: linkId -> Map<ip, timestamp>
+const clickCooldowns = new Map();
+const CLICK_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per IP per link
+
+app.post('/bio/track/:linkId', clickTrackerLimiter, asyncHandler(async (req, res) => {
+    const BioProfile = require('./model/bioProfile');
+    const { linkId } = req.params;
+    const clientIp = req.ip || req.connection.remoteAddress;
+
+    // IP-based deduplication with cooldown
+    if (!clickCooldowns.has(linkId)) {
+        clickCooldowns.set(linkId, new Map());
+    }
+    const linkCooldowns = clickCooldowns.get(linkId);
+    const lastClick = linkCooldowns.get(clientIp);
+
+    if (lastClick && (Date.now() - lastClick) < CLICK_COOLDOWN_MS) {
+        return res.json({ success: true, tracked: false, reason: 'cooldown' });
+    }
+
+    linkCooldowns.set(clientIp, Date.now());
+}));
 app.use('/', bioRoutes);
 
 // ── SERVICE PAGES ──
@@ -678,24 +760,18 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 async function startServer() {
-    try {
-        // Start the HTTP server immediately
-        const server = app.listen(port, () => {
-            const url = process.env.APP_URL || `http://localhost:${port}`;
-            console.log(`🚀 Server is running on ${url}`);
-        });
+    // Start the HTTP server immediately
+    app.listen(port, () => {
+        const url = process.env.APP_URL || `http://localhost:${port}`;
+        console.log(`🚀 Server is running on ${url}`);
+    });
 
-        // Connect to the database in the background
-        await connectDB();
-        console.log('✅ Database connected successfully.');
+    // Connect to the database. `connectDB` will handle exit on failure.
+    await connectDB();
 
-        // Initialize background workers after the database is ready
-        require("./workers/analyticsRefreshWorker");
-        require("./workers/contentPublishWorker").startContentPublishWorker();
-    } catch (error) {
-        console.error('❌ Failed to start the application:', error);
-        process.exit(1);
-    }
+    // Initialize background workers after the database is ready
+    require("./workers/analyticsRefreshWorker");
+    require("./workers/contentPublishWorker").startContentPublishWorker();
 }
 
 startServer();
