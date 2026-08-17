@@ -21,12 +21,12 @@
     <header class="topbar">
       <h2>Smart Bio Editor</h2>
       <div class="share-url">
-        <span>creatoros.com/<strong>@<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %></strong></span>
-        <button type="button" class="copy-btn" id="copyUrlBtn">Copy</button>
+        <span>creatoros.com/<strong>@<%= currentHandle %></strong></span>
+        <button type="button" class="copy-btn" id="copyUrlBtn" onclick="copyUrl()">Copy</button>
       </div>
       <div class="topbar-actions">
-        <a href="/bio/preview" target="_blank" class="btn-retro">Preview ↗</a>
-        <button type="button" class="btn-retro primary" id="saveBioBtn">Save Changes</button>
+        <a href="/@<%= currentHandle %>" id="previewLink" target="_blank" class="btn-retro">Preview ↗</a>
+        <button type="button" class="btn-retro primary" id="saveBioBtn" onclick="saveBio()">Save Changes</button>
       </div>
     </header>
 
@@ -47,16 +47,17 @@
             <div class="field-row">
               <div class="field">
                 <label>Display Name</label>
-                <input type="text" id="profileName" value="<%= user.name %>" placeholder="Your name" />
+                <input type="text" id="profileName" value="<%= currentName %>" placeholder="Your name" oninput="updatePreview()" />
               </div>
               <div class="field">
                 <label>Handle</label>
-                <input type="text" id="profileHandle" value="<%= user.handle || user.name.toLowerCase().replace(/\s+/g,'-') %>" placeholder="@handle" />
+                <input type="text" id="profileHandle" value="<%= currentHandle %>" placeholder="handle" oninput="handleInputChanged()" />
+                <span id="handleFeedback" style="font-size: 0.72rem; font-family:'DM Mono',monospace; margin-top: 0.2rem; display: block;"></span>
               </div>
             </div>
             <div class="field">
               <label>Bio</label>
-              <textarea id="profileBio" placeholder="Short description about you..."><%= user.bio || '' %></textarea>
+              <textarea id="profileBio" placeholder="Short description about you..." oninput="updatePreview()"><%= currentBio %></textarea>
             </div>
             <div class="field">
               <label>Tags (press Enter to add)</label>
@@ -110,20 +111,20 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <% const savedTheme = bioProfile?.theme || 'light'; %>
-                <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    data-theme="light">☀ Light</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     data-theme="dark">● Dark</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     data-theme="neon">⚡ Neon</button>
-                <button type="button" class="preset-btn <%= savedTheme === 'gradient' ? 'active' : '' %>" id="theme-gradient" data-theme="gradient">◈ Gradient</button>
+                <% const savedTheme = bioProfile?.theme || currentTheme || 'light'; %>
+                <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    data-theme="light" onclick="selectTheme('light',this)">☀ Light</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     data-theme="dark" onclick="selectTheme('dark',this)">● Dark</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     data-theme="neon" onclick="selectTheme('neon',this)">⚡ Neon</button>
+                <button type="button" class="preset-btn <%= savedTheme === 'gradient' ? 'active' : '' %>" id="theme-gradient" data-theme="gradient" onclick="selectTheme('gradient',this)">◈ Gradient</button>
               </div>
             </div>
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <% const savedLayout = bioProfile?.layout || 'list'; %>
-                <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  data-layout="list">≡ List</button>
-                <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  data-layout="grid">⊞ Grid</button>
-                <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" data-layout="cards">▤ Cards</button>
+                <% const savedLayout = bioProfile?.layout || currentLayout || 'list'; %>
+                <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  id="layout-list"  data-layout="list" onclick="selectLayout('list',this)">≡ List</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  id="layout-grid"  data-layout="grid" onclick="selectLayout('grid',this)">⊞ Grid</button>
+                <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" id="layout-cards" data-layout="cards" onclick="selectLayout('cards',this)">▤ Cards</button>
               </div>
             </div>
             <div class="field">
@@ -203,11 +204,15 @@
 <div class="toast" id="toast">✓ Saved!</div>
 
 <script nonce="<%= nonce %>">
-  const savedLinks = <%- JSON.stringify(bioProfile?.links || []) %>;
+  const initialProfile = <%- JSON.stringify(currentProfile) %>;
   let linkIdCounter = 0;
-  let links = savedLinks.map(l => ({ ...l, id: ++linkIdCounter }));
-  let currentTheme = '<%= bioProfile?.theme || "light" %>';
-  let currentLayout = '<%= bioProfile?.layout || "list" %>';
+  let links = Array.isArray(initialProfile.links) && initialProfile.links.length > 0
+    ? initialProfile.links.map(l => ({ ...l, id: ++linkIdCounter }))
+    : [];
+  let currentTheme = initialProfile.theme || 'light';
+  let currentLayout = initialProfile.layout || 'list';
+  let tags = Array.isArray(initialProfile.tags) ? [...initialProfile.tags] : [];
+  let avatarDataUrl = initialProfile.avatarUrl || null;
 
   // ── LINKS ──
   function addPreset(type, icon, label, urlPrefix, category) {
@@ -236,12 +241,15 @@
     document.getElementById('linkCount').textContent = `${links.length} link${links.length !== 1 ? 's' : ''}`;
     list.innerHTML = links.map(link => `
       <div class="link-row" id="link-row-${link.id}" draggable="true" data-id="${link.id}">
-        <div class="link-row-icon">${link.icon}</div>
-        <input type="text" value="${link.label}"
+        <div class="link-row-icon">${link.icon || '🔗'}</div>
+        <input type="text" value="${link.label || ''}"
                data-link-field="label" data-id="${link.id}"
+               onchange="updateLinkField(${link.id},'label',this.value)"
                placeholder="Label" />
-        <input type="text" value="${link.url}"
+        <input type="text" value="${link.url || ''}"
                data-link-field="url" data-id="${link.id}"
+               onchange="updateLinkField(${link.id},'url',this.value)"
+               placeholder="https://..." />
                placeholder="https://..." />
         <button type="button" class="link-row-featured ${link.featured ? 'active' : ''}" data-action="toggle-featured" data-id="${link.id}" title="Feature this link">★</button>
         <button type="button" class="link-row-del" data-action="remove-link" data-id="${link.id}" title="Remove">×</button>
@@ -326,57 +334,110 @@
   }
 
   // Event delegation for dynamically rendered link rows
-  document.getElementById('linksList').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const id = Number(btn.dataset.id);
-    if (btn.dataset.action === 'remove-link') removeLink(id);
-    if (btn.dataset.action === 'toggle-featured') toggleFeatured(id);
-  });
+  const linksListEl = document.getElementById('linksList');
+  if (linksListEl) {
+    linksListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      if (btn.dataset.action === 'remove-link') removeLink(id);
+      if (btn.dataset.action === 'toggle-featured') toggleFeatured(id);
+    });
 
-  document.getElementById('linksList').addEventListener('change', (e) => {
-    const field = e.target.dataset.linkField;
-    if (!field) return;
-    updateLinkField(Number(e.target.dataset.id), field, e.target.value);
-  });
+    linksListEl.addEventListener('change', (e) => {
+      const field = e.target.dataset.linkField;
+      if (!field) return;
+      updateLinkField(Number(e.target.dataset.id), field, e.target.value);
+    });
+  }
 
   // ── TAGS ──
-  const tags = <%- JSON.stringify(bioProfile?.tags || []) %>;
-
   function addTag(text) {
-    tags.push(text);
+    if (!tags.includes(text)) {
+      tags.push(text);
+      renderTagChip(text);
+    }
+  }
+
+  function renderTagChip(text) {
     const wrap = document.getElementById('tagsWrap');
     const input = document.getElementById('tagInput');
     const chip = document.createElement('span');
     chip.className = 'tag-chip';
     chip.innerHTML = `${text} <button type="button" class="tag-remove-btn">×</button>`;
-    wrap.insertBefore(chip, input);
+    if (wrap && input) wrap.insertBefore(chip, input);
   }
 
-  document.getElementById('tagInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.target.value.trim()) {
-      e.preventDefault();
-      addTag(e.target.value.trim());
-      e.target.value = '';
-    }
-  });
+  function removeTag(text, btn) {
+    tags = tags.filter(t => t !== text);
+    if (btn && btn.parentElement) btn.parentElement.remove();
+  }
 
-  document.getElementById('tagsWrap').addEventListener('click', (e) => {
-    if (e.target.classList.contains('tag-remove-btn')) {
-      e.target.parentElement.remove();
+  const tagInputEl = document.getElementById('tagInput');
+  if (tagInputEl) {
+    tagInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        e.preventDefault();
+        addTag(e.target.value.trim());
+        e.target.value = '';
+      }
+    });
+  }
+
+  const tagsWrapEl = document.getElementById('tagsWrap');
+  if (tagsWrapEl) {
+    tagsWrapEl.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tag-remove-btn')) {
+        const chip = e.target.parentElement;
+        const text = chip.textContent.replace('×', '').trim();
+        tags = tags.filter(t => t !== text);
+        chip.remove();
+        return;
+      }
+      if (e.target === e.currentTarget && tagInputEl) {
+        tagInputEl.focus();
+      }
+    });
+  }
+
+  // ── HANDLE AVAILABILITY ──
+  let handleCheckTimeout = null;
+  function handleInputChanged() {
+    updatePreview();
+    const handleInput = document.getElementById('profileHandle');
+    const feedback = document.getElementById('handleFeedback');
+    if (!handleInput || !feedback) return;
+    const rawVal = handleInput.value.trim().toLowerCase().replace(/^@/, '');
+    
+    if (handleCheckTimeout) clearTimeout(handleCheckTimeout);
+    if (!rawVal) {
+      feedback.textContent = '';
       return;
     }
-    if (e.target === e.currentTarget) {
-      document.getElementById('tagInput').focus();
-    }
-  });
+
+    handleCheckTimeout = setTimeout(() => {
+      fetch(`/bio/check-handle/${encodeURIComponent(rawVal)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.available) {
+            feedback.style.color = 'var(--accent, #37D6C8)';
+            feedback.textContent = '✓ Available';
+            const prevL = document.getElementById('previewLink');
+            if (prevL) prevL.href = `/@${res.handle}`;
+          } else {
+            feedback.style.color = '#ff4757';
+            feedback.textContent = `✗ ${res.reason}`;
+          }
+        })
+        .catch(() => {});
+    }, 400);
+  }
 
   // ── PREVIEW ──
   function updatePreview() {
     const nameVal = document.getElementById('profileName').value || 'Your Name';
     const handleVal = document.getElementById('profileHandle').value.trim().replace(/^@/, '') || 'handle';
     const bioVal = document.getElementById('profileBio').value || 'Your bio goes here...';
-
     document.getElementById('prevName').textContent   = nameVal;
     document.getElementById('prevHandle').textContent = '@' + handleVal;
     document.getElementById('prevBio').textContent    = bioVal;
@@ -386,11 +447,13 @@
 
     const sortedLinks = [...links].sort((a, b) => (b.featured === true) - (a.featured === true));
     const prevLinks = document.getElementById('prevLinks');
-    prevLinks.innerHTML = sortedLinks.slice(0,6).map(l => `
+    prevLinks.innerHTML = sortedLinks.slice(0, 8).map(l => `
       <div class="prev-link ${l.featured ? 'featured' : ''}">
-        <span class="prev-link-icon">${l.icon}</span>
-        <span>${l.label}</span>
+        <span class="prev-link-icon">${l.icon || '🔗'}</span>
+        <span>${l.label || 'Link'}</span>
         ${l.featured ? '<span class="prev-link-star">★</span>' : ''}
+      </div>
+    `).join('');
       </div>
     `).join('');
 
@@ -417,7 +480,7 @@
   function selectTheme(theme, btn) {
     currentTheme = theme;
     document.querySelectorAll('[id^="theme-"]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     document.getElementById('previewInner').setAttribute('data-theme-preview', theme);
   }
 
@@ -428,9 +491,11 @@
   // ── LAYOUT ──
   function selectLayout(layout, btn) {
     currentLayout = layout;
+    document.querySelectorAll('[id^="layout-"]').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('[data-layout]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     document.getElementById('prevLinks').className = 'prev-links layout-' + layout;
+  }
   }
 
   document.querySelectorAll('[data-layout]').forEach(btn => {
@@ -462,15 +527,15 @@
       links,
       theme:  currentTheme,
       layout: currentLayout,
-      avatarUrl: document.getElementById('avatarUrlInput').value,
-      background: document.getElementById('backgroundInput').value,
+      avatarUrl: avatarDataUrl || (document.getElementById('avatarUrlInput') ? document.getElementById('avatarUrlInput').value : null),
+      background: document.getElementById('backgroundInput') ? document.getElementById('backgroundInput').value : '',
       contactButton: {
-        label: document.getElementById('contactLabel').value,
-        url: document.getElementById('contactUrl').value,
+        label: document.getElementById('contactLabel') ? document.getElementById('contactLabel').value : '',
+        url: document.getElementById('contactUrl') ? document.getElementById('contactUrl').value : '',
       },
-      customDomain: document.getElementById('customDomainInput').value,
-      seoTitle: document.getElementById('seoTitleInput').value,
-      seoDescription: document.getElementById('seoDescInput').value,
+      customDomain: document.getElementById('customDomainInput') ? document.getElementById('customDomainInput').value : '',
+      seoTitle: document.getElementById('seoTitleInput') ? document.getElementById('seoTitleInput').value : '',
+      seoDescription: document.getElementById('seoDescInput') ? document.getElementById('seoDescInput').value : '',
     };
 
     fetch('/bio/save', {
@@ -539,16 +604,21 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
-
   // Init: render seeded links and preview
   renderLinks();
   updatePreview();
-  document.getElementById('previewInner').setAttribute('data-theme-preview', currentTheme);
-  document.getElementById('prevLinks').className = 'prev-links layout-' + currentLayout;
-  if ('<%= bioProfile?.avatarUrl || "" %>') {
-    document.getElementById('prevAvatar').style.backgroundImage = "url('<%= bioProfile?.avatarUrl || "" %>')";
-    document.getElementById('prevAvatar').style.backgroundSize = 'cover';
-    document.getElementById('prevAvatar').textContent = '';
+  const prevInner = document.getElementById('previewInner');
+  if (prevInner) prevInner.setAttribute('data-theme-preview', currentTheme);
+  const prevLks = document.getElementById('prevLinks');
+  if (prevLks) prevLks.className = 'prev-links layout-' + currentLayout;
+  if (avatarDataUrl) {
+    const av = document.getElementById('prevAvatar');
+    if (av) {
+      av.style.backgroundImage = `url("${avatarDataUrl}")`;
+      av.style.backgroundSize = 'cover';
+      av.textContent = '';
+    }
   }
 </script>
 <%- include('partials/layout/footer') %>
+

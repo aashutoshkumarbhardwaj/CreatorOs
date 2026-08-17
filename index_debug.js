@@ -510,14 +510,7 @@ app.get('/my-links', protect, asyncHandler(async (req, res) => {
 
 // Analytics
 app.get('/analytics', protect, asyncHandler(async (req, res) => {
-    const userDoc = await User.findById(req.user.id)
-        .select('name email')
-        .lean();
-
-    return res.render('analytics', {
-        services,
-        user: buildAccountViewModel(userDoc, req.user),
-    });
+    return res.redirect('/services/analytics-dashboard');
 }));
 
 // Vault redirect to new File Upload page
@@ -757,7 +750,7 @@ app.post('/services/url-shortener/shorten', protect, preventContributorWrites, u
 
 // ── FILE UPLOAD POST ──
 
-app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), (req, res) => {
+app.post('/services/file-upload/upload', protect, preventContributorWrites, uploadLimiter, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -793,7 +786,7 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             visitData.y = y;
         }
         
-        const entry = await Url.findOneAndUpdate(
+        const urlEntry = await Url.findOneAndUpdate(
             { shortId },
             {
                 $inc:  { totalClicks: 1 },
@@ -808,8 +801,8 @@ app.get('/u/:shortId', asyncHandler(async (req, res) => {
             { new: true }
         );
 
-        if (!entry) return res.status(404).send('URL not found');
-        return res.redirect(entry.redirectUrl);
+        if (!urlEntry) return res.status(404).send('URL not found');
+        return res.redirect(urlEntry.redirectUrl);
     } catch (err) {
         console.error('[redirect]', err);
         return res.status(500).send('Server error');
@@ -866,16 +859,14 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 async function startServer() {
-    try {
-        // Start the HTTP server immediately
-        const server = app.listen(port, () => {
-            const url = process.env.APP_URL || `http://localhost:${port}`;
-            console.log(`🚀 Server is running on ${url}`);
-        });
+    // Start the HTTP server immediately
+    app.listen(port, () => {
+        const url = process.env.APP_URL || `http://localhost:${port}`;
+        console.log(`🚀 Server is running on ${url}`);
+    });
 
-        // Connect to the database in the background
-        await connectDB();
-        console.log('✅ Database connected successfully.');
+    // Connect to the database. `connectDB` will handle exit on failure.
+    await connectDB();
 
         // Initialize background workers after the database is ready
         require("./workers/analyticsRefreshWorker");
@@ -890,6 +881,3 @@ async function startServer() {
 startServer();
 
 module.exports = app;
-
-
-.catch(err => console.error("Promise.all failed:", err));

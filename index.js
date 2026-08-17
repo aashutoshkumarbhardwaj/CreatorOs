@@ -83,6 +83,8 @@ const sponsorRoute = require("./routes/sponsor");
 const settingsRoutes = require("./routes/settings");
 const contentRoutes = require("./routes/content");
 const suggestionRoutes = require("./routes/suggestionRoutes");
+const bioRoutes = require("./routes/bioRoutes");
+const { renderPublicBioProfile } = require("./controller/bioController");
 const qrCodeRoutes = require("./routes/qrCode");
 const smartNotificationRoutes = require("./routes/smartNotificationRoutes");
 const contentOsRoutes = require("./routes/contentOsRoutes");
@@ -518,7 +520,6 @@ app.get(
 );
 
 // ── BIO LINK ROUTES ──
-
 // Editor — creator configures their bio page
 app.get(
   "/bio",
@@ -763,96 +764,7 @@ const clickCooldownsSweepInterval = setInterval(() => {
 }, CLEANUP_INTERVAL_MS);
 clickCooldownsSweepInterval.unref();
 
-app.post(
-  "/bio/track/:linkId",
-  clickTrackerLimiter,
-  asyncHandler(async (req, res) => {
-    const BioProfile = require("./model/bioProfile");
-    const { linkId } = req.params;
-    const clientIp = req.ip || req.connection.remoteAddress;
-
-    // IP-based deduplication with cooldown
-    if (!clickCooldowns.has(linkId)) {
-      clickCooldowns.set(linkId, new Map());
-    }
-    const linkCooldowns = clickCooldowns.get(linkId);
-    const lastClick = linkCooldowns.get(clientIp);
-
-    if (lastClick && Date.now() - lastClick < CLICK_COOLDOWN_MS) {
-      return res.json({ success: true, tracked: false, reason: "cooldown" });
-    }
-
-    linkCooldowns.set(clientIp, Date.now());
-
-    const bioProfile = await BioProfile.findOneAndUpdate(
-      { "links._id": linkId },
-      { $inc: { "stats.clicks": 1 } },
-      { new: true },
-    );
-
-    if (!bioProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Link not found" });
-    }
-
-    return res.json({ success: true, tracked: true });
-  }),
-);
-
-// Public profile — anyone can visit creatoros.com/@handle
-app.get(
-  "/@:handle",
-  asyncHandler(async (req, res) => {
-    const handle = req.params.handle;
-
-    const cachedResult = await getProfileFromCache(handle);
-    if (cachedResult) {
-      res.setCacheStatus("HIT");
-      const { profile, links } = cachedResult.data;
-      return res.render("bio-profile", { profile, links });
-    }
-
-    res.setCacheStatus("MISS");
-
-    const bioProfile = await BioProfile.findOne({ handle }).lean();
-
-    if (!bioProfile) {
-      return res.status(404).render("404", { url: req.originalUrl });
-    }
-
-    const profile = {
-      name: bioProfile.name || handle,
-      handle,
-      bio: bioProfile.bio || "",
-      tags: bioProfile.tags || [],
-      avatarUrl: bioProfile.avatarUrl || null,
-      initials: bioProfile.initials || handle.substring(0, 2).toUpperCase(),
-      stats: bioProfile.stats || {
-        links: bioProfile.links?.length || 0,
-        views: 0,
-        clicks: 0,
-      },
-      theme: bioProfile.theme || "light",
-      layout: bioProfile.layout || "list",
-      background: bioProfile.background || null,
-      contactButton: bioProfile.contactButton?.url
-        ? bioProfile.contactButton
-        : null,
-      seo: {
-        title: bioProfile.seo?.title || bioProfile.name || handle,
-        description: bioProfile.seo?.description || bioProfile.bio || "",
-      },
-    };
-
-    const links = bioProfile.links || [];
-
-    const cacheData = { profile, links };
-    await setProfileInCache(handle, cacheData);
-
-    return res.render("bio-profile", { profile, links });
-  }),
-);
+app.use('/', bioRoutes);
 
 // ── SERVICE PAGES ──
 
@@ -1011,22 +923,6 @@ app.get(
       if (entry.archived) {
         return res.status(404).render("404", { url: req.originalUrl });
       }
-      Object.assign(visitData, parseVisitMeta(req));
-
-      const entry = await Url.findOneAndUpdate(
-        { shortId },
-        {
-          $inc: { totalClicks: 1 },
-          $push: {
-            visitHistory: {
-              $each: [visitData],
-              $sort: { timestamp: -1 },
-              $slice: 1000,
-            },
-          },
-        },
-        { new: true },
-      );
 
       if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
         return res.status(410).render("link-expired", { shortId });
@@ -1153,7 +1049,7 @@ async function startServer() {
       console.log(`🚀 Server is running on ${url}`);
     });
 
-    // Connect to the database in the background
+    // Connect to the database
     await connectDB();
     console.log("✅ Database connected successfully.");
 

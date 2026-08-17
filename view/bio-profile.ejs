@@ -566,11 +566,11 @@
 
   <% if (socialLinks.length) { %>
     <div class="section-label">Social</div>
-    <div class="links-section layout-<%= currentLayout %>" id="linksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="linksContainer">
       <% socialLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
@@ -582,11 +582,11 @@
 
   <% if (workLinks.length) { %>
     <div class="section-label">Work</div>
-    <div class="links-section layout-<%= currentLayout %>" id="workLinksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="workLinksContainer">
       <% workLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
@@ -598,11 +598,11 @@
 
   <% if (otherLinks.length) { %>
     <div class="section-label">More</div>
-    <div class="links-section layout-<%= currentLayout %>" id="otherLinksContainer">
+    <div class="links-section layout-<%= profile.layout || 'list' %>" id="otherLinksContainer">
       <% otherLinks.forEach(link => { %>
         <a href="<%= link.url %>" target="_blank" rel="noopener"
            class="link-btn link-<%= link.type %><%= link.featured ? ' link-featured' : '' %>"
-           onclick="trackClick('<%= link.id %>')">
+           onclick="trackClick('<%= link._id || link.id %>')">
           <% if (link.featured) { %><span class="featured-badge">★</span><% } %>
           <span class="link-icon"><%= link.icon %></span>
           <span class="link-label"><%= link.label %></span>
@@ -672,10 +672,13 @@
 
   // Track link click
   function trackClick(id) {
-    fetch(`/bio/track/${id}`, { method: 'POST' }).catch(() => {});
+    if (!id) return;
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(`/bio/track/${id}`);
+    } else {
+      fetch(`/bio/track/${id}`, { method: 'POST' }).catch(() => {});
+    }
   }
-
-  
 
   // Stagger link animations
   document.querySelectorAll('.link-btn').forEach((btn, i) => {
