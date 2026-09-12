@@ -174,6 +174,18 @@
     );
     sections.forEach((s) => s && observer.observe(s));
 
+    // Bio character counter
+    const bioInput = document.getElementById('profile-bio');
+    const bioCount = document.getElementById('bio-count');
+
+    function updateBioCount() {
+        bioCount.textContent = bioInput.value.length;
+    }
+
+    updateBioCount();
+    bioInput.addEventListener('input', updateBioCount);
+
+
     // Profile form
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
         e.preventDefault();
