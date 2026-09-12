@@ -19,6 +19,14 @@ function slugify(text) {
 /**
  * Helper to find creator user by alias or ID or name slug.
  */
+function publicErrorMessage(error) {
+  console.error(error);
+  if (process.env.NODE_ENV === "production") {
+    return "An internal error occurred.";
+  }
+  return error && error.message ? error.message : "Internal server error";
+}
+
 async function findCreatorByAliasOrName(identifier) {
   let creator = await User.findOne({ alias: identifier });
   if (!creator) {
@@ -40,7 +48,7 @@ exports.getEventTypes = async (req, res) => {
     const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: eventTypes.length, data: eventTypes });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -85,7 +93,7 @@ exports.createEventType = async (req, res) => {
 
     return res.status(201).json({ success: true, data: eventType });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -111,7 +119,7 @@ exports.updateEventType = async (req, res) => {
     eventType = await EventType.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: eventType });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -126,7 +134,7 @@ exports.deleteEventType = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Event type deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -151,7 +159,7 @@ exports.getUserBookings = async (req, res) => {
       all: bookings,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -181,7 +189,7 @@ exports.cancelBooking = async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Booking cancelled", data: booking });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -198,7 +206,7 @@ exports.getGoogleCalendarStatus = async (req, res) => {
       isConfigured: GoogleCalendarService.isConfigured(),
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -212,7 +220,7 @@ exports.connectGoogleCalendar = async (req, res) => {
     await GoogleCalendarService.handleCallback("mock_code", req.user._id.toString());
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
-    return res.redirect("/services/meetings?error=" + encodeURIComponent(error.message));
+    return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
   }
 };
 
@@ -228,7 +236,7 @@ exports.googleCalendarCallback = async (req, res) => {
     await GoogleCalendarService.handleCallback(code || "mock_code", userId);
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
-    return res.redirect("/services/meetings?error=" + encodeURIComponent(error.message));
+    return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
   }
 };
 
@@ -245,7 +253,7 @@ exports.disconnectGoogleCalendar = async (req, res) => {
     });
     return res.status(200).json({ success: true, message: "Google Calendar disconnected" });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -279,7 +287,7 @@ exports.getPublicBookingData = async (req, res) => {
       eventType,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -374,7 +382,7 @@ exports.getAvailableSlots = async (req, res) => {
 
     return res.status(200).json({ success: true, date, slots: candidateSlots });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
 
@@ -461,6 +469,6 @@ exports.createBooking = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
