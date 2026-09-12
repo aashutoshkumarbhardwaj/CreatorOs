@@ -127,6 +127,7 @@
         localStorage.setItem('creatorosDensity', prefs.interfaceDensity || 'tactile');
         localStorage.setItem('creatorosMotion', String(!!prefs.motionEffects));
         localStorage.setItem('creatorosAutoSaveLinks', String(!!prefs.autoSaveLinks));
+        window.dispatchEvent(new Event('themeChanged'));
         window.dispatchEvent(new Event('creatorosSettingsAppearanceChanged'));
     }
 
@@ -306,7 +307,7 @@
         }
     });
 
-    document.getElementById('cancel-deletion-btn').addEventListener('click', async () => {
+    document.getElementById('cancel-deletion-btn')?.addEventListener('click', async () => {
         try {
             await apiRequest('/api/settings/account/cancel-deletion', { method: 'POST' });
             showToast('Account deletion cancelled');
