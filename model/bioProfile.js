@@ -28,7 +28,6 @@ const bioProfileSchema = new mongoose.Schema(
     avatarUrl: { type: String, default: null },
     initials: { type: String, default: '' },
     theme: { type: String, enum: ['light', 'dark', 'neon', 'gradient'], default: 'light' },
-    },
     layout: { type: String, enum: ["list", "grid", "cards"], default: "list" },
     background: { type: String },
     contactButton: {
@@ -45,6 +44,7 @@ const bioProfileSchema = new mongoose.Schema(
       views: { type: Number, default: 0 },
       clicks: { type: Number, default: 0 },
     },
+    socials: [socialSchema],
     links: [linkSchema],
   },
   { timestamps: true },
