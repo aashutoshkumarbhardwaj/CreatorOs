@@ -28,7 +28,6 @@ const bioProfileSchema = new mongoose.Schema(
     avatarUrl: { type: String, default: null },
     initials: { type: String, default: '' },
     theme: { type: String, enum: ['light', 'dark', 'neon', 'gradient'], default: 'light' },
-    },
     layout: { type: String, enum: ["list", "grid", "cards"], default: "list" },
     background: { type: String },
     contactButton: {
