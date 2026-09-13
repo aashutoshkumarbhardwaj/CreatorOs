@@ -229,7 +229,6 @@
         </div>
     </div>
 
-    <script src="/js/pages/my-links.js"></script>
     <script nonce="<%= nonce %>">
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');
@@ -247,4 +246,27 @@
             });
         }
     </script>
+
+<div id="qrModal" class="qr-modal" hidden>
+    <div class="qr-modal-content">
+        <button type="button" id="closeQrModal" class="qr-modal-close" aria-label="Close">
+            &times;
+        </button>
+
+        <h2>QR Code</h2>
+
+        <p id="qrModalUrl"></p>
+
+        <div id="qrModalPreview"></div>
+
+        <p id="qrModalStatus"></p>
+
+        <button type="button" id="downloadQrPng" disabled>
+            Download PNG
+        </button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+<script src="/js/pages/my-links.js"></script>
 <%- include('partials/layout/footer') %>

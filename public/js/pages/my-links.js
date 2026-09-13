@@ -1,4 +1,5 @@
 (async function () {
+  let currentQr = null;
   const body = document.body;
   const userData = JSON.parse(body.getAttribute("data-user") || "{}");
   const isGuest = !!userData.isGuestContributor;
@@ -140,6 +141,92 @@
     return links;
   }
 
+  function openQrModal(url) {
+      const modal = document.getElementById('qrModal');
+      const preview = document.getElementById('qrModalPreview');
+      const modalUrl = document.getElementById('qrModalUrl');
+      const status = document.getElementById('qrModalStatus');
+      const downloadBtn = document.getElementById('downloadQrPng');
+
+      if (!modal || !preview) return;
+
+      modal.hidden = false;
+      preview.innerHTML = '';
+      modalUrl.textContent = url;
+      status.textContent = 'Generating QR code...';
+      downloadBtn.disabled = true;
+
+      try {
+        currentQr = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            type: 'canvas',
+            data: url,
+            margin: 20,
+            dotsOptions: {
+                color: '#000000',
+                type: 'square',
+            },
+            backgroundOptions: {
+                color: '#ffffff',
+            },
+            cornersSquareOptions: {
+                type: 'square',
+                color: '#000000',
+            },
+            cornersDotOptions: {
+                type: 'square',
+                color: '#000000',
+            },
+            qrOptions: {
+                errorCorrectionLevel: 'M',
+            },
+        });
+
+        currentQr.append(preview);
+          status.textContent = 'QR code ready.';
+          downloadBtn.disabled = false;
+      } catch (error) {
+          console.error('QR generation error:', error);
+          status.textContent = 'Unable to generate QR code.';
+          downloadBtn.disabled = true;
+      }
+  }
+
+
+// Initialize QR modal event listeners after DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const downloadQrPng = document.getElementById('downloadQrPng');
+
+    if (downloadQrPng) {
+        downloadQrPng.addEventListener('click', () => {
+            if (!currentQr) return;
+
+            currentQr.download({
+                name: 'qr-code',
+                extension: 'png',
+            });
+        });
+    }
+
+    const closeQrModal = document.getElementById('closeQrModal');
+    const qrModal = document.getElementById('qrModal');
+
+    if (closeQrModal && qrModal) {
+        closeQrModal.addEventListener('click', () => {
+            qrModal.hidden = true;
+        });
+
+        // Close modal when clicking outside the content
+        qrModal.addEventListener('click', (e) => {
+            if (e.target === qrModal) {
+                qrModal.hidden = true;
+            }
+        });
+    }
+});
+
+
   function renderLinks() {
     const skeleton = document.getElementById("links-skeleton");
 
@@ -216,6 +303,7 @@
                     <div class="link-actions">
                         <button type="button" class="link-action-btn copy-btn" data-url="${escapeAttr(link.shortUrl)}">Copy</button>
                         <a href="${escapeAttr(link.shortUrl)}" target="_blank" rel="noopener" class="link-action-btn open-btn" data-id="${escapeAttr(link.shortId)}">Open</a>
+                        <button type="button" class="qr-btn" data-url="${escapeAttr(link.shortUrl)}">QR Code</button>
                         <button type="button" class="link-action-btn analytics-btn" data-id="${escapeAttr(link.shortId)}">Analytics</button>
                         <button type="button" class="link-action-btn edit-btn" data-id="${escapeAttr(link.shortId)}">Edit</button>
                         <button type="button" class="link-action-btn archive-btn" data-id="${escapeAttr(link.shortId)}">${link.archived ? "Unarchive" : "Archive"}</button>
@@ -234,6 +322,16 @@
       btn.addEventListener("click", () =>
         copyText(btn.dataset.url, "Link copied!"),
       );
+    });
+
+    document.querySelectorAll('.qr-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            const url = button.dataset.url;
+
+            if (!url) return;
+
+            openQrModal(url);
+        });
     });
 
     feedEl.querySelectorAll(".open-btn").forEach((btn) => {
