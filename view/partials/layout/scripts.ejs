@@ -92,7 +92,7 @@
         // ── Sidebar Mobile Toggle ──
         const sidebarBtn = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
-        const layout = document.getElementById('dashboardLayout');
+        const layout = document.getElementById('dashboardLayout') || document.querySelector('.dashboard-layout');
         
         if (layout) {
             // Hide by default on screens < 768px
