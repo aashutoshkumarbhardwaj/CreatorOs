@@ -1349,7 +1349,6 @@
             justify-content: center;
             gap: 0.5rem;
             padding: 0.85rem 1rem;
-            border-radius: 0.65rem;
             font: inherit;
             font-weight: 700;
             font-size: 0.9rem;
@@ -1780,19 +1779,26 @@
 /* ── Titli QR Code Modal ───────────────────────────── */
 
 #qrModal {
-    position: fixed;
-    inset: 0;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 1200;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     padding: 1rem;
+    box-sizing: border-box;
     background: rgba(0, 0, 0, 0.65);
 }
 
 #qrModal[hidden] {
-    display: none;
+    display: none !important;
 }
+
 
 .qr-modal-content {
     position: relative;
@@ -1913,4 +1919,33 @@
     #downloadQrPng {
         width: 100%;
     }
+}
+
+#qrModalPreview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+#qrModalPreview canvas,
+#qrModalPreview svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.link-actions .qr-btn {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: 0;
+    background: var(--bg-secondary);
+    color: var(--text);
+    box-shadow: none;
+}
+
+.link-actions .qr-btn:hover {
+    background: var(--accent-teal);
+    color: #111;
 }

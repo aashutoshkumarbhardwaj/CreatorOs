@@ -183,7 +183,7 @@
             },
         });
 
-        currentQr.append(preview);
+          currentQr.append(preview);
           status.textContent = 'QR code ready.';
           downloadBtn.disabled = false;
       } catch (error) {
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="link-actions">
                         <button type="button" class="link-action-btn copy-btn" data-url="${escapeAttr(link.shortUrl)}">Copy</button>
                         <a href="${escapeAttr(link.shortUrl)}" target="_blank" rel="noopener" class="link-action-btn open-btn" data-id="${escapeAttr(link.shortId)}">Open</a>
-                        <button type="button" class="qr-btn" data-url="${escapeAttr(link.shortUrl)}">QR Code</button>
+                        <button type="button" class="link-action-btn qr-btn" data-url="${escapeAttr(link.shortUrl)}">QR Code</button>
                         <button type="button" class="link-action-btn analytics-btn" data-id="${escapeAttr(link.shortId)}">Analytics</button>
                         <button type="button" class="link-action-btn edit-btn" data-id="${escapeAttr(link.shortId)}">Edit</button>
                         <button type="button" class="link-action-btn archive-btn" data-id="${escapeAttr(link.shortId)}">${link.archived ? "Unarchive" : "Archive"}</button>
