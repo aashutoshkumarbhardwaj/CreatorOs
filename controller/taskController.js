@@ -2,6 +2,7 @@ const Task = require("../model/task");
 const User = require("../model/user");
 const Invite = require("../model/invite");
 const asyncHandler = require("../utils/asyncHandler");
+const escapeRegex = require("../utils/escapeRegex");
 const mongoose = require("mongoose");
 
 let mockTasks = [
@@ -201,10 +202,11 @@ const getTasks = asyncHandler(async (req, res) => {
   if (category) query.category = category;
   if (tag) query.tags = tag;
   if (search) {
+    const escapedSearch = escapeRegex(search);
     query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { tags: { $regex: search, $options: "i" } },
+      { title: { $regex: escapedSearch, $options: "i" } },
+      { description: { $regex: escapedSearch, $options: "i" } },
+      { tags: { $regex: escapedSearch, $options: "i" } },
     ];
   }
 
