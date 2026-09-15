@@ -207,7 +207,18 @@ async function sendNotification(userId, payload) {
     if (targetChannels.includes("sms") && prefs.channels.sms) activeChannels.push("sms");
 
     if (activeChannels.length === 0) {
-        activeChannels = ["in_app"]; // fallback to in_app if available
+        return Notification.create({
+            userId,
+            title,
+            message,
+            type,
+            category,
+            priority,
+            channels: [],
+            status: "skipped",
+            metadata: { ...metadata, suppressionReason: "all_channels_disabled" },
+            deliveryLogs: [],
+        });
     }
 
     // 4. Determine whether the notification is explicitly scheduled or deferred by quiet hours.
