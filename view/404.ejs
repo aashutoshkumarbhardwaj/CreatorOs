@@ -159,6 +159,22 @@ body{
     color:#999;
     font-size:14px;
 }
+
+@media (max-width: 760px){
+    .wrapper{display:block;}
+    .sidebar{width:100%; border-right:0; border-bottom:4px solid #000; padding:24px 20px;}
+    .nav{display:flex; flex-wrap:wrap; gap:16px; margin-top:24px;}
+    .nav a{margin:0; font-size:16px;}
+    .main{padding:72px 20px 40px;}
+    .status{left:20px; top:20px; font-size:12px; padding:8px 10px;}
+    .coord{right:20px; top:20px; font-size:12px; padding:8px 10px;}
+    .big404{margin-top:70px; font-size:clamp(100px, 30vw, 180px);}
+    .title{font-size:clamp(36px, 10vw, 60px);}
+    .subtitle{font-size:18px;}
+    .actions{flex-direction:column; gap:16px; margin-top:36px;}
+    .btn{padding:16px 20px; font-size:16px; box-shadow:5px 5px 0 #111;}
+    .terminal{margin-top:56px; overflow-wrap:anywhere;}
+}
 </style>
 </head>
 <body>
@@ -208,9 +224,7 @@ body{
         </div>
 
         <div class="terminal">
-            GET /undefined 404 <br>
-            User-Agent: CreatorOS/2.0 <br>
-            Trace: ID_49201-ERROR
+            GET <%= url %> 404
         </div>
 
     </main>
