@@ -1,10 +1,8 @@
 /**
  * @function asyncHandler
- * @description Wraps asynchronous Express route handlers to automatically catch and forward errors to the error handler.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * @description Wraps an async Express route handler so rejections are forwarded to `next`.
+ * @param {Function} fn - Async `(req, res, next) => ...` handler
+ * @returns {Function} Express middleware that catches promise rejections
  */
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
