@@ -5,7 +5,6 @@ module.exports = [
         description: 'Create compact short links and redirect users reliably.',
         route: '/services/url-shortener',
         status: 'available',
-        // Link / chain icon
         svgPath: '<path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.9"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.1"/>',
     },
     {
@@ -14,7 +13,6 @@ module.exports = [
         description: 'Drag and drop or click to upload files. Supports all common formats.',
         route: '/services/file-upload',
         status: 'available',
-        // Upload cloud icon
         svgPath: '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
     },
     {
@@ -23,7 +21,6 @@ module.exports = [
         description: 'A smart mobile-first bio platform with branding, analytics, and custom domains.',
         route: '/services/smart-bio',
         status: 'available',
-        // User / profile card icon
         svgPath: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
     },
     {
@@ -32,7 +29,6 @@ module.exports = [
         description: 'Track performance and engagement across your creator services.',
         route: '/services/analytics-dashboard',
         status: 'available',
-        // Bar chart icon
         svgPath: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
     },
     {
@@ -41,7 +37,6 @@ module.exports = [
         description: 'Automate replies and deliver lead magnets via keyword triggers.',
         route: '/services/dm-automation',
         status: 'available',
-        // Message / bot icon
         svgPath: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     },
     {
@@ -50,7 +45,6 @@ module.exports = [
         description: 'Create dynamic QR codes with exports, batch generation, and scan telemetry.',
         route: '/services/qr-code-generator',
         status: 'available',
-        // QR/grid icon
         svgPath: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h2v2h-2z"/><path d="M18 14h3v3h-3z"/><path d="M14 18h3v3h-3z"/><path d="M19 20h2v1h-2z"/>',
     },
     {
@@ -59,7 +53,6 @@ module.exports = [
         description: 'Invite collaborators, manage team access, and view pending invitations.',
         route: '/services/creator-crm',
         status: 'available',
-        // People / users icon
         svgPath: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
     },
     {
@@ -68,7 +61,6 @@ module.exports = [
         description: 'Organize ideas, scripts, and content planning workflows.',
         route: '/services/content-os',
         status: 'available',
-        // Brain / layers icon
         svgPath: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
     },
     {
@@ -77,16 +69,14 @@ module.exports = [
         description: 'Plan, schedule, and collaborate on content across multiple platforms.',
         route: '/services/content-os?tab=calendar',
         status: 'available',
-        // Calendar icon
         svgPath: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
     },
     {
         key: 'suggestion-tool',
         name: '🎨 Caption & Hashtag Tool',
         description: 'Get captions, hashtags and song suggestions based on your content type.',
-        status: 'available',
         route: '/services/suggestion-tool',
-        // Sparkles / pen icon
+        status: 'available',
         svgPath: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
     },
     {
@@ -95,14 +85,15 @@ module.exports = [
         description: 'Organize, track, delegate tasks with Gantt timelines, Kanban boards, and subtask workflows.',
         route: '/services/task-manager',
         status: 'available',
-        // Task check square icon
         svgPath: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    },
+    {
         key: 'ai-assistant',
         name: '🤖 AI Creator Assistant',
         description: 'Intelligent conversational assistant, performance predictions, copy optimization, and SEO tools.',
         route: '/services/ai-assistant',
         status: 'available',
-        // Bot / AI spark icon
         svgPath: '<path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><line x1="9" y1="17" x2="15" y2="17"/>',
     }
 ];
+      
