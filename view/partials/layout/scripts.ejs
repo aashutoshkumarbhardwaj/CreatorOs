@@ -1,6 +1,6 @@
 <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', () => {
-        // Theme Toggle Logic
+        // ── Global Preferences: Appearance / Theme Logic ──
         const themeBtn = document.getElementById('theme-toggle');
         const root = document.documentElement;
         const iconLight = themeBtn ? themeBtn.querySelector('.icon-light') : null;
@@ -18,25 +18,81 @@
             }
         }
 
-        if (themeBtn) {
-            if (localStorage.getItem('theme') === 'dark') {
-                applyTheme(true);
-            } else {
-                applyTheme(false);
-            }
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        let mediaListener = null;
 
+        function handleSystemThemeChange(e) {
+            if (localStorage.getItem('creatorosAppearance') === 'system') {
+                applyTheme(e.matches);
+                window.dispatchEvent(new Event('themeChanged'));
+            }
+        }
+
+        function initAppearance() {
+            const appearance = localStorage.getItem('creatorosAppearance');
+            const storedTheme = localStorage.getItem('theme');
+
+            if (appearance === 'system') {
+                applyTheme(mediaQuery.matches);
+                if (!mediaListener) {
+                    mediaListener = handleSystemThemeChange;
+                    if (mediaQuery.addEventListener) {
+                        mediaQuery.addEventListener('change', mediaListener);
+                    } else if (mediaQuery.addListener) {
+                        mediaQuery.addListener(mediaListener);
+                    }
+                }
+            } else {
+                if (mediaListener) {
+                    if (mediaQuery.removeEventListener) {
+                        mediaQuery.removeEventListener('change', mediaListener);
+                    } else if (mediaQuery.removeListener) {
+                        mediaQuery.removeListener('change', mediaListener);
+                    }
+                    mediaListener = null;
+                }
+                const isDark = (appearance === 'dark') || (storedTheme === 'dark');
+                applyTheme(isDark);
+            }
+        }
+
+        initAppearance();
+
+        if (themeBtn) {
             themeBtn.addEventListener('click', () => {
                 const isDark = root.getAttribute('data-theme') === 'dark';
-                applyTheme(!isDark);
-                localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+                const newDark = !isDark;
+                applyTheme(newDark);
+                const nextTheme = newDark ? 'dark' : 'light';
+                localStorage.setItem('theme', nextTheme);
+                localStorage.setItem('creatorosAppearance', nextTheme);
+                initAppearance();
                 window.dispatchEvent(new Event('themeChanged'));
             });
         }
 
-        // Sidebar Mobile Toggle
+        // ── Global Preferences: Interface Density & Motion ──
+        function applyGlobalPreferences() {
+            const density = localStorage.getItem('creatorosDensity');
+            if (density) {
+                document.body.classList.remove('density-compact', 'density-tactile');
+                document.body.classList.add(`density-${density}`);
+            }
+
+            const motion = localStorage.getItem('creatorosMotion');
+            if (motion === 'false') {
+                document.body.classList.add('no-motion');
+            } else if (motion === 'true') {
+                document.body.classList.remove('no-motion');
+            }
+        }
+
+        applyGlobalPreferences();
+
+        // ── Sidebar Mobile Toggle ──
         const sidebarBtn = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
-        const layout = document.getElementById('dashboardLayout');
+        const layout = document.getElementById('dashboardLayout') || document.querySelector('.dashboard-layout');
         
         if (layout) {
             // Hide by default on screens < 768px
@@ -53,5 +109,30 @@
                 });
             }
         }
+
+        // ── Analytics: do not display fabricated geographic metrics ──
+        if (window.location.pathname.includes('/analytics')) {
+            const reachPanel = document.querySelector('.reach-panel');
+            if (reachPanel) {
+                const countryRows = reachPanel.querySelectorAll('.country-row');
+                countryRows.forEach((row) => row.remove());
+
+                const message = document.createElement('div');
+                message.className = 'country-row';
+                message.innerHTML = '<span class="country-name">No geographic data available</span>';
+                const reachLeft = reachPanel.querySelector('.reach-left');
+                if (reachLeft) reachLeft.appendChild(message);
+            }
+
+            const mapElement = document.getElementById('map');
+            if (mapElement) {
+                mapElement.querySelectorAll('.leaflet-overlay-pane path.leaflet-interactive').forEach((path) => {
+                    path.remove();
+                });
+            }
+        }
     });
+
 </script>
+
+<script src="/js/global-search.js" defer></script>

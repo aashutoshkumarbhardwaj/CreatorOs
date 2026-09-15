@@ -127,6 +127,29 @@ describe("Creator CRM Controller", () => {
         })
       );
     });
+
+    it("treats regex metacharacters in search text literally", async () => {
+      req.query = { q: "a+(b)" };
+      CrmDeal.countDocuments.mockResolvedValue(1);
+      CrmBrand.countDocuments.mockResolvedValue(1);
+      CrmDeal.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+      CrmBrand.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+      CrmInvoice.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+      CrmMediaKit.findOne.mockResolvedValue(null);
+
+      await getCrmData(req, res);
+
+      const dealQuery = CrmDeal.find.mock.calls[0][0];
+      const brandQuery = CrmBrand.find.mock.calls[0][0];
+      const invoiceQuery = CrmInvoice.find.mock.calls[0][0];
+      const searchRegex = dealQuery.$or[0].dealName;
+
+      expect(searchRegex).toBeInstanceOf(RegExp);
+      expect(searchRegex.test("a+(b)")).toBe(true);
+      expect(searchRegex.test("aaab")).toBe(false);
+      expect(brandQuery.$or[0].companyName).toBe(searchRegex);
+      expect(invoiceQuery.$or[0].invoiceName).toBe(searchRegex);
+    });
   });
 
   describe("Brands CRUD", () => {

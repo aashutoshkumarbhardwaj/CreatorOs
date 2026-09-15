@@ -75,14 +75,16 @@ describe('Meeting Validators', () => {
   });
 
   describe('validateCreateBooking', () => {
-    it('should pass with valid booking request', async () => {
+    it('should pass with the payload emitted by the public booking page', async () => {
       const { req, res, next } = mockReqRes({
         method: 'POST',
-        url: '/api/public/meetings/alex/30-min/book',
+        url: '/api/public/meetings/alex/30-min-book/book',
         body: {
-          guestName: 'Jane Doe',
-          guestEmail: 'jane@example.com',
-          slotTime: new Date().toISOString(),
+          attendeeName: 'Jane Doe',
+          attendeeEmail: 'jane@example.com',
+          attendeeNotes: 'Looking forward to the call.',
+          startTime: new Date().toISOString(),
+          timeZone: 'Asia/Kolkata',
         },
       });
 
@@ -93,17 +95,49 @@ describe('Meeting Validators', () => {
     it('should fail with invalid email', async () => {
       const { req, res, next } = mockReqRes({
         method: 'POST',
-        url: '/api/public/meetings/alex/30-min/book',
+        url: '/api/public/meetings/alex/30-min-book/book',
         body: {
-          guestName: 'Jane Doe',
-          guestEmail: 'not-an-email',
-          slotTime: new Date().toISOString(),
+          attendeeName: 'Jane Doe',
+          attendeeEmail: 'not-an-email',
+          startTime: new Date().toISOString(),
         },
       });
 
       await validateCreateBooking(req, res, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when attendee name is missing', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'POST',
+        url: '/api/public/meetings/alex/30-min-book/book',
+        body: {
+          attendeeEmail: 'jane@example.com',
+          startTime: new Date().toISOString(),
+        },
+      });
+
+      await validateCreateBooking(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+      expect(res.body.errors.some((error) => error.field === 'attendeeName')).toBe(true);
+    });
+
+    it('should fail when start time is missing', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'POST',
+        url: '/api/public/meetings/alex/30-min-book/book',
+        body: {
+          attendeeName: 'Jane Doe',
+          attendeeEmail: 'jane@example.com',
+        },
+      });
+
+      await validateCreateBooking(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+      expect(res.body.errors.some((error) => error.field === 'startTime')).toBe(true);
     });
   });
 });

@@ -5,9 +5,6 @@ const User = require("../model/user");
  * Service to handle Google Calendar Integration and fallback mock behavior.
  */
 class GoogleCalendarService {
-  /**
-   * Check if Google Calendar API environment variables are fully configured.
-   */
   static isConfigured() {
     return Boolean(
       process.env.GOOGLE_CLIENT_ID &&
@@ -16,9 +13,6 @@ class GoogleCalendarService {
     );
   }
 
-  /**
-   * Get the OAuth redirect URI for Google Calendar authorization.
-   */
   static getRedirectUri() {
     return (
       process.env.GOOGLE_CALENDAR_REDIRECT_URI ||
@@ -28,14 +22,73 @@ class GoogleCalendarService {
   }
 
   /**
+   * Generate an integrity-protected OAuth state value. The user id is not
+   * trusted until the signature and freshness checks succeed in handleCallback.
+   */
+  static createOAuthState(userId) {
+    const timestamp = Date.now().toString();
+    const nonce = crypto.randomBytes(32).toString("hex");
+    const payload = `${userId}.${timestamp}.${nonce}`;
+    const secret = process.env.GOOGLE_OAUTH_STATE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+
+    return `${Buffer.from(payload).toString("base64url")}.${signature}`;
+  }
+
+  /**
+   * Validate and recover the creator id from an OAuth state value.
+   * State values expire after ten minutes and are cryptographically bound to
+   * the server secret, so a caller cannot replace the target user id.
+   */
+  static verifyOAuthState(state) {
+    if (!state || typeof state !== "string") return null;
+
+    const [encodedPayload, signature] = state.split(".");
+    if (!encodedPayload || !signature) return null;
+
+    const secret = process.env.GOOGLE_OAUTH_STATE_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    if (!secret) return null;
+
+    let payload;
+    try {
+      payload = Buffer.from(encodedPayload, "base64url").toString("utf8");
+    } catch (_error) {
+      return null;
+    }
+
+    const expectedSignature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+    const provided = Buffer.from(signature, "utf8");
+    const expected = Buffer.from(expectedSignature, "utf8");
+
+    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+      return null;
+    }
+
+    const [userId, timestamp, nonce] = payload.split(".");
+    const issuedAt = Number(timestamp);
+    const tenMinutes = 10 * 60 * 1000;
+
+    if (!/^[0-9a-fA-F]{24}$/.test(userId) || !nonce || !Number.isFinite(issuedAt)) {
+      return null;
+    }
+
+    if (Date.now() - issuedAt < 0 || Date.now() - issuedAt > tenMinutes) {
+      return null;
+    }
+
+    return userId;
+  }
+
+  /**
    * Generate Google OAuth Auth URL for Google Calendar permission scope.
    */
-  static getAuthUrl(state = "") {
+  static getAuthUrl(userId = "") {
     if (!this.isConfigured()) {
       return null;
     }
 
     const redirectUri = this.getRedirectUri();
+    const state = this.createOAuthState(userId);
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID,
       redirect_uri: redirectUri,
@@ -51,11 +104,12 @@ class GoogleCalendarService {
 
   /**
    * Handle OAuth authorization code callback & save user tokens.
+   * In configured mode, the second argument must be a valid signed OAuth state.
+   * In mock mode it remains a direct user id because no external OAuth flow is used.
    */
-  static async handleCallback(code, userId) {
+  static async handleCallback(code, state) {
     if (!this.isConfigured()) {
-      // Mock mode activation
-      await User.findByIdAndUpdate(userId, {
+      await User.findByIdAndUpdate(state, {
         googleCalendarTokens: {
           accessToken: "mock_access_token_" + crypto.randomBytes(8).toString("hex"),
           refreshToken: "mock_refresh_token_" + crypto.randomBytes(8).toString("hex"),
@@ -65,6 +119,11 @@ class GoogleCalendarService {
         },
       });
       return { success: true, mock: true };
+    }
+
+    const userId = this.verifyOAuthState(state);
+    if (!userId) {
+      throw new Error("Invalid or expired Google Calendar OAuth state");
     }
 
     try {
@@ -114,7 +173,6 @@ class GoogleCalendarService {
 
     const tokens = user.googleCalendarTokens || {};
 
-    // Helper generator for mock Google Meet links
     const generateMockMeetLink = () => {
       const p1 = Math.random().toString(36).substring(2, 5);
       const p2 = Math.random().toString(36).substring(2, 6);
@@ -167,12 +225,10 @@ class GoogleCalendarService {
       const data = await res.json();
 
       if (!res.ok) {
-        console.warn("Google Calendar API call warning, falling back to generated meet link:", data);
-        return {
-          eventId: "evt_" + crypto.randomBytes(8).toString("hex"),
-          meetingLink: locationType === "google_meet" ? generateMockMeetLink() : (bookingDetails.locationDetails || ""),
-          isMock: true,
-        };
+        const error = new Error(data.error?.message || data.error_description || `Google Calendar API request failed with status ${res.status}`);
+        error.code = "GOOGLE_CALENDAR_API_ERROR";
+        error.status = res.status;
+        throw error;
       }
 
       let meetLink = "";
@@ -192,11 +248,7 @@ class GoogleCalendarService {
       };
     } catch (err) {
       console.error("Error creating Google Calendar event:", err.message);
-      return {
-        eventId: "evt_" + crypto.randomBytes(8).toString("hex"),
-        meetingLink: locationType === "google_meet" ? generateMockMeetLink() : (bookingDetails.locationDetails || ""),
-        isMock: true,
-      };
+      throw err;
     }
   }
 

@@ -48,11 +48,9 @@ describe("smartNotificationService", () => {
         it("should detect active quiet hours correctly for overnight range", () => {
             const config = { enabled: true, startTime: "22:00", endTime: "08:00" };
 
-            // 23:00 UTC date
             const nightTime = new Date(Date.UTC(2026, 6, 30, 23, 0, 0));
             expect(smartNotificationService.isQuietHoursActive(config, nightTime)).toBe(true);
 
-            // 12:00 UTC date
             const dayTime = new Date(Date.UTC(2026, 6, 30, 12, 0, 0));
             expect(smartNotificationService.isQuietHoursActive(config, dayTime)).toBe(false);
         });
@@ -60,12 +58,10 @@ describe("smartNotificationService", () => {
         it("getQuietHoursEndTime uses endTime and handles overnight windows", () => {
             const config = { enabled: true, startTime: "22:00", endTime: "08:00" };
 
-            // Before midnight: end should be next calendar day at 08:00 UTC
             const lateNight = new Date(Date.UTC(2026, 6, 30, 23, 15, 0));
             const endLate = smartNotificationService.getQuietHoursEndTime(config, lateNight);
             expect(endLate.toISOString()).toBe("2026-07-31T08:00:00.000Z");
 
-            // After midnight still inside quiet hours: end is same day 08:00 UTC
             const earlyMorning = new Date(Date.UTC(2026, 6, 31, 2, 30, 0));
             const endEarly = smartNotificationService.getQuietHoursEndTime(config, earlyMorning);
             expect(endEarly.toISOString()).toBe("2026-07-31T08:00:00.000Z");
@@ -164,6 +160,61 @@ describe("smartNotificationService", () => {
             expect(notif.status).toBe("sent");
             expect(notif.category).toBe("engagement");
             expect(notif.deliveryLogs.length).toBeGreaterThan(0);
+        });
+
+        it("should schedule a future notification without delivering it immediately", async () => {
+            const scheduledFor = new Date(Date.now() + 60 * 60 * 1000);
+
+            const notif = await smartNotificationService.sendNotification(testUserId, {
+                title: "Scheduled Alert",
+                message: "Deliver this later",
+                category: "system",
+                priority: "normal",
+                channels: ["in_app"],
+                scheduledFor,
+            });
+
+            expect(notif.status).toBe("scheduled");
+            expect(notif.sentAt).toBeNull();
+            expect(notif.scheduledFor.getTime()).toBe(scheduledFor.getTime());
+            expect(notif.deliveryLogs).toHaveLength(1);
+            expect(notif.deliveryLogs[0].channel).toBe("in_app");
+            expect(notif.deliveryLogs[0].status).toBe("delayed");
+            expect(notif.deliveryLogs[0].error).toBe("Deferred until scheduledFor");
+
+            const result = await smartNotificationService.processDueScheduledNotifications();
+            expect(result.processed).toBe(0);
+
+            const stillScheduled = await Notification.findById(notif._id);
+            expect(stillScheduled.status).toBe("scheduled");
+        });
+
+        it("should deliver an explicitly scheduled notification once it is due", async () => {
+            const scheduledFor = new Date(Date.now() - 60 * 1000);
+
+            const notif = await smartNotificationService.sendNotification(testUserId, {
+                title: "Due Alert",
+                message: "Deliver this now",
+                category: "system",
+                priority: "normal",
+                channels: ["in_app"],
+                scheduledFor,
+            });
+
+            expect(notif.status).toBe("sent");
+            expect(notif.sentAt).toBeInstanceOf(Date);
+        });
+
+        it("should reject an invalid scheduledFor value", async () => {
+            await expect(
+                smartNotificationService.sendNotification(testUserId, {
+                    title: "Invalid Schedule",
+                    message: "This should fail",
+                    scheduledFor: "not-a-date",
+                })
+            ).rejects.toThrow("scheduledFor must be a valid date");
+
+            expect(await Notification.countDocuments({ userId: testUserId })).toBe(0);
         });
 
         it("should suppress notification if category disabled by creator", async () => {

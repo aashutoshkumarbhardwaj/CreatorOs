@@ -265,9 +265,11 @@ async function generatePdf(qrDoc, baseUrl) {
  * @returns {string}
  */
 function parseDeviceFromUa(ua = '') {
-    const value = String(ua).toLowerCase();
+    if (!ua || typeof ua !== 'string') return 'Unknown';
+    const value = ua.trim().toLowerCase();
     if (!value) return 'Unknown';
     if (/ipad|tablet/.test(value)) return 'Tablet';
+    if (/android/.test(value) && !/mobile/.test(value)) return 'Tablet';
     if (/mobi|iphone|android/.test(value)) return 'Mobile';
     return 'Desktop';
 }

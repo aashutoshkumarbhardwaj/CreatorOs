@@ -31,32 +31,32 @@ const validateEventType = validateRequest([
 ]);
 
 const validateCreateBooking = validateRequest([
-  body('guestName')
+  body('attendeeName')
     .trim()
     .notEmpty()
-    .withMessage('Guest name is required')
+    .withMessage('Attendee name is required')
     .isLength({ max: 100 })
-    .withMessage('Guest name cannot exceed 100 characters')
+    .withMessage('Attendee name cannot exceed 100 characters')
     .escape(),
-  body('guestEmail')
+  body('attendeeEmail')
     .trim()
     .notEmpty()
-    .withMessage('Guest email is required')
+    .withMessage('Attendee email is required')
     .isEmail()
-    .withMessage('A valid guest email address is required')
+    .withMessage('A valid attendee email address is required')
     .normalizeEmail(),
-  body('guestNotes')
+  body('attendeeNotes')
     .optional()
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Guest notes cannot exceed 1000 characters')
+    .withMessage('Attendee notes cannot exceed 1000 characters')
     .escape(),
-  body('slotTime')
+  body('startTime')
     .trim()
     .notEmpty()
-    .withMessage('Slot time is required')
+    .withMessage('Start time is required')
     .isISO8601()
-    .withMessage('Slot time must be a valid ISO 8601 date string'),
+    .withMessage('Start time must be a valid ISO 8601 date string'),
 ]);
 
 module.exports = {

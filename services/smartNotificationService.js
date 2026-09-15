@@ -210,14 +210,28 @@ async function sendNotification(userId, payload) {
         activeChannels = ["in_app"]; // fallback to in_app if available
     }
 
-    // 4. Quiet hours & Intelligent scheduling
+    // 4. Determine whether the notification is explicitly scheduled or deferred by quiet hours.
+    const now = new Date();
     let finalStatus = "sent";
-    let targetScheduledFor = scheduledFor ? new Date(scheduledFor) : new Date();
+    let targetScheduledFor = scheduledFor ? new Date(scheduledFor) : now;
+    let schedulingReason = null;
 
-    const quietActive = isQuietHoursActive(prefs.quietHours, new Date());
-    if (quietActive && priority !== "urgent") {
+    if (scheduledFor !== undefined && scheduledFor !== null) {
+        if (Number.isNaN(targetScheduledFor.getTime())) {
+            throw new TypeError("scheduledFor must be a valid date");
+        }
+
+        if (targetScheduledFor > now) {
+            finalStatus = "scheduled";
+            schedulingReason = "scheduled_for_future";
+        }
+    }
+
+    const quietActive = isQuietHoursActive(prefs.quietHours, now);
+    if (quietActive && priority !== "urgent" && finalStatus !== "scheduled") {
         finalStatus = "scheduled";
-        targetScheduledFor = getQuietHoursEndTime(prefs.quietHours, new Date());
+        targetScheduledFor = getQuietHoursEndTime(prefs.quietHours, now);
+        schedulingReason = "quiet_hours";
     }
 
     const deliveryLogs = [];
@@ -226,7 +240,13 @@ async function sendNotification(userId, payload) {
     if (finalStatus === "sent") {
         deliveryLogs.push(...(await deliverToChannels(userId, activeChannels, title, message)));
     } else {
-        deliveryLogs.push({ channel: "in_app", status: "delayed", error: "Deferred due to active Quiet Hours" });
+        deliveryLogs.push({
+            channel: "in_app",
+            status: "delayed",
+            error: schedulingReason === "scheduled_for_future"
+                ? "Deferred until scheduledFor"
+                : "Deferred due to active Quiet Hours",
+        });
     }
 
     const notification = await Notification.create({
@@ -238,7 +258,7 @@ async function sendNotification(userId, payload) {
         channels: activeChannels,
         status: finalStatus,
         scheduledFor: targetScheduledFor,
-        sentAt: finalStatus === "sent" ? new Date() : null,
+        sentAt: finalStatus === "sent" ? now : null,
         deduplicationKey,
         metadata,
         deliveryLogs,

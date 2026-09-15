@@ -22,6 +22,21 @@
             --shadow-retro: 3px 3px 0px var(--border);
             --shadow-retro-hover: 5px 5px 0px var(--border);
             --shadow-retro-btn: 2px 2px 0px var(--border);
+
+            /* ── Shared Interface Density (Default: Tactile Spacing) ── */
+            --section-pad: 2.2rem 2.4rem 2.8rem;
+            --card-gap: 2rem;
+        }
+
+        /* ── Interface Density Overrides ── */
+        body.density-compact {
+            --section-pad: 1.25rem 1.5rem 1.75rem;
+            --card-gap: 1.25rem;
+        }
+
+        body.density-tactile {
+            --section-pad: 2.2rem 2.4rem 2.8rem;
+            --card-gap: 2rem;
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
@@ -51,6 +66,13 @@
             background-color: var(--bg);
             min-height: 100vh;
             overflow-x: hidden;
+        }
+
+        body.no-motion *,
+        body.no-motion *::before,
+        body.no-motion *::after {
+            transition: none !important;
+            animation: none !important;
         }
 
         a {
@@ -337,6 +359,79 @@
             position: relative;
         }
 
+        .global-search-results {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    max-height: 420px;
+    overflow-y: auto;
+    background-color: var(--bg, #fff);
+    border: 2px solid #111;
+    box-shadow: 4px 4px 0 #111;
+    z-index: 1000;
+}
+
+.global-search-results[hidden] {
+    display: none;
+}
+
+.global-search-result {
+    display: block;
+    padding: 0.8rem 1rem;
+    border-bottom: 2px solid #111;
+    background-color: #fff;
+    color: #111;
+    text-decoration: none;
+}
+
+.global-search-result:last-child {
+    border-bottom: none;
+}
+
+.global-search-result:hover,
+.global-search-result:focus-visible {
+    background-color: var(--teal, #38d0c3);
+    color: #111;
+    outline: none;
+}
+
+.global-search-result strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.global-search-result span {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.global-search-result small {
+    display: block;
+    overflow: hidden;
+    color: #555;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.global-search-result:hover small,
+.global-search-result:focus-visible small {
+    color: #111;
+}
+
+.global-search-empty {
+    padding: 0.9rem 1rem;
+    background-color: #fff;
+    color: #555;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
         .search-input {
             width: 100%;
             border: var(--border-thick);
@@ -458,14 +553,12 @@
 
         /* ── Content ── */
         .content {
-            padding: 2rem;
+            padding: var(--section-pad, 2.2rem 2.4rem 2.8rem);
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: var(--card-gap, 2rem);
         }
         .profile-name { font-weight: 700; }
-
-        .content { padding: 2.2rem 2.4rem 2.8rem; }
 
         .dashboard-head {
             display: flex;

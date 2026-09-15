@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - CreatorOS</title>
+    <%- include('./partials/_brand_head') %>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Google Fonts: loaded once from shared partial -->
+    <%- include('./partials/_fonts') %>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg, #F5F1EA);
+            color: var(--text, #111111);
+            padding: 2rem 1rem 4rem;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #111111;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            border: 2px solid #111111;
+            padding: 0.4rem 0.85rem;
+            background: #FFFFFF;
+            box-shadow: 2px 2px 0px #111111;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .back-link:hover {
+            background: #37D6C8;
+        }
+
+        .hero {
+            margin-bottom: 2.5rem;
+        }
+
+        .badge-retro {
+            display: inline-block;
+            border: 2px solid #111111;
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            background-color: #37D6C8;
+            color: #111111;
+            box-shadow: 2px 2px 0px #111111;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #374151;
+            margin: 0;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border: 2px solid #111111;
+            padding: 1.5rem;
+            box-shadow: 3px 3px 0px #111111;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #111111;
+        }
+
+        .card-number {
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.1em;
+        }
+
+        .card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+            border-left: 4px solid #37D6C8;
+            padding-left: 0.65rem;
+        }
+
+        .card p {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.75;
+            margin: 0;
+        }
+
+        .card ul {
+            padding-left: 1.1rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .card li {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.65;
+        }
+
+        .card.full-width {
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+
+        .card.full-width h2 {
+            border-left: none;
+            padding-left: 0;
+            text-align: center;
+        }
+
+        a.contact-link {
+            color: #37D6C8;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 2px solid #111111;
+            padding-top: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+
+        <div class="hero">
+            <span class="badge-retro">LEGAL</span>
+            <h1>Privacy Policy</h1>
+            <p class="subtitle">Last updated: September 2026 - Your privacy is important to us.</p>
+        </div>
+
+        <div class="cards-grid">
+
+            <div class="card">
+                <span class="card-number">01 — OVERVIEW</span>
+                <h2>Privacy & Data Protection</h2>
+                <p>CreatorOS is committed to protecting your privacy and ensuring you have a positive experience on our platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">02 — DATA COLLECTION</span>
+                <h2>Information We Collect</h2>
+                <ul>
+                    <li><strong>Account Information:</strong> Name, email address, password, and profile details.</li>
+                    <li><strong>Social Media Data:</strong> When you connect Instagram or other accounts, we collect linked profile information.</li>
+                    <li><strong>Analytics Data:</strong> Page views, interaction data, and engagement metrics.</li>
+                    <li><strong>Payment Information:</strong> Billing address and payment method details (processed securely via Stripe).</li>
+                    <li><strong>Technical Data:</strong> IP address, browser type, device information, and usage logs.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-number">03 — DATA USAGE</span>
+                <h2>How We Use Your Data</h2>
+                <ul>
+                    <li>To provide and improve our services and user experience.</li>
+                    <li>To authenticate your account and prevent fraudulent activity.</li>
+                    <li>To send transactional emails and service notifications.</li>
+                    <li>To analyze platform usage and generate analytics reports.</li>
+                    <li>To comply with legal obligations and respond to legal requests.</li>
+                    <li>To deliver personalized content and recommendations.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-number">04 — DATA SHARING</span>
+                <h2>Data Sharing & Disclosure</h2>
+                <p>We do not sell your personal data. We may share information with:</p>
+                <ul>
+                    <li><strong>Service Providers:</strong> Payment processors, email services, and hosting providers.</li>
+                    <li><strong>Legal Requirements:</strong> When required by law or to protect our legal rights.</li>
+                    <li><strong>Business Transfers:</strong> In case of merger, acquisition, or sale of assets.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-number">05 — COOKIES & TRACKING</span>
+                <h2>Cookies & Tracking Technologies</h2>
+                <p>We use cookies to enhance your experience, remember preferences, and analyze platform usage. You can control cookie settings in your browser. Some cookies are essential for platform functionality.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">06 — DATA SECURITY</span>
+                <h2>Security Measures</h2>
+                <p>We implement industry-standard security measures including encryption, secure servers, and regular security audits to protect your data. However, no transmission method is 100% secure, and we cannot guarantee absolute security.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">07 — YOUR RIGHTS</span>
+                <h2>Your Privacy Rights</h2>
+                <p>Depending on your location, you may have the right to:</p>
+                <ul>
+                    <li>Access your personal data.</li>
+                    <li>Request correction of inaccurate data.</li>
+                    <li>Request deletion of your data.</li>
+                    <li>Opt-out of marketing communications.</li>
+                    <li>Request data portability.</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="card-number">08 — RETENTION</span>
+                <h2>Data Retention</h2>
+                <p>We retain your personal data for as long as necessary to provide our services and comply with legal obligations. You may request deletion at any time, subject to legal requirements.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">09 — THIRD-PARTY SERVICES</span>
+                <h2>Third-Party Services</h2>
+                <p>Our platform integrates with third-party services (Instagram, Stripe, etc.). We are not responsible for their privacy practices. Please review their privacy policies independently.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">10 — CHILDREN'S PRIVACY</span>
+                <h2>Children's Privacy</h2>
+                <p>CreatorOS is not intended for users under 13 years of age. We do not knowingly collect personal information from children under 13. If we learn we have collected such data, we will delete it promptly.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">11 — INTERNATIONAL DATA TRANSFER</span>
+                <h2>Data Transfer</h2>
+                <p>Your information may be transferred to and processed in countries other than your country of residence. These countries may have different data protection laws. By using CreatorOS, you consent to such transfers.</p>
+            </div>
+
+            <div class="card">
+                <span class="card-number">12 — UPDATES</span>
+                <h2>Changes to Privacy Policy</h2>
+                <p>We may update this Privacy Policy periodically to reflect changes in our practices or legal requirements. We will notify you of material changes via email or platform notification. Your continued use of CreatorOS implies acceptance of the updated policy.</p>
+            </div>
+
+            <div class="card full-width">
+                <span class="card-number">13 — CONTACT US</span>
+                <h2>Questions or Concerns?</h2>
+                <p>If you have any questions about this Privacy Policy, your data, or our privacy practices, please contact us at <a href="mailto:privacy@creatoros.com" class="contact-link">privacy@creatoros.com</a> or <a href="mailto:support@creatoros.com" class="contact-link">support@creatoros.com</a>.</p>
+            </div>
+
+        </div>
+
+        <p class="footer-note">© 2026 CreatorOS. All rights reserved.</p>
+    </div>
+</body>
+</html>
