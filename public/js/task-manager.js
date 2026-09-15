@@ -397,17 +397,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const taskDates = activeTasks.flatMap(task => [
+            task.startDate ? new Date(task.startDate) : new Date(task.createdAt),
+            task.dueDate ? new Date(task.dueDate) : new Date(new Date(task.startDate || task.createdAt).getTime() + 86400000 * 3),
+        ]).filter(date => !Number.isNaN(date.getTime()));
+        const timelineStart = new Date(Math.min(...taskDates));
+        const timelineEnd = new Date(Math.max(...taskDates));
+        const timelineSpan = Math.max(timelineEnd.getTime() - timelineStart.getTime(), 86400000);
+
         activeTasks.forEach(task => {
             const row = document.createElement('div');
             row.className = 'gantt-row';
 
             const startDate = task.startDate ? new Date(task.startDate) : new Date(task.createdAt);
             const dueDate = task.dueDate ? new Date(task.dueDate) : new Date(startDate.getTime() + 86400000 * 3);
+            const left = Math.max(0, ((startDate - timelineStart) / timelineSpan) * 100);
+            const width = Math.max(1, ((dueDate - startDate) / timelineSpan) * 100);
 
             row.innerHTML = `
                 <div class="gantt-label" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</div>
                 <div class="gantt-track">
-                    <div class="gantt-bar ${task.status} ${task.priority}" style="left: 10%; width: 40%;">
+                    <div class="gantt-bar ${task.status} ${task.priority}" style="left: ${left}%; width: ${width}%;">
                         <span>${escapeHtml(task.title)} (${task.status})</span>
                     </div>
                 </div>
