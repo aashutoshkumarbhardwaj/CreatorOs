@@ -9,6 +9,13 @@ function getUserId(req) {
   return req.user?.id || req.user?._id;
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\function getUserId(req) {
+  return req.user?.id || req.user?._id;
+}
+");
+}
+
 async function seedInitialCrmData(userId) {
   const dealCount = await CrmDeal.countDocuments({ creatorId: userId });
   const brandCount = await CrmBrand.countDocuments({ creatorId: userId });
@@ -223,7 +230,7 @@ const getCrmData = asyncHandler(async (req, res) => {
   }
 
   if (q && q.trim() !== "") {
-    const searchRegex = new RegExp(q.trim(), "i");
+    const searchRegex = new RegExp(escapeRegex(q.trim()), "i");
     dealQuery.$or = [
       { dealName: searchRegex },
       { companyName: searchRegex },
