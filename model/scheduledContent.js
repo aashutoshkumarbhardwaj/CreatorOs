@@ -50,10 +50,6 @@ const scheduledContentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Creator",
         },
-        platform: {
-            type: String,
-            enum: ["instagram", "youtube", "twitter", "tiktok"],
-        },
         publishedAt: {
             type: Date,
         },
