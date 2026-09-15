@@ -31,6 +31,7 @@ function createUpstashRestClient(url, token) {
 
     return {
         mode: 'upstash-rest',
+        ping: () => command(['PING']),
         get: (key) => command(['GET', key]),
         set: (key, value, ...options) => command(['SET', key, value, ...options]),
         setex: (key, seconds, value) => command(['SETEX', key, seconds, value]),

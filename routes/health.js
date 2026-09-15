@@ -25,14 +25,18 @@ router.get("/health", async (req, res) => {
     dbStatus = "disconnecting";
   }
 
-  const isHealthy = dbState === 1 || isMockDb;
+  let isHealthy = dbState === 1 || isMockDb;
 
   let redisStatus = "not_configured";
   if (hasRedisConfig()) {
     try {
       const redisClient = createRedisClient();
       if (redisClient) {
-        if (redisClient.status === "ready" || redisClient.status === "connect") {
+        await Promise.race([
+          redisClient.ping(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Redis health check timed out")), 2000)),
+        ]);
+        if (redisClient.status === "ready" || redisClient.status === "connect" || redisClient.mode === "upstash-rest") {
           redisStatus = "connected";
         } else {
           redisStatus = "configured";
@@ -43,6 +47,7 @@ router.get("/health", async (req, res) => {
       }
     } catch (err) {
       redisStatus = "error";
+      isHealthy = false;
     }
   }
 
