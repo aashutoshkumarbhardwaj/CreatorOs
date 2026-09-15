@@ -1,0 +1,133 @@
+.error-page-main {
+    min-height: 100vh;
+}
+
+.error-page {
+    flex: 1;
+    position: relative;
+    width: min(100%, 1120px);
+    margin: 0 auto;
+    padding: 4rem 3rem 5rem;
+    text-align: center;
+}
+
+.error-page-status,
+.error-page-coordinate {
+    position: absolute;
+    top: 3rem;
+    padding: 0.65rem 1rem;
+    border: var(--border-thick);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.error-page-status {
+    left: 3rem;
+    background: var(--accent-red);
+    color: #fff;
+    box-shadow: var(--shadow-retro);
+}
+
+.error-page-coordinate {
+    right: 3rem;
+    background: var(--text);
+    color: var(--bg);
+    transform: rotate(-2deg);
+}
+
+.error-page-code {
+    margin-top: 5rem;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(8rem, 20vw, 13rem);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: 0;
+    text-shadow: 0.08em 0.08em 0 var(--accent-teal);
+}
+
+.error-page-title {
+    margin-top: 1.5rem;
+    font-size: clamp(2rem, 5vw, 4.5rem);
+}
+
+.error-page-subtitle {
+    max-width: 42rem;
+    margin: 1.5rem auto 0;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.error-page-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2.5rem;
+}
+
+.error-page-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.8rem 1.25rem;
+    border: var(--border-thick);
+    background: var(--card-bg);
+    color: var(--text);
+    box-shadow: var(--shadow-retro-btn);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.error-page-button:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-retro);
+}
+
+.error-page-button-primary {
+    background: var(--accent-teal);
+    color: #111;
+}
+
+.error-page-terminal {
+    max-width: 48rem;
+    margin: 4rem auto 0;
+    padding-top: 1.5rem;
+    border-top: var(--border-thick);
+    color: var(--muted-2);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    text-align: left;
+}
+
+@media (max-width: 767px) {
+    .error-page {
+        padding: 2rem 1.25rem 3rem;
+    }
+
+    .error-page-status,
+    .error-page-coordinate {
+        position: static;
+        display: inline-block;
+        margin: 0.25rem;
+    }
+
+    .error-page-code {
+        margin-top: 3rem;
+    }
+
+    .error-page-button {
+        width: 100%;
+    }
+
+    .error-page-terminal {
+        margin-top: 3rem;
+    }
+}
