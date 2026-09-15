@@ -30,9 +30,6 @@ beforeAll(async () => {
 }, 30000);
 
 afterAll(async () => {
-    if (process.env.USE_MOCK_DB === 'true') {
-        return;
-    }
     if (mongoose.connection.readyState !== 0) {
         await mongoose.disconnect();
     }
