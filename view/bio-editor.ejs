@@ -111,7 +111,7 @@
             <div class="field">
               <label>Theme</label>
               <div class="presets">
-                <% const savedTheme = bioProfile?.theme || currentTheme || 'light'; %>
+                <% const savedTheme = bioProfile?.theme || 'light'; %>
                 <button type="button" class="preset-btn <%= savedTheme === 'light' ? 'active' : '' %>"    id="theme-light"    data-theme="light" onclick="selectTheme('light',this)">☀ Light</button>
                 <button type="button" class="preset-btn <%= savedTheme === 'dark' ? 'active' : '' %>"     id="theme-dark"     data-theme="dark" onclick="selectTheme('dark',this)">● Dark</button>
                 <button type="button" class="preset-btn <%= savedTheme === 'neon' ? 'active' : '' %>"     id="theme-neon"     data-theme="neon" onclick="selectTheme('neon',this)">⚡ Neon</button>
@@ -121,7 +121,7 @@
             <div class="field">
               <label>Layout</label>
               <div class="presets">
-                <% const savedLayout = bioProfile?.layout || currentLayout || 'list'; %>
+                <% const savedLayout = bioProfile?.layout || 'list'; %>
                 <button type="button" class="preset-btn <%= savedLayout === 'list' ? 'active' : '' %>"  id="layout-list"  data-layout="list" onclick="selectLayout('list',this)">≡ List</button>
                 <button type="button" class="preset-btn <%= savedLayout === 'grid' ? 'active' : '' %>"  id="layout-grid"  data-layout="grid" onclick="selectLayout('grid',this)">⊞ Grid</button>
                 <button type="button" class="preset-btn <%= savedLayout === 'cards' ? 'active' : '' %>" id="layout-cards" data-layout="cards" onclick="selectLayout('cards',this)">▤ Cards</button>

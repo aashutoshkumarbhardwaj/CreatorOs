@@ -22,6 +22,21 @@
             --shadow-retro: 3px 3px 0px var(--border);
             --shadow-retro-hover: 5px 5px 0px var(--border);
             --shadow-retro-btn: 2px 2px 0px var(--border);
+
+            /* ── Shared Interface Density (Default: Tactile Spacing) ── */
+            --section-pad: 2.2rem 2.4rem 2.8rem;
+            --card-gap: 2rem;
+        }
+
+        /* ── Interface Density Overrides ── */
+        body.density-compact {
+            --section-pad: 1.25rem 1.5rem 1.75rem;
+            --card-gap: 1.25rem;
+        }
+
+        body.density-tactile {
+            --section-pad: 2.2rem 2.4rem 2.8rem;
+            --card-gap: 2rem;
         }
 
         /* Toggled Theme: Dark Charcoal Retro */
@@ -51,6 +66,13 @@
             background-color: var(--bg);
             min-height: 100vh;
             overflow-x: hidden;
+        }
+
+        body.no-motion *,
+        body.no-motion *::before,
+        body.no-motion *::after {
+            transition: none !important;
+            animation: none !important;
         }
 
         a {
@@ -458,14 +480,12 @@
 
         /* ── Content ── */
         .content {
-            padding: 2rem;
+            padding: var(--section-pad, 2.2rem 2.4rem 2.8rem);
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: var(--card-gap, 2rem);
         }
         .profile-name { font-weight: 700; }
-
-        .content { padding: 2.2rem 2.4rem 2.8rem; }
 
         .dashboard-head {
             display: flex;

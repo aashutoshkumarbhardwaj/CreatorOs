@@ -23,35 +23,16 @@ body.settings-page {
     min-height: 100vh;
 }
 
-body.settings-page.density-compact {
+body.settings-page.density-compact,
+body.density-compact {
     --section-pad: 1.5rem;
     --card-gap: 2rem;
 }
 
-body.settings-page.density-tactile {
+body.settings-page.density-tactile,
+body.density-tactile {
     --section-pad: 2.5rem;
     --card-gap: 3rem;
-}
-
-[data-theme="dark"] body.settings-page {
-    --settings-bg: #1a1a1a;
-    --settings-sidebar: #2d2d2d;
-    color: #f5f5f5;
-}
-
-[data-theme="dark"] body.settings-page .section-card,
-[data-theme="dark"] body.settings-page .billing-card,
-[data-theme="dark"] body.settings-page .sub-nav-item,
-[data-theme="dark"] body.settings-page .form-input,
-[data-theme="dark"] body.settings-page .form-textarea,
-[data-theme="dark"] body.settings-page .setting-row {
-    background-color: #2d2d2d;
-    color: #f5f5f5;
-}
-
-body.settings-page.no-motion * {
-    transition: none !important;
-    animation: none !important;
 }
 
 body.settings-page {
@@ -384,14 +365,14 @@ body.settings-page .brand-mark {
 .settings-sections {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--card-gap, 1.5rem);
     max-width: 1040px;
 }
 
 .section-card {
     background-color: var(--settings-card);
     border: 2px solid var(--settings-border);
-    padding: 1.5rem;
+    padding: var(--section-pad, 1.5rem);
     box-shadow: var(--settings-shadow);
     scroll-margin-top: 1.5rem;
 }

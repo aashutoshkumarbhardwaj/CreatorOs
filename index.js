@@ -4,7 +4,11 @@ if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env.local", override: true });
 }
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = "dev_secret_key_creatoros_2026";
+  if (process.env.NODE_ENV === "production") {
+    console.error("JWT_SECRET must be set in production.");
+    process.exit(1);
+  }
+  process.env.JWT_SECRET = require("crypto").randomBytes(32).toString("hex");
 }
 const cookieParser = require("cookie-parser");
 const mongoSanitize = require("express-mongo-sanitize");
@@ -370,6 +374,11 @@ app.get("/services", (req, res) => {
 app.get("/terms", (req, res) => {
   res.render("terms");
 });
+
+app.get("/privacy", (req, res) => {
+  res.render("privacy-policy");
+});
+
 app.get("/about", (req, res) => {
   res.render("about");
 });

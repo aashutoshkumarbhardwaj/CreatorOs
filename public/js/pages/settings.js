@@ -127,6 +127,7 @@
         localStorage.setItem('creatorosDensity', prefs.interfaceDensity || 'tactile');
         localStorage.setItem('creatorosMotion', String(!!prefs.motionEffects));
         localStorage.setItem('creatorosAutoSaveLinks', String(!!prefs.autoSaveLinks));
+        window.dispatchEvent(new Event('themeChanged'));
         window.dispatchEvent(new Event('creatorosSettingsAppearanceChanged'));
     }
 
@@ -173,6 +174,18 @@
         { rootMargin: '-30% 0px -55% 0px', threshold: 0 }
     );
     sections.forEach((s) => s && observer.observe(s));
+
+    // Bio character counter
+    const bioInput = document.getElementById('profile-bio');
+    const bioCount = document.getElementById('bio-count');
+
+    function updateBioCount() {
+        bioCount.textContent = bioInput.value.length;
+    }
+
+    updateBioCount();
+    bioInput.addEventListener('input', updateBioCount);
+
 
     // Profile form
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
@@ -306,7 +319,7 @@
         }
     });
 
-    document.getElementById('cancel-deletion-btn').addEventListener('click', async () => {
+    document.getElementById('cancel-deletion-btn')?.addEventListener('click', async () => {
         try {
             await apiRequest('/api/settings/account/cancel-deletion', { method: 'POST' });
             showToast('Account deletion cancelled');

@@ -13,9 +13,9 @@ const {
   googleCalendarCallback,
   disconnectGoogleCalendar,
   getPublicBookingData,
-  getAvailableSlots,
   createBooking,
 } = require("../controller/meetingController");
+const { getAvailableSlots } = require("../controller/availabilityController");
 
 const {
   validateEventType,
