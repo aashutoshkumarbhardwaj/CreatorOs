@@ -14,19 +14,13 @@ beforeAll(async () => {
     }
 
     if (!process.env.MONGODB_URI) {
-        try {
-            mongod = await MongoMemoryServer.create();
-            process.env.MONGODB_URI = mongod.getUri();
-        } catch (err) {
-            console.warn('MongoMemoryServer startup skipped:', err.message);
-            process.env.USE_MOCK_DB = 'true';
-            return;
-        }
+        // Allow MongoMemoryServer errors to propagate so suites that require
+        // a real Mongoose connection fail loudly instead of silently degrading.
+        mongod = await MongoMemoryServer.create();
+        process.env.MONGODB_URI = mongod.getUri();
     }
-    
-    if (process.env.MONGODB_URI) {
-        await mongoose.connect(process.env.MONGODB_URI);
-    }
+
+    await mongoose.connect(process.env.MONGODB_URI);
 }, 30000);
 
 afterAll(async () => {

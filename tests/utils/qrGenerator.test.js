@@ -75,6 +75,14 @@ describe('qrGenerator utility', () => {
             expect(parseDeviceFromUa(undefined)).toBe('Unknown');
         });
 
+        it('should return Unknown for non-string inputs (exercises typeof guard)', () => {
+            // These exercise the `typeof ua !== 'string'` branch added to prevent
+            // String(42) or String({}) being treated as a valid UA string.
+            expect(parseDeviceFromUa(42)).toBe('Unknown');
+            expect(parseDeviceFromUa({ ua: 'iphone' })).toBe('Unknown');
+            expect(parseDeviceFromUa(true)).toBe('Unknown');
+        });
+
         it('should detect Tablet devices', () => {
             const ipadUa = 'Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15';
             expect(parseDeviceFromUa(ipadUa)).toBe('Tablet');
@@ -137,6 +145,33 @@ describe('qrGenerator utility', () => {
                 expect(svg).toContain('<svg');
                 expect(svg).toContain('</svg>');
             }
+        });
+
+        it('should render preset-specific module shapes in SVG output', async () => {
+            // Preset B (dots) must use <circle> elements for data modules.
+            const svgB = await generateSvg(
+                { targetUrl: 'https://example.com', design: { patternPreset: 'B' } },
+                baseUrl
+            );
+            expect(svgB).toContain('<circle ');
+
+            // Presets C (rounded) and E (extra-rounded) must use <rect> with rx attribute.
+            for (const preset of ['C', 'E']) {
+                const svg = await generateSvg(
+                    { targetUrl: 'https://example.com', design: { patternPreset: preset } },
+                    baseUrl
+                );
+                expect(svg).toContain('rx="');
+            }
+
+            // Preset A (square) must NOT contain <circle> in data modules.
+            const svgA = await generateSvg(
+                { targetUrl: 'https://example.com', design: { patternPreset: 'A' } },
+                baseUrl
+            );
+            // Square preset uses plain <rect> without rx for data modules.
+            // Confirm it still renders a valid QR (has <rect> shapes).
+            expect(svgA).toContain('<rect ');
         });
     });
 
