@@ -106,17 +106,27 @@ exports.updateEventType = async (req, res) => {
       return res.status(404).json({ success: false, message: "Event type not found" });
     }
 
-    if (req.body.title && req.body.title !== eventType.title) {
-      let baseSlug = slugify(req.body.title);
+    const allowedFields = [
+      "title", "description", "duration", "price", "currency", "color",
+      "availability", "bufferBefore", "bufferAfter", "customQuestions", "isActive",
+    ];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+
+    if (updates.title && updates.title !== eventType.title) {
+      let baseSlug = slugify(updates.title);
       let slug = baseSlug;
       let count = 1;
       while (await EventType.findOne({ userId: req.user._id, slug, _id: { $ne: id } })) {
         slug = `${baseSlug}-${count++}`;
       }
-      req.body.slug = slug;
+      updates.slug = slug;
     }
 
-    eventType = await EventType.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    eventType = await EventType.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: eventType });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
