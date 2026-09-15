@@ -79,7 +79,8 @@ const triggerRefresh = asyncHandler(async (req, res) => {
     try {
         fetchedData = await fetchInstagramAnalytics(creator);
     } catch (error) {
-        return res.status(502).json({ success: false, message: "Failed to fetch data from external API", error: error.message });
+        console.error("Instagram analytics refresh failed:", error);
+        return res.status(502).json({ success: false, message: "Failed to fetch data from external API" });
     }
 
     const snapshot = await AnalyticsSnapshot.create({
