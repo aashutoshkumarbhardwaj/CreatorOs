@@ -9,7 +9,9 @@ function getUserId(req) {
   return req.user?.id || req.user?._id;
 }
 
-function escapeRegex(value) {\n  return value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");\n}
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+}
 
 async function seedInitialCrmData(userId) {
   const dealCount = await CrmDeal.countDocuments({ creatorId: userId });
