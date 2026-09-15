@@ -116,7 +116,8 @@ exports.updateEventType = async (req, res) => {
       req.body.slug = slug;
     }
 
-    eventType = await EventType.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    const { userId, _id, ...updateData } = req.body;
+    eventType = await EventType.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: eventType });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
