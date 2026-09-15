@@ -1,12 +1,11 @@
 import CryptoJS from 'crypto-js';
 
-// Resolve the secret key from environment variables (supports Vite, Next.js, Create React App)
-// Fallback to a hardcoded string to ensure it doesn't crash during local dev if env is missing
+// Resolve the secret key from environment variables (supports Vite, Next.js, Create React App).
 const SECRET_KEY = 
   (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_ENCRYPTION_KEY) || 
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ENCRYPTION_KEY) || 
   (typeof process !== 'undefined' && process.env?.REACT_APP_ENCRYPTION_KEY) ||
-  'default-fallback-secure-key-12345!';
+  null;
 
 export const secureStorage = {
   /**
@@ -16,6 +15,9 @@ export const secureStorage = {
    */
   set: (key, value) => {
     try {
+      if (!SECRET_KEY) {
+        throw new Error('Encryption key is not configured');
+      }
       const jsonValue = JSON.stringify(value);
       const encryptedValue = CryptoJS.AES.encrypt(jsonValue, SECRET_KEY).toString();
       localStorage.setItem(key, encryptedValue);
@@ -33,6 +35,9 @@ export const secureStorage = {
    */
   get: (key, defaultValue = null) => {
     try {
+      if (!SECRET_KEY) {
+        return defaultValue;
+      }
       const encryptedValue = localStorage.getItem(key);
       if (!encryptedValue) {
         return defaultValue;
