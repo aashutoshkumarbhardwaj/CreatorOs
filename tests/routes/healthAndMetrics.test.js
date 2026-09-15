@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
 const healthRoutes = require("../../routes/health");
+const redisClientModule = require("../../utils/redisClient");
 
 function createApp() {
   const app = express();
@@ -18,6 +19,7 @@ describe("Health and Metrics Routes", () => {
   afterEach(() => {
     process.env.USE_MOCK_DB = originalEnv;
     delete mongoose.connection.readyState;
+    jest.restoreAllMocks();
   });
 
   describe("GET /health", () => {
@@ -65,6 +67,77 @@ describe("Health and Metrics Routes", () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.status).toBe("ok");
       expect(res.body.database).toBe("connected");
+    });
+
+    it("returns redis: 'not_configured' when Redis is not configured", async () => {
+      process.env.USE_MOCK_DB = "true";
+      jest.spyOn(redisClientModule, "hasRedisConfig").mockReturnValue(false);
+
+      const app = createApp();
+      const res = await request(app).get("/health");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.redis).toBe("not_configured");
+    });
+
+    it("returns redis: 'connected' when ioredis ping succeeds", async () => {
+      process.env.USE_MOCK_DB = "true";
+      const mockClient = {
+        ping: jest.fn().mockResolvedValue("PONG"),
+        disconnect: jest.fn(),
+        quit: jest.fn(),
+      };
+      jest.spyOn(redisClientModule, "hasRedisConfig").mockReturnValue(true);
+      jest.spyOn(redisClientModule, "createRedisClient").mockReturnValue(mockClient);
+
+      const app = createApp();
+      const res = await request(app).get("/health");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("ok");
+      expect(res.body.redis).toBe("connected");
+      expect(mockClient.ping).toHaveBeenCalled();
+      expect(mockClient.disconnect).toHaveBeenCalled();
+    });
+
+    it("returns redis: 'connected' when Upstash REST probe succeeds", async () => {
+      process.env.USE_MOCK_DB = "true";
+      const mockClient = {
+        mode: "upstash-rest",
+        get: jest.fn().mockResolvedValue(null),
+        quit: jest.fn().mockResolvedValue(undefined),
+      };
+      jest.spyOn(redisClientModule, "hasRedisConfig").mockReturnValue(true);
+      jest.spyOn(redisClientModule, "createRedisClient").mockReturnValue(mockClient);
+
+      const app = createApp();
+      const res = await request(app).get("/health");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("ok");
+      expect(res.body.redis).toBe("connected");
+      expect(mockClient.get).toHaveBeenCalledWith("__healthcheck__");
+      expect(mockClient.quit).toHaveBeenCalled();
+    });
+
+    it("returns redis: 'error' and preserves overall HTTP 200 when Redis ping fails", async () => {
+      process.env.USE_MOCK_DB = "true";
+      const mockClient = {
+        ping: jest.fn().mockRejectedValue(new Error("connect ECONNREFUSED 127.0.0.1:6379")),
+        disconnect: jest.fn(),
+      };
+      jest.spyOn(redisClientModule, "hasRedisConfig").mockReturnValue(true);
+      jest.spyOn(redisClientModule, "createRedisClient").mockReturnValue(mockClient);
+
+      const app = createApp();
+      const res = await request(app).get("/health");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.status).toBe("ok");
+      expect(res.body.database).toBe("mock");
+      expect(res.body.redis).toBe("error");
+      expect(mockClient.ping).toHaveBeenCalled();
+      expect(mockClient.disconnect).toHaveBeenCalled();
     });
   });
 
