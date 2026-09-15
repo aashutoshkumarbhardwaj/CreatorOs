@@ -1,0 +1,92 @@
+name: Auto-Assign Issue to Creator
+
+on:
+  issues:
+    types: [opened]
+  schedule:
+    # Run every 30 minutes to catch issues created within the last 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @octokit/rest
+
+      - name: Auto-assign issues to creator
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const now = new Date();
+            const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+
+            try {
+              // Get all open issues
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100
+              });
+
+              console.log(`Found ${issues.length} open issues to check`);
+
+              for (const issue of issues) {
+                // Skip if it's a pull request
+                if (issue.pull_request) {
+                  continue;
+                }
+
+                // Parse the issue creation time
+                const createdAt = new Date(issue.created_at);
+                
+                // Check if issue was created within the last 30 minutes
+                if (createdAt >= thirtyMinutesAgo && createdAt <= now) {
+                  // Check if issue is already assigned
+                  if (issue.assignees && issue.assignees.length > 0) {
+                    console.log(`Issue #${issue.number} is already assigned to ${issue.assignees.map(a => a.login).join(', ')}`);
+                    continue;
+                  }
+
+                  // Get the issue creator
+                  const creator = issue.user.login;
+
+                  console.log(`Assigning issue #${issue.number} to creator @${creator}`);
+
+                  try {
+                    // Assign the issue to its creator
+                    await github.rest.issues.addAssignees({
+                      owner,
+                      repo,
+                      issue_number: issue.number,
+                      assignees: [creator]
+                    });
+
+                    console.log(`✅ Successfully assigned issue #${issue.number} to @${creator}`);
+                  } catch (error) {
+                    console.error(`❌ Failed to assign issue #${issue.number}: ${error.message}`);
+                  }
+                }
+              }
+
+              console.log('Auto-assign task completed');
+            } catch (error) {
+              console.error(`Error during auto-assign: ${error.message}`);
+              throw error;
+            }
