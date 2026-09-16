@@ -5,6 +5,10 @@ describe('DM Queue Service sendInstagramDM', () => {
     const originalToken = process.env.INSTAGRAM_ACCESS_TOKEN;
     const originalAppId = process.env.INSTAGRAM_APP_ID;
 
+    beforeEach(() => {
+        global.fetch = jest.fn();
+    });
+
     afterEach(() => {
         global.fetch = originalFetch;
         if (originalToken === undefined) {
