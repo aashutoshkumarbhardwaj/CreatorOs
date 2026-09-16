@@ -27,17 +27,16 @@ function createFallbackQueue() {
 let dmQueue = createFallbackQueue();
 let dmWorker = null;
 
-// Send Instagram DM via Instagram Graph API
+// Send an Instagram DM with the credential owned by the creator account.
 async function sendInstagramDM(recipientId, text, options = {}) {
-  const accessToken =
-    options.accessToken ||
-    process.env.INSTAGRAM_PAGE_ACCESS_TOKEN ||
-    process.env.INSTAGRAM_ACCESS_TOKEN;
+  const accessToken = options.accessToken;
 
   if (!accessToken) {
-    throw new Error(
-      "Instagram Page Access Token is not configured (INSTAGRAM_PAGE_ACCESS_TOKEN / INSTAGRAM_ACCESS_TOKEN). Outbound DM delivery failed.",
+    const error = new Error(
+      "Instagram creator access token is required for outbound DM delivery.",
     );
+    error.code = "DM_CREDENTIAL_MISSING";
+    throw error;
   }
 
   if (!recipientId || !text) {
@@ -46,41 +45,48 @@ async function sendInstagramDM(recipientId, text, options = {}) {
     );
   }
 
-  const url = `https://graph.instagram.com/v19.0/me/messages?access_token=${accessToken}`;
-  const payload = {
-    recipient: { id: recipientId },
-    message: { text },
-  };
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    let errorData;
-    try {
-      errorData = JSON.parse(errorText);
-    } catch (_) {
-      errorData = {};
-    }
-
-    const statusCode = response.status;
-    const message =
-      errorData.error?.message ||
-      errorText ||
-      `Instagram API HTTP ${statusCode}`;
+  const appId = process.env.INSTAGRAM_APP_ID;
+  if (!appId) {
     const error = new Error(
-      `Instagram DM Delivery Error (${statusCode}): ${message}`,
+      "Instagram DM automation is not configured: INSTAGRAM_APP_ID is required.",
     );
-    error.code = statusCode;
-    error.apiError = errorData.error;
+    error.code = "DM_NOT_CONFIGURED";
     throw error;
   }
 
-  return await response.json().catch(() => ({ success: true }));
+  const response = await fetch("https://graph.facebook.com/v21.0/me/messages", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Ig-App-Id": appId,
+    },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      messaging_type: "RESPONSE",
+      message: { text },
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    const error = new Error(
+      `Instagram DM send failed: ${response.status} - ${errBody}`,
+    );
+    error.status = response.status;
+    try {
+      const parsed = JSON.parse(errBody);
+      if (parsed?.error?.code) {
+        error.code = parsed.error.code;
+      }
+    } catch (_) {
+      // Preserve the HTTP status for non-JSON error bodies.
+    }
+    throw error;
+  }
+
+  const data = await response.json().catch(() => ({}));
+  return { success: true, messageId: data?.message_id || null };
 }
 
 function createRedisConnection(label) {
@@ -160,16 +166,16 @@ if (REDIS_URI) {
           console.log(`[Worker] Successfully processed job ${job.id}`);
           return result;
         } catch (error) {
-            if (error.status === 429 || error.code === 429) {
-                console.warn(`[Worker] Rate limited on job ${job.id}. Will retry...`);
-                // Throwing the error tells BullMQ to retry the job based on backoff settings
-            }
-            throw error;
+          if (error.status === 429 || error.code === 429) {
+            console.warn(
+              `[Worker] Rate limited on job ${job.id}. Will retry...`,
+            );
+          }
+          throw error;
         }
       },
       {
         connection: workerConnection,
-        // Add rate limit pacing (e.g., max 50 jobs per 10 seconds)
         limiter: {
           max: 50,
           duration: 10000,
@@ -177,7 +183,6 @@ if (REDIS_URI) {
       },
     );
 
-    // Event Listeners for logging
     dmWorker.on("completed", (job) => {
       console.log(
         `[Worker] Job ${job.id} for sender ${job.data.senderId} completed.`,
@@ -209,53 +214,6 @@ if (REDIS_URI) {
 
 if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
   console.log("📦 Upstash Redis REST client configured.");
-}
-
-async function sendInstagramDM(recipientId, text) {
-    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-    const appId = process.env.INSTAGRAM_APP_ID;
-
-    // No OAuth/token flow is configured yet. Never silently "deliver" a DM that
-    // was not sent: surface a clear error so jobs fail loudly instead.
-    if (!accessToken || !appId) {
-        const error = new Error(
-            'Instagram DM automation is not configured: INSTAGRAM_APP_ID and INSTAGRAM_ACCESS_TOKEN are required.'
-        );
-        error.code = 'DM_NOT_CONFIGURED';
-        throw error;
-    }
-
-    const response = await fetch('https://graph.facebook.com/v21.0/me/messages', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'X-Ig-App-Id': appId,
-        },
-        body: JSON.stringify({
-            recipient: { id: recipientId },
-            messaging_type: 'RESPONSE',
-            message: { text },
-        }),
-    });
-
-    if (!response.ok) {
-        const errBody = await response.text();
-        const error = new Error(`Instagram DM send failed: ${response.status} - ${errBody}`);
-        error.status = response.status;
-        try {
-            const parsed = JSON.parse(errBody);
-            if (parsed?.error?.code) {
-                error.code = parsed.error.code;
-            }
-        } catch (e) {
-            // Non-JSON error body; the HTTP status is preserved above.
-        }
-        throw error;
-    }
-
-    const data = await response.json();
-    return { success: true, messageId: data?.message_id || null };
 }
 
 module.exports = { dmQueue, sendInstagramDM };
