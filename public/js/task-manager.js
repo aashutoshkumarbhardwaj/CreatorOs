@@ -397,17 +397,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const taskDates = activeTasks.flatMap(task => [
+            task.startDate ? new Date(task.startDate) : new Date(task.createdAt),
+            task.dueDate ? new Date(task.dueDate) : new Date(new Date(task.startDate || task.createdAt).getTime() + 86400000 * 3),
+        ]).filter(date => date instanceof Date && !Number.isNaN(date.getTime()));
+        if (taskDates.length === 0) {
+            container.innerHTML = `<div style="padding: 2rem; text-align: center;">No valid task dates to display in Gantt Timeline.</div>`;
+            return;
+        }
+        const timelineStart = new Date(Math.min(...taskDates.map(d => d.getTime())));
+        const timelineEnd = new Date(Math.max(...taskDates.map(d => d.getTime())));
+        const timelineSpan = Math.max(timelineEnd.getTime() - timelineStart.getTime(), 86400000);
+
         activeTasks.forEach(task => {
             const row = document.createElement('div');
             row.className = 'gantt-row';
 
-            const startDate = task.startDate ? new Date(task.startDate) : new Date(task.createdAt);
-            const dueDate = task.dueDate ? new Date(task.dueDate) : new Date(startDate.getTime() + 86400000 * 3);
+            let startDate = task.startDate ? new Date(task.startDate) : new Date(task.createdAt);
+            if (Number.isNaN(startDate.getTime())) startDate = new Date(timelineStart);
+            let dueDate = task.dueDate ? new Date(task.dueDate) : new Date(startDate.getTime() + 86400000 * 3);
+            if (Number.isNaN(dueDate.getTime()) || dueDate < startDate) dueDate = new Date(startDate.getTime() + 86400000);
+            const left = Math.min(99, Math.max(0, ((startDate - timelineStart) / timelineSpan) * 100));
+            const width = Math.min(100 - left, Math.max(1, ((dueDate - startDate) / timelineSpan) * 100));
 
             row.innerHTML = `
                 <div class="gantt-label" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</div>
                 <div class="gantt-track">
-                    <div class="gantt-bar ${task.status} ${task.priority}" style="left: 10%; width: 40%;">
+                    <div class="gantt-bar ${task.status} ${task.priority}" style="left: ${left}%; width: ${width}%;">
                         <span>${escapeHtml(task.title)} (${task.status})</span>
                     </div>
                 </div>

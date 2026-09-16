@@ -3,17 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const mongoose = require('mongoose');
 const User = require('../model/user');
-const Url = require('../model/url');
-const Invite = require('../model/invite');
-const Creator = require('../model/creator');
-const AnalyticsSnapshot = require('../model/analyticsSnapshot');
-const EngagementHistory = require('../model/engagementHistory');
 const { preventContributorWrites } = require('../middleware/auth');
 const { validate, updateProfileSchema } = require('../middleware/validators');
 const { isEmailTransportConfigured, sendDeletionConfirmationEmail } = require('../utils/email');
 const { verifyTotp } = require('../utils/totp');
+const { deleteAccount } = require('../services/accountDeletionService');
 
 const asyncHandler = fn => (req, res, next) =>
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -455,65 +450,42 @@ router.post('/account/cancel-deletion', preventContributorWrites, asyncHandler(a
 router.delete('/account', preventContributorWrites, asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    if (process.env.USE_MOCK_DB === 'true') {
-        // Delete shortened links and collaborator invites associated with the user
-        await Url.deleteMany({ userId: user._id });
-        await Invite.deleteMany({ inviter: user._id });
 
-        if (typeof user.deleteOne === 'function') {
-            await user.deleteOne();
+    if (process.env.USE_MOCK_DB !== 'true') {
+        if (!user.scheduledDeletionAt) {
+            return res.status(400).json({ error: 'No account deletion is scheduled. Please request deletion first.' });
         }
 
+        if (!user.deletionConfirmed) {
+            return res.status(400).json({ error: 'Account deletion is not confirmed. Please confirm via the email sent to you.' });
+        }
+
+        if (new Date() < new Date(user.scheduledDeletionAt)) {
+            const daysRemaining = Math.ceil((new Date(user.scheduledDeletionAt) - new Date()) / (1000 * 60 * 60 * 24));
+            return res.status(400).json({ error: `Account deletion is scheduled for the future. ${daysRemaining} day(s) remaining.` });
+        }
+    }
+
+    try {
+        await deleteAccount(user);
         res.clearCookie('token');
         return res.json({ message: 'Account deleted successfully' });
-    }
-
-    if (!user.scheduledDeletionAt) {
-        return res.status(400).json({ error: 'No account deletion is scheduled. Please request deletion first.' });
-    }
-    
-    if (!user.deletionConfirmed) {
-        return res.status(400).json({ error: 'Account deletion is not confirmed. Please confirm via the email sent to you.' });
-    }
-    
-    if (new Date() < new Date(user.scheduledDeletionAt)) {
-        const daysRemaining = Math.ceil((new Date(user.scheduledDeletionAt) - new Date()) / (1000 * 60 * 60 * 24));
-        return res.status(400).json({ error: `Account deletion is scheduled for the future. ${daysRemaining} day(s) remaining.` });
-    }
-
-    const session = await mongoose.startSession();
-    try {
-        session.startTransaction();
-
-        await Url.deleteMany({ userId: user._id }).session(session);
-        await Invite.deleteMany({ inviter: user._id }).session(session);
-
-        if (process.env.USE_MOCK_DB !== 'true') {
-            await Creator.deleteOne({ userId: user._id }).session(session);
-            await AnalyticsSnapshot.deleteMany({ creatorId: user._id }).session(session);
-            await EngagementHistory.deleteMany({ creatorId: user._id }).session(session);
-        }
-
-        await User.deleteOne({ _id: user._id }).session(session);
-
-        await session.commitTransaction();
-        res.clearCookie('token');
-        res.json({ message: 'Account deleted successfully' });
     } catch (error) {
-        await session.abortTransaction();
-        console.error('[account-deletion] Transaction failed:', error);
+        console.error('[account-deletion] Deletion failed:', error);
+
         const isReplicaSetError = error.message && (
             error.message.includes('transaction numbers') ||
             error.message.includes('replica set') ||
             error.message.includes('Transaction isn\'t supported')
         );
-        const message = isReplicaSetError
-            ? 'Account deletion requires a MongoDB replica set. Please check your database configuration.'
-            : 'Failed to delete account. Please try again.';
-        res.status(500).json({ error: message });
-    } finally {
-        session.endSession();
+
+        const message = error.code === 'ACCOUNT_STORAGE_NOT_CONFIGURED'
+            ? error.message
+            : isReplicaSetError
+                ? 'Account deletion requires a MongoDB replica set. Please check your database configuration.'
+                : 'Failed to delete account. Please try again.';
+
+        return res.status(error.status || 500).json({ error: message });
     }
 }));
 

@@ -114,5 +114,5 @@ CreatorOS supports four primary roles enforced by dedicated middleware functions
 ### Available Middleware Functions
 - `protect`: Verifies JWT validity and attaches decoded payload to `req.user`.
 - `requireAdmin`: Enforces `req.user.role === 'admin'`.
-- `preventContributorWrites`: Blocks write requests (`POST`, `PUT`, `DELETE`) for contributor roles.
+- `preventContributorWrites`: Returns 403 for `contributor` / `guest_contributor` roles when this middleware is mounted (typically on mutation routes). It does not itself filter by HTTP method.
 - `redirectIfAuthenticated`: Utility middleware for landing/login pages to redirect active sessions to `/dashboard`.

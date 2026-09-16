@@ -615,23 +615,10 @@
       <div class="reach-panel">
         <div class="reach-left">
           <h2>Global Reach</h2>
-          <p>Where your audience is clicking from around the world.</p>
+          <p>Geographic data will appear when it is available.</p>
 
           <div class="country-row">
-            <span class="country-name"><span class="country-dot" style="background:#37D6C8;"></span>United States</span>
-            <span class="country-pct">42%</span>
-          </div>
-          <div class="country-row">
-            <span class="country-name"><span class="country-dot" style="background:#4fb8c0;"></span>United Kingdom</span>
-            <span class="country-pct">18%</span>
-          </div>
-          <div class="country-row">
-            <span class="country-name"><span class="country-dot" style="background:#a8d8db;"></span>Germany</span>
-            <span class="country-pct">12%</span>
-          </div>
-          <div class="country-row">
-            <span class="country-name"><span class="country-dot" style="background:#b5882a;"></span>India</span>
-            <span class="country-pct">9%</span>
+            <span class="country-name">No geographic data available</span>
           </div>
         </div>
 
@@ -752,22 +739,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Custom teal circle marker
-function makeMarker(lat, lng, size, color, label, pct) {
-  return L.circleMarker([lat, lng], {
-    radius: size,
-    fillColor: color,
-    color: '#111',
-    weight: 2,
-    fillOpacity: 0.85
-  }).addTo(map).bindPopup(`<b>${label}</b><br>${pct}`);
-}
-
-// Hardcoded points — swap with real user data later
-makeMarker(37.09,  -95.71, 18, '#37D6C8', 'United States', '42%');
-makeMarker(55.37,  -3.43,  12, '#4fb8c0', 'United Kingdom', '18%');
-makeMarker(51.16,  10.45,  10, '#a8d8db', 'Germany',        '12%');
-makeMarker(20.59,  78.96,   9, '#b5882a', 'India',           '9%');
+// Geographic analytics data is not available yet, so the map remains marker-free.
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 </script>
