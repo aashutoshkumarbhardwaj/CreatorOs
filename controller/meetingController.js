@@ -2,7 +2,15 @@ const EventType = require("../model/eventType");
 const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
-const { generateState, validateState } = require("../utils/oauthState");
+
+/**
+ * JWT `protect` attaches the verified payload as `req.user`.
+ * Auth tokens expose the user identity as `id`, not Mongoose `_id`.
+ */
+function getAuthenticatedUserId(user) {
+  const userId = user && (user.id || user._id);
+  return userId != null ? String(userId) : undefined;
+}
 
 /**
  * Helper to slugify string titles.
@@ -46,7 +54,7 @@ async function findCreatorByAliasOrName(identifier) {
 
 exports.getEventTypes = async (req, res) => {
   try {
-    const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const eventTypes = await EventType.find({ userId: getAuthenticatedUserId(req.user) }).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: eventTypes.length, data: eventTypes });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
@@ -66,12 +74,14 @@ exports.createEventType = async (req, res) => {
 
     let slug = baseSlug;
     let count = 1;
-    while (await EventType.findOne({ userId: req.user._id, slug })) {
+    const userId = getAuthenticatedUserId(req.user);
+
+    while (await EventType.findOne({ userId, slug })) {
       slug = `${baseSlug}-${count++}`;
     }
 
     const eventType = await EventType.create({
-      userId: req.user._id,
+      userId,
       title,
       slug,
       description: description || "",
@@ -101,7 +111,8 @@ exports.createEventType = async (req, res) => {
 exports.updateEventType = async (req, res) => {
   try {
     const { id } = req.params;
-    let eventType = await EventType.findOne({ _id: id, userId: req.user._id });
+    const userId = getAuthenticatedUserId(req.user);
+    let eventType = await EventType.findOne({ _id: id, userId });
 
     if (!eventType) {
       return res.status(404).json({ success: false, message: "Event type not found" });
@@ -122,7 +133,7 @@ exports.updateEventType = async (req, res) => {
       let baseSlug = slugify(updates.title);
       let slug = baseSlug;
       let count = 1;
-      while (await EventType.findOne({ userId: req.user._id, slug, _id: { $ne: id } })) {
+      while (await EventType.findOne({ userId, slug, _id: { $ne: id } })) {
         slug = `${baseSlug}-${count++}`;
       }
       updates.slug = slug;
@@ -138,7 +149,7 @@ exports.updateEventType = async (req, res) => {
 exports.deleteEventType = async (req, res) => {
   try {
     const { id } = req.params;
-    const eventType = await EventType.findOneAndDelete({ _id: id, userId: req.user._id });
+    const eventType = await EventType.findOneAndDelete({ _id: id, userId: getAuthenticatedUserId(req.user) });
 
     if (!eventType) {
       return res.status(404).json({ success: false, message: "Event type not found" });
@@ -156,7 +167,7 @@ exports.deleteEventType = async (req, res) => {
 
 exports.getUserBookings = async (req, res) => {
   try {
-    const bookings = await MeetingBooking.find({ userId: req.user._id })
+    const bookings = await MeetingBooking.find({ userId: getAuthenticatedUserId(req.user) })
       .populate("eventTypeId", "title duration color price locationType")
       .sort({ startTime: 1 });
 
@@ -186,7 +197,7 @@ exports.cancelBooking = async (req, res) => {
     }
 
     // Check ownership if requested by logged in user
-    if (req.user && booking.userId.toString() !== req.user._id.toString()) {
+    if (req.user && booking.userId.toString() !== getAuthenticatedUserId(req.user)) {
       return res.status(403).json({ success: false, message: "Unauthorized to cancel this booking" });
     }
 
@@ -207,10 +218,10 @@ exports.cancelBooking = async (req, res) => {
 
 exports.getGoogleCalendarStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const userId = getAuthenticatedUserId(req.user);
+    const user = await User.findById(userId);
     const tokens = user.googleCalendarTokens || {};
-    const state = generateState(req.user._id.toString());
-    const authUrl = GoogleCalendarService.getAuthUrl(state);
+    const authUrl = GoogleCalendarService.getAuthUrl(userId);
 
     return res.status(200).json({
       success: true,
@@ -225,12 +236,12 @@ exports.getGoogleCalendarStatus = async (req, res) => {
 
 exports.connectGoogleCalendar = async (req, res) => {
   try {
-    const state = generateState(req.user._id.toString());
-    const authUrl = GoogleCalendarService.getAuthUrl(state);
+    const userId = getAuthenticatedUserId(req.user);
+    const authUrl = GoogleCalendarService.getAuthUrl(userId);
     if (authUrl) {
       return res.redirect(authUrl);
     }
-    await GoogleCalendarService.handleCallback("mock_code", req.user._id.toString());
+    await GoogleCalendarService.handleCallback("mock_code", userId);
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
     return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
@@ -240,13 +251,11 @@ exports.connectGoogleCalendar = async (req, res) => {
 exports.googleCalendarCallback = async (req, res) => {
   try {
     const { code, state } = req.query;
-    const userId = validateState(state);
-
-    if (!userId) {
+    if (!state) {
       return res.redirect("/services/meetings?error=" + encodeURIComponent("Invalid or expired OAuth state. Please try connecting again."));
     }
 
-    await GoogleCalendarService.handleCallback(code || "mock_code", userId);
+    await GoogleCalendarService.handleCallback(code || "mock_code", state);
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
     return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
@@ -255,7 +264,7 @@ exports.googleCalendarCallback = async (req, res) => {
 
 exports.disconnectGoogleCalendar = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(getAuthenticatedUserId(req.user), {
       googleCalendarTokens: {
         accessToken: null,
         refreshToken: null,
