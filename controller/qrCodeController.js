@@ -682,7 +682,7 @@ const handleQrRedirect = asyncHandler(async (req, res) => {
             // No paid geolocation in-repo — stub location gracefully
             country: null,
             city: null,
-            device: parseDeviceFromUa(req.get('user-agent')),
+            device: parseDeviceFromUa(typeof req.get === 'function' ? req.get('user-agent') : req.headers?.['user-agent']),
         };
 
         const entry = await QrCode.findOneAndUpdate(

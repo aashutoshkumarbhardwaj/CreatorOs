@@ -2,6 +2,7 @@ const EventType = require("../model/eventType");
 const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
+const { generateState, validateState } = require("../utils/oauthState");
 
 /**
  * Helper to slugify string titles.
@@ -106,17 +107,28 @@ exports.updateEventType = async (req, res) => {
       return res.status(404).json({ success: false, message: "Event type not found" });
     }
 
-    if (req.body.title && req.body.title !== eventType.title) {
-      let baseSlug = slugify(req.body.title);
+    const allowedFields = [
+      "title", "description", "duration", "locationType", "locationDetails",
+      "price", "currency", "color",
+      "availability", "bufferBefore", "bufferAfter", "customQuestions", "isActive",
+    ];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+
+    if (updates.title && updates.title !== eventType.title) {
+      let baseSlug = slugify(updates.title);
       let slug = baseSlug;
       let count = 1;
       while (await EventType.findOne({ userId: req.user._id, slug, _id: { $ne: id } })) {
         slug = `${baseSlug}-${count++}`;
       }
-      req.body.slug = slug;
+      updates.slug = slug;
     }
 
-    eventType = await EventType.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    eventType = await EventType.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: eventType });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
@@ -197,7 +209,8 @@ exports.getGoogleCalendarStatus = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const tokens = user.googleCalendarTokens || {};
-    const authUrl = GoogleCalendarService.getAuthUrl(req.user._id.toString());
+    const state = generateState(req.user._id.toString());
+    const authUrl = GoogleCalendarService.getAuthUrl(state);
 
     return res.status(200).json({
       success: true,
@@ -212,11 +225,11 @@ exports.getGoogleCalendarStatus = async (req, res) => {
 
 exports.connectGoogleCalendar = async (req, res) => {
   try {
-    const authUrl = GoogleCalendarService.getAuthUrl(req.user._id.toString());
+    const state = generateState(req.user._id.toString());
+    const authUrl = GoogleCalendarService.getAuthUrl(state);
     if (authUrl) {
       return res.redirect(authUrl);
     }
-    // If not configured, activate mock connection directly
     await GoogleCalendarService.handleCallback("mock_code", req.user._id.toString());
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
@@ -227,10 +240,10 @@ exports.connectGoogleCalendar = async (req, res) => {
 exports.googleCalendarCallback = async (req, res) => {
   try {
     const { code, state } = req.query;
-    const userId = state || req.user?._id?.toString();
+    const userId = validateState(state);
 
     if (!userId) {
-      return res.redirect("/login");
+      return res.redirect("/services/meetings?error=" + encodeURIComponent("Invalid or expired OAuth state. Please try connecting again."));
     }
 
     await GoogleCalendarService.handleCallback(code || "mock_code", userId);

@@ -76,8 +76,8 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
       bioProfile = await BioProfile.findOne({ userId }).lean();
     } catch (e) {}
   }
-  const bioViews = bioProfile?.stats?.views || (userUrls.length > 0 ? userUrls.length * 15 : 120);
-  const bioClicks = bioProfile?.stats?.clicks || Math.floor(bioViews * 0.35);
+  const bioViews = bioProfile?.stats?.views || 0;
+  const bioClicks = bioProfile?.stats?.clicks || 0;
   const bioLinksCount = bioProfile?.links?.length || 0;
 
   // 3. FILE UPLOAD / VAULT DATA
@@ -92,7 +92,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
   const totalVaultFiles = (vaultFiles?.length || 0) + (uploads?.length || 0);
   const totalStorageBytes = [...vaultFiles, ...uploads].reduce((sum, f) => sum + (f.size || 0), 0);
   const totalStorageMB = (totalStorageBytes / (1024 * 1024)).toFixed(1);
-  const totalDownloads = totalVaultFiles * 4 + (totalVaultFiles > 0 ? 12 : 0);
+  const totalDownloads = 0;
 
   [...vaultFiles, ...uploads].forEach((f) => {
     if (f.createdAt) timestampsList.push(new Date(f.createdAt));
@@ -118,7 +118,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
 
   const totalDeals = crmDeals.length;
   const closedWonDeals = crmDeals.filter((d) => d.stage === "closed_won").length;
-  const conversionRate = totalDeals > 0 ? Number(((closedWonDeals / totalDeals) * 100).toFixed(1)) : (totalDeals === 0 ? 0 : 25.0);
+  const conversionRate = totalDeals > 0 ? Number(((closedWonDeals / totalDeals) * 100).toFixed(1)) : 0;
   const dealRevenue = crmDeals
     .filter((d) => d.stage === "closed_won")
     .reduce((sum, d) => sum + (d.amount || 0), 0);
@@ -150,7 +150,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
   }
   const activeDmTriggers = dmTriggers.filter((t) => t.isActive).length;
   const totalDmTriggers = dmTriggers.length;
-  const dmExecutionsCount = activeDmTriggers * 18 + (totalDmTriggers * 5);
+  const dmExecutionsCount = 0;
 
   dmTriggers.forEach((t) => { if (t.createdAt) timestampsList.push(new Date(t.createdAt)); });
 
@@ -178,7 +178,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
 
   const avgEngagementRate = totalPostViews > 0
     ? Number((((totalPostLikes + totalPostComments) / totalPostViews) * 100).toFixed(2))
-    : (publishedCount > 0 ? 5.8 : 0);
+    : 0;
 
   contentOsItems.forEach((c) => { if (c.createdAt) timestampsList.push(new Date(c.createdAt)); });
   posts.forEach((p) => { if (p.postedAt || p.createdAt) timestampsList.push(new Date(p.postedAt || p.createdAt)); });
@@ -198,7 +198,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
       snapshot = await AnalyticsSnapshot.findOne({ creatorId: creatorDoc._id }, {}, { sort: { createdAt: -1 } }).lean();
     } catch (e) {}
   }
-  const followersCount = snapshot?.followers || creatorDoc?.followersCount || 14250;
+  const followersCount = snapshot?.followers || creatorDoc?.followersCount || 0;
 
   // 8. DAILY TIMELINE DATA GENERATION (for charts)
   const labels = [];
@@ -233,22 +233,6 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
     });
   });
 
-  // Distribute remaining stats realistically over days if DB lacks granular daily records
-  const totalClicksSum = dailyClicks.reduce((a, b) => a + b, 0);
-  if (totalClicksSum === 0 && totalShortClicks > 0) {
-    const avg = Math.ceil(totalShortClicks / daysCount);
-    for (let i = 0; i < daysCount; i++) {
-      dailyClicks[i] = Math.max(1, Math.floor(avg + (Math.sin(i) * avg * 0.4)));
-    }
-  }
-
-  for (let i = 0; i < daysCount; i++) {
-    dailyViews[i] = dailyClicks[i] + Math.floor(bioViews / daysCount) + Math.floor((i % 3 === 0 ? 15 : 5));
-    dailyDownloads[i] = Math.floor((totalDownloads / daysCount) + (i % 5 === 0 ? 2 : 0));
-    dailyRevenue[i] = totalRevenue > 0 && i % 7 === 0 ? Math.floor(totalRevenue / Math.ceil(daysCount / 7)) : 0;
-    dailyEngagement[i] = Number((avgEngagementRate + (Math.sin(i * 0.5) * 0.8)).toFixed(2));
-  }
-
   // 9. 7x24 ENGAGEMENT HEATMAP MATRIX
   // Matrix rows: 0 (Sun) to 6 (Sat). Cols: 0 to 23 hours.
   const heatmapMatrix = Array.from({ length: 7 }, () => Array(24).fill(0));
@@ -258,14 +242,9 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
     heatmapMatrix[day][hour]++;
   });
 
-  // Fill sample distribution if sparse
   let maxHeat = 0;
   for (let d = 0; d < 7; d++) {
     for (let h = 0; h < 24; h++) {
-      if (heatmapMatrix[d][h] === 0) {
-        const base = (h >= 14 && h <= 21) ? (d >= 1 && d <= 5 ? 8 : 12) : (h >= 9 && h <= 13 ? 5 : 1);
-        heatmapMatrix[d][h] = Math.floor(base + Math.random() * 4);
-      }
       if (heatmapMatrix[d][h] > maxHeat) maxHeat = heatmapMatrix[d][h];
     }
   }
@@ -333,13 +312,12 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
   const totalClicks = totalShortClicks + bioClicks;
   const totalViews = bioViews + totalPostViews;
 
-  const prevTraffic = prevShortClicks + (bioViews * 0.85);
+  const prevTraffic = prevShortClicks;
   const trafficGrowthRate = prevTraffic > 0
     ? Number((((totalTraffic - prevTraffic) / prevTraffic) * 100).toFixed(1))
-    : 12.4;
-
-  const revenueGrowthRate = totalRevenue > 0 ? 18.5 : 0;
-  const conversionsGrowthRate = conversionRate > 0 ? 5.2 : 0;
+    : 0;
+  const revenueGrowthRate = 0;
+  const conversionsGrowthRate = 0;
 
   return {
     selectedRange: range,
@@ -353,14 +331,14 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
     }),
     summaryCards: {
       traffic: { value: totalTraffic, growth: trafficGrowthRate, label: "Total Traffic" },
-      clicks: { value: totalClicks, growth: 8.6, label: "Total Clicks" },
-      views: { value: totalViews, growth: 14.1, label: "Total Views" },
-      downloads: { value: totalDownloads, growth: 4.5, label: "Vault Downloads" },
+      clicks: { value: totalClicks, growth: 0, label: "Total Clicks" },
+      views: { value: totalViews, growth: 0, label: "Total Views" },
+      downloads: { value: totalDownloads, growth: 0, label: "Vault Downloads" },
       uploads: { value: totalVaultFiles, storageMB: totalStorageMB, label: "Files Uploaded" },
-      followers: { value: followersCount, growth: 2.8, label: "Total Followers" },
+      followers: { value: followersCount, growth: 0, label: "Total Followers" },
       conversions: { value: closedWonDeals, rate: conversionRate, growth: conversionsGrowthRate, label: "CRM Conversions" },
       revenue: { value: totalRevenue, growth: revenueGrowthRate, label: "Total Revenue ($)" },
-      engagementRate: { value: avgEngagementRate, growth: 1.2, label: "Avg Engagement %" },
+      engagementRate: { value: avgEngagementRate, growth: 0, label: "Avg Engagement %" },
     },
     moduleMetrics: {
       smartBio: { views: bioViews, clicks: bioClicks, links: bioLinksCount, handle: bioProfile?.handle || null },
@@ -373,12 +351,12 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
     moduleSplit: {
       labels: ["Smart Bio", "URL Shortener", "File Upload", "Creator CRM", "DM Automation", "Content OS"],
       data: [
-        bioViews || 15,
-        totalShortClicks || 35,
-        totalDownloads || 10,
-        closedWonDeals * 10 || 15,
-        dmExecutionsCount || 10,
-        publishedCount * 8 || 15,
+        bioViews,
+        totalShortClicks,
+        totalDownloads,
+        closedWonDeals * 10,
+        dmExecutionsCount,
+        publishedCount * 8,
       ],
     },
     charts: {
@@ -388,7 +366,7 @@ async function buildUnifiedAnalyticsData(userId, options = {}) {
       downloads: dailyDownloads,
       revenue: dailyRevenue,
       engagement: dailyEngagement,
-      followers: dailyClicks.map((c, i) => followersCount - (daysCount - i) * 5 + c),
+      followers: dailyClicks.map(() => 0),
     },
     heatmap: {
       matrix: normalizedHeatmap,

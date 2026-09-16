@@ -47,7 +47,7 @@
                     if (mediaQuery.removeEventListener) {
                         mediaQuery.removeEventListener('change', mediaListener);
                     } else if (mediaQuery.removeListener) {
-                        mediaQuery.removeListener(mediaListener);
+                        mediaQuery.removeListener('change', mediaListener);
                     }
                     mediaListener = null;
                 }
@@ -92,7 +92,7 @@
         // ── Sidebar Mobile Toggle ──
         const sidebarBtn = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
-        const layout = document.getElementById('dashboardLayout');
+        const layout = document.getElementById('dashboardLayout') || document.querySelector('.dashboard-layout');
         
         if (layout) {
             // Hide by default on screens < 768px
@@ -109,5 +109,30 @@
                 });
             }
         }
+
+        // ── Analytics: do not display fabricated geographic metrics ──
+        if (window.location.pathname.includes('/analytics')) {
+            const reachPanel = document.querySelector('.reach-panel');
+            if (reachPanel) {
+                const countryRows = reachPanel.querySelectorAll('.country-row');
+                countryRows.forEach((row) => row.remove());
+
+                const message = document.createElement('div');
+                message.className = 'country-row';
+                message.innerHTML = '<span class="country-name">No geographic data available</span>';
+                const reachLeft = reachPanel.querySelector('.reach-left');
+                if (reachLeft) reachLeft.appendChild(message);
+            }
+
+            const mapElement = document.getElementById('map');
+            if (mapElement) {
+                mapElement.querySelectorAll('.leaflet-overlay-pane path.leaflet-interactive').forEach((path) => {
+                    path.remove();
+                });
+            }
+        }
     });
+
 </script>
+
+<script src="/js/global-search.js" defer></script>

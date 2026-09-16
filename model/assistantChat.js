@@ -28,6 +28,11 @@ const assistantChatSchema = new mongoose.Schema(
       enum: ["energetic", "professional", "witty", "persuasive", "minimalist", "educational"],
       default: "energetic",
     },
+    length: {
+      type: String,
+      enum: ["short", "medium", "long"],
+      default: "medium",
+    },
     messages: [
       {
         messageId: {
