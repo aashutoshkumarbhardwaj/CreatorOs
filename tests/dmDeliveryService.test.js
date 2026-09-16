@@ -7,6 +7,10 @@ const {
 } = require("../services/dmDeliveryService");
 
 describe("DM delivery idempotency", () => {
+    beforeAll(async () => {
+        await DmDelivery.init();
+    });
+
     beforeEach(async () => {
         await DmDelivery.deleteMany({});
     });
