@@ -23,20 +23,32 @@ async function checkTaskReminders() {
     }).lean();
 
     if (!existingNotif) {
-      await Notification.create({
-        userId: task.creatorId,
-        title: isOverdue ? `⚠️ Task Overdue: ${task.title}` : `⏰ Task Due Soon: ${task.title}`,
-        message: isOverdue
-          ? `Your task "${task.title}" was due on ${new Date(task.dueDate).toLocaleDateString()}.`
-          : `Your task "${task.title}" is due soon.`,
-        category: "system",
-        priority: isOverdue ? "high" : "normal",
-        channels: ["in_app"],
-        status: "sent",
-        deduplicationKey: dedupKey,
-        metadata: { taskId: task._id },
-      });
-      notificationCount++;
+      try {
+        await Notification.create({
+          userId: task.creatorId,
+          title: isOverdue ? `⚠️ Task Overdue: ${task.title}` : `⏰ Task Due Soon: ${task.title}`,
+          message: isOverdue
+            ? `Your task "${task.title}" was due on ${new Date(task.dueDate).toLocaleDateString()}.`
+            : `Your task "${task.title}" is due soon.`,
+          category: "system",
+          priority: isOverdue ? "high" : "normal",
+          channels: ["in_app"],
+          status: "sent",
+          deduplicationKey: dedupKey,
+          metadata: { taskId: task._id },
+        });
+        notificationCount++;
+      } catch (err) {
+        const isDuplicateKey =
+          err.code === 11000 ||
+          (err.name === "MongoServerError" && err.code === 11000) ||
+          (err.message && err.message.includes("E11000"));
+
+        if (isDuplicateKey) {
+          continue;
+        }
+        throw err;
+      }
     }
   }
 
