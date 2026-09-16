@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const cellDate = new Date(year, month, day);
-            const dateISO = cellDate.toISOString().split('T')[0];
+            const dateISO = CreatorOsDateTime.toLocalDateISO(cellDate);
             const isToday = cellDate.toDateString() === todayStr;
 
             const dayEvents = scheduledItems.filter(i => {
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 7; i++) {
             const colDate = new Date(startOfWeek);
             colDate.setDate(startOfWeek.getDate() + i);
-            const dateISO = colDate.toISOString().split('T')[0];
+            const dateISO = CreatorOsDateTime.toLocalDateISO(colDate);
             const isToday = colDate.toDateString() === todayStr;
             const dayName = colDate.toLocaleString('default', { weekday: 'short' });
             const dayNum = colDate.getDate();
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         monthTitle.textContent = dateStr;
         if (subtitle) subtitle.textContent = 'Hourly Daily Timeline Schedule';
 
-        const todayISO = currentCalDate.toISOString().split('T')[0];
+        const todayISO = CreatorOsDateTime.toLocalDateISO(currentCalDate);
         const dayEvents = scheduledItems.filter(e => {
             const d = e.scheduledAt ? new Date(e.scheduledAt) : (e.deadlineAt ? new Date(e.deadlineAt) : null);
             return d && d.toDateString() === currentCalDate.toDateString();
@@ -496,7 +496,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             cell.addEventListener('click', (e) => {
                 if (e.target.closest('.cal-event-chip')) return;
-                const scheduledDate = new Date(dateStr);
+                const scheduledDate = dateStr.includes('T')
+                    ? new Date(dateStr)
+                    : new Date(`${dateStr}T00:00:00`);
                 if (isNaN(scheduledDate.getTime())) return;
                 openItemModal({ status: 'scheduled', scheduledAt: scheduledDate });
             });
@@ -517,8 +519,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const itemId = e.dataTransfer.getData('text/plain');
                 if (!itemId) return;
 
-                const targetDate = new Date(dateStr);
-                targetDate.setHours(12, 0, 0, 0);
+                const targetDate = dateStr.includes('T')
+                    ? new Date(dateStr)
+                    : new Date(`${dateStr}T12:00:00`);
 
                 try {
                     const res = await fetch(`/services/content-os/api/items/${itemId}/reschedule`, {
@@ -777,8 +780,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-input-tags').value = (presetData.tags || []).join(', ');
 
         // Format ISO dates for datetime-local picker
-        document.getElementById('modal-input-scheduled').value = presetData.scheduledAt ? new Date(presetData.scheduledAt).toISOString().slice(0, 16) : '';
-        document.getElementById('modal-input-deadline').value = presetData.deadlineAt ? new Date(presetData.deadlineAt).toISOString().slice(0, 16) : '';
+        document.getElementById('modal-input-scheduled').value = CreatorOsDateTime.toDatetimeLocalValue(presetData.scheduledAt);
+        document.getElementById('modal-input-deadline').value = CreatorOsDateTime.toDatetimeLocalValue(presetData.deadlineAt);
 
         // Multi-Platform checkboxes
         const selectedPlatforms = presetData.platforms || (presetData.platform ? [presetData.platform] : ['general']);
@@ -940,8 +943,8 @@ document.addEventListener('DOMContentLoaded', () => {
             platforms: platforms.length > 0 ? platforms : [platform],
             description,
             tags,
-            scheduledAt,
-            deadlineAt,
+            scheduledAt: CreatorOsDateTime.datetimeLocalToISO(scheduledAt),
+            deadlineAt: CreatorOsDateTime.datetimeLocalToISO(deadlineAt),
             performance
         };
 
