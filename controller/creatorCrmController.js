@@ -533,11 +533,11 @@ const getMediaKit = asyncHandler(async (req, res) => {
 
 const updateMediaKit = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const { bio, stats, packages } = req.body;
+  const { displayName, bio, stats, packages } = req.body;
 
   const mediaKit = await CrmMediaKit.findOneAndUpdate(
     { creatorId: userId },
-    { $set: { bio, stats, packages } },
+    { $set: { displayName, bio, stats, packages } },
     { new: true, upsert: true }
   );
 

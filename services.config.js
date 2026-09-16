@@ -88,6 +88,15 @@ module.exports = [
         svgPath: '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
     },
     {
+        key: 'sponsorship-calculator',
+        name: '💰 Sponsorship Calculator',
+        description: 'Calculate brand collaboration rates based on your metrics and campaign requirements.',
+        route: '/services/sponsorship-calculator',
+        status: 'available',
+        // Calculator/money icon
+        svgPath: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>',
+    },
+    {
         key: 'ai-assistant',
         name: '🤖 AI Creator Assistant',
         description: 'Intelligent conversational assistant, performance predictions, copy optimization, and SEO tools.',

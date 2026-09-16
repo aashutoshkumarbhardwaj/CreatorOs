@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const packageJson = require("../package.json");
-const { hasRedisConfig, createRedisClient } = require("../utils/redisClient");
+const redisClientModule = require("../utils/redisClient");
 
 const router = express.Router();
 
@@ -28,21 +28,42 @@ router.get("/health", async (req, res) => {
   const isHealthy = dbState === 1 || isMockDb;
 
   let redisStatus = "not_configured";
-  if (hasRedisConfig()) {
-    try {
-      const redisClient = createRedisClient();
-      if (redisClient) {
-        if (redisClient.status === "ready" || redisClient.status === "connect") {
-          redisStatus = "connected";
-        } else {
-          redisStatus = "configured";
+  if (redisClientModule.hasRedisConfig()) {
+    const redisClient = redisClientModule.createRedisClient();
+    if (redisClient) {
+      let timeoutId;
+      try {
+        const REDIS_HEALTH_TIMEOUT_MS = 2000;
+        const pingPromise =
+          typeof redisClient.ping === "function"
+            ? redisClient.ping()
+            : typeof redisClient.get === "function"
+              ? redisClient.get("__healthcheck__")
+              : Promise.reject(new Error("Unsupported redis client"));
+
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error("Redis health check timeout")),
+            REDIS_HEALTH_TIMEOUT_MS,
+          );
+        });
+
+        await Promise.race([pingPromise, timeoutPromise]);
+        redisStatus = "connected";
+      } catch (err) {
+        redisStatus = "error";
+      } finally {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
         }
-        if (typeof redisClient.quit === "function") {
-          redisClient.quit().catch(() => {});
-        }
+        try {
+          if (typeof redisClient.disconnect === "function") {
+            redisClient.disconnect();
+          } else if (typeof redisClient.quit === "function") {
+            redisClient.quit().catch(() => {});
+          }
+        } catch (_) {}
       }
-    } catch (err) {
-      redisStatus = "error";
     }
   }
 
@@ -74,7 +95,7 @@ router.get("/health", async (req, res) => {
 router.get("/metrics", async (req, res) => {
   const isMockDb = process.env.USE_MOCK_DB === "true";
   const dbConnected = mongoose.connection.readyState === 1 || isMockDb ? 1 : 0;
-  const redisConfigured = hasRedisConfig() ? 1 : 0;
+  const redisConfigured = redisClientModule.hasRedisConfig() ? 1 : 0;
   const memory = process.memoryUsage();
   const cpu = process.cpuUsage();
   const uptime = process.uptime();

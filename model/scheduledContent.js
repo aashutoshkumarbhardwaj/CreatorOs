@@ -12,6 +12,11 @@ const scheduledContentSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        contentOsId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ContentOs",
+            default: null,
+        },
         caption: {
             type: String,
             required: true,
@@ -50,10 +55,6 @@ const scheduledContentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Creator",
         },
-        platform: {
-            type: String,
-            enum: ["instagram", "youtube", "twitter", "tiktok"],
-        },
         publishedAt: {
             type: Date,
         },
@@ -75,6 +76,10 @@ const scheduledContentSchema = new mongoose.Schema(
 
 scheduledContentSchema.index({ status: 1, scheduledAt: 1 });
 scheduledContentSchema.index({ status: 1, publishingStartedAt: 1 });
+scheduledContentSchema.index(
+    { userId: 1, contentOsId: 1 },
+    { unique: true, partialFilterExpression: { contentOsId: { $type: "objectId" } } }
+);
 
 const ScheduledContentModel =
     mongoose.models.ScheduledContent || mongoose.model("ScheduledContent", scheduledContentSchema);

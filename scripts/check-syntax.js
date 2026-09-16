@@ -11,6 +11,7 @@ const RUNTIME_DIRS = [
   "config",
   "services",
   "workers",
+  "scripts",
 ];
 
 function collectJsFiles(dir) {

@@ -191,7 +191,7 @@ function predictContentPerformance(text, platform = "instagram") {
  * @param {object} params
  * @returns {object}
  */
-function generateLocalAiResponse({ prompt, platform = "general", tone = "energetic" }) {
+function generateLocalAiResponse({ prompt, platform = "general", tone = "energetic", length = "medium" }) {
   const sanitized = sanitizePrompt(prompt);
   const keywords = extractKeywords(sanitized);
   const mainWord = keywords[0] || "content";
@@ -208,7 +208,7 @@ function generateLocalAiResponse({ prompt, platform = "general", tone = "energet
     `${emoji} **Call to Action**: Save this post and tag a fellow creator who needs to hear this!`
   ];
 
-  const content = `Here are intelligent AI suggestions tailored for **${platform.toUpperCase()}** in an **${tone.toUpperCase()}** tone:
+  const content = `Here are intelligent AI suggestions tailored for **${platform.toUpperCase()}** in an **${tone.toUpperCase()}** tone (${length} caption length):
 
 ### 💡 Content Angles & Copy Hooks
 1. **The Hook**: "If you're still struggling with ${mainWord}, here is the exact framework to fix it in 2026."
@@ -251,8 +251,13 @@ function generateLocalAiResponse({ prompt, platform = "general", tone = "energet
  * @param {object} options
  * @returns {Promise<object>}
  */
-async function generateConversationalResponse({ prompt, platform = "general", tone = "energetic", history = [] }) {
+async function generateConversationalResponse({ prompt, platform = "general", tone = "energetic", length = "medium", history = [] }) {
   const sanitizedPrompt = sanitizePrompt(prompt);
+  const lengthGuidance = length === "short"
+    ? "Keep captions concise (under 100 characters)."
+    : length === "long"
+      ? "Provide detailed, long-form captions."
+      : "Provide balanced, medium-length captions.";
 
   if (openai && process.env.OPENAI_API_KEY) {
     try {
@@ -260,7 +265,8 @@ async function generateConversationalResponse({ prompt, platform = "general", to
         {
           role: "system",
           content: `You are CreatorOS AI Creator Assistant — an expert content strategist, copywriter, and growth advisor. 
-Platform: ${platform}. Desired Tone: ${tone}.
+Platform: ${platform}. Desired Tone: ${tone}. Caption Length: ${length}.
+${lengthGuidance}
 Provide clear, actionable, structured advice. Include post hooks, copy recommendations, SEO advice, and call-to-actions.`
         }
       ];
@@ -279,7 +285,7 @@ Provide clear, actionable, structured advice. Include post hooks, copy recommend
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages,
-        max_tokens: 600,
+        max_tokens: length === "short" ? 200 : length === "long" ? 1000 : 600,
         temperature: 0.7,
       });
 
@@ -291,7 +297,7 @@ Provide clear, actionable, structured advice. Include post hooks, copy recommend
       return {
         content: responseText,
         suggestions: [
-          `Hook option 1: Master ${platform} with ${tone} content.`,
+          `Hook option 1: Master ${platform} with ${tone} content (${length} caption).`,
           `Hook option 2: Why ${platform} creators fail without a strategy.`
         ],
         seoScore: seo.seoScore,
@@ -303,11 +309,11 @@ Provide clear, actionable, structured advice. Include post hooks, copy recommend
       };
     } catch (err) {
       console.error("OpenAI API call failed, using local NLP fallback:", err.message);
-      return generateLocalAiResponse({ prompt: sanitizedPrompt, platform, tone });
+      return generateLocalAiResponse({ prompt: sanitizedPrompt, platform, tone, length });
     }
   }
 
-  return generateLocalAiResponse({ prompt: sanitizedPrompt, platform, tone });
+  return generateLocalAiResponse({ prompt: sanitizedPrompt, platform, tone, length });
 }
 
 /**
