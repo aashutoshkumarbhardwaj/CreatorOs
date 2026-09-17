@@ -407,7 +407,9 @@ const deleteTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, message: "Task deleted successfully." });
   }
 
-  await Task.findByIdAndDelete(taskId);
+  const userId = req.user?.id || req.user?._id;
+  const deleted = await Task.findOneAndDelete({ _id: taskId, creatorId: userId });
+  if (!deleted) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, message: "Task deleted successfully." });
 });
 
