@@ -14,7 +14,7 @@ function timingSafeEqual(a, b) {
 
     if (bufA.length !== bufB.length) {
         // Still do a constant-time comparison to avoid leaking the length difference
-        crypto.timingSafeEqual(Buffer.alloc(bufA.length), bufB);
+        crypto.timingSafeEqual(Buffer.alloc(bufB.length), bufB);
         return false;
     }
 
