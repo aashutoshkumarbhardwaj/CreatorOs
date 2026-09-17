@@ -389,7 +389,8 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  const userId = req.user?.id || req.user?._id;
+  const taskDoc = await Task.findOne({ _id: taskId, creatorId: userId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   taskDoc.isArchived = !taskDoc.isArchived;
   await taskDoc.save();
