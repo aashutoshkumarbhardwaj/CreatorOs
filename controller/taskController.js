@@ -367,7 +367,8 @@ const logTaskTime = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  const userId = req.user?.id || req.user?._id;
+  const taskDoc = await Task.findOne({ _id: taskId, creatorId: userId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
 
   taskDoc.spentHours = Math.round(((taskDoc.spentHours || 0) + hours) * 100) / 100;
