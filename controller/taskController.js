@@ -330,7 +330,9 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
+  const userId = req.user?.id || req.user?._id;
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId: userId }, { status }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -348,7 +350,9 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true });
+  const userId = req.user?.id || req.user?._id;
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId: userId }, { subtasks }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
