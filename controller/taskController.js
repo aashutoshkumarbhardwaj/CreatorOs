@@ -312,7 +312,7 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
+  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true, runValidators: true });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -330,7 +330,7 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
+  const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true, runValidators: true });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -348,7 +348,7 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true });
+  const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true, runValidators: true });
   res.json({ success: true, task: taskDoc });
 });
 
