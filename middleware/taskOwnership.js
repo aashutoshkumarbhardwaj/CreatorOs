@@ -31,19 +31,29 @@ const requireTaskOwnership = async (req, res, next) => {
       delete req.body.creatorId;
       delete req.body._id;
       
-      const stripMongoOperators = (obj) => {
-        if (!obj || typeof obj !== 'object') return;
-        
-        if (Array.isArray(obj)) {
-          obj.forEach(stripMongoOperators);
-          return;
-        }
+      const stripMongoOperators = (rootObj) => {
+        const stack = [rootObj];
+        const visited = new WeakSet();
 
-        for (const key in obj) {
-          if (key.startsWith('$')) {
-            delete obj[key];
-          } else {
-            stripMongoOperators(obj[key]);
+        while (stack.length > 0) {
+          const current = stack.pop();
+          if (!current || typeof current !== 'object') continue;
+          if (visited.has(current)) continue;
+          visited.add(current);
+          
+          if (Array.isArray(current)) {
+            for (let i = 0; i < current.length; i++) {
+              stack.push(current[i]);
+            }
+            continue;
+          }
+
+          for (const key in current) {
+            if (key.startsWith('$')) {
+              delete current[key];
+            } else {
+              stack.push(current[key]);
+            }
           }
         }
       };
