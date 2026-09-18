@@ -9,6 +9,11 @@ const crmMediaKitSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    displayName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     bio: {
       type: String,
       default: "Tech & Lifestyle Creator building high-impact brand partnerships.",

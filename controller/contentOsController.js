@@ -3,6 +3,7 @@ const ContentFolderModel = require("../model/contentFolder");
 const ScheduledContentModel = require("../model/scheduledContent");
 const User = require("../model/user");
 const services = require("../services.config");
+const { syncScheduledContent } = require("../services/contentOsScheduler");
 
 function buildAccountViewModel(userDoc, fallbackUser) {
     const name = userDoc?.name || fallbackUser?.name || "Creator";
@@ -198,17 +199,9 @@ async function createItem(req, res) {
 
         const item = await ContentOsModel.create(newItemData);
 
-        // If scheduledAt is provided and status is scheduled, sync with ScheduledContent queue
         if (item.scheduledAt && item.status === "scheduled") {
             try {
-                await ScheduledContentModel.create({
-                    userId,
-                    caption: item.title + (item.description ? "\n\n" + item.description : ""),
-                    platform: item.platform || "general",
-                    timezone: "UTC",
-                    scheduledAt: item.scheduledAt,
-                    status: "scheduled",
-                });
+                await syncScheduledContent({ userId, item });
             } catch (scheduleErr) {
                 console.warn("Notice: ScheduledContent sync skipped:", scheduleErr.message);
             }
@@ -283,20 +276,10 @@ async function updateItem(req, res) {
 
         const updatedItem = await ContentOsModel.findByIdAndUpdate(id, updateData, { new: true });
 
-        // If scheduledAt is modified and status is scheduled, sync with ScheduledContent
-        if (updatedItem.scheduledAt && updatedItem.status === "scheduled") {
-            try {
-                await ScheduledContentModel.create({
-                    userId,
-                    caption: updatedItem.title + (updatedItem.description ? "\n\n" + updatedItem.description : ""),
-                    platform: updatedItem.platform || "general",
-                    timezone: "UTC",
-                    scheduledAt: updatedItem.scheduledAt,
-                    status: "scheduled",
-                });
-            } catch (scheduleErr) {
-                console.warn("Notice: ScheduledContent sync skipped:", scheduleErr.message);
-            }
+        try {
+            await syncScheduledContent({ userId, item: updatedItem, previousItem: existing });
+        } catch (scheduleErr) {
+            console.warn("Notice: ScheduledContent sync skipped:", scheduleErr.message);
         }
 
         return res.json({ success: true, item: updatedItem, message: "Item updated successfully." });
@@ -320,6 +303,11 @@ async function deleteItem(req, res) {
         }
 
         await ContentOsModel.findByIdAndDelete(id);
+        try {
+            await syncScheduledContent({ userId, item: { _id: existing._id, status: "deleted", scheduledAt: null } });
+        } catch (scheduleErr) {
+            console.warn("Notice: ScheduledContent cancellation skipped:", scheduleErr.message);
+        }
         return res.json({ success: true, message: "Item deleted successfully." });
     } catch (err) {
         console.error("Error deleting Content OS item:", err);
@@ -334,6 +322,15 @@ async function convertItem(req, res) {
     try {
         const { id } = req.params;
         const { targetStatus, targetType } = req.body;
+        const validStatuses = new Set(["idea", "scripting", "filming", "editing", "ready", "scheduled", "published"]);
+        const validTypes = new Set(["idea", "script", "post", "template", "draft"]);
+
+        if (targetStatus && !validStatuses.has(targetStatus)) {
+            return res.status(400).json({ success: false, message: "Invalid target status." });
+        }
+        if (targetType && !validTypes.has(targetType)) {
+            return res.status(400).json({ success: false, message: "Invalid target type." });
+        }
 
         const item = await ContentOsModel.findById(id);
         if (!item || item.userId?.toString() !== req.user.id.toString()) {
@@ -346,7 +343,7 @@ async function convertItem(req, res) {
         const updated = await ContentOsModel.findByIdAndUpdate(
             id,
             { status: newStatus, type: newType },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         return res.json({ success: true, item: updated, message: `Converted item to ${newStatus}.` });
@@ -554,19 +551,17 @@ async function rescheduleItem(req, res) {
             { new: true }
         );
 
-        // Sync with ScheduledContent queue if status is scheduled
         if (newStatus === "scheduled") {
             try {
-                await ScheduledContentModel.create({
-                    userId,
-                    caption: updatedItem.title + (updatedItem.description ? "\n\n" + updatedItem.description : ""),
-                    platform: updatedItem.platform || "general",
-                    timezone: "UTC",
-                    scheduledAt: updatedDate,
-                    status: "scheduled",
-                });
+                await syncScheduledContent({ userId, item: updatedItem, previousItem: existing });
             } catch (scheduleErr) {
                 console.warn("Notice: ScheduledContent sync skipped:", scheduleErr.message);
+            }
+        } else {
+            try {
+                await syncScheduledContent({ userId, item: updatedItem, previousItem: existing });
+            } catch (scheduleErr) {
+                console.warn("Notice: ScheduledContent cancellation skipped:", scheduleErr.message);
             }
         }
 

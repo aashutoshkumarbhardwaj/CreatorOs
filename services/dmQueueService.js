@@ -10,6 +10,7 @@ const {
 
 const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
+const DEFAULT_DM_REQUEST_TIMEOUT_MS = 15000;
 
 function createFallbackQueue() {
   return {
@@ -177,6 +178,7 @@ if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
 async function sendInstagramDM(recipientId, text, options = {}) {
   const accessToken = options.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
   const appId = process.env.INSTAGRAM_APP_ID;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_DM_REQUEST_TIMEOUT_MS;
 
   if (!accessToken || !appId) {
     const error = new Error(
@@ -192,19 +194,33 @@ async function sendInstagramDM(recipientId, text, options = {}) {
     );
   }
 
-  const response = await fetch("https://graph.facebook.com/v21.0/me/messages", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      "X-Ig-App-Id": appId,
-    },
-    body: JSON.stringify({
-      recipient: { id: recipientId },
-      messaging_type: "RESPONSE",
-      message: { text },
-    }),
-  });
+  let response;
+  try {
+    response = await fetch("https://graph.facebook.com/v21.0/me/messages", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Ig-App-Id": appId,
+      },
+      body: JSON.stringify({
+        recipient: { id: recipientId },
+        messaging_type: "RESPONSE",
+        message: { text },
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+      const timeoutError = new Error(
+        `Instagram DM request timed out after ${timeoutMs}ms`,
+        { cause: error },
+      );
+      timeoutError.code = "DM_REQUEST_TIMEOUT";
+      throw timeoutError;
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const errBody = await response.text();
