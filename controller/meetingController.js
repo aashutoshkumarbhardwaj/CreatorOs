@@ -425,6 +425,46 @@ exports.createBooking = async (req, res) => {
 
     const end = new Date(start.getTime() + eventType.duration * 60 * 1000);
 
+    const availability = eventType.availability || {};
+    const availabilityTimeZone = availability.timeZone || "UTC";
+    let localParts;
+    try {
+      localParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: availabilityTimeZone,
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(start).reduce((parts, part) => {
+        parts[part.type] = part.value;
+        return parts;
+      }, {});
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Event availability timezone is invalid" });
+    }
+
+    const weekdayMap = { Sun: "sun", Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri", Sat: "sat" };
+    const allowedDays = availability.days || ["mon", "tue", "wed", "thu", "fri"];
+    const localStartMinutes = Number(localParts.hour) * 60 + Number(localParts.minute);
+    const [startHour, startMinute] = (availability.startTime || "09:00").split(":").map(Number);
+    const [endHour, endMinute] = (availability.endTime || "17:00").split(":").map(Number);
+    const windowStart = startHour * 60 + startMinute;
+    const windowEnd = endHour * 60 + endMinute;
+    const endLocalParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: availabilityTimeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(end).reduce((parts, part) => {
+      parts[part.type] = part.value;
+      return parts;
+    }, {});
+    const localEndMinutes = Number(endLocalParts.hour) * 60 + Number(endLocalParts.minute);
+
+    if (!allowedDays.includes(weekdayMap[localParts.weekday]) || localStartMinutes < windowStart || localEndMinutes > windowEnd) {
+      return res.status(409).json({ success: false, message: "This time is outside the event availability window" });
+    }
+
     // Conflict check
     const existingConflict = await MeetingBooking.findOne({
       userId: creator._id,
