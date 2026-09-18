@@ -27,8 +27,16 @@ const requireTaskOwnership = async (req, res, next) => {
       return res.status(404).json({ success: false, error: "Task not found." });
     }
 
-    if (req.body && Object.prototype.hasOwnProperty.call(req.body, "creatorId")) {
+    if (req.body && typeof req.body === 'object') {
       delete req.body.creatorId;
+      delete req.body._id;
+      
+      // Strip MongoDB operators to prevent IDOR bypass
+      for (const key in req.body) {
+        if (key.startsWith('$')) {
+          delete req.body[key];
+        }
+      }
     }
 
     return next();

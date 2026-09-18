@@ -312,7 +312,19 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
+  const updates = { ...req.body };
+  // Prevent mass assignment of sensitive fields
+  delete updates._id;
+  delete updates.creatorId;
+
+  // Prevent MongoDB operator injection
+  for (const key in updates) {
+    if (key.startsWith("$")) {
+      delete updates[key];
+    }
+  }
+
+  const taskDoc = await Task.findByIdAndUpdate(taskId, updates, { new: true });
   res.json({ success: true, task: taskDoc });
 });
 
