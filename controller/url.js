@@ -340,16 +340,11 @@ async function handleListUserLinks(req, res) {
     limit: limit + 1,
     cursor,
     includeArchived,
+    archivedOnly: req.query?.archived === "only",
+    favoriteOnly: req.query?.favorite === "true",
   });
   const hasMore = entries.length > limit;
-  let pageEntries = hasMore ? entries.slice(0, limit) : entries;
-
-  if (req.query?.archived === "only") {
-    pageEntries = pageEntries.filter((e) => e.archived);
-  }
-  if (req.query?.favorite === "true") {
-    pageEntries = pageEntries.filter((e) => e.favorite);
-  }
+  const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
   const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
   const userStats = await Url.getStatsForUser(userId);
