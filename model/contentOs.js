@@ -253,7 +253,18 @@ class MockContentOsModel {
         const idx = mockItems.findIndex((item) => item._id?.toString() === id?.toString());
         if (idx === -1) return null;
         const current = mockItems[idx];
-        const updatedData = { ...current, ...(update.$set || update), updatedAt: new Date() };
+        const { $push, $pull, $set, ...plain } = update || {};
+        const updatedData = { ...current, ...($set || plain), updatedAt: new Date() };
+        // The controller appends and removes comments atomically; mirror that here.
+        if ($push && $push.comments) {
+            updatedData.comments = [...(current.comments || []), $push.comments];
+        }
+        if ($pull && $pull.comments) {
+            const removeId = $pull.comments._id?.toString();
+            updatedData.comments = (updatedData.comments || []).filter(
+                (c) => c._id?.toString() !== removeId
+            );
+        }
         mockItems[idx] = new MockContentOsModel(updatedData);
         return mockItems[idx];
     }
