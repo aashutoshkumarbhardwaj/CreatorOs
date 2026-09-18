@@ -35,7 +35,7 @@ const eventTypeSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: true,
-      default: 30, // in minutes
+      default: 30,
       min: 5,
       max: 480,
     },
