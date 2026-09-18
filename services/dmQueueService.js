@@ -2,6 +2,7 @@ const { Queue, Worker } = require("bullmq");
 const IORedis = require("ioredis");
 const Creator = require("../model/creator");
 const DmTrigger = require("../model/dmTrigger");
+const dmConsentService = require("./dmConsentService");
 
 const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
@@ -86,6 +87,24 @@ if (REDIS_URI) {
           }
 
           const responseText = matchedTrigger.responseUrl;
+
+          const allowed = await dmConsentService.canSend({
+            creatorId: creator.userId,
+            platform: "instagram",
+            recipientId: senderId,
+          });
+
+          if (!allowed) {
+            console.warn(
+              `[Worker] Message dispatch suppressed: recipient ${senderId} is opted out for creator ${creator.userId}.`,
+            );
+            return {
+              skipped: true,
+              suppressed: true,
+              reason: "recipient_opted_out",
+            };
+          }
+
           const result = await sendInstagramDM(senderId, responseText, {
             accessToken: creator.accessToken,
           });
@@ -211,4 +230,4 @@ async function sendInstagramDM(recipientId, text, options = {}) {
   return { success: true, messageId: data?.message_id || null };
 }
 
-module.exports = { dmQueue, sendInstagramDM };
+module.exports = { dmQueue, sendInstagramDM, dmWorker };

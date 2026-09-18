@@ -1,4 +1,6 @@
 const dmQueueService = require("../services/dmQueueService");
+const dmConsentService = require("../services/dmConsentService");
+const Creator = require("../model/creator");
 const asyncHandler = require("../utils/asyncHandler");
 
 const crypto = require("crypto");
@@ -169,6 +171,52 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
               console.log(
                 `[Webhook] Received message from ${senderId}: ${message.text}`,
               );
+
+              if (dmConsentService.isOptOutKeyword(message.text)) {
+                try {
+                  const creator = await Creator.findOne({
+                    platform: "instagram",
+                    platformId: recipientId,
+                  });
+                  if (creator && creator.userId) {
+                    await dmConsentService.recordOptOut({
+                      creatorId: creator.userId,
+                      platform: "instagram",
+                      recipientId: senderId,
+                      keyword: message.text,
+                    });
+                  }
+                  markProcessed(eventId);
+                  continue;
+                } catch (error) {
+                  enqueueFailed = true;
+                  console.warn(
+                    `[Webhook] Opt-out recording failed: ${error.message}`,
+                  );
+                  continue;
+                }
+              }
+
+              if (dmConsentService.isOptInKeyword(message.text)) {
+                try {
+                  const creator = await Creator.findOne({
+                    platform: "instagram",
+                    platformId: recipientId,
+                  });
+                  if (creator && creator.userId) {
+                    await dmConsentService.recordOptIn({
+                      creatorId: creator.userId,
+                      platform: "instagram",
+                      recipientId: senderId,
+                      keyword: message.text,
+                    });
+                  }
+                } catch (error) {
+                  console.warn(
+                    `[Webhook] Opt-in recording failed: ${error.message}`,
+                  );
+                }
+              }
 
               // Enqueue first; only mark processed after a successful add so Meta can retry on failure.
               try {
