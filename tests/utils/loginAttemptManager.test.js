@@ -65,8 +65,11 @@ describe('loginAttemptManager - getFailedLoginAttempts()', () => {
         expect(attempts).toBe(0);
     });
 
-    it('should return 0 when the key value is empty string or undefined', async () => {
-        mockGet.mockResolvedValue('');
+    it.each([
+        ['empty string', ''],
+        ['undefined', undefined],
+    ])('should return 0 when the key value is %s', async (_label, value) => {
+        mockGet.mockResolvedValue(value);
 
         const attempts = await getFailedLoginAttempts('user@example.com');
 
