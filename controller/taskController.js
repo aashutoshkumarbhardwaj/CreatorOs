@@ -358,7 +358,14 @@ const updateSubtasks = asyncHandler(async (req, res) => {
 const logTaskTime = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
   const { durationMinutes } = req.body;
-  const hours = Number(durationMinutes) / 60;
+  const minutes = Number(durationMinutes);
+  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 1440) {
+    return res.status(400).json({
+      success: false,
+      error: "Duration must be a positive number of minutes no greater than 1440.",
+    });
+  }
+  const hours = minutes / 60;
 
   if (isMockMode()) {
     const task = mockTasks.find((t) => t._id === taskId);
