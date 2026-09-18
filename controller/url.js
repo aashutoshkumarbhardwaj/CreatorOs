@@ -698,11 +698,7 @@ const handleDeleteShortURL = asyncHandler(async (req, res) => {
       });
   }
 
-  if (Url.findByIdAndDelete) {
-    await Url.findByIdAndDelete(entry._id || shortId);
-  } else if (Url.deleteOne) {
-    await Url.deleteOne({ shortId });
-  }
+  await Url.findByIdAndDelete(entry._id);
 
   return res.json({
     success: true,

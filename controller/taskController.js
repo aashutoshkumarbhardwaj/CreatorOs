@@ -312,7 +312,8 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
+  const { creatorId, _id, ...updates } = req.body;
+  const taskDoc = await Task.findByIdAndUpdate(taskId, updates, { new: true });
   res.json({ success: true, task: taskDoc });
 });
 

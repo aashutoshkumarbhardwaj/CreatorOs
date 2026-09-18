@@ -21,7 +21,7 @@ describe('DM Queue Service sendInstagramDM', () => {
         }
     });
 
-    it('throws an error when Instagram DM configuration is missing', async () => {
+    it('returns a configuration error when the app id is missing', async () => {
         delete process.env.INSTAGRAM_ACCESS_TOKEN;
         delete process.env.INSTAGRAM_APP_ID;
 
@@ -31,8 +31,19 @@ describe('DM Queue Service sendInstagramDM', () => {
             });
     });
 
-    it('makes an outbound POST request to the Instagram Graph API', async () => {
-        process.env.INSTAGRAM_ACCESS_TOKEN = 'test_page_token';
+    it('requires an explicit creator access token even when a global token exists', async () => {
+        process.env.INSTAGRAM_ACCESS_TOKEN = 'global_token';
+        process.env.INSTAGRAM_APP_ID = 'test_app_id';
+
+        await expect(sendInstagramDM('12345', 'Hello!'))
+            .rejects.toMatchObject({
+                code: 'DM_CREDENTIAL_MISSING',
+            });
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('uses the supplied creator access token for the outbound request', async () => {
+        process.env.INSTAGRAM_ACCESS_TOKEN = 'global_token';
         process.env.INSTAGRAM_APP_ID = 'test_app_id';
 
         global.fetch = jest.fn().mockResolvedValue({
@@ -40,7 +51,9 @@ describe('DM Queue Service sendInstagramDM', () => {
             json: async () => ({ message_id: 'mid.100' }),
         });
 
-        const result = await sendInstagramDM('12345', 'Hello Instagram!');
+        const result = await sendInstagramDM('12345', 'Hello Instagram!', {
+            accessToken: 'creator_token_a',
+        });
 
         expect(global.fetch).toHaveBeenCalledTimes(1);
         const [url, options] = global.fetch.mock.calls[0];
@@ -48,7 +61,7 @@ describe('DM Queue Service sendInstagramDM', () => {
         expect(url).toBe('https://graph.facebook.com/v21.0/me/messages');
         expect(options.method).toBe('POST');
         expect(options.headers).toEqual({
-            Authorization: 'Bearer test_page_token',
+            Authorization: 'Bearer creator_token_a',
             'Content-Type': 'application/json',
             'X-Ig-App-Id': 'test_app_id',
         });
