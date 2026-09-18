@@ -13,6 +13,14 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function pickFields(source, fields) {
+  return Object.fromEntries(
+    fields
+      .filter((field) => Object.prototype.hasOwnProperty.call(source, field))
+      .map((field) => [field, source[field]])
+  );
+}
+
 async function seedInitialCrmData(userId) {
   const dealCount = await CrmDeal.countDocuments({ creatorId: userId });
   const brandCount = await CrmBrand.countDocuments({ creatorId: userId });
@@ -309,9 +317,13 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const updates = pickFields(req.body, [
+    "companyName", "category", "contactName", "contactEmail", "contactPhone",
+    "website", "socialLinks", "status", "notes",
+  ]);
   const brand = await CrmBrand.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updates },
     { new: true, runValidators: true }
   );
 
@@ -382,9 +394,13 @@ const createDeal = asyncHandler(async (req, res) => {
 
 const updateDeal = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const updates = pickFields(req.body, [
+    "dealName", "companyName", "category", "contactName", "contactEmail",
+    "stage", "amount", "deliverables", "statusTag", "notes",
+  ]);
   const deal = await CrmDeal.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updates },
     { new: true, runValidators: true }
   );
 
@@ -483,9 +499,12 @@ const createInvoice = asyncHandler(async (req, res) => {
 
 const updateInvoice = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const updates = pickFields(req.body, [
+    "companyName", "invoiceName", "amount", "status", "dueDate", "notes",
+  ]);
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updates },
     { new: true, runValidators: true }
   );
 
