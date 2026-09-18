@@ -31,6 +31,7 @@ describe('requireTaskOwnership', () => {
     Object.defineProperty(mongoose.connection, 'readyState', {
       configurable: true,
       value: 1,
+      writable: true,
     });
   });
 
@@ -39,6 +40,7 @@ describe('requireTaskOwnership', () => {
     Object.defineProperty(mongoose.connection, 'readyState', {
       configurable: true,
       value: originalReadyState,
+      writable: true,
     });
   });
 
@@ -63,6 +65,33 @@ describe('requireTaskOwnership', () => {
     expect(req.body.creatorId).toBeUndefined();
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(200);
+  });
+
+  it('strips MongoDB operators from req.body to prevent IDOR bypass', async () => {
+    const taskId = new mongoose.Types.ObjectId().toString();
+    const creatorId = new mongoose.Types.ObjectId().toString();
+    const select = jest.fn().mockReturnThis();
+    const lean = jest.fn().mockResolvedValue({ _id: taskId });
+    Task.findOne.mockReturnValue({ select, lean });
+
+    const req = {
+      user: { id: creatorId },
+      params: { id: taskId },
+      body: { 
+        title: 'Nice update',
+        $set: { creatorId: 'attacker_id' },
+        $push: { subtasks: {} }
+      },
+    };
+    const res = mockRes();
+    const next = jest.fn();
+
+    await requireTaskOwnership(req, res, next);
+
+    expect(req.body.$set).toBeUndefined();
+    expect(req.body.$push).toBeUndefined();
+    expect(req.body.title).toBe('Nice update');
+    expect(next).toHaveBeenCalledTimes(1);
   });
 
   it('rejects access when the task belongs to another creator', async () => {
