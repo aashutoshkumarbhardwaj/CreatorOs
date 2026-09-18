@@ -310,9 +310,10 @@ const updateTask = asyncHandler(async (req, res) => {
   ];
   
   const updates = {};
+  const body = req.body || {};
   for (const field of allowedFields) {
-    if (req.body[field] !== undefined) {
-      updates[field] = req.body[field];
+    if (body[field] !== undefined) {
+      updates[field] = body[field];
     }
   }
 
