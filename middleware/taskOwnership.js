@@ -31,12 +31,24 @@ const requireTaskOwnership = async (req, res, next) => {
       delete req.body.creatorId;
       delete req.body._id;
       
-      // Strip MongoDB operators to prevent IDOR bypass
-      for (const key in req.body) {
-        if (key.startsWith('$')) {
-          delete req.body[key];
+      const stripMongoOperators = (obj) => {
+        if (!obj || typeof obj !== 'object') return;
+        
+        if (Array.isArray(obj)) {
+          obj.forEach(stripMongoOperators);
+          return;
         }
-      }
+
+        for (const key in obj) {
+          if (key.startsWith('$')) {
+            delete obj[key];
+          } else {
+            stripMongoOperators(obj[key]);
+          }
+        }
+      };
+
+      stripMongoOperators(req.body);
     }
 
     return next();

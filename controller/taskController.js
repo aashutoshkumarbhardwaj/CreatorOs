@@ -303,19 +303,10 @@ const createTask = asyncHandler(async (req, res) => {
 const updateTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
 
-  if (isMockMode()) {
-    const idx = mockTasks.findIndex((t) => t._id === taskId);
-    if (idx === -1) return res.status(404).json({ success: false, error: "Task not found." });
-
-    const updated = { ...mockTasks[idx], ...req.body, updatedAt: new Date() };
-    mockTasks[idx] = updated;
-    return res.json({ success: true, task: updated });
-  }
-
   const allowedFields = [
     "title", "description", "status", "priority", "category", 
     "tags", "startDate", "dueDate", "estimatedHours", 
-    "subtasks", "dependencies"
+    "subtasks"
   ];
   
   const updates = {};
@@ -323,6 +314,15 @@ const updateTask = asyncHandler(async (req, res) => {
     if (req.body[field] !== undefined) {
       updates[field] = req.body[field];
     }
+  }
+
+  if (isMockMode()) {
+    const idx = mockTasks.findIndex((t) => t._id === taskId);
+    if (idx === -1) return res.status(404).json({ success: false, error: "Task not found." });
+
+    const updated = { ...mockTasks[idx], ...updates, updatedAt: new Date() };
+    mockTasks[idx] = updated;
+    return res.json({ success: true, task: updated });
   }
 
   const taskDoc = await Task.findByIdAndUpdate(taskId, { $set: updates }, { new: true });

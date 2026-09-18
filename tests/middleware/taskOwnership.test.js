@@ -67,7 +67,7 @@ describe('requireTaskOwnership', () => {
     expect(res.statusCode).toBe(200);
   });
 
-  it('strips MongoDB operators from req.body to prevent IDOR bypass', async () => {
+  it('strips MongoDB operators recursively from req.body to prevent IDOR bypass', async () => {
     const taskId = new mongoose.Types.ObjectId().toString();
     const creatorId = new mongoose.Types.ObjectId().toString();
     const select = jest.fn().mockReturnThis();
@@ -80,7 +80,15 @@ describe('requireTaskOwnership', () => {
       body: { 
         title: 'Nice update',
         $set: { creatorId: 'attacker_id' },
-        $push: { subtasks: {} }
+        $push: { subtasks: {} },
+        nestedObject: {
+          $inc: { spentHours: 1 },
+          validKey: 'value'
+        },
+        nestedArray: [
+          { $set: { hacked: true } },
+          { valid: true }
+        ]
       },
     };
     const res = mockRes();
@@ -90,6 +98,10 @@ describe('requireTaskOwnership', () => {
 
     expect(req.body.$set).toBeUndefined();
     expect(req.body.$push).toBeUndefined();
+    expect(req.body.nestedObject.$inc).toBeUndefined();
+    expect(req.body.nestedObject.validKey).toBe('value');
+    expect(req.body.nestedArray[0].$set).toBeUndefined();
+    expect(req.body.nestedArray[1].valid).toBe(true);
     expect(req.body.title).toBe('Nice update');
     expect(next).toHaveBeenCalledTimes(1);
   });
