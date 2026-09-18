@@ -429,10 +429,8 @@ exports.createBooking = async (req, res) => {
     const existingConflict = await MeetingBooking.findOne({
       userId: creator._id,
       status: "scheduled",
-      $or: [
-        { startTime: { $lt: end, $gte: start } },
-        { endTime: { $gt: start, $lte: end } },
-      ],
+      startTime: { $lt: end },
+      endTime: { $gt: start },
     });
 
     if (existingConflict) {
