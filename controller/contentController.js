@@ -199,6 +199,7 @@ const bulkScheduleContent = asyncHandler(async (req, res) => {
         const fields = parseCSVLine(lines[i]);
         const caption = fields[captionIdx];
         const scheduledAt = fields[scheduledAtIdx];
+        const mediaUrl = mediaUrlIdx !== -1 ? fields[mediaUrlIdx]?.trim() : "";
 
         if (!caption || !scheduledAt) {
             results.errors.push({ row: i + 1, reason: 'Missing caption or scheduledAt' });
@@ -211,11 +212,16 @@ const bulkScheduleContent = asyncHandler(async (req, res) => {
             continue;
         }
 
+        if (mediaUrl && !isValidUrl(mediaUrl)) {
+            results.errors.push({ row: i + 1, reason: 'mediaUrl must be a valid HTTP or HTTPS URL' });
+            continue;
+        }
+
         try {
             await ScheduledContent.create({
                 userId: req.user.id,
                 caption: caption.trim(),
-                mediaUrl: mediaUrlIdx !== -1 ? fields[mediaUrlIdx] : undefined,
+                mediaUrl: mediaUrl || undefined,
                 timezone: 'UTC',
                 scheduledAt: scheduledDate,
                 accountId: accountIdIdx !== -1 && fields[accountIdIdx] ? fields[accountIdIdx] : undefined,

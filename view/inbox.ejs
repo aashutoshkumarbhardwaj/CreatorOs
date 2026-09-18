@@ -66,37 +66,28 @@
                 placeholder="Search messages..."
                 class="inbox-search">
 
-            <div class="message-card"
-            data-channel="email"
-            data-title="Brand Collaboration"
-            data-sender="Nike"
-            data-read="false"
-            data-important="true"
-            data-archived="false">
+            <% if (messages && messages.length) { %>
+                <% messages.forEach((message) => { %>
+                    <div class="message-card"
+                    data-channel="<%= message.channel %>"
+                    data-title="<%= message.subject || '' %>"
+                    data-sender="<%= message.sender %>"
+                    data-time="<%= message.createdAt ? new Date(message.createdAt).toLocaleString() : '' %>"
+                    data-body="<%= message.body || '' %>"
+                    data-read="<%= message.read %>"
+                    data-important="<%= message.important %>"
+                    data-archived="<%= message.archived %>">
 
-                <h4>📧 Brand Collaboration <span class="badge-retro">⭐ Important</span></h4>
-
-                <p>Nike <span class="badge-retro">Unread</span> </p>
-
-                <small>2 hours ago</small>
-
-            </div>
-
-            <div class="message-card"
-            data-channel="instagram"
-            data-title="Instagram DM"
-            data-sender="creator_support"
-            data-read="true"
-            data-important="false"
-            data-archived="false">
-
-                <h4>📱 Instagram DM</h4>
-
-                <p>@creator_support</p>
-
-                <small>Yesterday</small>
-
-            </div>
+                        <h4><%= message.channel %> <%= message.subject || 'Message' %>
+                            <% if (message.important) { %><span class="badge-retro">⭐ Important</span><% } %>
+                        </h4>
+                        <p><%= message.sender %> <% if (!message.read) { %><span class="badge-retro">Unread</span><% } %></p>
+                        <small><%= message.createdAt ? new Date(message.createdAt).toLocaleString() : '' %></small>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <p class="inbox-empty-state">No messages yet.</p>
+            <% } %>
 
         </div>
 
@@ -125,22 +116,7 @@
                 Hi, We'd love to collaborate with you on our next campaign...
             </p>
 
-            <textarea
-                id="replyBox"
-                rows="6"
-                placeholder="Write your reply...">
-            </textarea>
-
-            <br><br>
-
             <div class="action-buttons">
-
-                <button
-                    id="replyBtn"
-                    class="badge-retro">
-                    Reply
-                </button>
-
                 <button
                     id="readBtn"
                     class="badge-retro">

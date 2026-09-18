@@ -71,7 +71,6 @@ const notificationSchema = new mongoose.Schema(
         },
         deduplicationKey: {
             type: String,
-            index: true,
         },
         metadata: {
             type: mongoose.Schema.Types.Mixed,
@@ -97,7 +96,13 @@ const notificationSchema = new mongoose.Schema(
 
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, status: 1 });
-notificationSchema.index({ userId: 1, deduplicationKey: 1, createdAt: -1 });
+notificationSchema.index(
+    { userId: 1, deduplicationKey: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { deduplicationKey: { $type: "string" } },
+    }
+);
 
 const NotificationModel =
     mongoose.models.Notification || mongoose.model("Notification", notificationSchema);
