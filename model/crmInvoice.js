@@ -50,5 +50,7 @@ const crmInvoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+crmInvoiceSchema.index({ creatorId: 1, invoiceNumber: 1 }, { unique: true, sparse: true });
+
 module.exports =
   mongoose.models.CrmInvoice || mongoose.model("CrmInvoice", crmInvoiceSchema);
