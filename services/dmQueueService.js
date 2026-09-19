@@ -2,6 +2,11 @@ const { Queue, Worker } = require("bullmq");
 const IORedis = require("ioredis");
 const Creator = require("../model/creator");
 const DmTrigger = require("../model/dmTrigger");
+const {
+  reserveDmDelivery,
+  markDmDeliverySent,
+  releaseDmDelivery,
+} = require("./dmDeliveryService");
 
 const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
@@ -53,7 +58,7 @@ if (REDIS_URI) {
     dmWorker = new Worker(
       "dm-automation-queue",
       async (job) => {
-        const { senderId, recipientId, message } = job.data;
+        const { senderId, recipientId, message, eventId } = job.data;
 
         console.log(`[Worker] Processing job ${job.id} for sender ${senderId}`);
 
@@ -85,13 +90,40 @@ if (REDIS_URI) {
             return { skipped: true, reason: "no_matching_trigger" };
           }
 
-          const responseText = matchedTrigger.responseUrl;
-          const result = await sendInstagramDM(senderId, responseText, {
-            accessToken: creator.accessToken,
-          });
+          const deliveryEventId = eventId || job.id;
+          const reservation = await reserveDmDelivery(
+            creator._id,
+            deliveryEventId,
+          );
 
-          console.log(`[Worker] Successfully processed job ${job.id}`);
-          return result;
+          if (!reservation.claimed) {
+            return {
+              skipped: true,
+              reason:
+                reservation.delivery.status === "sent"
+                  ? "already_sent"
+                  : "already_reserved",
+            };
+          }
+
+          try {
+            const responseText = matchedTrigger.responseUrl;
+            const result = await sendInstagramDM(senderId, responseText, {
+              accessToken: creator.accessToken,
+            });
+
+            await markDmDeliverySent(
+              creator._id,
+              deliveryEventId,
+              result.messageId,
+            );
+
+            console.log(`[Worker] Successfully processed job ${job.id}`);
+            return result;
+          } catch (error) {
+            await releaseDmDelivery(creator._id, deliveryEventId);
+            throw error;
+          }
         } catch (error) {
           if (error.status === 429 || error.code === 429) {
             console.warn(
@@ -144,15 +176,23 @@ if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
 }
 
 async function sendInstagramDM(recipientId, text, options = {}) {
-  const accessToken = options.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
+  const accessToken = options.accessToken;
   const appId = process.env.INSTAGRAM_APP_ID;
   const timeoutMs = options.timeoutMs ?? DEFAULT_DM_REQUEST_TIMEOUT_MS;
 
-  if (!accessToken || !appId) {
+  if (!appId) {
     const error = new Error(
-      "Instagram DM automation is not configured: INSTAGRAM_APP_ID and INSTAGRAM_ACCESS_TOKEN are required.",
+      "Instagram DM automation is not configured: INSTAGRAM_APP_ID is required.",
     );
     error.code = "DM_NOT_CONFIGURED";
+    throw error;
+  }
+
+  if (!accessToken) {
+    const error = new Error(
+      "Instagram creator access token is required for outbound DM delivery.",
+    );
+    error.code = "DM_CREDENTIAL_MISSING";
     throw error;
   }
 
