@@ -29,6 +29,25 @@ describe("OAuth state token", () => {
     expect(validateState(`${encoded}.badsignature`)).toBeNull();
   });
 
+  it("rejects a shorter signature without throwing RangeError", () => {
+    const state = generateState(userId);
+    const [encoded] = state.split(".");
+    expect(validateState(`${encoded}.short`)).toBeNull();
+  });
+
+  it("rejects a longer signature without throwing RangeError", () => {
+    const state = generateState(userId);
+    const [encoded] = state.split(".");
+    expect(validateState(`${encoded}.anextremelylongtamperedsignaturethatismuchlongerthanexpected`)).toBeNull();
+  });
+
+  it("rejects an invalid signature of the exact same length", () => {
+    const state = generateState(userId);
+    const [encoded, sig] = state.split(".");
+    const corruptedSig = "x".repeat(sig.length);
+    expect(validateState(`${encoded}.${corruptedSig}`)).toBeNull();
+  });
+
   it("rejects an expired token", () => {
     const origNow = Date.now;
     const state = generateState(userId);
