@@ -11,17 +11,25 @@ function escapeHtml(str) {
 }
 
 function getEmailConfig() {
-  const {
-    EMAIL_SERVICE,
-    EMAIL_HOST,
-    EMAIL_PORT,
-    EMAIL_SECURE,
-    EMAIL_USER,
-    EMAIL_PASSWORD,
-    EMAIL_FROM_NAME,
-    EMAIL_FROM,
-    EMAIL_REPLY_TO,
-  } = process.env;
+  const EMAIL_SERVICE = process.env.EMAIL_SERVICE;
+  const EMAIL_HOST = process.env.EMAIL_HOST || process.env.SMTP_HOST || process.env.MAIL_HOST;
+  const EMAIL_PORT = process.env.EMAIL_PORT || process.env.SMTP_PORT || process.env.MAIL_PORT;
+  const EMAIL_SECURE = process.env.EMAIL_SECURE;
+  const EMAIL_USER =
+    process.env.EMAIL_USER ||
+    process.env.SMTP_USER ||
+    process.env.SMTP_USERNAME ||
+    process.env.MAIL_USERNAME ||
+    process.env.SPRING_MAIL_USERNAME;
+  const EMAIL_PASSWORD =
+    process.env.EMAIL_PASSWORD ||
+    process.env.SMTP_PASSWORD ||
+    process.env.MAIL_PASSWORD ||
+    process.env.EMAIL_PASS ||
+    process.env.SPRING_MAIL_PASSWORD;
+  const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME;
+  const EMAIL_FROM = process.env.EMAIL_FROM;
+  const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO;
 
   return {
     EMAIL_SERVICE,
@@ -89,15 +97,17 @@ function createTransporter() {
  * @returns {boolean}
  */
 function isEmailTransportConfigured() {
-  const currentEmailUser = process.env.EMAIL_USER;
-  const currentEmailPassword = process.env.EMAIL_PASSWORD;
-  const currentEmailService = process.env.EMAIL_SERVICE;
-  const currentEmailHost = process.env.EMAIL_HOST;
+  const {
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+    EMAIL_SERVICE,
+    EMAIL_HOST,
+  } = getEmailConfig();
 
   return Boolean(
-    currentEmailUser &&
-    currentEmailPassword &&
-    (currentEmailService || currentEmailHost)
+    EMAIL_USER &&
+    EMAIL_PASSWORD &&
+    (EMAIL_SERVICE || EMAIL_HOST)
   );
 }
 

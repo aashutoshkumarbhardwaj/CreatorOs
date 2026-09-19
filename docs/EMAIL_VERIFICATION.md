@@ -488,8 +488,8 @@ APP_URL=https://<your_production_domain>        # Must be set for production
 ### Example: Gmail Setup
 
 ```bash
-EMAIL_USER=creatorOS@gmail.com
-EMAIL_PASSWORD=abcd efgh ijkl mnop    # Gmail App Password
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_google_app_password
 EMAIL_SERVICE=gmail
 EMAIL_FROM_NAME=CreatorOS
 ```

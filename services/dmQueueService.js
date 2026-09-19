@@ -251,4 +251,4 @@ async function sendInstagramDM(recipientId, text, options = {}) {
   return { success: true, messageId: data?.message_id || null };
 }
 
-module.exports = { dmQueue, sendInstagramDM };
+module.exports = { dmQueue, dmWorker, sendInstagramDM };

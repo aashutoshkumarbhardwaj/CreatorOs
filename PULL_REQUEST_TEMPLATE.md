@@ -240,8 +240,8 @@ JWT_SECRET=your-secret-key       # Already required
 ### Example: Gmail Configuration
 
 ```bash
-EMAIL_USER=creatorOS@gmail.com
-EMAIL_PASSWORD=abcd efgh ijkl mnop  # Gmail App Password
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_google_app_password
 EMAIL_SERVICE=gmail
 EMAIL_FROM_NAME=CreatorOS
 ```
