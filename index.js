@@ -540,9 +540,7 @@ app.get(
       .select("name email alias bio")
       .lean();
 
-    const bioProfile = userDoc?.alias
-      ? await BioProfile.findOne({ userId: req.user.id }).lean()
-      : null;
+    const bioProfile = await BioProfile.findOne({ userId: req.user.id }).lean();
 
     return res.render("bio-editor", {
       services,
@@ -654,10 +652,10 @@ app.post(
     const updateData = {
       userId: userDoc._id,
       handle: userHandle,
-      name: name || userDoc.name,
-      bio: bio || userDoc.bio,
+      name: name !== undefined ? name : userDoc.name,
+      bio: bio !== undefined ? bio : (userDoc.bio || ''),
       tags: tags || [],
-      avatarUrl: avatarUrl || userDoc.avatar,
+      avatarUrl: avatarUrl !== undefined ? avatarUrl : (userDoc.avatar || null),
       links: links || [],
       ...(theme !== undefined && { theme }),
       ...(layout !== undefined && { layout }),
@@ -671,8 +669,8 @@ app.post(
 
     const bioProfile = await BioProfile.findOneAndUpdate(
       { userId: userDoc._id },
-      updateData,
-      { new: true, upsert: true },
+      { $set: updateData },
+      { new: true, upsert: true, runValidators: true },
     );
 
     await invalidateProfileCache(userHandle);
