@@ -34,7 +34,13 @@ function validateState(state) {
     .update(encoded)
     .digest("base64url");
 
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+  const sigBuf = Buffer.from(sig);
+  const expectedSigBuf = Buffer.from(expectedSig);
+
+  if (
+    sigBuf.length !== expectedSigBuf.length ||
+    !crypto.timingSafeEqual(sigBuf, expectedSigBuf)
+  ) {
     return null;
   }
 
