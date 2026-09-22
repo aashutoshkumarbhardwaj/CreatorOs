@@ -35,4 +35,22 @@ describe('Task Model Test Suite', () => {
     expect(task.estimatedHours).toBe(0);
     expect(task.spentHours).toBe(0);
   });
+
+  it('should invalidate task creation with negative spentHours', async () => {
+    const task = new Task({
+      creatorId: new mongoose.Types.ObjectId(),
+      title: 'Script YouTube Video',
+      spentHours: -1,
+    });
+
+    let err;
+    try {
+      await task.validate();
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err).toBeDefined();
+    expect(err.errors.spentHours).toBeDefined();
+  });
 });
