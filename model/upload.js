@@ -12,7 +12,7 @@ const uploadSchema = new mongoose.Schema(
     hfPath: { type: String, required: true },
     url: { type: String, required: true },
     mimetype: { type: String, required: true },
-    size: { type: Number, required: true },
+    size: { type: Number, required: true, min: [0, 'File size cannot be negative'] },
     folder: { type: String, default: "" },
   },
   { timestamps: true },
