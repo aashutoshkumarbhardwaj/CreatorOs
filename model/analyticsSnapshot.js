@@ -10,6 +10,7 @@ const analyticsSnapshotSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Creator",
             required: true,
+            immutable: true,
         },
         platform: {
             type: String,
