@@ -90,12 +90,12 @@ const contentOsSchema = new mongoose.Schema(
             default: null,
         },
         performance: {
-            impressions: { type: Number, default: 0 },
-            views: { type: Number, default: 0 },
-            engagementRate: { type: Number, default: 0 },
-            clicks: { type: Number, default: 0 },
-            likes: { type: Number, default: 0 },
-            shares: { type: Number, default: 0 },
+            impressions: { type: Number, default: 0, min: [0, 'impressions cannot be negative'] },
+            views: { type: Number, default: 0, min: [0, 'views cannot be negative'] },
+            engagementRate: { type: Number, default: 0, min: [0, 'engagementRate cannot be negative'], max: [100, 'engagementRate cannot exceed 100'] },
+            clicks: { type: Number, default: 0, min: [0, 'clicks cannot be negative'] },
+            likes: { type: Number, default: 0, min: [0, 'likes cannot be negative'] },
+            shares: { type: Number, default: 0, min: [0, 'shares cannot be negative'] },
         },
         comments: [
             {
