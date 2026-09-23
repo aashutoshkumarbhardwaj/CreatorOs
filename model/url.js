@@ -26,6 +26,7 @@ const urlSchema = new mongoose.Schema({
   totalClicks: {
     type: Number,
     default: 0,
+    min: [0, 'Click count cannot be negative'],
   },
   qrFgColor: {
     type: String,
