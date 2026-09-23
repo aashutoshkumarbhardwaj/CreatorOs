@@ -46,17 +46,32 @@ function validateRequest(validations, viewName = null, buildLocals = () => ({}))
 /**
  * Middleware to sanitize query parameters from potential NoSQL injection objects.
  */
-function sanitizeNoSqlQuery(queryKeys = ['q', 'stage', 'category', 'status', 'type', 'platform', 'priority', 'search', 'folderId', 'tag']) {
+function sanitizeNoSqlQuery(queryKeys = ['q', 'stage', 'category', 'status', 'type', 'platform', 'priority', 'search', 'folderId', 'tag', 'isArchived', 'page', 'limit']) {
   return (req, res, next) => {
     if (req.query && typeof req.query === 'object') {
+      // In Express 5, req.query is a getter that computes the query every time it's accessed.
+      // We must cache the object, modify it, and overwrite the getter.
+      const sanitizedQuery = { ...req.query };
+      let modified = false;
+
       for (const key of queryKeys) {
-        if (req.query[key] !== undefined) {
-          if (typeof req.query[key] === 'object' && req.query[key] !== null) {
-            delete req.query[key];
+        if (sanitizedQuery[key] !== undefined) {
+          if (typeof sanitizedQuery[key] === 'object' && sanitizedQuery[key] !== null) {
+            delete sanitizedQuery[key];
+            modified = true;
           } else {
-            req.query[key] = String(req.query[key]).trim();
+            sanitizedQuery[key] = String(sanitizedQuery[key]).trim();
+            modified = true;
           }
         }
+      }
+
+      if (modified) {
+        Object.defineProperty(req, 'query', {
+          value: sanitizedQuery,
+          configurable: true,
+          enumerable: true
+        });
       }
     }
     next();

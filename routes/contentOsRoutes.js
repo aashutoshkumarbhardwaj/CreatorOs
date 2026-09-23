@@ -24,8 +24,9 @@ const {
     contentOsItemValidator,
     contentOsFolderValidator,
     contentOsAiValidator,
-    sanitizeNoSqlQuery,
 } = require('../middleware/validators');
+
+const { sanitizeNoSqlQuery } = require('../middleware/validators/common');
 
 const { aiGenerationLimiter } = require('../middleware/rateLimiters');
 
