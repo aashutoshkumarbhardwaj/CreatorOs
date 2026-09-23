@@ -24,6 +24,7 @@ const {
     contentOsItemValidator,
     contentOsFolderValidator,
     contentOsAiValidator,
+    sanitizeNoSqlQuery,
 } = require('../middleware/validators');
 
 const { aiGenerationLimiter } = require('../middleware/rateLimiters');
@@ -37,7 +38,7 @@ const { aiGenerationLimiter } = require('../middleware/rateLimiters');
 router.get('/', renderPage);
 
 // API Endpoints for Content OS Items
-router.get('/api/items', listItems);
+router.get('/api/items', sanitizeNoSqlQuery(), listItems);
 router.post('/api/items', contentOsItemValidator, createItem);
 router.get('/api/items/:id', getItemById);
 router.put('/api/items/:id', updateItem);

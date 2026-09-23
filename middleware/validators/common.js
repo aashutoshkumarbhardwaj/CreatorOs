@@ -46,7 +46,7 @@ function validateRequest(validations, viewName = null, buildLocals = () => ({}))
 /**
  * Middleware to sanitize query parameters from potential NoSQL injection objects.
  */
-function sanitizeNoSqlQuery(queryKeys = ['q', 'stage', 'category', 'status', 'type', 'platform', 'priority']) {
+function sanitizeNoSqlQuery(queryKeys = ['q', 'stage', 'category', 'status', 'type', 'platform', 'priority', 'search', 'folderId', 'tag']) {
   return (req, res, next) => {
     if (req.query && typeof req.query === 'object') {
       for (const key of queryKeys) {
