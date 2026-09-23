@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("crypto");
 const asyncHandler = require("../utils/asyncHandler");
+const mongoose = require("mongoose");
 const services = require("../services.config");
 const AssistantChat = require("../model/assistantChat");
 const ContentOs = require("../model/contentOs");
@@ -134,6 +135,8 @@ const getChats = asyncHandler(async (req, res) => {
  * Retrieves a specific chat thread.
  */
 const getChatById = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid chat ID" });
   const userId = req.user?.id || req.user?._id;
   const chat = await AssistantChat.findOne({ _id: req.params.id, userId }).lean();
 
@@ -149,6 +152,8 @@ const getChatById = asyncHandler(async (req, res) => {
  * Deletes a chat thread.
  */
 const deleteChat = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid chat ID" });
   const userId = req.user?.id || req.user?._id;
   const result = await AssistantChat.deleteOne({ _id: req.params.id, userId });
 
