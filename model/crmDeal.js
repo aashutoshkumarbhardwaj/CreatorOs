@@ -106,5 +106,7 @@ const crmDealSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+crmDealSchema.index({ creatorId: 1, createdAt: -1 });
+
 module.exports =
   mongoose.models.CrmDeal || mongoose.model("CrmDeal", crmDealSchema);
