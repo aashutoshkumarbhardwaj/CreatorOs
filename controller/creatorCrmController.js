@@ -1,4 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
+const mongoose = require("mongoose");
 const CrmBrand = require("../model/crmBrand");
 const CrmDeal = require("../model/crmDeal");
 const CrmInvoice = require("../model/crmInvoice");
@@ -320,6 +321,8 @@ const updateBrand = asyncHandler(async (req, res) => {
 });
 
 const deleteBrand = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid brand ID" });
   const userId = getUserId(req);
   const brand = await CrmBrand.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!brand) return res.status(404).json({ success: false, message: "Brand not found" });
@@ -327,6 +330,8 @@ const deleteBrand = asyncHandler(async (req, res) => {
 });
 
 const addContactHistory = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid brand ID" });
   const userId = getUserId(req);
   const { type, note } = req.body;
 
@@ -393,6 +398,8 @@ const updateDeal = asyncHandler(async (req, res) => {
 });
 
 const deleteDeal = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
   const userId = getUserId(req);
   const deal = await CrmDeal.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
@@ -400,6 +407,8 @@ const deleteDeal = asyncHandler(async (req, res) => {
 });
 
 const addTaskToDeal = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
   const userId = getUserId(req);
   const { title, dueDate, priority } = req.body;
 
@@ -494,6 +503,8 @@ const updateInvoice = asyncHandler(async (req, res) => {
 });
 
 const deleteInvoice = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid invoice ID" });
   const userId = getUserId(req);
   const invoice = await CrmInvoice.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
@@ -501,6 +512,8 @@ const deleteInvoice = asyncHandler(async (req, res) => {
 });
 
 const markInvoicePaid = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid invoice ID" });
   const userId = getUserId(req);
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
