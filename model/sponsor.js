@@ -25,6 +25,7 @@ const sponsorSchema = new mongoose.Schema({
     value: {
         type: Number,
         default: 0,
+        min: [0, 'Sponsor value cannot be negative'],
     },
     notes: {
         type: String,
