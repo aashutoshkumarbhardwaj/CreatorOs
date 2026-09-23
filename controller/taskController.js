@@ -1,6 +1,7 @@
 const Task = require("../model/task");
 const User = require("../model/user");
 const Invite = require("../model/invite");
+const mongoose = require("mongoose");
 const asyncHandler = require("../utils/asyncHandler");
 const escapeRegex = require("../utils/escapeRegex");
 const mongoose = require("mongoose");
@@ -230,6 +231,9 @@ const getTaskById = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+
   const task = await Task.findOne({ _id: req.params.id, creatorId })
     .populate("dependencies", "title status priority dueDate")
     .lean();
@@ -312,6 +316,9 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+
   const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
   res.json({ success: true, task: taskDoc });
 });
@@ -329,6 +336,9 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     task.status = status;
     return res.json({ success: true, task });
   }
+
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
 
   const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
   res.json({ success: true, task: taskDoc });
@@ -348,6 +358,9 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+
   const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true });
   res.json({ success: true, task: taskDoc });
 });
@@ -366,6 +379,9 @@ const logTaskTime = asyncHandler(async (req, res) => {
     task.spentHours = Math.round(((task.spentHours || 0) + hours) * 100) / 100;
     return res.json({ success: true, task });
   }
+
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
 
   const taskDoc = await Task.findById(taskId);
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
@@ -389,6 +405,9 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+
   const taskDoc = await Task.findById(taskId);
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   taskDoc.isArchived = !taskDoc.isArchived;
@@ -406,6 +425,9 @@ const deleteTask = asyncHandler(async (req, res) => {
     mockTasks = mockTasks.filter((t) => t._id !== taskId);
     return res.json({ success: true, message: "Task deleted successfully." });
   }
+
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
 
   await Task.findByIdAndDelete(taskId);
   res.json({ success: true, message: "Task deleted successfully." });
