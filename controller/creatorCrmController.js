@@ -363,6 +363,11 @@ const createDeal = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Deal name and company name are required" });
   }
 
+  const parsedAmount = amount !== undefined && amount !== null ? Number(amount) : 0;
+  if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+    return res.status(400).json({ success: false, message: "Amount must be a non-negative number" });
+  }
+
   const deal = await CrmDeal.create({
     creatorId: userId,
     dealName,
@@ -371,7 +376,7 @@ const createDeal = asyncHandler(async (req, res) => {
     contactName,
     contactEmail,
     stage: stage || "lead",
-    amount: Number(amount) || 0,
+    amount: parsedAmount,
     deliverables,
     statusTag,
     notes,
