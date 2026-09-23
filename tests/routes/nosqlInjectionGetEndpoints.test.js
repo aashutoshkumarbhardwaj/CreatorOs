@@ -12,7 +12,6 @@ jest.mock('../../middleware/auth', () => ({
 
 jest.mock('../../middleware/rateLimiters', () => ({
     aiGenerationLimiter: (req, res, next) => next(),
-    // mock any other limiters if needed
 }));
 
 const taskController = require('../../controller/taskController');
@@ -45,32 +44,64 @@ describe('NoSQL Query Sanitization on Production Routes', () => {
         contentOsController.listItems.mockClear();
     });
 
-    it('sanitizes NoSQL operators from GET /api/tasks', async () => {
-        const res = await request(app).get('/api/tasks').query({ status: { $ne: 'draft' }, isArchived: { $ne: 'true' } });
+    const allAllowlistedKeys = [
+        'q', 'stage', 'category', 'status', 'type', 'platform', 'priority', 
+        'search', 'folderId', 'tag', 'isArchived', 'page', 'limit'
+    ];
+
+    it('sanitizes ALL allowlisted NoSQL operators from GET /api/tasks', async () => {
+        const maliciousQuery = {};
+        allAllowlistedKeys.forEach(key => {
+            maliciousQuery[key] = { $ne: 'malicious' };
+        });
+
+        const res = await request(app).get('/api/tasks').query(maliciousQuery);
         expect(res.status).toBe(200);
-        expect(res.body.query.status).toBeUndefined();
-        expect(res.body.query.isArchived).toBeUndefined();
+        
+        allAllowlistedKeys.forEach(key => {
+            expect(res.body.query[key]).toBeUndefined();
+        });
     });
 
-    it('sanitizes NoSQL operators from GET /api/notifications', async () => {
-        const res = await request(app).get('/api/notifications').query({ type: { $ne: 'alert' }, page: { $gt: '1' } });
+    it('sanitizes ALL allowlisted NoSQL operators from GET /api/notifications', async () => {
+        const maliciousQuery = {};
+        allAllowlistedKeys.forEach(key => {
+            maliciousQuery[key] = { $gt: '1' };
+        });
+
+        const res = await request(app).get('/api/notifications').query(maliciousQuery);
         expect(res.status).toBe(200);
-        expect(res.body.query.type).toBeUndefined();
-        expect(res.body.query.page).toBeUndefined();
+        
+        allAllowlistedKeys.forEach(key => {
+            expect(res.body.query[key]).toBeUndefined();
+        });
     });
 
-    it('sanitizes NoSQL operators from GET /api/items', async () => {
-        const res = await request(app).get('/api/items').query({ category: { $ne: 'video' }, limit: { $gt: '50' } });
+    it('sanitizes ALL allowlisted NoSQL operators from GET /api/items', async () => {
+        const maliciousQuery = {};
+        allAllowlistedKeys.forEach(key => {
+            maliciousQuery[key] = { $regex: '.*' };
+        });
+
+        const res = await request(app).get('/api/items').query(maliciousQuery);
         expect(res.status).toBe(200);
-        expect(res.body.query.category).toBeUndefined();
-        expect(res.body.query.limit).toBeUndefined();
+        
+        allAllowlistedKeys.forEach(key => {
+            expect(res.body.query[key]).toBeUndefined();
+        });
     });
     
-    it('allows scalar values on GET /api/tasks', async () => {
-        const res = await request(app).get('/api/tasks').query({ status: 'draft', isArchived: 'false', page: '2' });
+    it('allows ALL scalar values on GET /api/tasks', async () => {
+        const scalarQuery = {};
+        allAllowlistedKeys.forEach(key => {
+            scalarQuery[key] = 'valid_value';
+        });
+
+        const res = await request(app).get('/api/tasks').query(scalarQuery);
         expect(res.status).toBe(200);
-        expect(res.body.query.status).toBe('draft');
-        expect(res.body.query.isArchived).toBe('false');
-        expect(res.body.query.page).toBe('2');
+        
+        allAllowlistedKeys.forEach(key => {
+            expect(res.body.query[key]).toBe('valid_value');
+        });
     });
 });
