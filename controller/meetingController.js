@@ -158,7 +158,8 @@ exports.getUserBookings = async (req, res) => {
   try {
     const bookings = await MeetingBooking.find({ userId: req.user._id })
       .populate("eventTypeId", "title duration color price locationType")
-      .sort({ startTime: 1 });
+      .sort({ startTime: 1 })
+      .lean();
 
     const now = new Date();
     const upcoming = bookings.filter((b) => b.endTime >= now && b.status === "scheduled");
