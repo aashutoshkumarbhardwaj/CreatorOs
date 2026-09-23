@@ -21,7 +21,7 @@ const getSnapshots = asyncHandler(async (req, res) => {
 
     const snapshots = await AnalyticsSnapshot.find({
         creatorId: req.params.creatorId,
-    }).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt').sort({ createdAt: -1 });
+    }).select('creatorId platform followers following totalPosts totalLikes totalComments totalViews engagementRate engagementAvailable snapshotDate createdAt updatedAt').sort({ createdAt: -1 }).lean();
 
     res.json({ success: true, data: snapshots });
 });
@@ -55,7 +55,7 @@ const getEngagementHistory = asyncHandler(async (req, res) => {
 
     const history = await EngagementHistory.find({
         creatorId: req.params.creatorId,
-    }).select('creatorId engagementMetric value timestamp createdAt updatedAt').sort({ createdAt: -1 });
+    }).select('creatorId engagementMetric value timestamp createdAt updatedAt').sort({ createdAt: -1 }).lean();
 
     res.json({ success: true, data: history });
 });
