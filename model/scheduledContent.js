@@ -11,6 +11,7 @@ const scheduledContentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
+            immutable: true,
         },
         contentOsId: {
             type: mongoose.Schema.Types.ObjectId,
