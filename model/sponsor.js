@@ -16,6 +16,8 @@ const sponsorSchema = new mongoose.Schema({
     },
     contactEmail: {
         type: String,
+        trim: true,
+        match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'contactEmail must be a valid email address'],
     },
     status: {
         type: String,
