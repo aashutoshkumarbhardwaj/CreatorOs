@@ -474,7 +474,11 @@ const createInvoice = asyncHandler(async (req, res) => {
     invoiceName,
     amount: Number(amount),
     status: status || "pending",
-    dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 14),
+    dueDate: (() => {
+      if (!dueDate) return new Date(Date.now() + 86400000 * 14);
+      const parsed = new Date(dueDate);
+      return Number.isNaN(parsed.getTime()) ? new Date(Date.now() + 86400000 * 14) : parsed;
+    })(),
     notes,
   });
 
