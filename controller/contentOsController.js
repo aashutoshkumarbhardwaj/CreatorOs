@@ -57,8 +57,8 @@ async function renderPage(req, res) {
         }
 
         const [items, folders] = await Promise.all([
-            ContentOsModel.find({ userId }).sort({ updatedAt: -1 }),
-            ContentFolderModel.find({ userId }),
+            ContentOsModel.find({ userId }).sort({ updatedAt: -1 }).lean(),
+            ContentFolderModel.find({ userId }).lean(),
         ]);
 
         const stats = {
@@ -110,7 +110,7 @@ async function listItems(req, res) {
         if (folderId) query.folderId = folderId;
         if (type) query.type = type;
 
-        let items = await ContentOsModel.find(query).sort({ updatedAt: -1 });
+        let items = await ContentOsModel.find(query).sort({ updatedAt: -1 }).lean();
 
         if (search) {
             const term = search.toLowerCase();
@@ -403,7 +403,7 @@ async function generateAiSuggestions(req, res) {
 async function listFolders(req, res) {
     try {
         const userId = req.user.id;
-        const folders = await ContentFolderModel.find({ userId });
+        const folders = await ContentFolderModel.find({ userId }).lean();
         return res.json({ success: true, count: folders.length, folders });
     } catch (err) {
         console.error("Error listing folders:", err);
