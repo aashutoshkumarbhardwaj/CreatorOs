@@ -1,4 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
+const mongoose = require("mongoose");
 const Sponsor = require("../model/sponsor");
 
 function getAuthenticatedUserId(req) {
@@ -46,6 +47,9 @@ const updateSponsor = asyncHandler(async (req, res) => {
     const userId = requireAuthenticatedUserId(req, res);
     if (!userId) return;
 
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+        return res.status(400).json({ success: false, message: "Invalid sponsor ID" });
+
     const sponsor = await Sponsor.findOneAndUpdate(
         { _id: req.params.id, creatorId: userId },
         { $set: pickSponsorFields(req.body) },
@@ -58,6 +62,9 @@ const updateSponsor = asyncHandler(async (req, res) => {
 const deleteSponsor = asyncHandler(async (req, res) => {
     const userId = requireAuthenticatedUserId(req, res);
     if (!userId) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+        return res.status(400).json({ success: false, message: "Invalid sponsor ID" });
 
     const sponsor = await Sponsor.findOneAndDelete({ _id: req.params.id, creatorId: userId });
     if (!sponsor) return res.status(404).json({ success: false, message: "Sponsor not found" });
