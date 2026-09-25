@@ -83,4 +83,49 @@ describe("verifyCsrf", () => {
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(403);
   });
+
+  it("safely blocks a request with 403 when CSRF token lengths differ", () => {
+    const req = {
+      method: "POST",
+      path: "/api/urls",
+      cookies: { _csrf: "a".repeat(64) },
+      headers: { "x-csrf-token": "short" },
+      body: {},
+      originalUrl: "/api/urls",
+      accepts: jest.fn().mockReturnValue(true),
+    };
+    const res = createResponse();
+    res.accepts = req.accepts;
+    const next = jest.fn();
+
+    expect(() => verifyCsrf(req, res, next)).not.toThrow();
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: "Invalid CSRF token. Request blocked.",
+      error: "CSRF token mismatch",
+    });
+  });
+
+  it("allows a POST request when valid matching CSRF token is provided", () => {
+    const token = "a".repeat(64);
+    const req = {
+      method: "POST",
+      path: "/api/urls",
+      cookies: { _csrf: token },
+      headers: { "x-csrf-token": token },
+      body: {},
+      originalUrl: "/api/urls",
+      accepts: jest.fn().mockReturnValue(true),
+    };
+    const res = createResponse();
+    res.accepts = req.accepts;
+    const next = jest.fn();
+
+    verifyCsrf(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
 });

@@ -42,7 +42,8 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
         
         // Mock verification: check if it points to our generic app domain
         // Or if in mock mode, just accept it
-        const isVerified = records.includes("cname.creatoros.com") || process.env.NODE_ENV !== "production";
+        const mockVerification = process.env.MOCK_DOMAIN_VERIFICATION === "true";
+        const isVerified = records.includes("cname.creatoros.com") || mockVerification;
 
         if (isVerified) {
             const userId = req.user.id || req.user._id;
@@ -52,8 +53,8 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, message: "Domain DNS records are not pointing correctly" });
         }
     } catch (error) {
-        // If dns lookup fails in dev, mock success to allow progression
-        if (process.env.NODE_ENV !== "production") {
+        // Tests may opt into mock verification explicitly; deployments must resolve DNS.
+        if (process.env.MOCK_DOMAIN_VERIFICATION === "true") {
             const userId = req.user.id || req.user._id;
             await User.findByIdAndUpdate(userId, { customDomain: domain, domainVerified: true });
             return res.json({ success: true, message: "Domain verified successfully (mock)" });

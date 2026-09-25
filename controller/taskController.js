@@ -312,7 +312,8 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
+  const { creatorId, _id, ...updates } = req.body;
+  const taskDoc = await Task.findByIdAndUpdate(taskId, updates, { new: true });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -358,7 +359,30 @@ const updateSubtasks = asyncHandler(async (req, res) => {
 const logTaskTime = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
   const { durationMinutes } = req.body;
-  const hours = Number(durationMinutes) / 60;
+
+  if (
+    durationMinutes === undefined ||
+    durationMinutes === null ||
+    (typeof durationMinutes !== "number" && typeof durationMinutes !== "string") ||
+    (typeof durationMinutes === "string" && durationMinutes.trim() === "")
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: "durationMinutes must be a positive finite number.",
+      message: "durationMinutes must be a positive finite number.",
+    });
+  }
+
+  const parsedDuration = Number(durationMinutes);
+  if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: "durationMinutes must be a positive finite number.",
+      message: "durationMinutes must be a positive finite number.",
+    });
+  }
+
+  const hours = parsedDuration / 60;
 
   if (isMockMode()) {
     const task = mockTasks.find((t) => t._id === taskId);

@@ -322,6 +322,15 @@ async function convertItem(req, res) {
     try {
         const { id } = req.params;
         const { targetStatus, targetType } = req.body;
+        const validStatuses = new Set(["idea", "scripting", "filming", "editing", "ready", "scheduled", "published"]);
+        const validTypes = new Set(["idea", "script", "post", "template", "draft"]);
+
+        if (targetStatus && !validStatuses.has(targetStatus)) {
+            return res.status(400).json({ success: false, message: "Invalid target status." });
+        }
+        if (targetType && !validTypes.has(targetType)) {
+            return res.status(400).json({ success: false, message: "Invalid target type." });
+        }
 
         const item = await ContentOsModel.findById(id);
         if (!item || item.userId?.toString() !== req.user.id.toString()) {
@@ -334,7 +343,7 @@ async function convertItem(req, res) {
         const updated = await ContentOsModel.findByIdAndUpdate(
             id,
             { status: newStatus, type: newType },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         return res.json({ success: true, item: updated, message: `Converted item to ${newStatus}.` });
