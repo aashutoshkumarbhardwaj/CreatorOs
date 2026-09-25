@@ -27,8 +27,38 @@ const requireTaskOwnership = async (req, res, next) => {
       return res.status(404).json({ success: false, error: "Task not found." });
     }
 
-    if (req.body && Object.prototype.hasOwnProperty.call(req.body, "creatorId")) {
+    if (req.body && typeof req.body === 'object') {
       delete req.body.creatorId;
+      delete req.body._id;
+      
+      const stripMongoOperators = (rootObj) => {
+        const stack = [rootObj];
+        const visited = new WeakSet();
+
+        while (stack.length > 0) {
+          const current = stack.pop();
+          if (!current || typeof current !== 'object') continue;
+          if (visited.has(current)) continue;
+          visited.add(current);
+          
+          if (Array.isArray(current)) {
+            for (let i = 0; i < current.length; i++) {
+              stack.push(current[i]);
+            }
+            continue;
+          }
+
+          for (const key in current) {
+            if (key.startsWith('$')) {
+              delete current[key];
+            } else {
+              stack.push(current[key]);
+            }
+          }
+        }
+      };
+
+      stripMongoOperators(req.body);
     }
 
     return next();
