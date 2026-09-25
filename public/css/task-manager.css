@@ -672,3 +672,239 @@
   font-size: 1.5rem;
   font-weight: 800;
 }
+
+/* ---- Team workspaces and task details (task-manager-collab.js) ---- */
+.tmx-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tmx-bar .neo-select {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.tmx-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.tmx-column {
+  min-height: 120px;
+  padding: 0.75rem;
+  background: #f4f4f5;
+  border: 2px solid #111;
+  border-radius: 10px;
+}
+
+.tmx-column-head {
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.tmx-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem;
+  background: #fff;
+  border: 2px solid #111;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #111;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.tmx-heading {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.tmx-muted {
+  font-size: 0.78rem;
+  color: #52525b;
+}
+
+.tmx-empty {
+  color: #71717a;
+  font-size: 0.9rem;
+}
+
+.tmx-load {
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.tmx-load-bar {
+  height: 10px;
+  margin-top: 0.25rem;
+  background: #6366f1;
+  border: 2px solid #111;
+  border-radius: 999px;
+}
+
+.tmx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(17, 17, 17, 0.55);
+}
+
+.tmx-backdrop[hidden] {
+  display: none;
+}
+
+.tmx-drawer {
+  width: min(520px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: #fff;
+  border-left: 2px solid #111;
+}
+
+.tmx-modal {
+  height: auto;
+  max-height: 90vh;
+  margin: auto;
+  border: 2px solid #111;
+  border-radius: 12px;
+}
+
+.tmx-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #111;
+}
+
+.tmx-drawer-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.tmx-stack,
+.tmx-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tmx-stack {
+  flex-direction: column;
+}
+
+.tmx-row {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Direct children only: a nested field inside a column label must not
+   inherit a flex-basis, or the basis becomes its height. */
+.tmx-row > span,
+.tmx-row > label,
+.tmx-row > .neo-input,
+.tmx-row > .neo-select {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/* The link picker has three fields; two per line keeps their labels readable. */
+#tmx-link-form > .neo-input,
+#tmx-link-form > .neo-select {
+  flex-basis: 45%;
+}
+
+.tmx-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.6rem;
+  padding: 0.6rem;
+  border: 2px solid #111;
+  border-radius: 8px;
+}
+
+.tmx-body {
+  margin: 0;
+  /* Comments are plain text; keep the author's line breaks. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tmx-view-btn.active {
+  background: #111;
+  color: #fff;
+}
+
+.tmx-clickable {
+  cursor: pointer;
+}
+
+.tmx-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.tmx-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 84px;
+  padding: 0.35rem;
+  border: 2px solid #111;
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.tmx-chip {
+  padding: 0.1rem 0.35rem;
+  border: 1px solid #111;
+  border-radius: 4px;
+  background: #ede9fe;
+  font-size: 0.72rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.tmx-chip.done {
+  background: #dcfce7;
+  text-decoration: line-through;
+}
+
+#tmx-task-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+#tmx-task-form [hidden] {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tmx-calendar {
+    gap: 0.15rem;
+  }
+
+  .tmx-day {
+    min-height: 56px;
+  }
+}

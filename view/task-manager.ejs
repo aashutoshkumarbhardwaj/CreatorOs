@@ -77,6 +77,9 @@
             <button type="button" class="tm-tab-btn" data-tab="archive">
                 <span>🗃️</span> Archive Vault
             </button>
+            <button type="button" class="tm-tab-btn" data-tab="team">
+                <span>👥</span> Team
+            </button>
         </nav>
 
         <!-- Control & Filter Bar -->
@@ -231,7 +234,154 @@
             </div>
         </section>
 
+        <!-- VIEW 6: TEAM WORKSPACES -->
+        <section id="view-team" class="tm-view-section">
+            <div class="tmx-bar">
+                <select id="tmx-workspace" class="neo-select" aria-label="Workspace"></select>
+                <select id="tmx-project" class="neo-select" aria-label="Project">
+                    <option value="">All projects</option>
+                </select>
+                <button type="button" class="neo-btn secondary sm" id="tmx-new-workspace">+ WORKSPACE</button>
+                <button type="button" class="neo-btn secondary sm" id="tmx-new-project">+ PROJECT</button>
+                <button type="button" class="neo-btn secondary sm" id="tmx-add-member">+ MEMBER</button>
+                <button type="button" class="neo-btn secondary sm" id="tmx-templates">📋 TEMPLATES</button>
+                <button type="button" class="neo-btn primary sm" id="tmx-new-task">⚡ TEAM TASK</button>
+            </div>
+            <p class="tmx-empty" id="tmx-team-empty">Create a workspace to plan work with your editors, writers and designers.</p>
+            <div class="tmx-bar" role="tablist" aria-label="Team views">
+                <button type="button" class="neo-btn secondary sm tmx-view-btn active" data-view="board">📋 Board</button>
+                <button type="button" class="neo-btn secondary sm tmx-view-btn" data-view="list">📑 List</button>
+                <button type="button" class="neo-btn secondary sm tmx-view-btn" data-view="calendar">📅 Calendar</button>
+                <button type="button" class="neo-btn secondary sm tmx-view-btn" data-view="workload">⚖️ Workload</button>
+            </div>
+            <div id="tmx-view"></div>
+        </section>
+
     </div>
+</div>
+
+<!-- Task details: comments, dependencies, links and activity -->
+<div class="tmx-backdrop" id="tmx-drawer" hidden>
+    <aside class="tmx-drawer" role="dialog" aria-modal="true" aria-labelledby="tmx-d-title">
+        <header class="tmx-drawer-head">
+            <h2 class="font-display" id="tmx-d-title">Task</h2>
+            <button type="button" class="neo-btn secondary sm" id="tmx-edit">✏️ EDIT</button>
+            <button type="button" class="neo-btn secondary sm" id="tmx-watch">👁️ WATCH</button>
+            <button type="button" class="neo-btn secondary sm" id="tmx-d-close" aria-label="Close">✕</button>
+        </header>
+        <p class="tmx-muted" id="tmx-d-summary"></p>
+
+        <h3 class="tmx-heading">💬 Comments</h3>
+        <form id="tmx-comment-form" class="tmx-stack">
+            <textarea id="tmx-comment-body" class="neo-textarea" rows="3" maxlength="5000" placeholder="Write a comment…"></textarea>
+            <label class="tmx-muted" id="tmx-mentions-label" hidden>Mention teammates (Ctrl/Cmd-click for several)
+                <select id="tmx-mentions" class="neo-select" multiple></select>
+            </label>
+            <label class="tmx-muted">Attach images
+                <input type="file" id="tmx-attach" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+            </label>
+            <button type="submit" class="neo-btn primary sm">POST</button>
+        </form>
+        <div id="tmx-comments"></div>
+
+        <h3 class="tmx-heading">⛓️ Blocked by</h3>
+        <form id="tmx-dep-form" class="tmx-row">
+            <select id="tmx-dep-select" class="neo-select" aria-label="Prerequisite task"></select>
+            <button type="submit" class="neo-btn secondary sm">ADD</button>
+        </form>
+        <div id="tmx-deps"></div>
+
+        <h3 class="tmx-heading">🔗 Linked records</h3>
+        <form id="tmx-link-form" class="tmx-row">
+            <select id="tmx-link-module" class="neo-select" aria-label="Record type">
+                <option value="crm_deal">Deal / campaign</option>
+                <option value="crm_brand">Brand</option>
+                <option value="crm_invoice">Invoice</option>
+                <option value="content_os">Content</option>
+                <option value="scheduled_content">Scheduled post</option>
+                <option value="meeting">Meeting</option>
+                <option value="url">Short link</option>
+                <option value="vault_file">Vault file</option>
+            </select>
+            <input type="search" id="tmx-link-search" class="neo-input" placeholder="Search your records…" aria-label="Search records" />
+            <select id="tmx-link-ref" class="neo-select" aria-label="Record to link"></select>
+            <button type="submit" class="neo-btn secondary sm">LINK</button>
+        </form>
+        <div id="tmx-links"></div>
+
+        <h3 class="tmx-heading">🕒 Activity</h3>
+        <div id="tmx-activity"></div>
+    </aside>
+</div>
+
+<!-- Built-in templates -->
+<div class="tmx-backdrop" id="tmx-template-modal" hidden>
+    <div class="tmx-drawer tmx-modal" role="dialog" aria-modal="true" aria-labelledby="tmx-t-title">
+        <header class="tmx-drawer-head">
+            <h2 class="font-display" id="tmx-t-title">📋 Templates</h2>
+            <input type="date" id="tmx-template-start" class="neo-input" aria-label="Start date" />
+            <button type="button" class="neo-btn secondary sm" id="tmx-t-close" aria-label="Close">✕</button>
+        </header>
+        <div id="tmx-template-list"></div>
+    </div>
+</div>
+
+<!-- Create or edit a task with team fields -->
+<div class="tmx-backdrop" id="tmx-task-modal" hidden>
+    <form class="tmx-drawer tmx-modal tmx-stack" id="tmx-task-form" role="dialog" aria-modal="true" aria-labelledby="tmx-f-title">
+        <header class="tmx-drawer-head">
+            <h2 class="font-display" id="tmx-f-title">⚡ Team task</h2>
+            <button type="button" class="neo-btn secondary sm" id="tmx-f-close" aria-label="Close">✕</button>
+        </header>
+        <label>Title <input name="title" class="neo-input" required maxlength="200" /></label>
+        <label>Description <textarea name="description" class="neo-textarea" rows="3"></textarea></label>
+        <div class="tmx-row">
+            <label>Status
+                <select name="status" class="neo-select">
+                    <option value="todo">Todo</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="review">Review</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </label>
+            <label>Priority
+                <select name="priority" class="neo-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </label>
+            <label>Due date <input type="date" name="dueDate" class="neo-input" /></label>
+        </div>
+        <div class="tmx-row" data-team-only>
+            <label>Project <select name="projectId" class="neo-select"></select></label>
+            <label>Visibility
+                <select name="visibility" class="neo-select">
+                    <option value="workspace">Whole workspace</option>
+                    <option value="private">Only people on this task</option>
+                </select>
+            </label>
+        </div>
+        <label data-team-only>Assignees (Ctrl/Cmd-click for several)
+            <select name="assigneeIds" class="neo-select" multiple></select>
+        </label>
+        <div class="tmx-row">
+            <label>Repeats
+                <select name="frequency" class="neo-select">
+                    <option value="">Does not repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+            </label>
+            <label>Every <input type="number" name="interval" class="neo-input" min="1" max="365" value="1" /></label>
+            <label>Until <input type="date" name="endDate" class="neo-input" /></label>
+        </div>
+        <p class="tmx-muted" id="tmx-f-note"></p>
+        <button type="submit" class="neo-btn primary">SAVE</button>
+    </form>
 </div>
 
 <!-- Task Create/Edit Modal Drawer -->
@@ -335,5 +485,6 @@
 </div>
 
 <script src="/js/task-manager.js"></script>
+<script src="/js/task-manager-collab.js"></script>
 
 <%- include('partials/layout/footer') %>
