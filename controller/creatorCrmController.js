@@ -309,9 +309,10 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const { creatorId: _cid, _id: _oid, ...brandUpdates } = req.body;
   const brand = await CrmBrand.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: brandUpdates },
     { new: true, runValidators: true }
   );
 
@@ -382,9 +383,10 @@ const createDeal = asyncHandler(async (req, res) => {
 
 const updateDeal = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const { creatorId, _id, ...updates } = req.body;
   const deal = await CrmDeal.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updates },
     { new: true, runValidators: true }
   );
 
@@ -483,9 +485,10 @@ const createInvoice = asyncHandler(async (req, res) => {
 
 const updateInvoice = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  const { creatorId: _cid, _id: _oid, ...invoiceUpdates } = req.body;
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: invoiceUpdates },
     { new: true, runValidators: true }
   );
 
