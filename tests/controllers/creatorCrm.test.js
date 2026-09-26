@@ -100,7 +100,7 @@ describe("Creator CRM Controller", () => {
     it("returns aggregated CRM data feed and seeds default data when empty", async () => {
       CrmDeal.countDocuments.mockResolvedValue(0);
       CrmBrand.countDocuments.mockResolvedValue(0);
-      CrmBrand.insertMany.mockResolvedValue([{ companyName: "Adobe Creative Cloud", _id: "b1" }]);
+      CrmBrand.insertMany.mockResolvedValue([{ companyName: "Adobe Creative Cloud", _id: "507f1f77bcf86cd799439011" }]);
       CrmDeal.insertMany.mockResolvedValue([]);
       CrmInvoice.insertMany.mockResolvedValue([]);
       CrmDeal.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([{ dealName: "Test Deal", amount: 5000 }]) });
@@ -155,7 +155,7 @@ describe("Creator CRM Controller", () => {
   describe("Brands CRUD", () => {
     it("creates a new brand contact", async () => {
       req.body = { companyName: "Acme Corp", category: "Tech", contactName: "Alice" };
-      CrmBrand.create.mockResolvedValue({ _id: "b1", ...req.body, creatorId: userId });
+      CrmBrand.create.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", ...req.body, creatorId: userId });
 
       await createBrand(req, res);
 
@@ -170,11 +170,11 @@ describe("Creator CRM Controller", () => {
     });
 
     it("adds contact history to brand", async () => {
-      req.params = { id: "b1" };
+      req.params = { id: "507f1f77bcf86cd799439011" };
       req.body = { type: "call", note: "Discussed sponsorship terms" };
 
       const mockBrand = {
-        _id: "b1",
+        _id: "507f1f77bcf86cd799439011",
         creatorId: userId,
         contactHistory: [],
         save: jest.fn().mockResolvedValue(true),
@@ -220,7 +220,7 @@ describe("Creator CRM Controller", () => {
     it("creates an invoice", async () => {
       req.body = { companyName: "Skillshare", invoiceName: "Annual Sub", amount: 12000 };
       CrmInvoice.countDocuments.mockResolvedValue(0);
-      CrmInvoice.create.mockResolvedValue({ _id: "i1", invoiceNumber: "INV-2026-001", ...req.body });
+      CrmInvoice.create.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", invoiceNumber: "INV-2026-001", ...req.body });
 
       await createInvoice(req, res);
 
@@ -229,17 +229,17 @@ describe("Creator CRM Controller", () => {
     });
 
     it("marks invoice as paid", async () => {
-      req.params = { id: "i1" };
-      CrmInvoice.findOneAndUpdate.mockResolvedValue({ _id: "i1", status: "paid" });
+      req.params = { id: "507f1f77bcf86cd799439011" };
+      CrmInvoice.findOneAndUpdate.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", status: "paid" });
 
       await markInvoicePaid(req, res);
 
       expect(CrmInvoice.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: "i1", creatorId: userId },
+        { _id: "507f1f77bcf86cd799439011", creatorId: userId },
         { $set: { status: "paid", paidAt: expect.any(Date) } },
         { new: true }
       );
-      expect(res.json).toHaveBeenCalledWith({ success: true, data: { _id: "i1", status: "paid" } });
+      expect(res.json).toHaveBeenCalledWith({ success: true, data: { _id: "507f1f77bcf86cd799439011", status: "paid" } });
     });
   });
 
@@ -251,3 +251,4 @@ describe("Creator CRM Controller", () => {
     });
   });
 });
+
