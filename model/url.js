@@ -102,8 +102,14 @@ urlSchema.statics.listForUser = async function (userId, options = {}) {
   const cursor = typeof options === "object" ? options.cursor : null;
   const includeArchived =
     typeof options === "object" && options.includeArchived;
+  const archivedOnly =
+    typeof options === "object" && options.archivedOnly;
+  const favoriteOnly =
+    typeof options === "object" && options.favoriteOnly;
   const query = { userId };
-  if (!includeArchived) query.archived = { $ne: true };
+  if (archivedOnly) query.archived = true;
+  else if (!includeArchived) query.archived = { $ne: true };
+  if (favoriteOnly) query.favorite = true;
 
   if (cursor) {
     const cursorLink = await this.findOne({ _id: cursor, userId })
