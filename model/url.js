@@ -127,8 +127,9 @@ urlSchema.statics.findDuplicate = async function (userId, redirectUrl) {
 };
 
 urlSchema.statics.getStatsForUser = async function (userId) {
-  const totalLinks = await this.countDocuments({ userId });
-  const allLinks = await this.find({ userId })
+  const activeQuery = { userId, archived: { $ne: true } };
+  const totalLinks = await this.countDocuments(activeQuery);
+  const allLinks = await this.find(activeQuery)
     .select("totalClicks title redirectUrl")
     .lean();
   const totalClicks = allLinks.reduce(
