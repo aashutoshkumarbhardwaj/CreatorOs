@@ -3,6 +3,8 @@ const shortid = require("shortid");
 const QRCode = require("qrcode");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
+const net = require("net");
+const dns = require("dns").promises;
 const Url = require("../model/url");
 const { isValidUrl } = require("../utils/validators");
 const asyncHandler = require("../utils/asyncHandler");
@@ -82,12 +84,7 @@ async function validateURL(urlString) {
     }
 
     // Resolve hostname to IP addresses and check each one
-    const addresses = await new Promise((resolve) => {
-        dns.lookup(hostname, { all: true }, (err, addrs) => {
-            if (err) resolve([]);
-            else resolve(addrs.map(a => a.address));
-        });
-    });
+    const addresses = await dns.lookup(hostname, { all: true });
 
     for (const addr of addresses) {
         if (isPrivateIP(addr)) {
@@ -213,6 +210,12 @@ async function handleGenerateShortURL(req, res) {
   } = req.body;
   const redirectUrl = redirectUrlField || url;
   const hostBaseEarly = `${req.protocol}://${req.get("host")}`;
+
+  try {
+    await validateURL(redirectUrl);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
 
   // Duplicate detection: same user, same destination, not archived.
   // `force: true` from the client bypasses this (user chose "create anyway").
