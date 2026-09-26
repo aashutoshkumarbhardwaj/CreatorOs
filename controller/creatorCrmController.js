@@ -469,8 +469,13 @@ const createInvoice = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
   const { companyName, invoiceName, amount, status, dueDate, notes } = req.body;
 
-  if (!companyName || !invoiceName || amount === undefined) {
+  if (!companyName || !invoiceName || amount === undefined || amount === null) {
     return res.status(400).json({ success: false, message: "Company name, invoice name, and amount are required" });
+  }
+
+  const parsedAmount = Number(amount);
+  if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+    return res.status(400).json({ success: false, message: "Amount must be a non-negative number" });
   }
 
   const count = await CrmInvoice.countDocuments({ creatorId: userId });
@@ -481,7 +486,7 @@ const createInvoice = asyncHandler(async (req, res) => {
     invoiceNumber,
     companyName,
     invoiceName,
-    amount: Number(amount),
+    amount: parsedAmount,
     status: status || "pending",
     dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 14),
     notes,
