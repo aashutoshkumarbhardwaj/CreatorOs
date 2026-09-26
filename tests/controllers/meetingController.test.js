@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const EventType = require("../../model/eventType");
 const MeetingBooking = require("../../model/meetingBooking");
 const User = require("../../model/user");
@@ -402,6 +403,50 @@ describe("Meeting Controller & Google Calendar Service", () => {
       MeetingBooking.findOne = originalFindOneBooking;
       MeetingBooking.create = originalCreateBooking;
       GoogleCalendarService.createCalendarEvent = originalCreateCalendarEvent;
+    });
+  });
+
+  describe("EventType userId immutability", () => {
+    it("marks userId as immutable in the schema", () => {
+      const userIdPath = EventType.schema.paths.userId;
+      expect(userIdPath).toBeDefined();
+      expect(userIdPath.options.immutable).toBe(true);
+    });
+
+    it("strips userId and _id from the update payload in updateEventType", async () => {
+      const ownerId = new mongoose.Types.ObjectId();
+      const attackerId = new mongoose.Types.ObjectId();
+      const eventId = new mongoose.Types.ObjectId().toString();
+
+      const mockEventType = { _id: eventId, userId: ownerId, title: "Call" };
+
+      const findOneSpy = jest.spyOn(EventType, "findOne").mockResolvedValue(mockEventType);
+      const updateSpy = jest.spyOn(EventType, "findByIdAndUpdate").mockResolvedValue({
+        ...mockEventType,
+        title: "Updated Call",
+      });
+
+      const req = {
+        user: { _id: ownerId },
+        params: { id: eventId },
+        body: { title: "Updated Call", userId: attackerId.toString() },
+      };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
+      };
+
+      await meetingController.updateEventType(req, res);
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        eventId,
+        expect.not.objectContaining({ userId: expect.anything() }),
+        expect.any(Object)
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+
+      findOneSpy.mockRestore();
+      updateSpy.mockRestore();
     });
   });
 });
