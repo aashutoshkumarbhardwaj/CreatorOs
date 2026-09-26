@@ -19,7 +19,7 @@ const getSponsors = asyncHandler(async (req, res) => {
     const userId = requireAuthenticatedUserId(req, res);
     if (!userId) return;
 
-    const sponsors = await Sponsor.find({ creatorId: userId }).sort({ createdAt: -1 });
+    const sponsors = await Sponsor.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
     res.json({ success: true, data: sponsors });
 });
 
