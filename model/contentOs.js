@@ -10,6 +10,7 @@ const contentOsSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
+            immutable: true,
             index: true,
         },
         title: {
