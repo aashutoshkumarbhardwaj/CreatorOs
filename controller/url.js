@@ -532,8 +532,8 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
       light: entry.qrBgColor || "#ffffff",
     },
     errorCorrectionLevel: "M",
-    margin: 2,
-    width: 256,
+    margin: 4,
+    width: 512,
   });
 
   Url.findOneAndUpdate({ shortId }, { $set: { qrGenerated: true } }).catch(

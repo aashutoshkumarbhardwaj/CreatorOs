@@ -1229,17 +1229,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 220px;
+            min-height: 280px;
             border-radius: 0.85rem;
             border: 1px solid var(--border);
             background: rgba(255, 255, 255, 0.03);
             margin-bottom: 1.4rem;
             overflow: hidden;
+            padding: 1rem;
         }
 
-        .qr-preview img {
-            width: 200px;
-            height: 200px;
+        .qr-preview svg {
+            width: 100%;
+            height: auto;
+            max-width: 320px;
+            max-height: 320px;
             display: block;
         }
 
@@ -1362,7 +1365,7 @@
 
         .qr-btn-primary {
             color: #042f3e;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            background: var(--accent-teal, #37D6C8);
             box-shadow: 0 12px 28px rgba(34, 211, 238, 0.2);
         }
 
@@ -1441,6 +1444,25 @@
             .topbar { position:relative; padding:1rem; }
             .content { padding:1.4rem 1rem 2rem; }
             .dashboard-head { flex-direction:column; }
+        }
+
+        /* ── QR Modal Responsive ──────────────────────────────────── */
+        @media (max-width: 480px) {
+            .qr-modal {
+                padding: 1.25rem;
+                border-radius: 1rem;
+            }
+            .qr-preview {
+                min-height: 240px;
+                padding: 0.75rem;
+            }
+            .qr-preview svg {
+                max-width: 240px;
+                max-height: 240px;
+            }
+            .qr-actions {
+                grid-template-columns: 1fr;
+            }
         }
 
 /* BIO LINK BUILDER */
@@ -1754,6 +1776,14 @@
 }
 .link-action-btn:hover {
     background: var(--accent-teal);
+    color: #111;
+}
+.link-action-btn.qr-btn-link {
+    color: var(--accent-teal, #37D6C8);
+    border-color: var(--accent-teal, #37D6C8);
+}
+.link-action-btn.qr-btn-link:hover {
+    background: var(--accent-teal, #37D6C8);
     color: #111;
 }
 .link-clicks {

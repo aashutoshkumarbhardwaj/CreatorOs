@@ -305,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <a href="${escapeAttr(link.shortUrl)}" target="_blank" rel="noopener" class="link-action-btn open-btn" data-id="${escapeAttr(link.shortId)}">Open</a>
                         <button type="button" class="link-action-btn qr-btn" data-url="${escapeAttr(link.shortUrl)}">QR Code</button>
                         <button type="button" class="link-action-btn analytics-btn" data-id="${escapeAttr(link.shortId)}">Analytics</button>
+                        <button type="button" class="link-action-btn qr-btn-link" data-id="${escapeAttr(link.shortId)}" data-url="${escapeAttr(link.shortUrl)}">QR</button>
                         <button type="button" class="link-action-btn edit-btn" data-id="${escapeAttr(link.shortId)}">Edit</button>
                         <button type="button" class="link-action-btn archive-btn" data-id="${escapeAttr(link.shortId)}">${link.archived ? "Unarchive" : "Archive"}</button>
                         <button type="button" class="link-action-btn delete-btn" data-id="${escapeAttr(link.shortId)}" style="color:var(--accent-red, #E13B3B);border-color:var(--accent-red, #E13B3B);">Delete</button>
@@ -812,4 +813,97 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById("redirect-url")?.focus();
     });
   }
+
+  // ── QR Code Modal ────────────────────────────────────────────────────────
+  const qrModal = document.getElementById("qrModal");
+  const qrBackdrop = document.getElementById("qrBackdrop");
+  const qrClose = document.getElementById("qrClose");
+  const qrCloseMobile = document.getElementById("qrCloseMobile");
+  const qrPreview = document.getElementById("qrPreview");
+  const qrPlaceholder = document.getElementById("qrPlaceholder");
+  const qrModalTitle = document.getElementById("qrModalTitle");
+  const qrModalUrl = document.getElementById("qrModalUrl");
+  const qrDownload = document.getElementById("qrDownload");
+  let currentQrShortId = null;
+
+  function closeQrModal() {
+    if (qrModal) qrModal.style.display = "none";
+    currentQrShortId = null;
+  }
+
+  function openQrModal(shortId, shortUrl) {
+    currentQrShortId = shortId;
+    if (qrModalTitle) qrModalTitle.textContent = "QR Code";
+    if (qrModalUrl) qrModalUrl.textContent = shortUrl;
+    if (qrDownload) {
+      qrDownload.href = `/api/urls/qr/${shortId}/download`;
+      qrDownload.download = `qr-${shortId}.png`;
+    }
+    if (qrModal) qrModal.style.display = "flex";
+    loadQrPreview(shortId);
+  }
+
+  async function loadQrPreview(shortId) {
+    if (!qrPreview) return;
+    qrPreview.innerHTML = "";
+    const placeholder = document.createElement("div");
+    placeholder.className = "qr-preview-placeholder";
+    placeholder.innerHTML = '<div class="qr-spinner"></div><span>Generating QR…</span>';
+    qrPreview.appendChild(placeholder);
+
+    try {
+      const res = await fetch(`/api/urls/qr/${shortId}`, {
+        headers: { Accept: "image/svg+xml" },
+        credentials: "same-origin",
+      });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Please log in to generate QR codes" : "Failed to generate QR code");
+      }
+      const svgText = await res.text();
+      // Inject SVG directly into the DOM for reliable rendering
+      qrPreview.innerHTML = "";
+      const svgContainer = document.createElement("div");
+      svgContainer.style.display = "flex";
+      svgContainer.style.alignItems = "center";
+      svgContainer.style.justifyContent = "center";
+      svgContainer.style.width = "100%";
+      svgContainer.style.maxWidth = "320px";
+      svgContainer.style.margin = "0 auto";
+      svgContainer.innerHTML = svgText;
+      const svgEl = svgContainer.querySelector("svg");
+      if (svgEl) {
+        svgEl.setAttribute("width", "100%");
+        svgEl.setAttribute("height", "auto");
+        svgEl.style.display = "block";
+      }
+      qrPreview.appendChild(svgContainer);
+    } catch (err) {
+      qrPreview.innerHTML = "";
+      const errBox = document.createElement("div");
+      errBox.className = "qr-preview-placeholder";
+      errBox.style.color = "var(--accent-red, #E13B3B)";
+      errBox.innerHTML = '<svg viewBox="0 0 24 24" width="2rem" height="2rem" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01" stroke-width="2"></path></svg><span>Failed to load QR</span>';
+      qrPreview.appendChild(errBox);
+      showToast(err.message || "Failed to load QR code", true);
+    }
+  }
+
+  if (qrBackdrop) qrBackdrop.addEventListener("click", closeQrModal);
+  if (qrClose) qrClose.addEventListener("click", closeQrModal);
+  if (qrCloseMobile) qrCloseMobile.addEventListener("click", closeQrModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && qrModal && qrModal.style.display === "flex") {
+      closeQrModal();
+    }
+  });
+
+  feedEl?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".qr-btn-link");
+    if (!btn) return;
+    const shortId = btn.dataset.id;
+    const shortUrl = btn.dataset.url;
+    if (!shortId) return;
+    e.preventDefault();
+    openQrModal(shortId, shortUrl);
+  });
 })();

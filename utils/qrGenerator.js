@@ -212,7 +212,7 @@ async function compositeLogo(pngBuffer, logoUrl) {
 
 /**
  * @function generatePng
- * @description Generates a canonical PNG buffer (with optional logo overlay).
+ * @description Generates a canonical PNG buffer (with optional logo overlay and URL caption).
  * @param {object} qrDoc
  * @param {string} baseUrl
  * @returns {Promise<Buffer>}
@@ -222,7 +222,88 @@ async function generatePng(qrDoc, baseUrl) {
     const svg = await generateSvg(qrDoc, baseUrl);
     let pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
     pngBuffer = await compositeLogo(pngBuffer, design.logoUrl || null);
+
+    // Add shortened URL text below QR code for dynamic codes
+    if (qrDoc.isDynamic && qrDoc.shortId) {
+        const shortUrl = `${baseUrl.replace(/\/$/, '')}/q/${qrDoc.shortId}`;
+        const bgColor = design.backgroundColor || '#ffffff';
+        pngBuffer = await addCaptionToPng(pngBuffer, shortUrl, bgColor);
+    }
+
     return pngBuffer;
+}
+
+/**
+ * @function addCaptionToPng
+ * @description Adds a text caption (shortened URL) below the QR code PNG.
+ * @param {Buffer} pngBuffer
+ * @param {string} captionText
+ * @param {string} bgColor - Background color for caption area
+ * @returns {Promise<Buffer>}
+ */
+async function addCaptionToPng(pngBuffer, captionText, bgColor = '#ffffff') {
+    const meta = await sharp(pngBuffer).metadata();
+    const qrWidth = meta.width || 512;
+    const qrHeight = meta.height || 512;
+    const captionHeight = 70;
+    const fontSize = Math.max(14, Math.min(20, Math.round(qrWidth * 0.035)));
+
+    // Parse background color for text contrast
+    const isDarkBg = isDarkColor(bgColor);
+    const textColor = isDarkBg ? '#ffffff' : '#1a1a1a';
+    const accentColor = '#37D6C8';
+
+    // Create caption SVG with background bar
+    const captionSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${qrWidth}" height="${captionHeight}" viewBox="0 0 ${qrWidth} ${captionHeight}">
+            <rect width="${qrWidth}" height="${captionHeight}" fill="${bgColor}"/>
+            <rect x="0" y="0" width="${qrWidth}" height="3" fill="${accentColor}"/>
+            <text x="${qrWidth / 2}" y="${captionHeight / 2 + 2}" 
+                  font-family="system-ui, -apple-system, sans-serif" 
+                  font-size="${fontSize}" 
+                  font-weight="600" 
+                  fill="${textColor}" 
+                  text-anchor="middle" 
+                  dominant-baseline="middle">
+                ${captionText}
+            </text>
+        </svg>
+    `;
+
+    const captionBuffer = await sharp(Buffer.from(captionSvg)).png().toBuffer();
+
+    // Composite QR code and caption
+    const combined = await sharp({
+        create: {
+            width: qrWidth,
+            height: qrHeight + captionHeight,
+            channels: 4,
+            background: { r: 255, g: 255, b: 255, alpha: 1 }
+        }
+    })
+    .composite([
+        { input: pngBuffer, left: 0, top: 0 },
+        { input: captionBuffer, left: 0, top: qrHeight }
+    ])
+    .png()
+    .toBuffer();
+
+    return combined;
+}
+
+/**
+ * @function isDarkColor
+ * @description Determines if a hex color is dark for text contrast.
+ * @param {string} hexColor
+ * @returns {boolean}
+ */
+function isDarkColor(hexColor) {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
 }
 
 /**

@@ -29,11 +29,11 @@ const urlSchema = new mongoose.Schema({
   },
   qrFgColor: {
     type: String,
-    default: "#1a1a1a",
+    default: "#37D6C8",
   },
   qrBgColor: {
     type: String,
-    default: "#ffffff",
+    default: "#FFFFFF",
   },
   qrGenerated: {
     type: Boolean,
@@ -159,7 +159,7 @@ class MockUrlModel {
     this.campaignName = data.campaignName || "Untitled Campaign";
     this.userId = data.userId;
     this.totalClicks = data.totalClicks || 0;
-    this.qrFgColor = data.qrFgColor || "#1a1a1a";
+    this.qrFgColor = data.qrFgColor || "#37D6C8";
     this.qrBgColor = data.qrBgColor || "#ffffff";
     this.qrGenerated = data.qrGenerated || false;
     this.title = data.title ?? null;
