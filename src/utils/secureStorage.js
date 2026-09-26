@@ -18,12 +18,18 @@ export const secureStorage = {
    * @param {any} value
    */
   set: (key, value) => {
+    if (!SECRET_KEY) {
+      const configError = new Error('Encryption key is not configured');
+      console.error(`Error encrypting and saving key "${key}" to localStorage:`, configError);
+      throw configError;
+    }
     try {
       const jsonValue = JSON.stringify(value);
       const encryptedValue = CryptoJS.AES.encrypt(jsonValue, SECRET_KEY).toString();
       localStorage.setItem(key, encryptedValue);
     } catch (error) {
       console.error(`Error encrypting and saving key "${key}" to localStorage:`, error);
+      throw error;
     }
   },
 
@@ -35,6 +41,10 @@ export const secureStorage = {
    * @returns {any}
    */
   get: (key, defaultValue = null) => {
+    if (!SECRET_KEY) {
+      console.warn(`secureStorage: encryption key is not configured; returning default for "${key}"`);
+      return defaultValue;
+    }
     try {
       const encryptedValue = localStorage.getItem(key);
       if (!encryptedValue) {
