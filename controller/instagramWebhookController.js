@@ -1,4 +1,7 @@
+```javascript
 const dmQueueService = require("../services/dmQueueService");
+const dmConsentService = require("../services/dmConsentService");
+const Creator = require("../model/creator");
 const asyncHandler = require("../utils/asyncHandler");
 
 const crypto = require("crypto");
@@ -13,12 +16,14 @@ const EVENT_TTL_MS = 5 * 60 * 1000;
 
 const cleanupInterval = setInterval(() => {
   const now = Date.now();
+
   for (const [eventId, timestamp] of processedEvents) {
     if (now - timestamp > EVENT_TTL_MS) {
       processedEvents.delete(eventId);
     }
   }
 }, 60 * 1000);
+
 cleanupInterval.unref();
 
 function hasProcessed(eventId) {
@@ -37,6 +42,7 @@ function clearProcessedEvents() {
 
 function buildEventId(senderId, recipientId, message, timestamp) {
   const messageId = message?.mid;
+
   const stableIdentity = messageId
     ? `${recipientId}:${senderId}:mid:${messageId}`
     : `${recipientId}:${senderId}:message:${message?.text || ""}:timestamp:${timestamp || ""}`;
@@ -49,7 +55,9 @@ const verifyWebhook = (req, res) => {
   const VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;
 
   if (!VERIFY_TOKEN) {
-    console.error("[Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not configured");
+    console.error(
+      "[Webhook] INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not configured",
+    );
     return res.sendStatus(500);
   }
 
@@ -61,9 +69,9 @@ const verifyWebhook = (req, res) => {
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       console.log("WEBHOOK_VERIFIED");
       return res.status(200).send(challenge);
-    } else {
-      return res.sendStatus(403);
     }
+
+    return res.sendStatus(403);
   }
 
   return res.status(400).send("Missing hub variables");
@@ -106,15 +114,20 @@ const verifyWebhookSignature = (req, res, next) => {
     ) {
       return next();
     }
-  } catch (e) {
-    // catch error if buffer lengths don't match
+  } catch (error) {
+    // timingSafeEqual throws when buffer lengths do not match.
   }
 
   console.warn("[Webhook] Invalid signature");
   return res.sendStatus(403);
 };
 
-async function enqueueDmEvent(eventId, senderId, messageText, recipientId) {
+async function enqueueDmEvent(
+  eventId,
+  senderId,
+  messageText,
+  recipientId,
+) {
   if (!dmQueue || typeof dmQueue.add !== "function") {
     throw new Error("DM queue unavailable");
   }
@@ -122,11 +135,11 @@ async function enqueueDmEvent(eventId, senderId, messageText, recipientId) {
   await dmQueue.add(
     "process-dm",
     {
-      senderId: senderId,
-      recipientId: recipientId,
+      senderId,
+      recipientId,
       message: messageText,
       triggerKeyword: messageText.toLowerCase(),
-      eventId: eventId,
+      eventId,
     },
     {
       attempts: 5,
@@ -140,75 +153,17 @@ async function enqueueDmEvent(eventId, senderId, messageText, recipientId) {
 }
 
 // Handle incoming webhook events
-const handleWebhook = asyncHandler(async (req, res, next) => {
+const handleWebhook = asyncHandler(async (req, res) => {
   const body = req.body || {};
   let enqueueFailed = false;
 
-  if (body.object === "instagram") {
-    if (body.entry && body.entry.length > 0) {
-      for (const entry of body.entry) {
-        const recipientId = entry.id;
-        if (entry.messaging && entry.messaging.length > 0) {
-          for (const webhookEvent of entry.messaging) {
-            const senderId = webhookEvent?.sender?.id;
-            const message = webhookEvent?.message;
-            const timestamp = webhookEvent?.timestamp;
-
-            if (senderId && message && message.text) {
-              // Deduplicate each platform message independently. A request-level
-              // X-Event-ID cannot safely identify multiple messages in one request.
-              const eventId = buildEventId(
-                senderId,
-                recipientId,
-                message,
-                timestamp,
-              );
-
-              if (hasProcessed(eventId)) {
-                console.log(`[Webhook] Duplicate event ${eventId}, skipping`);
-                continue;
-              }
-
-              console.log(
-                `[Webhook] Received message from ${senderId}: ${message.text}`,
-              );
-
-              try {
-                await enqueueDmEvent(
-                  eventId,
-                  senderId,
-                  message.text,
-                  recipientId,
-                );
-                markProcessed(eventId);
-              } catch (error) {
-                enqueueFailed = true;
-                console.warn(
-                  `[Webhook] DM queue enqueue failed: ${error.message}`,
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (enqueueFailed) {
-      return res.status(503).send("SERVICE_UNAVAILABLE");
-    }
-
-    return res.status(200).send("EVENT_RECEIVED");
-  } else {
+  if (body.object !== "instagram") {
     return res.sendStatus(404);
   }
-});
 
-module.exports = {
-  verifyWebhook,
-  verifyWebhookSignature,
-  handleWebhook,
-  hasProcessed,
-  markProcessed,
-  clearProcessedEvents,
-  buildEventId,
-};
+  if (body.entry && body.entry.length > 0) {
+    for (const entry of body.entry) {
+      const recipientId = entry.id;
+
+      if (!entry.messaging || entry.messaging.length === 0) {
+```

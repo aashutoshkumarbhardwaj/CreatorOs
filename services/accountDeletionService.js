@@ -31,6 +31,7 @@ const PasswordResetToken = require("../model/passwordResetToken");
 const Upload = require("../model/upload");
 const VaultFile = require("../model/vaultFile");
 const ContributorSession = require("../model/contributorSession");
+const DmConsent = require("../model/dmConsent");
 
 const isMockDb = () => process.env.USE_MOCK_DB === "true";
 
@@ -44,6 +45,7 @@ async function deleteDirectUserData(session, userId) {
         [Invite, { inviter: userId }],
         [Task, { creatorId: userId }],
         [DmTrigger, { creatorId: userId }],
+        [DmConsent, { creatorId: userId }],
         [Sponsor, { creatorId: userId }],
         [CrmBrand, { creatorId: userId }],
         [CrmDeal, { creatorId: userId }],

@@ -29,6 +29,7 @@ const PasswordResetToken = require("../../model/passwordResetToken");
 const Upload = require("../../model/upload");
 const VaultFile = require("../../model/vaultFile");
 const ContributorSession = require("../../model/contributorSession");
+const DmConsent = require("../../model/dmConsent");
 const { deleteAccount } = require("../../services/accountDeletionService");
 
 jest.mock("@huggingface/hub", () => ({
@@ -45,6 +46,7 @@ describe("accountDeletionService", () => {
     Invite,
     Task,
     DmTrigger,
+    DmConsent,
     Sponsor,
     CrmBrand,
     CrmDeal,
@@ -68,8 +70,9 @@ describe("accountDeletionService", () => {
     Post,
   ];
 
-  afterEach(() => {
+  afterEach(async () => {
     jest.restoreAllMocks();
+    await DmConsent.deleteMany({});
     if (originalMockDb === undefined) delete process.env.USE_MOCK_DB;
     else process.env.USE_MOCK_DB = originalMockDb;
     if (originalHfToken === undefined) delete process.env.HF_TOKEN;
@@ -89,6 +92,14 @@ describe("accountDeletionService", () => {
     const userId = new mongoose.Types.ObjectId();
     const creatorId = new mongoose.Types.ObjectId();
     const user = { _id: userId };
+
+    const consentRecord = await DmConsent.create({
+      creatorId: userId,
+      platform: "instagram",
+      recipientId: "test_recipient_1",
+      status: "opted_out",
+    });
+
     const deletionQuery = () => ({
       session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
     });
@@ -121,6 +132,15 @@ describe("accountDeletionService", () => {
       if (Model === Upload) {
         jest.spyOn(Model, "find").mockReturnValue(uploadQuery);
       }
+      if (Model === DmConsent) {
+        jest.spyOn(Model, "deleteMany").mockImplementation((filter) => ({
+          session: jest.fn(async () => {
+            await Model.collection.deleteMany(filter);
+            return { deletedCount: 1 };
+          }),
+        }));
+        return;
+      }
       jest.spyOn(Model, "deleteMany").mockImplementation(deletionQuery);
     });
 
@@ -145,12 +165,15 @@ describe("accountDeletionService", () => {
     );
 
     expect(Task.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
+    expect(DmConsent.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
     expect(EventType.deleteMany).toHaveBeenCalledWith({ userId });
     expect(MeetingBooking.deleteMany).toHaveBeenCalledWith({ userId });
     expect(ContentOs.deleteMany).toHaveBeenCalledWith({ userId });
     expect(CrmDeal.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
     expect(Upload.deleteMany).toHaveBeenCalledWith({ userId });
     expect(VaultFile.deleteMany).toHaveBeenCalledWith({ userId });
+    expect(await DmConsent.findById(consentRecord._id)).toBeNull();
+    expect(await DmConsent.findOne({ creatorId: userId })).toBeNull();
 
     expect(AnalyticsSnapshot.deleteMany).toHaveBeenCalledWith({
       creatorId: { $in: [creatorId] },
