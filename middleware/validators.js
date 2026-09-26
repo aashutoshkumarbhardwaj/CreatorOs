@@ -85,6 +85,7 @@ const contentOsItemSchema = z.object({
   type: z.enum(['idea', 'script', 'post', 'template', 'draft']).optional(),
   status: z.enum(['idea', 'scripting', 'filming', 'editing', 'ready', 'scheduled', 'published']).optional(),
   platform: z.enum(['instagram', 'youtube', 'twitter', 'tiktok', 'linkedin', 'blog', 'general']).optional(),
+  platforms: z.array(z.enum(['instagram', 'youtube', 'twitter', 'tiktok', 'linkedin', 'blog', 'general'])).optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   folderId: z.string().optional().nullable().or(z.literal('')),
   tags: z.union([z.array(z.string()), z.string()]).optional(),
