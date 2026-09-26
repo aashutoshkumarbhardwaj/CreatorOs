@@ -6,9 +6,9 @@ const linkSchema = new mongoose.Schema({
     label: { type: String, required: true },
     url: { type: String, required: true },
     category: { type: String, default: 'other' },
-    clicks: { type: Number, default: 0 },
+    clicks: { type: Number, default: 0, min: [0, 'Link click count cannot be negative'] },
     isEnabled: { type: Boolean, default: true },
-    order: { type: Number, default: 0 },
+    order: { type: Number, default: 0, min: [0, 'Link order cannot be negative'] },
     featured: { type: Boolean, default: false }
 });
 
@@ -40,9 +40,9 @@ const bioProfileSchema = new mongoose.Schema(
       description: { type: String },
     },
     stats: {
-      links: { type: Number, default: 0 },
-      views: { type: Number, default: 0 },
-      clicks: { type: Number, default: 0 },
+      links: { type: Number, default: 0, min: [0, 'stats.links cannot be negative'] },
+      views: { type: Number, default: 0, min: [0, 'stats.views cannot be negative'] },
+      clicks: { type: Number, default: 0, min: [0, 'stats.clicks cannot be negative'] },
     },
     socials: [socialSchema],
     links: [linkSchema],
