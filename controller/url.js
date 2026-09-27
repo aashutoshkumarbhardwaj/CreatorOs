@@ -4,6 +4,8 @@ const QRCode = require("qrcode");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
 const Url = require("../model/url");
+const dns = require("dns");
+const net = require("net");
 const { isValidUrl } = require("../utils/validators");
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -99,6 +101,7 @@ async function validateURL(urlString) {
 async function fetchWebsiteTitle(url, fallback) {
   if (fallback) return fallback;
   try {
+    await validateURL(url);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(url, {
@@ -213,6 +216,12 @@ async function handleGenerateShortURL(req, res) {
   } = req.body;
   const redirectUrl = redirectUrlField || url;
   const hostBaseEarly = `${req.protocol}://${req.get("host")}`;
+
+  try {
+    await validateURL(redirectUrl);
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
 
   // Duplicate detection: same user, same destination, not archived.
   // `force: true` from the client bypasses this (user chose "create anyway").
@@ -443,6 +452,16 @@ const handleRenderDashboard = asyncHandler(async (req, res) => {
 const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
   const { redirectUrl, url, campaignName, qrFgColor, qrBgColor } = req.body;
   const inputUrl = redirectUrl || url;
+
+  try {
+    await validateURL(inputUrl);
+  } catch (err) {
+    return res.status(400).render("home", {
+      urls: await Url.find({ userId: req.user?.id || null }).sort({ _id: -1 }).limit(20).lean(),
+      error: err.message,
+      id: null, shortUrl: null, qrCode: null, campaignName: ""
+    });
+  }
 
   if (!inputUrl || !isValidUrl(inputUrl)) {
     // Implement cursor-based pagination to avoid loading all records
@@ -730,6 +749,11 @@ const handleUpdateShortURL = asyncHandler(async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid destination URL" });
     }
+    try {
+      await validateURL(redirectUrl);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
     updates.redirectUrl = redirectUrl;
   }
   if (title !== undefined) updates.title = String(title).trim().slice(0, 200);
@@ -865,10 +889,13 @@ const handleBulkImport = asyncHandler(async (req, res) => {
 
   for (const row of rows) {
     if (!row.redirectUrl || !isValidUrl(row.redirectUrl)) {
-      skipped.push({
-        input: row.redirectUrl || "(empty)",
-        reason: "Invalid URL",
-      });
+      skipped.push({ input: row.redirectUrl || "(empty)", reason: "Invalid URL" });
+      continue;
+    }
+    try {
+      await validateURL(row.redirectUrl);
+    } catch (err) {
+      skipped.push({ input: row.redirectUrl, reason: err.message });
       continue;
     }
 
