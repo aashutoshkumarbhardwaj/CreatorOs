@@ -19,9 +19,9 @@ const crmMediaKitSchema = new mongoose.Schema(
       default: "Tech & Lifestyle Creator building high-impact brand partnerships.",
     },
     stats: {
-      followers: { type: Number, default: 125000 },
+      followers: { type: Number, default: 125000, min: 0 },
       engagementRate: { type: String, default: "4.8%" },
-      avgViews: { type: Number, default: 45000 },
+      avgViews: { type: Number, default: 45000, min: 0 },
     },
     packages: [
       {
