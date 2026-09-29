@@ -302,13 +302,14 @@ const createTask = asyncHandler(async (req, res) => {
  */
 const updateTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
 
   const allowedFields = [
-    "title", "description", "status", "priority", "category", 
-    "tags", "startDate", "dueDate", "estimatedHours", 
+    "title", "description", "status", "priority", "category",
+    "tags", "startDate", "dueDate", "estimatedHours",
     "subtasks"
   ];
-  
+
   const updates = {};
   const body = req.body || {};
   for (const field of allowedFields) {
@@ -326,7 +327,8 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { $set: updates }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { $set: updates }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -335,6 +337,7 @@ const updateTask = asyncHandler(async (req, res) => {
  */
 const updateTaskStatus = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
   const { status } = req.body;
 
   if (isMockMode()) {
@@ -344,7 +347,8 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { status }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -353,6 +357,7 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
  */
 const updateSubtasks = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
   const { subtasks } = req.body;
 
   if (isMockMode()) {
@@ -362,7 +367,8 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { subtasks }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -417,6 +423,7 @@ const logTaskTime = asyncHandler(async (req, res) => {
  */
 const toggleArchiveTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
     const task = mockTasks.find((t) => t._id === taskId);
@@ -426,7 +433,7 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  const taskDoc = await Task.findOne({ _id: taskId, creatorId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   taskDoc.isArchived = !taskDoc.isArchived;
   await taskDoc.save();
@@ -438,13 +445,15 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
  */
 const deleteTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
     mockTasks = mockTasks.filter((t) => t._id !== taskId);
     return res.json({ success: true, message: "Task deleted successfully." });
   }
 
-  await Task.findByIdAndDelete(taskId);
+  const deleted = await Task.findOneAndDelete({ _id: taskId, creatorId });
+  if (!deleted) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, message: "Task deleted successfully." });
 });
 
@@ -452,7 +461,10 @@ const deleteTask = asyncHandler(async (req, res) => {
  * GET /api/tasks/export/calendar - Export calendar feed
  */
 const exportCalendar = asyncHandler(async (req, res) => {
-  const tasks = isMockMode() ? mockTasks : await Task.find({ isArchived: false }).lean();
+  const creatorId = req.user?.id || "mock-user-123";
+  const tasks = isMockMode()
+    ? mockTasks
+    : await Task.find({ creatorId, isArchived: false }).lean();
   const calendarEvents = tasks.map((t) => ({
     id: t._id,
     title: t.title,

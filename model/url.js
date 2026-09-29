@@ -26,14 +26,15 @@ const urlSchema = new mongoose.Schema({
   totalClicks: {
     type: Number,
     default: 0,
+    min: [0, 'Click count cannot be negative'],
   },
   qrFgColor: {
     type: String,
-    default: "#1a1a1a",
+    default: "#37D6C8",
   },
   qrBgColor: {
     type: String,
-    default: "#ffffff",
+    default: "#FFFFFF",
   },
   qrGenerated: {
     type: Boolean,
@@ -127,8 +128,9 @@ urlSchema.statics.findDuplicate = async function (userId, redirectUrl) {
 };
 
 urlSchema.statics.getStatsForUser = async function (userId) {
-  const totalLinks = await this.countDocuments({ userId });
-  const allLinks = await this.find({ userId })
+  const activeQuery = { userId, archived: { $ne: true } };
+  const totalLinks = await this.countDocuments(activeQuery);
+  const allLinks = await this.find(activeQuery)
     .select("totalClicks title redirectUrl")
     .lean();
   const totalClicks = allLinks.reduce(
@@ -159,7 +161,7 @@ class MockUrlModel {
     this.campaignName = data.campaignName || "Untitled Campaign";
     this.userId = data.userId;
     this.totalClicks = data.totalClicks || 0;
-    this.qrFgColor = data.qrFgColor || "#1a1a1a";
+    this.qrFgColor = data.qrFgColor || "#37D6C8";
     this.qrBgColor = data.qrBgColor || "#ffffff";
     this.qrGenerated = data.qrGenerated || false;
     this.title = data.title ?? null;

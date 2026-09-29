@@ -64,6 +64,24 @@ describe("verifyCsrf", () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+    it("allows a POST to the billing webhook path without a CSRF token", () => {
+    const req = {
+      method: "POST",
+      path: "/api/billing/webhook",
+      cookies: {},
+      headers: {},
+      body: {},
+      originalUrl: "/api/billing/webhook",
+    };
+    const res = createResponse();
+    const next = jest.fn();
+
+    verifyCsrf(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   it("still requires a valid CSRF token on other POST routes even if their prefix overlaps the exempt path", () => {
     const req = {
       method: "POST",

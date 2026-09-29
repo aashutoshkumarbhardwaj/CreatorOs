@@ -310,9 +310,18 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  
+  const allowedFields = ["companyName", "category", "contactName", "contactEmail", "contactPhone", "website", "socialLinks", "status", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const brand = await CrmBrand.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -387,9 +396,18 @@ const createDeal = asyncHandler(async (req, res) => {
 
 const updateDeal = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  const allowedFields = ["dealName", "companyName", "category", "contactName", "contactEmail", "stage", "amount", "deliverables", "statusTag", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const deal = await CrmDeal.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -492,9 +510,18 @@ const createInvoice = asyncHandler(async (req, res) => {
 
 const updateInvoice = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  const allowedFields = ["companyName", "invoiceName", "invoiceNumber", "amount", "status", "dueDate", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -580,3 +607,4 @@ module.exports = {
   getMediaKit,
   updateMediaKit,
 };
+

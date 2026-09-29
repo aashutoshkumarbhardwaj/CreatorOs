@@ -4,6 +4,8 @@ const QRCode = require("qrcode");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
 const Url = require("../model/url");
+const dns = require("dns");
+const net = require("net");
 const { isValidUrl } = require("../utils/validators");
 const asyncHandler = require("../utils/asyncHandler");
 const { assertSafePublicHttpUrl } = require("../utils/ssrf");
@@ -34,7 +36,7 @@ function parseListLimit(value) {
 async function fetchWebsiteTitle(url, fallback) {
   if (fallback) return fallback;
   try {
-    await assertSafePublicHttpUrl(url);
+    await validateURL(url);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(url, {
@@ -151,9 +153,9 @@ async function handleGenerateShortURL(req, res) {
   const hostBaseEarly = `${req.protocol}://${req.get("host")}`;
 
   try {
-    await assertSafePublicHttpUrl(redirectUrl);
+    await validateURL(redirectUrl);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ success: false, message: err.message });
   }
 
   // Duplicate detection: same user, same destination, not archived.
@@ -386,6 +388,16 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
   const { redirectUrl, url, campaignName, qrFgColor, qrBgColor } = req.body;
   const inputUrl = redirectUrl || url;
 
+  try {
+    await validateURL(inputUrl);
+  } catch (err) {
+    return res.status(400).render("home", {
+      urls: await Url.find({ userId: req.user?.id || null }).sort({ _id: -1 }).limit(20).lean(),
+      error: err.message,
+      id: null, shortUrl: null, qrCode: null, campaignName: ""
+    });
+  }
+
   if (!inputUrl || !isValidUrl(inputUrl)) {
     // Implement cursor-based pagination to avoid loading all records
     const pageSize = 20;
@@ -474,8 +486,8 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
       light: entry.qrBgColor || "#ffffff",
     },
     errorCorrectionLevel: "M",
-    margin: 2,
-    width: 256,
+    margin: 4,
+    width: 512,
   });
 
   Url.findOneAndUpdate({ shortId }, { $set: { qrGenerated: true } }).catch(
@@ -672,6 +684,11 @@ const handleUpdateShortURL = asyncHandler(async (req, res) => {
         .status(400)
         .json({ success: false, message: "Invalid destination URL" });
     }
+    try {
+      await validateURL(redirectUrl);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
     updates.redirectUrl = redirectUrl;
   }
   if (title !== undefined) updates.title = String(title).trim().slice(0, 200);
@@ -807,10 +824,13 @@ const handleBulkImport = asyncHandler(async (req, res) => {
 
   for (const row of rows) {
     if (!row.redirectUrl || !isValidUrl(row.redirectUrl)) {
-      skipped.push({
-        input: row.redirectUrl || "(empty)",
-        reason: "Invalid URL",
-      });
+      skipped.push({ input: row.redirectUrl || "(empty)", reason: "Invalid URL" });
+      continue;
+    }
+    try {
+      await validateURL(row.redirectUrl);
+    } catch (err) {
+      skipped.push({ input: row.redirectUrl, reason: err.message });
       continue;
     }
 
