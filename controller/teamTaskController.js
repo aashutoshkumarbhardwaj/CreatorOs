@@ -24,6 +24,17 @@ exports.createTeamTask = async (req, res) => {
     }
 
     const hasBlockers = Array.isArray(blockedByIds) && blockedByIds.length > 0;
+    
+    // IDOR / BAC Fix: Verify all blockers belong to the same creator before allowing dependency linkage
+    let validBlockers = [];
+    if (hasBlockers) {
+      const blockers = await TeamTask.find({ _id: { $in: blockedByIds }, creatorId });
+      if (blockers.length !== blockedByIds.length) {
+        return res.status(403).json({ success: false, message: "One or more blocking tasks do not exist or you do not have permission to access them." });
+      }
+      validBlockers = blockers.map(b => b._id);
+    }
+    
     const initialStatus = hasBlockers ? "blocked" : "todo";
 
     const task = new TeamTask({
@@ -37,15 +48,18 @@ exports.createTeamTask = async (req, res) => {
       priority: priority || "medium",
       estimatedHours: estimatedHours || 2,
       dueDate: dueDate ? new Date(dueDate) : null,
-      blockedBy: hasBlockers ? blockedByIds : [],
+      blockedBy: hasBlockers ? validBlockers : [],
     });
 
     await task.save();
 
-    // Link this task as dependent on the blockers
+    // Link this task as dependent on the validated blockers
     if (hasBlockers) {
-      for (const blockerId of blockedByIds) {
-        await TeamTask.findByIdAndUpdate(blockerId, { $addToSet: { dependents: task._id } });
+      for (const blockerId of validBlockers) {
+        await TeamTask.findOneAndUpdate(
+          { _id: blockerId, creatorId },
+          { $addToSet: { dependents: task._id } }
+        );
       }
     }
 
