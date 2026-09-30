@@ -54,6 +54,101 @@ function calculateBaselineRate({ niche = "tech", estimatedViews = 10000, engagem
 }
 
 /**
+ * Validates inputs for sponsorship quote calculation
+ */
+function validateSponsorshipQuoteInputs({
+  deliverables,
+  usageRightsOption,
+  exclusivityOption,
+  twoDiscountPercent,
+  threePlusDiscountPercent,
+}) {
+  if (deliverables === undefined || deliverables === null) {
+    throw new TypeError("deliverables is required and must be an array");
+  }
+
+  if (!Array.isArray(deliverables)) {
+    throw new TypeError("deliverables must be an array");
+  }
+
+  for (let i = 0; i < deliverables.length; i++) {
+    const d = deliverables[i];
+    if (!d || typeof d !== "object" || Array.isArray(d)) {
+      throw new TypeError(`deliverable at index ${i} must be a valid object`);
+    }
+
+    if (
+      d.basePrice === undefined ||
+      d.basePrice === null ||
+      d.basePrice === "" ||
+      (typeof d.basePrice === "string" && d.basePrice.trim() === "") ||
+      typeof d.basePrice === "boolean"
+    ) {
+      throw new TypeError(`deliverable at index ${i} requires a valid basePrice`);
+    }
+
+    const price = Number(d.basePrice);
+    if (!Number.isFinite(price) || isNaN(price)) {
+      throw new TypeError(`deliverable at index ${i} basePrice must be a finite number`);
+    }
+
+    if (price < 0) {
+      throw new RangeError(`deliverable at index ${i} basePrice must be non-negative`);
+    }
+  }
+
+  if (twoDiscountPercent !== undefined && twoDiscountPercent !== null) {
+    if (
+      typeof twoDiscountPercent === "boolean" ||
+      twoDiscountPercent === "" ||
+      (typeof twoDiscountPercent === "string" && twoDiscountPercent.trim() === "")
+    ) {
+      throw new TypeError("twoDiscountPercent must be a finite number between 0 and 100");
+    }
+    const val = Number(twoDiscountPercent);
+    if (!Number.isFinite(val) || isNaN(val)) {
+      throw new TypeError("twoDiscountPercent must be a finite number between 0 and 100");
+    }
+    if (val < 0 || val > 100) {
+      throw new RangeError("twoDiscountPercent must be between 0 and 100");
+    }
+  }
+
+  if (threePlusDiscountPercent !== undefined && threePlusDiscountPercent !== null) {
+    if (
+      typeof threePlusDiscountPercent === "boolean" ||
+      threePlusDiscountPercent === "" ||
+      (typeof threePlusDiscountPercent === "string" && threePlusDiscountPercent.trim() === "")
+    ) {
+      throw new TypeError("threePlusDiscountPercent must be a finite number between 0 and 100");
+    }
+    const val = Number(threePlusDiscountPercent);
+    if (!Number.isFinite(val) || isNaN(val)) {
+      throw new TypeError("threePlusDiscountPercent must be a finite number between 0 and 100");
+    }
+    if (val < 0 || val > 100) {
+      throw new RangeError("threePlusDiscountPercent must be between 0 and 100");
+    }
+  }
+
+  if (
+    usageRightsOption !== undefined &&
+    usageRightsOption !== null &&
+    !(usageRightsOption in USAGE_RIGHTS_MULTIPLIERS)
+  ) {
+    throw new RangeError(`Invalid usageRightsOption: ${usageRightsOption}`);
+  }
+
+  if (
+    exclusivityOption !== undefined &&
+    exclusivityOption !== null &&
+    !(exclusivityOption in EXCLUSIVITY_MULTIPLIERS)
+  ) {
+    throw new RangeError(`Invalid exclusivityOption: ${exclusivityOption}`);
+  }
+}
+
+/**
  * Calculate full quotation with add-ons and bundle discounts
  */
 function calculateSponsorshipQuote({
@@ -63,20 +158,35 @@ function calculateSponsorshipQuote({
   whitelistingAllowed = false,
   twoDiscountPercent = 10,
   threePlusDiscountPercent = 20,
-}) {
-  if (!deliverables || deliverables.length === 0) {
+} = {}) {
+  validateSponsorshipQuoteInputs({
+    deliverables,
+    usageRightsOption,
+    exclusivityOption,
+    twoDiscountPercent,
+    threePlusDiscountPercent,
+  });
+
+  if (deliverables.length === 0) {
     return {
       subtotal: 0,
+      usageRightsOption,
       usageSurcharge: 0,
+      exclusivityOption,
       exclusivitySurcharge: 0,
+      whitelistingAllowed: Boolean(whitelistingAllowed),
       whitelistingSurcharge: 0,
+      grossTotal: 0,
+      discountPercent: 0,
       discountAmount: 0,
       finalTotal: 0,
       deliverablesCount: 0,
     };
   }
 
-  const baseDeliverablesSum = deliverables.reduce((sum, d) => sum + (Number(d.basePrice) || 0), 0);
+  const baseDeliverablesSum = Number(
+    deliverables.reduce((sum, d) => sum + Number(d.basePrice), 0).toFixed(2)
+  );
 
   const usageFactor = USAGE_RIGHTS_MULTIPLIERS[usageRightsOption] || 0;
   const usageSurcharge = Number((baseDeliverablesSum * usageFactor).toFixed(2));
@@ -84,7 +194,9 @@ function calculateSponsorshipQuote({
   const exclusivityFactor = EXCLUSIVITY_MULTIPLIERS[exclusivityOption] || 0;
   const exclusivitySurcharge = Number((baseDeliverablesSum * exclusivityFactor).toFixed(2));
 
-  const whitelistingSurcharge = whitelistingAllowed ? Number((baseDeliverablesSum * 0.35).toFixed(2)) : 0;
+  const whitelistingSurcharge = whitelistingAllowed
+    ? Number((baseDeliverablesSum * 0.35).toFixed(2))
+    : 0;
 
   const grossTotal = Number(
     (baseDeliverablesSum + usageSurcharge + exclusivitySurcharge + whitelistingSurcharge).toFixed(2)
@@ -92,13 +204,13 @@ function calculateSponsorshipQuote({
 
   let discountPercent = 0;
   if (deliverables.length >= 3) {
-    discountPercent = threePlusDiscountPercent;
+    discountPercent = Number(threePlusDiscountPercent);
   } else if (deliverables.length === 2) {
-    discountPercent = twoDiscountPercent;
+    discountPercent = Number(twoDiscountPercent);
   }
 
   const discountAmount = Number(((grossTotal * discountPercent) / 100).toFixed(2));
-  const finalTotal = Number((grossTotal - discountAmount).toFixed(2));
+  const finalTotal = Math.max(0, Number((grossTotal - discountAmount).toFixed(2)));
 
   return {
     subtotal: baseDeliverablesSum,
@@ -106,7 +218,7 @@ function calculateSponsorshipQuote({
     usageSurcharge,
     exclusivityOption,
     exclusivitySurcharge,
-    whitelistingAllowed,
+    whitelistingAllowed: Boolean(whitelistingAllowed),
     whitelistingSurcharge,
     grossTotal,
     discountPercent,
@@ -121,5 +233,6 @@ module.exports = {
   USAGE_RIGHTS_MULTIPLIERS,
   EXCLUSIVITY_MULTIPLIERS,
   calculateBaselineRate,
+  validateSponsorshipQuoteInputs,
   calculateSponsorshipQuote,
 };
