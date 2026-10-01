@@ -66,6 +66,7 @@ const {
   getDeals,
   updateDeal,
   deleteDeal,
+  toggleDealTask,
   createInvoice,
   getInvoices,
   markInvoicePaid,
@@ -213,6 +214,140 @@ describe("Creator CRM Controller", () => {
         { new: true, runValidators: true }
       );
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { _id: "d1", stage: "negotiation" } });
+    });
+
+    describe("toggleDealTask", () => {
+      const validDealId = "507f1f77bcf86cd799439011";
+      const validTaskId = "507f191e810c19729de860ea";
+      const nonexistentDealId = "507f1f77bcf86cd799439099";
+      const nonexistentTaskId = "507f191e810c19729de86099";
+      let mockTask;
+      let mockDeal;
+
+      beforeEach(() => {
+        mockTask = {
+          _id: validTaskId,
+          title: "Send contract draft",
+          completed: false,
+        };
+        mockDeal = {
+          _id: validDealId,
+          creatorId: userId,
+          dealName: "Test Deal",
+          tasks: {
+            id: jest.fn((taskId) => (taskId === validTaskId ? mockTask : null)),
+          },
+          save: jest.fn().mockResolvedValue(true),
+        };
+      });
+
+      it("successfully toggles task completion with valid deal ID and task ID", async () => {
+        req.params = { id: validDealId, taskId: validTaskId };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(CrmDeal.findOne).toHaveBeenCalledWith({ _id: validDealId, creatorId: userId });
+        expect(mockDeal.tasks.id).toHaveBeenCalledWith(validTaskId);
+        expect(mockTask.completed).toBe(true);
+        expect(mockDeal.save).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: mockDeal });
+      });
+
+      it("toggles a valid task from false to true", async () => {
+        mockTask.completed = false;
+        req.params = { id: validDealId, taskId: validTaskId };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(mockTask.completed).toBe(true);
+        expect(mockDeal.save).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: mockDeal });
+      });
+
+      it("toggles a valid task from true to false", async () => {
+        mockTask.completed = true;
+        req.params = { id: validDealId, taskId: validTaskId };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(mockTask.completed).toBe(false);
+        expect(mockDeal.save).toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: mockDeal });
+      });
+
+      it("returns HTTP 400 with 'Invalid deal ID' for a malformed deal ID", async () => {
+        req.params = { id: "invalid-deal-id", taskId: validTaskId };
+
+        await toggleDealTask(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({ success: false, message: "Invalid deal ID" });
+      });
+
+      it("does not execute the database query for a malformed deal ID", async () => {
+        req.params = { id: "invalid-deal-id", taskId: validTaskId };
+
+        await toggleDealTask(req, res);
+
+        expect(CrmDeal.findOne).not.toHaveBeenCalled();
+      });
+
+      it("returns HTTP 404 with 'Deal not found' for a valid-format but nonexistent deal ID", async () => {
+        req.params = { id: nonexistentDealId, taskId: validTaskId };
+        CrmDeal.findOne.mockResolvedValue(null);
+
+        await toggleDealTask(req, res);
+
+        expect(CrmDeal.findOne).toHaveBeenCalledWith({ _id: nonexistentDealId, creatorId: userId });
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ success: false, message: "Deal not found" });
+      });
+
+      it("returns HTTP 400 with 'Invalid task ID' for a malformed task ID", async () => {
+        req.params = { id: validDealId, taskId: "invalid-task-id" };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({ success: false, message: "Invalid task ID" });
+      });
+
+      it("does not perform task lookup for a malformed task ID", async () => {
+        req.params = { id: validDealId, taskId: "invalid-task-id" };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(mockDeal.tasks.id).not.toHaveBeenCalled();
+      });
+
+      it("returns HTTP 404 with 'Task not found' for a valid-format but nonexistent task ID", async () => {
+        req.params = { id: validDealId, taskId: nonexistentTaskId };
+        CrmDeal.findOne.mockResolvedValue(mockDeal);
+
+        await toggleDealTask(req, res);
+
+        expect(mockDeal.tasks.id).toHaveBeenCalledWith(nonexistentTaskId);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ success: false, message: "Task not found" });
+        expect(mockDeal.save).not.toHaveBeenCalled();
+      });
+
+      it("does not allow access to a deal belonging to another user", async () => {
+        req.user = { id: "other-user-456", name: "Other User" };
+        req.params = { id: validDealId, taskId: validTaskId };
+        CrmDeal.findOne.mockResolvedValue(null);
+
+        await toggleDealTask(req, res);
+
+        expect(CrmDeal.findOne).toHaveBeenCalledWith({ _id: validDealId, creatorId: "other-user-456" });
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ success: false, message: "Deal not found" });
+      });
     });
   });
 
