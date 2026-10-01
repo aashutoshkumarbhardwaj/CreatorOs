@@ -19,6 +19,15 @@ if (redis?.on) {
 function getCooldownSeconds() {
     return getInstagramLookupCooldownSeconds({ allowZero: true });
 }
+function getProfileCacheTtlSeconds() {
+    const value = Number(process.env.INSTAGRAM_PROFILE_CACHE_TTL_SECONDS);
+
+    if (Number.isFinite(value) && value > 0) {
+        return value;
+    }
+
+    return 600;
+}
 
 /**
  * @function getLookupKey
@@ -129,33 +138,45 @@ function sendInstagramError(res, error) {
  */
 async function getInstagramProfile(req, res) {
     try {
-        const username = validateUsername(req.query.username);
+        const username = validateUsername(req.query.username).toLowerCase();
         const cacheKey = `ig:profile:${username}`;
         const cachedProfile = redis
             ? await redis.get(cacheKey)
             : getMemoryValue(cacheKey);
-
-        if (cachedProfile) {
-            return res.json({
-                success: true,
-                data: JSON.parse(cachedProfile),
-            });
-        }
+       if (cachedProfile) {
+    return res.json({
+        success: true,
+        data: JSON.parse(cachedProfile),
+        cached: true,
+    });
+}
+        
 
         await assertLookupAllowed(req);
-
+         const cacheTtlSeconds = getProfileCacheTtlSeconds();
         const profile = await fetchInstagramProfile(username);
+       
 
         if (redis) {
-            await redis.set(cacheKey, JSON.stringify(profile), 'EX', 1800); // 30 minutes TTL
-        } else {
-            setMemoryValue(cacheKey, JSON.stringify(profile), 1800);
-        }
+    await redis.set(
+        cacheKey,
+        JSON.stringify(profile),
+        'EX',
+        cacheTtlSeconds
+    );
+} else {
+    setMemoryValue(
+        cacheKey,
+        JSON.stringify(profile),
+        cacheTtlSeconds
+    );
+}
 
         return res.json({
-            success: true,
-            data: profile,
-        });
+    success: true,
+    data: profile,
+    cached: false,
+});
     } catch (error) {
         return sendInstagramError(res, error);
     }
