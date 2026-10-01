@@ -22,32 +22,60 @@ exports.createTeamTask = async (req, res) => {
     if (!title) {
       return res.status(400).json({ success: false, message: "title is required" });
     }
+const hasBlockers = Array.isArray(blockedByIds) && blockedByIds.length > 0;
 
-    const hasBlockers = Array.isArray(blockedByIds) && blockedByIds.length > 0;
-    const initialStatus = hasBlockers ? "blocked" : "todo";
+let validatedBlockedByIds = [];
 
-    const task = new TeamTask({
-      creatorId,
-      title,
-      description: description || "",
-      assigneeName: assigneeName || "Unassigned",
-      assigneeEmail: assigneeEmail || "",
-      role: role || "video_editor",
-      status: initialStatus,
-      priority: priority || "medium",
-      estimatedHours: estimatedHours || 2,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      blockedBy: hasBlockers ? blockedByIds : [],
+if (hasBlockers) {
+  // Prevent cross-tenant task references by validating blocker ownership.
+  const blockerTasks = await TeamTask.find({
+    _id: { $in: blockedByIds },
+    creatorId,
+  }).select("_id");
+
+  if (blockerTasks.length !== blockedByIds.length) {
+    return res.status(403).json({
+      success: false,
+      message: "One or more blocker tasks do not belong to you",
     });
+  }
 
-    await task.save();
+  validatedBlockedByIds = blockerTasks.map((blocker) => blocker._id);
+}
 
-    // Link this task as dependent on the blockers
-    if (hasBlockers) {
-      for (const blockerId of blockedByIds) {
-        await TeamTask.findByIdAndUpdate(blockerId, { $addToSet: { dependents: task._id } });
+const initialStatus = validatedBlockedByIds.length > 0 ? "blocked" : "todo";
+
+const task = new TeamTask({
+  creatorId,
+  title,
+  description: description || "",
+  assigneeName: assigneeName || "Unassigned",
+  assigneeEmail: assigneeEmail || "",
+  role: role || "video_editor",
+  status: initialStatus,
+  priority: priority || "medium",
+  estimatedHours: estimatedHours || 2,
+  dueDate: dueDate ? new Date(dueDate) : null,
+  blockedBy: validatedBlockedByIds,
+});
+
+await task.save();
+
+// Link this task only to validated blockers owned by the same creator.
+if (validatedBlockedByIds.length > 0) {
+  for (const blockerId of validatedBlockedByIds) {
+    await TeamTask.findOneAndUpdate(
+      {
+        _id: blockerId,
+        creatorId,
+      },
+      {
+        $addToSet: { dependents: task._id },
       }
-    }
+    );
+  }
+}
+    
 
     return res.status(201).json({
       success: true,
