@@ -76,10 +76,14 @@ const creatorRateCardSchema = new mongoose.Schema(
     twoDeliverableBundleDiscountPercent: {
       type: Number,
       default: 10,
+      min: 0,
+      max: 100,
     },
     threePlusBundleDiscountPercent: {
       type: Number,
       default: 20,
+      min: 0,
+      max: 100,
     },
     agencyCommissionPercent: {
       type: Number,

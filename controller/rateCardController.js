@@ -1,5 +1,5 @@
 const CreatorRateCard = require("../model/creatorRateCard");
-const { calculateBaselineRate, calculateSponsorshipQuote } = require("../services/rateCardEngine");
+const { calculateBaselineRate, calculateSponsorshipQuote, validateSponsorshipQuoteInputs } = require("../services/rateCardEngine");
 
 function createSlug(title) {
   return title
@@ -192,6 +192,13 @@ exports.deleteRateCard = async (req, res) => {
  */
 exports.calculateQuote = async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must be a valid JSON object",
+      });
+    }
+
     const {
       deliverables,
       usageRightsOption,
@@ -201,13 +208,36 @@ exports.calculateQuote = async (req, res) => {
       threePlusDiscountPercent,
     } = req.body;
 
+    if (deliverables === undefined || deliverables === null) {
+      return res.status(400).json({
+        success: false,
+        message: "deliverables is required and must be an array",
+      });
+    }
+
+    try {
+      validateSponsorshipQuoteInputs({
+        deliverables,
+        usageRightsOption,
+        exclusivityOption,
+        twoDiscountPercent,
+        threePlusDiscountPercent,
+      });
+    } catch (valError) {
+      return res.status(400).json({
+        success: false,
+        message: valError.message,
+      });
+    }
+
     const quote = calculateSponsorshipQuote({
       deliverables,
       usageRightsOption,
       exclusivityOption,
-      whitelistingAllowed,
-      twoDiscountPercent,
-      threePlusDiscountPercent,
+      whitelistingAllowed: Boolean(whitelistingAllowed),
+      twoDiscountPercent: twoDiscountPercent !== undefined ? Number(twoDiscountPercent) : 10,
+      threePlusDiscountPercent:
+        threePlusDiscountPercent !== undefined ? Number(threePlusDiscountPercent) : 20,
     });
 
     return res.status(200).json({
