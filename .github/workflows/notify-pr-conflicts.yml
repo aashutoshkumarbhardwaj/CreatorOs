@@ -77,7 +77,7 @@ jobs:
                         owner,
                         repo,
                         issue_number: pr.number,
-                        body: `@${author}, please resolve the commit so that it will be merged soon ......`
+                        body: `@${author}, this pull request has merge conflicts. Please rebase or merge the latest base branch and resolve the conflicts so it can be merged.`
                       });
                       console.log(`Posted merge conflict comment on PR #${pr.number}`);
                     } catch (e) {
