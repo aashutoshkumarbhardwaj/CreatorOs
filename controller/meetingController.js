@@ -46,7 +46,7 @@ async function findCreatorByAliasOrName(identifier) {
   }
 
   if (!creator && identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    creator = await User.findById(identifier);
+    creator = await User.findOne({ _id: identifier, role: "creator" });
   }
   return creator;
 }
