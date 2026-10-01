@@ -83,6 +83,7 @@ const crmDealSchema = new mongoose.Schema(
     amount: {
       type: Number,
       default: 0,
+      min: [0, 'Deal amount cannot be negative'],
     },
     deliverables: {
       type: String,
