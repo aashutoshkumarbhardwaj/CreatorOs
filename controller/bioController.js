@@ -1,6 +1,7 @@
 const BioProfile = require('../model/bioProfile');
 const User = require('../model/user');
 const asyncHandler = require('../utils/asyncHandler');
+const mongoose = require('mongoose');
 
 const RESERVED_HANDLES = new Set([
     'admin', 'login', 'signup', 'dashboard', 'bio', 'api', 'services', 
@@ -219,6 +220,10 @@ const renderPublicBioProfile = asyncHandler(async (req, res, next) => {
  */
 const trackLinkClick = asyncHandler(async (req, res) => {
     const { linkId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(linkId)) {
+        return res.status(400).json({ success: false, message: 'Invalid link ID' });
+    }
 
     const bioProfile = await BioProfile.findOneAndUpdate(
         { "links._id": linkId },
