@@ -155,4 +155,138 @@ describe('Content Publish Worker', () => {
         expect(refreshed.status).toBe('failed');
         expect(refreshed.errorMessage).toContain('Publishing lease expired');
     });
+
+    describe('lease fencing and atomic reclaim', () => {
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        function dueItem(overrides = {}) {
+            return ScheduledContent.create({
+                userId: new mongoose.Types.ObjectId(),
+                caption: 'Lease test',
+                timezone: 'UTC',
+                scheduledAt: new Date(Date.now() - 60 * 1000),
+                status: 'scheduled',
+                ...overrides,
+            });
+        }
+
+        // Simulates another instance reclaiming this item's expired lease and
+        // re-claiming it, right after the current worker claimed it.
+        function stealClaimAfterFirstClaim() {
+            const realClaim = ScheduledContent.findOneAndUpdate.bind(ScheduledContent);
+            let stolen = false;
+            return jest.spyOn(ScheduledContent, 'findOneAndUpdate').mockImplementation(async (...args) => {
+                const claimed = await realClaim(...args);
+                if (claimed && !stolen) {
+                    stolen = true;
+                    await ScheduledContent.updateOne(
+                        { _id: claimed._id },
+                        { $set: { publishedBy: 'other-instance' }, $inc: { publishAttempts: 1 } }
+                    );
+                }
+                return claimed;
+            });
+        }
+
+        it('does not let a worker whose lease was reclaimed overwrite the newer claim with "published"', async () => {
+            const item = await dueItem();
+            const spy = stealClaimAfterFirstClaim();
+
+            const publishedCount = await publishDueContent();
+            spy.mockRestore();
+
+            expect(publishedCount).toBe(0);
+            const refreshed = await ScheduledContent.findById(item._id);
+            expect(refreshed.status).toBe('publishing');
+            expect(refreshed.publishedBy).toBe('other-instance');
+            expect(refreshed.publishAttempts).toBe(2);
+            expect(refreshed.platformPostId).toBeNull();
+        });
+
+        it('does not let a worker whose lease was reclaimed overwrite the newer claim with "failed"', async () => {
+            const item = await dueItem();
+            process.env.TEST_PUBLISH_FAIL = 'true';
+            const spy = stealClaimAfterFirstClaim();
+
+            await publishDueContent();
+            spy.mockRestore();
+
+            const refreshed = await ScheduledContent.findById(item._id);
+            expect(refreshed.status).toBe('publishing');
+            expect(refreshed.publishedBy).toBe('other-instance');
+            expect(refreshed.errorMessage).toBeNull();
+        });
+
+        it('starts each item\'s lease at its own claim time, not at the start of the batch', async () => {
+            await dueItem();
+            await dueItem();
+            await dueItem();
+
+            const realClaim = ScheduledContent.findOneAndUpdate.bind(ScheduledContent);
+            const leaseStarts = [];
+            const spy = jest.spyOn(ScheduledContent, 'findOneAndUpdate').mockImplementation(async (...args) => {
+                const claimed = await realClaim(...args);
+                if (claimed) {
+                    leaseStarts.push(args[1].$set.publishingStartedAt.getTime());
+                    await sleep(40); // each publish takes a while
+                }
+                return claimed;
+            });
+
+            await publishDueContent();
+            spy.mockRestore();
+
+            expect(leaseStarts).toHaveLength(3);
+            expect(leaseStarts[1] - leaseStarts[0]).toBeGreaterThanOrEqual(30);
+            expect(leaseStarts[2] - leaseStarts[0]).toBeGreaterThanOrEqual(60);
+        });
+
+        it('reclaims stale leases on legacy documents that have no publishAttempts counter', async () => {
+            const legacy = await dueItem({
+                status: 'publishing',
+                publishedBy: 'dead-worker',
+                publishingStartedAt: new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000),
+            });
+            await ScheduledContent.updateOne({ _id: legacy._id }, { $unset: { publishAttempts: 1 } });
+
+            const result = await reclaimStalePublishingLeases();
+
+            expect(result).toEqual({ reclaimed: 1, failed: 0 });
+            const refreshed = await ScheduledContent.findById(legacy._id);
+            expect(refreshed.status).toBe('scheduled');
+            expect(refreshed.publishedBy).toBeNull();
+        });
+
+        it('never exposes an exhausted stale item as "scheduled" while reclaiming it', async () => {
+            const exhausted = await dueItem({
+                status: 'publishing',
+                publishedBy: 'dead-worker',
+                publishingStartedAt: new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000),
+                publishAttempts: MAX_PUBLISH_ATTEMPTS,
+            });
+
+            // Observe the stored status right after every write issued by the reclaim.
+            // Any intermediate "scheduled" state is claimable by another instance.
+            const observed = [];
+            const spies = ['findOneAndUpdate', 'findByIdAndUpdate', 'updateOne', 'updateMany'].map((method) => {
+                const real = ScheduledContent[method].bind(ScheduledContent);
+                return jest.spyOn(ScheduledContent, method).mockImplementation(async (...args) => {
+                    const result = await real(...args);
+                    observed.push((await ScheduledContent.findById(exhausted._id)).status);
+                    return result;
+                });
+            });
+
+            const result = await reclaimStalePublishingLeases();
+            spies.forEach((spy) => spy.mockRestore());
+
+            expect(result).toEqual({ reclaimed: 0, failed: 1 });
+            expect(observed.length > 0).toBe(true);
+            expect(observed.every((status) => status === 'failed')).toBe(true);
+
+            const refreshed = await ScheduledContent.findById(exhausted._id);
+            expect(refreshed.status).toBe('failed');
+            expect(refreshed.publishAttempts).toBe(MAX_PUBLISH_ATTEMPTS);
+        });
+    });
 });
