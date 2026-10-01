@@ -444,11 +444,17 @@ const addTaskToDeal = asyncHandler(async (req, res) => {
 });
 
 const toggleDealTask = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
+
   const userId = getUserId(req);
   const { id, taskId } = req.params;
 
   const deal = await CrmDeal.findOne({ _id: id, creatorId: userId });
   if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
+
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, message: "Invalid task ID" });
 
   const task = deal.tasks.id(taskId);
   if (!task) return res.status(404).json({ success: false, message: "Task not found" });
