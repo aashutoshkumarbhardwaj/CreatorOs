@@ -143,6 +143,51 @@ describe('URL Controller Endpoints', () => {
         expect([200, 404, 401, 403]).toContain(res.statusCode);
     });
 
+    it('should reject private/internal URLs (SSRF protection)', async () => {
+        const ssrfUrls = [
+            'http://169.254.169.254/latest/meta-data/',
+            'http://127.0.0.1:6379/',
+            'http://10.0.0.1/admin',
+            'http://192.168.1.1/',
+            'http://localhost:3000/',
+        ];
+
+        for (const blockedUrl of ssrfUrls) {
+            const req = request(app)
+                .post('/api/urls/shorten')
+                .set(csrfHeader)
+                .send({ redirectUrl: blockedUrl });
+
+            if (authCookie) {
+                req.set('Cookie', [csrfCookie, authCookie]);
+            } else {
+                req.set('Cookie', [csrfCookie]);
+            }
+
+            const res = await req;
+            expect([400, 401]).toContain(res.statusCode);
+            if (res.statusCode === 400) {
+                expect(res.body.error).toMatch(/private|internal|Invalid/i);
+            }
+        }
+    });
+
+    it('should allow public URLs through SSRF check', async () => {
+        const req = request(app)
+            .post('/api/urls/shorten')
+            .set(csrfHeader)
+            .send({ redirectUrl: 'https://example.com' });
+
+        if (authCookie) {
+            req.set('Cookie', [csrfCookie, authCookie]);
+        } else {
+            req.set('Cookie', [csrfCookie]);
+        }
+
+        const res = await req;
+        expect([201, 401]).toContain(res.statusCode);
+    });
+
     it('should return 403 when unauthenticated user (req.user undefined) accesses analytics of a protected URL', async () => {
         const { handleGetAnalytics } = require('../../controller/url');
         const Url = require('../../model/url');
