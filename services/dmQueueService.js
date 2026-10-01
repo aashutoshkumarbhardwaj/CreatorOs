@@ -1,7 +1,9 @@
+```javascript
 const { Queue, Worker } = require("bullmq");
 const IORedis = require("ioredis");
 const Creator = require("../model/creator");
 const DmTrigger = require("../model/dmTrigger");
+const dmConsentService = require("./dmConsentService");
 const {
   reserveDmDelivery,
   markDmDeliverySent,
@@ -18,6 +20,7 @@ function createFallbackQueue() {
       console.warn(
         `[DM Queue] Redis is not configured, skipping job "${jobName}" for sender ${jobData?.senderId || "unknown"}.`,
       );
+
       return {
         id: null,
         name: jobName,
@@ -46,7 +49,10 @@ function createRedisConnection(label) {
 
 if (REDIS_URI) {
   const queueConnection = createRedisConnection("dm-queue");
-  dmQueue = new Queue("dm-automation-queue", { connection: queueConnection });
+
+  dmQueue = new Queue("dm-automation-queue", {
+    connection: queueConnection,
+  });
 
   if (process.env.VERCEL === "1") {
     console.warn(
@@ -60,37 +66,88 @@ if (REDIS_URI) {
       async (job) => {
         const { senderId, recipientId, message, eventId } = job.data;
 
-        console.log(`[Worker] Processing job ${job.id} for sender ${senderId}`);
+        console.log(
+          `[Worker] Processing job ${job.id} for sender ${senderId}`,
+        );
 
         try {
+          /*
+           * 1. Find the creator associated with the Instagram
+           *    recipient/page account.
+           */
           const creator = await Creator.findOne({
             platform: "instagram",
             platformId: recipientId,
           });
+
           if (!creator) {
             console.warn(
               `[Worker] No creator found for recipientId ${recipientId}, skipping job ${job.id}`,
             );
-            return { skipped: true, reason: "unknown_creator" };
+
+            return {
+              skipped: true,
+              reason: "unknown_creator",
+            };
           }
 
+          /*
+           * 2. Find an active DM trigger matching the incoming message.
+           */
           const triggers = await DmTrigger.find({
             creatorId: creator.userId,
             isActive: true,
           });
+
           const normalizedMessage = (message || "").toLowerCase();
-          const matchedTrigger = triggers.find((t) =>
-            normalizedMessage.includes(t.keyword),
+
+          const matchedTrigger = triggers.find((trigger) =>
+            normalizedMessage.includes(trigger.keyword),
           );
 
           if (!matchedTrigger) {
             console.log(
               `[Worker] No matching trigger for job ${job.id}, skipping reply`,
             );
-            return { skipped: true, reason: "no_matching_trigger" };
+
+            return {
+              skipped: true,
+              reason: "no_matching_trigger",
+            };
           }
 
+          /*
+           * 3. Check recipient consent BEFORE attempting delivery.
+           *
+           * If the recipient has opted out, no Instagram DM should
+           * be sent.
+           */
+          const allowed = await dmConsentService.canSend({
+            creatorId: creator.userId,
+            platform: "instagram",
+            recipientId: senderId,
+          });
+
+          if (!allowed) {
+            console.warn(
+              `[Worker] Message dispatch suppressed: recipient ${senderId} is opted out for creator ${creator.userId}.`,
+            );
+
+            return {
+              skipped: true,
+              suppressed: true,
+              reason: "recipient_opted_out",
+            };
+          }
+
+          /*
+           * 4. Reserve the delivery.
+           *
+           * This prevents duplicate outbound DMs when the same webhook
+           * or BullMQ job is processed more than once.
+           */
           const deliveryEventId = eventId || job.id;
+
           const reservation = await reserveDmDelivery(
             creator._id,
             deliveryEventId,
@@ -107,21 +164,43 @@ if (REDIS_URI) {
           }
 
           try {
+            /*
+             * 5. Send the Instagram DM.
+             */
             const responseText = matchedTrigger.responseUrl;
-            const result = await sendInstagramDM(senderId, responseText, {
-              accessToken: creator.accessToken,
-            });
 
+            const result = await sendInstagramDM(
+              senderId,
+              responseText,
+              {
+                accessToken: creator.accessToken,
+              },
+            );
+
+            /*
+             * 6. Mark delivery as successfully sent.
+             */
             await markDmDeliverySent(
               creator._id,
               deliveryEventId,
               result.messageId,
             );
 
-            console.log(`[Worker] Successfully processed job ${job.id}`);
+            console.log(
+              `[Worker] Successfully processed job ${job.id}`,
+            );
+
             return result;
           } catch (error) {
-            await releaseDmDelivery(creator._id, deliveryEventId);
+            /*
+             * 7. If sending fails, release the reservation so a retry
+             * can attempt the delivery again.
+             */
+            await releaseDmDelivery(
+              creator._id,
+              deliveryEventId,
+            );
+
             throw error;
           }
         } catch (error) {
@@ -130,6 +209,7 @@ if (REDIS_URI) {
               `[Worker] Rate limited on job ${job.id}. Will retry...`,
             );
           }
+
           throw error;
         }
       },
@@ -151,7 +231,11 @@ if (REDIS_URI) {
     dmWorker.on("failed", (job, err) => {
       const jobId = job?.id || "unknown";
       const errorMsg = err?.message || "unknown error";
-      console.error(`❌ Job with id ${jobId} has failed with ${errorMsg}`);
+
+      console.error(
+        `❌ Job with id ${jobId} has failed with ${errorMsg}`,
+      );
+
       if (
         job?.attemptsMade &&
         job?.opts?.attempts &&
@@ -178,13 +262,16 @@ if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
 async function sendInstagramDM(recipientId, text, options = {}) {
   const accessToken = options.accessToken;
   const appId = process.env.INSTAGRAM_APP_ID;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_DM_REQUEST_TIMEOUT_MS;
+  const timeoutMs =
+    options.timeoutMs ?? DEFAULT_DM_REQUEST_TIMEOUT_MS;
 
   if (!appId) {
     const error = new Error(
       "Instagram DM automation is not configured: INSTAGRAM_APP_ID is required.",
     );
+
     error.code = "DM_NOT_CONFIGURED";
+
     throw error;
   }
 
@@ -192,7 +279,9 @@ async function sendInstagramDM(recipientId, text, options = {}) {
     const error = new Error(
       "Instagram creator access token is required for outbound DM delivery.",
     );
+
     error.code = "DM_CREDENTIAL_MISSING";
+
     throw error;
   }
 
@@ -203,52 +292,82 @@ async function sendInstagramDM(recipientId, text, options = {}) {
   }
 
   let response;
+
   try {
-    response = await fetch("https://graph.facebook.com/v21.0/me/messages", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "X-Ig-App-Id": appId,
+    response = await fetch(
+      "https://graph.facebook.com/v21.0/me/messages",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "X-Ig-App-Id": appId,
+        },
+        body: JSON.stringify({
+          recipient: {
+            id: recipientId,
+          },
+          messaging_type: "RESPONSE",
+          message: {
+            text,
+          },
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
       },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        messaging_type: "RESPONSE",
-        message: { text },
-      }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    );
   } catch (error) {
-    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+    if (
+      error?.name === "TimeoutError" ||
+      error?.name === "AbortError"
+    ) {
       const timeoutError = new Error(
         `Instagram DM request timed out after ${timeoutMs}ms`,
-        { cause: error },
+        {
+          cause: error,
+        },
       );
+
       timeoutError.code = "DM_REQUEST_TIMEOUT";
+
       throw timeoutError;
     }
+
     throw error;
   }
 
   if (!response.ok) {
     const errBody = await response.text();
+
     const error = new Error(
       `Instagram DM send failed: ${response.status} - ${errBody}`,
     );
+
     error.status = response.status;
+
     try {
       const parsed = JSON.parse(errBody);
+
       if (parsed?.error?.code) {
         error.code = parsed.error.code;
       }
     } catch (e) {
       // Preserve the HTTP status when the API returns a non-JSON body.
     }
+
     throw error;
   }
 
   const data = await response.json();
-  return { success: true, messageId: data?.message_id || null };
+
+  return {
+    success: true,
+    messageId: data?.message_id || null,
+  };
 }
 
-module.exports = { dmQueue, sendInstagramDM };
+module.exports = {
+  dmQueue,
+  sendInstagramDM,
+  dmWorker,
+};
+```
