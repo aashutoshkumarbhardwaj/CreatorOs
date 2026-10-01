@@ -83,6 +83,39 @@ describe("Digital Store & Monetization Engine Unit Tests", () => {
   });
 
   describe("Digital Store Controller Handlers Validation", () => {
+        it("should only query active products for public product details", async () => {
+      const productId = new mongoose.Types.ObjectId();
+
+      const findOneSpy = jest
+        .spyOn(DigitalProduct, "findOne")
+        .mockResolvedValue(null);
+
+      const req = {
+        params: {
+          idOrSlug: productId.toString(),
+        },
+        route: {
+          path: "/public/product/:idOrSlug",
+        },
+      };
+
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+
+      await digitalStoreController.getProductDetails(req, res);
+
+      expect(findOneSpy).toHaveBeenCalledWith({
+        _id: productId.toString(),
+        status: "active",
+      });
+
+      expect(res.status).toHaveBeenCalledWith(404);
+
+      findOneSpy.mockRestore();
+    });
+    
     it("should reject product creation when required fields are missing", async () => {
       const req = {
         user: { _id: dummyCreatorId },
