@@ -434,11 +434,13 @@ const addTaskToDeal = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Task title is required" });
   }
 
-  const deal = await CrmDeal.findOne({ _id: req.params.id, creatorId: userId });
-  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
+  const deal = await CrmDeal.findOneAndUpdate(
+    { _id: req.params.id, creatorId: userId },
+    { $push: { tasks: { title, dueDate, priority: priority || "medium" } } },
+    { new: true }
+  );
 
-  deal.tasks.push({ title, dueDate, priority: priority || "medium" });
-  await deal.save();
+  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
   res.status(201).json({ success: true, data: deal });
 });
@@ -453,10 +455,13 @@ const toggleDealTask = asyncHandler(async (req, res) => {
   const task = deal.tasks.id(taskId);
   if (!task) return res.status(404).json({ success: false, message: "Task not found" });
 
-  task.completed = !task.completed;
-  await deal.save();
+  const updatedDeal = await CrmDeal.findOneAndUpdate(
+    { _id: id, creatorId: userId, "tasks._id": taskId },
+    { $set: { "tasks.$.completed": !task.completed } },
+    { new: true }
+  );
 
-  res.json({ success: true, data: deal });
+  res.json({ success: true, data: updatedDeal || deal });
 });
 
 const addContractToDeal = asyncHandler(async (req, res) => {
@@ -467,11 +472,13 @@ const addContractToDeal = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Contract title is required" });
   }
 
-  const deal = await CrmDeal.findOne({ _id: req.params.id, creatorId: userId });
-  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
+  const deal = await CrmDeal.findOneAndUpdate(
+    { _id: req.params.id, creatorId: userId },
+    { $push: { contracts: { title, status: status || "draft", fileUrl } } },
+    { new: true }
+  );
 
-  deal.contracts.push({ title, status: status || "draft", fileUrl });
-  await deal.save();
+  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
   res.status(201).json({ success: true, data: deal });
 });

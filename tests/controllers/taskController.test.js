@@ -49,12 +49,12 @@ describe('Task Controller - updateTask', () => {
       randomField: 'hacked'
     };
 
-    Task.findByIdAndUpdate.mockResolvedValue({ _id: 'task-123', title: 'Allowed Title' });
+    Task.findOneAndUpdate.mockResolvedValue({ _id: { _id: { _id: 'task-123', creatorId: 'mock-user-123' }, creatorId: 'mock-user-123' }, title: 'Allowed Title' });
 
     await updateTask(req, res);
 
-    expect(Task.findByIdAndUpdate).toHaveBeenCalledWith(
-      'task-123',
+    expect(Task.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'task-123', creatorId: 'mock-user-123' },
       {
         $set: {
           title: 'Allowed Title',
