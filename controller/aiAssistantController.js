@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("crypto");
+const { randomUUID } = require("crypto");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const services = require("../services.config");
@@ -69,7 +69,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   }
 
   // User message
-  const userMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+  const userMessageId = randomUUID();
   chatDoc.messages.push({
     messageId: userMessageId,
     role: "user",
@@ -87,7 +87,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   });
 
   // Assistant message
-  const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+  const assistantMessageId = randomUUID();
   const assistantMsg = {
     messageId: assistantMessageId,
     role: "assistant",
