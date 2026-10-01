@@ -67,7 +67,71 @@ describe('Meeting Validators', () => {
           price: -10,
         },
       });
+it('should pass with valid event type', async () => {
+  // existing test
+});
 
+it('should fail with negative price', async () => {
+  // existing test
+});
+
+it('should reject duration below 5 minutes', async () => {
+  const { req, res, next } = mockReqRes({
+    method: 'POST',
+    url: '/api/meetings/event-types',
+    body: {
+      title: 'Short Call',
+      duration: 4,
+    },
+  });
+
+  await validateEventType(req, res, next);
+
+  expect(next).not.toHaveBeenCalled();
+  expect(res.statusCode).toBe(422);
+});
+
+it('should reject duration above 480 minutes', async () => {
+  const { req, res, next } = mockReqRes({
+    method: 'POST',
+    url: '/api/meetings/event-types',
+    body: {
+      title: 'Long Call',
+      duration: 481,
+    },
+  });
+
+  await validateEventType(req, res, next);
+
+  expect(next).not.toHaveBeenCalled();
+  expect(res.statusCode).toBe(422);
+});
+
+it('should accept duration at the model boundaries', async () => {
+  const lower = mockReqRes({
+    method: 'POST',
+    url: '/api/meetings/event-types',
+    body: {
+      title: '5 Min Call',
+      duration: 5,
+    },
+  });
+
+  await validateEventType(lower.req, lower.res, lower.next);
+  expect(lower.next).toHaveBeenCalled();
+
+  const upper = mockReqRes({
+    method: 'POST',
+    url: '/api/meetings/event-types',
+    body: {
+      title: '480 Min Call',
+      duration: 480,
+    },
+  });
+
+  await validateEventType(upper.req, upper.res, upper.next);
+  expect(upper.next).toHaveBeenCalled();
+});
       await validateEventType(req, res, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(422);
