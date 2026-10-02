@@ -1,0 +1,111 @@
+<%- include('partials/layout/header', {
+  activeNav: 'sponsorship-calculator',
+  title: 'Sponsorship Scenarios',
+  extraHead: '<link rel="stylesheet" href="/css/sponsorship-scenarios.css"><script src="/js/pages/sponsorship-scenarios.js" defer></script>'
+}) %>
+
+<main class="content sponsorship-scenarios" id="sponsorship-scenario-app"
+  data-creator-name="<%= user?.name || '' %>" data-creator-email="<%= user?.email || '' %>">
+  <header class="dashboard-head">
+    <div>
+      <h1>Sponsorship scenarios</h1>
+      <p>Build and compare campaign quotes from your rate cards.</p>
+    </div>
+  </header>
+
+  <p class="scenario-status" id="scenario-status" role="status" aria-live="polite"></p>
+
+  <div class="scenario-columns">
+    <section class="panel-retro scenario-panel">
+      <div class="panel-retro-title-row"><h2 id="scenario-form-title">Create a scenario</h2></div>
+      <form id="scenario-form">
+        <div class="scenario-form-grid">
+          <label class="scenario-field scenario-span-2">Scenario name
+            <input name="name" maxlength="100" required placeholder="Spring launch package">
+          </label>
+          <label class="scenario-field">Rate card
+            <select name="rateCardId" id="scenario-rate-card"><option value="">Manual deliverables</option></select>
+          </label>
+          <label class="scenario-field">Platform
+            <select name="platform" required>
+              <option value="youtube">YouTube</option><option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option><option value="twitter">Twitter / X</option>
+              <option value="podcast">Podcast</option><option value="newsletter">Newsletter</option>
+            </select>
+          </label>
+          <fieldset class="scenario-field scenario-span-2" id="rate-card-deliverables" hidden>
+            <legend>Rate-card deliverables</legend>
+            <div class="scenario-choice-list"></div>
+          </fieldset>
+          <fieldset class="scenario-field scenario-span-2" id="manual-deliverables">
+            <legend>Deliverables</legend>
+            <div class="manual-deliverable-list"></div>
+            <button class="crm-btn-secondary scenario-add-deliverable" type="button" id="add-deliverable">Add deliverable</button>
+          </fieldset>
+          <label class="scenario-field">Usage rights
+            <select name="usageRightsOption" required>
+              <option value="organic_only">Organic only</option><option value="days_30">30 days</option>
+              <option value="days_90">90 days</option><option value="days_180">180 days</option>
+              <option value="days_365">365 days</option><option value="in_perpetuity">In perpetuity</option>
+            </select>
+          </label>
+          <label class="scenario-field">Exclusivity
+            <select name="exclusivityOption" required>
+              <option value="none">None</option><option value="days_30">30 days</option>
+              <option value="days_90">90 days</option><option value="days_180">180 days</option>
+            </select>
+          </label>
+          <label class="scenario-field">Campaign duration (days)
+            <input name="campaignDurationDays" type="number" min="1" max="365" value="30" required>
+          </label>
+          <label class="scenario-toggle"><input name="whitelistingAllowed" type="checkbox"> Include whitelisting</label>
+        </div>
+        <div class="scenario-actions">
+          <button class="crm-btn-secondary" type="button" id="cancel-scenario-edit" hidden>Cancel edit</button>
+          <button class="crm-btn-primary" type="submit" id="save-scenario">Calculate and save</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-retro scenario-panel">
+      <div class="panel-retro-title-row"><h2>Saved scenarios</h2><span id="scenario-count"></span></div>
+      <div id="scenario-list" class="scenario-list"></div>
+      <button class="crm-btn-secondary" type="button" id="compare-scenarios">Compare selected</button>
+      <div id="scenario-comparison" class="scenario-comparison" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <section class="panel-retro proposal-panel">
+    <div class="panel-retro-title-row"><h2>Proposal summary</h2></div>
+    <div class="proposal-source-row">
+      <label class="scenario-field" for="proposal-scenario">Scenario</label>
+      <select id="proposal-scenario"><option value="">Select a saved scenario</option></select>
+    </div>
+    <form id="proposal-form" class="proposal-grid">
+      <label class="scenario-field">Proposal title<input name="title" maxlength="160"></label>
+      <label class="scenario-field">Creator name<input name="creatorName" maxlength="120"></label>
+      <label class="scenario-field">Creator email<input name="creatorEmail" type="email" maxlength="254"></label>
+      <label class="scenario-field">Brand<input name="brandName" maxlength="120"></label>
+      <label class="scenario-field">Campaign<input name="campaignName" maxlength="120"></label>
+      <label class="scenario-field">Calculated pricing<input name="price" maxlength="40" inputmode="decimal"></label>
+      <label class="scenario-field">Currency<input name="currency" maxlength="8"></label>
+      <label class="scenario-field">Usage rights<input name="usageRights" maxlength="80"></label>
+      <label class="scenario-field">Exclusivity<input name="exclusivity" maxlength="80"></label>
+      <label class="scenario-field">Campaign duration (days)<input name="campaignDurationDays" maxlength="12"></label>
+      <label class="scenario-field proposal-wide">Deliverables, one per line as name | base price
+        <textarea name="deliverables" rows="4"></textarea>
+      </label>
+      <label class="scenario-field proposal-wide">Pricing assumptions, one per line
+        <textarea name="assumptions" rows="4"></textarea>
+      </label>
+      <label class="scenario-field proposal-wide">Disclaimer
+        <textarea name="disclaimer" rows="3" maxlength="500"></textarea>
+      </label>
+      <div class="scenario-actions proposal-wide">
+        <button class="crm-btn-primary" type="button" id="export-proposal">Export HTML</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('partials/layout/footer') %>
