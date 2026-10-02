@@ -1,10 +1,15 @@
 const {
+  PRICING_RULE_VERSION,
   NICHE_BENCHMARK_CPM,
   calculateBaselineRate,
   calculateSponsorshipQuote,
 } = require("../services/rateCardEngine");
 
 describe("Sponsorship Rate Card & Pricing Engine Unit Tests", () => {
+  it("exposes a version for reproducible saved scenario calculations", () => {
+    expect(PRICING_RULE_VERSION).toBe("1.0.0");
+  });
+
   describe("calculateBaselineRate", () => {
     it("should compute base rate based on views and niche CPM", () => {
       // 10,000 views in tech ($35 CPM) at standard 4% engagement (1.0x) = $350
