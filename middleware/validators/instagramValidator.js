@@ -9,18 +9,42 @@ const validateDmTrigger = validateRequest([
     .isLength({ max: 100 })
     .withMessage('Keyword cannot exceed 100 characters')
     .escape(),
-  body('responseType')
+
+  body('triggerSource')
     .optional()
     .trim()
-    .isIn(['text', 'link', 'media'])
-    .withMessage('Invalid response type'),
+    .isIn(['dm', 'comment'])
+    .withMessage('triggerSource must be "dm" or "comment"'),
+
+  body('postId')
+    .optional({ nullable: true })
+    .trim()
+    .isString()
+    .withMessage('postId must be a string')
+    .isLength({ max: 100 })
+    .withMessage('postId cannot exceed 100 characters'),
+
+  body('matchType')
+    .optional()
+    .trim()
+    .isIn(['partial', 'exact'])
+    .withMessage('matchType must be "partial" or "exact"'),
+
   body('responseText')
     .trim()
     .notEmpty()
-    .withMessage('Response text is required')
+    .withMessage('responseText is required')
     .isLength({ max: 1000 })
-    .withMessage('Response text cannot exceed 1000 characters')
+    .withMessage('responseText cannot exceed 1000 characters')
     .escape(),
+
+  body('commentReply')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('commentReply cannot exceed 500 characters')
+    .escape(),
+
   body('isActive')
     .optional()
     .isBoolean()
