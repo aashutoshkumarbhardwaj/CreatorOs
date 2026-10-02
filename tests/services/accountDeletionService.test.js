@@ -29,6 +29,11 @@ const PasswordResetToken = require("../../model/passwordResetToken");
 const Upload = require("../../model/upload");
 const VaultFile = require("../../model/vaultFile");
 const ContributorSession = require("../../model/contributorSession");
+const BioProfile = require("../../model/bioProfile");
+const CreatorRateCard = require("../../model/creatorRateCard");
+const { DigitalProduct, DigitalOrder } = require("../../model/digitalProduct");
+const TeamTask = require("../../model/teamTaskDependency");
+const DmDelivery = require("../../model/dmDelivery");
 const { deleteAccount } = require("../../services/accountDeletionService");
 
 jest.mock("@huggingface/hub", () => ({
@@ -66,6 +71,12 @@ describe("accountDeletionService", () => {
     AnalyticsSnapshot,
     EngagementHistory,
     Post,
+    BioProfile,
+    CreatorRateCard,
+    DigitalProduct,
+    DigitalOrder,
+    TeamTask,
+    DmDelivery,
   ];
 
   afterEach(() => {
@@ -152,6 +163,13 @@ describe("accountDeletionService", () => {
     expect(Upload.deleteMany).toHaveBeenCalledWith({ userId });
     expect(VaultFile.deleteMany).toHaveBeenCalledWith({ userId });
 
+    // Public-facing and customer-data collections must not survive account deletion.
+    expect(BioProfile.deleteMany).toHaveBeenCalledWith({ userId });
+    expect(CreatorRateCard.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
+    expect(DigitalProduct.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
+    expect(DigitalOrder.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
+    expect(TeamTask.deleteMany).toHaveBeenCalledWith({ creatorId: userId });
+
     expect(AnalyticsSnapshot.deleteMany).toHaveBeenCalledWith({
       creatorId: { $in: [creatorId] },
     });
@@ -159,6 +177,10 @@ describe("accountDeletionService", () => {
       creatorId: { $in: [creatorId] },
     });
     expect(Post.deleteMany).toHaveBeenCalledWith({
+      creatorId: { $in: [creatorId] },
+    });
+    // DmDelivery is keyed by Creator._id, not User._id.
+    expect(DmDelivery.deleteMany).toHaveBeenCalledWith({
       creatorId: { $in: [creatorId] },
     });
     expect(creatorDeleteOne).toHaveBeenCalledWith({ _id: creatorId });
