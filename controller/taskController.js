@@ -448,7 +448,11 @@ const deleteTask = asyncHandler(async (req, res) => {
   const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
-    mockTasks = mockTasks.filter((t) => t._id !== taskId);
+    const before = mockTasks.length;
+    mockTasks = mockTasks.filter((t) => !(t._id === taskId && String(t.creatorId) === String(creatorId)));
+    if (mockTasks.length === before) {
+      return res.status(404).json({ success: false, error: "Task not found." });
+    }
     return res.json({ success: true, message: "Task deleted successfully." });
   }
 
