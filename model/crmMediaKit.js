@@ -8,6 +8,7 @@ const crmMediaKitSchema = new mongoose.Schema(
       required: true,
       unique: true,
       index: true,
+      immutable: true,
     },
     displayName: {
       type: String,
