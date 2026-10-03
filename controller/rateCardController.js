@@ -102,12 +102,13 @@ exports.getRateCards = async (req, res) => {
 exports.getPublicRateCard = async (req, res) => {
   try {
     const { slug } = req.params;
-    const card = await CreatorRateCard.findOne({ slug, isPublic: true });
+    const card = await CreatorRateCard.findOne({ slug, isPublic: true }).lean();
     if (!card) {
       return res.status(404).json({ success: false, message: "Public rate card not found" });
     }
 
-    return res.status(200).json({ success: true, card });
+    const { agencyCommissionPercent, ...publicCard } = card;
+    return res.status(200).json({ success: true, card: publicCard });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error fetching rate card", error: error.message });
   }
