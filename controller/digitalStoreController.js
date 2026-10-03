@@ -266,6 +266,20 @@ exports.createCheckoutOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: couponResult.error });
     }
 
+    // Reserve limited coupon atomically before creating the order so
+    // concurrent checkouts cannot overshoot usageLimit.
+    let couponReserved = false;
+    if (couponResult.coupon && couponResult.coupon.usageLimit) {
+      const reserve = await DigitalProduct.updateOne(
+        { _id: product._id, coupons: { $elemMatch: { code: couponResult.coupon.code, timesUsed: { $lt: couponResult.coupon.usageLimit } } } },
+        { $inc: { "coupons.$.timesUsed": 1 } }
+      );
+      if (reserve.modifiedCount === 0) {
+        return res.status(400).json({ success: false, message: "Coupon usage limit reached" });
+      }
+      couponReserved = true;
+    }
+
     const downloadToken = product.generateDownloadToken();
     const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
@@ -286,13 +300,17 @@ exports.createCheckoutOrder = async (req, res) => {
 
     await order.save();
 
-    // Update product stats
-    product.totalSales += 1;
-    product.totalRevenue += couponResult.finalPrice;
-    if (couponResult.coupon) {
-      couponResult.coupon.timesUsed += 1;
+    // Atomic stats: sales and revenue cannot be lost under concurrency.
+    await DigitalProduct.updateOne(
+      { _id: product._id },
+      { $inc: { totalSales: 1, totalRevenue: couponResult.finalPrice } }
+    );
+    if (couponResult.coupon && !couponReserved) {
+      await DigitalProduct.updateOne(
+        { _id: product._id, "coupons.code": couponResult.coupon.code },
+        { $inc: { "coupons.$.timesUsed": 1 } }
+      );
     }
-    await product.save();
 
     return res.status(201).json({
       success: true,
@@ -361,15 +379,33 @@ exports.validateAndConsumeDownload = async (req, res) => {
       return res.status(404).json({ success: false, message: "Associated product file missing" });
     }
 
-    tokenRecord.downloadCount += 1;
-    await order.save();
+    // Atomic consume: only one concurrent request can take the last slot.
+    const consumed = await DigitalOrder.updateOne(
+      {
+        _id: order._id,
+        downloadTokens: {
+          $elemMatch: {
+            token,
+            revoked: { $ne: true },
+            downloadCount: { $lt: tokenRecord.maxDownloads },
+          },
+        },
+      },
+      { $inc: { "downloadTokens.$.downloadCount": 1 } }
+    );
+    if (consumed.modifiedCount === 0) {
+      return res.status(429).json({
+        success: false,
+        message: "Maximum download limit reached for this token",
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message: "Download authorized",
       fileUrl: product.fileUrl,
       fileName: product.title,
-      remainingDownloads: tokenRecord.maxDownloads - tokenRecord.downloadCount,
+      remainingDownloads: Math.max(0, tokenRecord.maxDownloads - tokenRecord.downloadCount - 1),
     });
   } catch (error) {
     return res.status(500).json({
@@ -397,24 +433,34 @@ exports.refundOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: "Order already refunded" });
     }
 
-    order.orderStatus = "refunded";
-    order.downloadTokens.forEach((t) => {
-      t.revoked = true;
-    });
-
-    await order.save();
-
-    // Adjust product revenue
-    const product = await DigitalProduct.findById(order.productId);
-    if (product) {
-      product.totalRevenue = Math.max(0, product.totalRevenue - order.amountPaid);
-      await product.save();
+    const updated = await DigitalOrder.findOneAndUpdate(
+      { _id: orderId, creatorId, orderStatus: { $ne: "refunded" } },
+      {
+        $set: {
+          orderStatus: "refunded",
+          "downloadTokens.$[].revoked": true,
+        },
+      },
+      { new: true }
+    );
+    if (!updated) {
+      const gone = await DigitalOrder.findOne({ _id: orderId, creatorId });
+      if (!gone) {
+        return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+      }
+      return res.status(400).json({ success: false, message: "Order already refunded" });
     }
+
+    // Adjust product revenue atomically, clamped at zero.
+    await DigitalProduct.updateOne(
+      { _id: updated.productId },
+      [{ $set: { totalRevenue: { $max: [0, { $subtract: ["$totalRevenue", updated.amountPaid] }] } } }]
+    );
 
     return res.status(200).json({
       success: true,
       message: "Order refunded and download access revoked",
-      order,
+      order: updated,
     });
   } catch (error) {
     return res.status(500).json({
