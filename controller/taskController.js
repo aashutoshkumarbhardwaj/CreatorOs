@@ -230,6 +230,10 @@ const getTaskById = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
   const task = await Task.findOne({ _id: req.params.id, creatorId })
     .populate("dependencies", "title status priority dueDate")
     .lean();
@@ -327,6 +331,10 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
   const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { $set: updates }, { new: true });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
@@ -347,6 +355,10 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
   const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { status }, { new: true });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
@@ -365,6 +377,10 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     if (!task) return res.status(404).json({ success: false, error: "Task not found." });
     task.subtasks = subtasks;
     return res.json({ success: true, task });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
   }
 
   const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { subtasks }, { new: true });
@@ -410,6 +426,10 @@ const logTaskTime = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
   const taskDoc = await Task.findById(taskId);
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
 
@@ -433,6 +453,10 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
   const taskDoc = await Task.findOne({ _id: taskId, creatorId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   taskDoc.isArchived = !taskDoc.isArchived;
@@ -450,6 +474,10 @@ const deleteTask = asyncHandler(async (req, res) => {
   if (isMockMode()) {
     mockTasks = mockTasks.filter((t) => t._id !== taskId);
     return res.json({ success: true, message: "Task deleted successfully." });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
   }
 
   const deleted = await Task.findOneAndDelete({ _id: taskId, creatorId });
