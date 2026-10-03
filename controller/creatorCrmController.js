@@ -249,10 +249,10 @@ const getCrmData = asyncHandler(async (req, res) => {
   }
 
   const [deals, brands, invoices, mediaKit] = await Promise.all([
-    CrmDeal.find(dealQuery).sort({ createdAt: -1 }),
-    CrmBrand.find(brandQuery).sort({ createdAt: -1 }),
-    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }),
-    CrmMediaKit.findOne({ creatorId: userId }),
+    CrmDeal.find(dealQuery).sort({ createdAt: -1 }).lean(),
+    CrmBrand.find(brandQuery).sort({ createdAt: -1 }).lean(),
+    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }).lean(),
+    CrmMediaKit.findOne({ creatorId: userId }).lean(),
   ]);
 
   const totalPipelineValue = deals.reduce((sum, d) => sum + (d.amount || 0), 0);
@@ -280,7 +280,7 @@ const getCrmData = asyncHandler(async (req, res) => {
 // ── BRAND CONTROLLERS ──
 const getBrands = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: brands });
 });
 
@@ -365,7 +365,7 @@ const addContactHistory = asyncHandler(async (req, res) => {
 // ── DEAL CONTROLLERS ──
 const getDeals = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: deals });
 });
 
@@ -479,7 +479,7 @@ const addContractToDeal = asyncHandler(async (req, res) => {
 // ── INVOICE CONTROLLERS ──
 const getInvoices = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: invoices });
 });
 
