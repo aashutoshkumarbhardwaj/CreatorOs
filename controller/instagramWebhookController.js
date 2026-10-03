@@ -153,8 +153,9 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
             const senderId = webhookEvent?.sender?.id;
             const message = webhookEvent?.message;
             const timestamp = webhookEvent?.timestamp;
+            const messageText = typeof message?.text === "string" ? message.text : String(message?.text ?? "");
 
-            if (senderId && message && message.text) {
+            if (senderId && messageText.trim()) {
               // Deduplicate each platform message independently. A request-level
               // X-Event-ID cannot safely identify multiple messages in one request.
               const eventId = buildEventId(
@@ -170,14 +171,14 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
               }
 
               console.log(
-                `[Webhook] Received message from ${senderId}: ${message.text}`,
+                `[Webhook] Received message from ${senderId}: ${messageText}`,
               );
 
               try {
                 await enqueueDmEvent(
                   eventId,
                   senderId,
-                  message.text,
+                  messageText,
                   recipientId,
                 );
                 markProcessed(eventId);
