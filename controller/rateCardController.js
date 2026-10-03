@@ -138,14 +138,22 @@ exports.updateRateCard = async (req, res) => {
       "notes",
     ];
 
+    const previousTitle = card.title;
+
     fields.forEach((f) => {
       if (req.body[f] !== undefined) {
         card[f] = req.body[f];
       }
     });
 
-    if (req.body.title && req.body.title !== card.title) {
-      card.slug = createSlug(req.body.title);
+    if (req.body.title && req.body.title !== previousTitle) {
+      let baseSlug = createSlug(req.body.title) || "rate-card";
+      let slug = baseSlug;
+      let counter = 1;
+      while (await CreatorRateCard.findOne({ creatorId, slug, _id: { $ne: card._id } })) {
+        slug = `${baseSlug}-${counter++}`;
+      }
+      card.slug = slug;
     }
 
     await card.save();
