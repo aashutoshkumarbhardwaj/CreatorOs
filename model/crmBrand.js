@@ -27,6 +27,7 @@ const crmBrandSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       index: true,
+      immutable: true,
     },
     companyName: {
       type: String,

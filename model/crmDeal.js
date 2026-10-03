@@ -47,6 +47,7 @@ const crmDealSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       index: true,
+      immutable: true,
     },
     brandId: {
       type: mongoose.Schema.Types.ObjectId,

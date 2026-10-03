@@ -7,6 +7,7 @@ const crmInvoiceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       index: true,
+      immutable: true,
     },
     dealId: {
       type: mongoose.Schema.Types.ObjectId,
