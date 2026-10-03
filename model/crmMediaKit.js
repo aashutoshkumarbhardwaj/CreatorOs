@@ -26,7 +26,7 @@ const crmMediaKitSchema = new mongoose.Schema(
     packages: [
       {
         name: { type: String, required: true },
-        price: { type: Number, required: true },
+        price: { type: Number, required: true, min: [0, 'Package price cannot be negative'] },
         description: { type: String, default: "" },
       },
     ],
