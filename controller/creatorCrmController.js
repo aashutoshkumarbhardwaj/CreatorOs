@@ -491,6 +491,11 @@ const createInvoice = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Company name, invoice name, and amount are required" });
   }
 
+  const parsedAmount = Number(amount);
+  if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+    return res.status(400).json({ success: false, message: "Invalid amount" });
+  }
+
   const count = await CrmInvoice.countDocuments({ creatorId: userId });
   const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
 
@@ -499,7 +504,7 @@ const createInvoice = asyncHandler(async (req, res) => {
     invoiceNumber,
     companyName,
     invoiceName,
-    amount: Number(amount),
+    amount: parsedAmount,
     status: status || "pending",
     dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 14),
     notes,
