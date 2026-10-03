@@ -101,6 +101,9 @@ const { buildUnifiedAnalyticsData } = require("../utils/analyticsHelper");
 // GET /api/analytics/summary
 const getAnalyticsSummary = asyncHandler(async (req, res) => {
     const userId = req.user ? req.user.id : "mock_user_id";
+    if (req.query.creatorId && !mongoose.Types.ObjectId.isValid(req.query.creatorId)) {
+        return res.status(400).json({ success: false, message: "Invalid creatorId" });
+    }
     const data = await buildUnifiedAnalyticsData(userId, {
         range: req.query.range || "30",
         creatorId: req.query.creatorId || null,
