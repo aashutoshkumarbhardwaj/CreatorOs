@@ -1,5 +1,5 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
-const { getInstagramLookupCooldownSeconds } = require('../utils/instagramCooldown');
+const { getInstagramLookupCooldownSeconds, getInstagramProfileCacheTtlSeconds } = require('../utils/instagramCooldown');
 const { createRedisClient } = require('../utils/redisClient');
 
 const redis = createRedisClient();
@@ -120,8 +120,10 @@ function sendInstagramError(res, error) {
 /**
  * @function getInstagramProfile
  * @description Retrieves public profile information from Instagram.
- * Checks Redis cache first (30-min TTL) to avoid redundant network requests,
- * then enforces a distributed per-user cooldown before hitting Instagram.
+ * Checks cache first (configurable TTL via INSTAGRAM_PROFILE_CACHE_TTL_SECONDS)
+ * to avoid redundant network requests, then enforces a distributed
+ * per-user cooldown before hitting Instagram. Cached hits do not count
+ * against the cooldown. Only successful fetches are cached.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -131,6 +133,7 @@ async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
         const cacheKey = `ig:profile:${username}`;
+        const cacheTtl = getInstagramProfileCacheTtlSeconds();
         const cachedProfile = redis
             ? await redis.get(cacheKey)
             : getMemoryValue(cacheKey);
@@ -138,6 +141,7 @@ async function getInstagramProfile(req, res) {
         if (cachedProfile) {
             return res.json({
                 success: true,
+                cached: true,
                 data: JSON.parse(cachedProfile),
             });
         }
@@ -147,13 +151,14 @@ async function getInstagramProfile(req, res) {
         const profile = await fetchInstagramProfile(username);
 
         if (redis) {
-            await redis.set(cacheKey, JSON.stringify(profile), 'EX', 1800); // 30 minutes TTL
+            await redis.set(cacheKey, JSON.stringify(profile), 'EX', cacheTtl);
         } else {
-            setMemoryValue(cacheKey, JSON.stringify(profile), 1800);
+            setMemoryValue(cacheKey, JSON.stringify(profile), cacheTtl);
         }
 
         return res.json({
             success: true,
+            cached: false,
             data: profile,
         });
     } catch (error) {

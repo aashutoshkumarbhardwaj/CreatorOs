@@ -39,6 +39,7 @@ describe('Instagram Controller - Profile Cache & Cooldown', () => {
         expect(instagramService.fetchInstagramProfile).toHaveBeenCalledWith('cacheduser');
         expect(mockRes.json).toHaveBeenCalledWith({
             success: true,
+            cached: false,
             data: dummyProfile,
         });
 
@@ -49,6 +50,7 @@ describe('Instagram Controller - Profile Cache & Cooldown', () => {
         expect(instagramService.fetchInstagramProfile).toHaveBeenCalledTimes(1);
         expect(mockRes.json).toHaveBeenCalledWith({
             success: true,
+            cached: true,
             data: dummyProfile,
         });
     });
@@ -66,6 +68,7 @@ describe('Instagram Controller - Profile Cache & Cooldown', () => {
         await getInstagramProfile(mockReq, mockRes);
         expect(mockRes.json).toHaveBeenCalledWith({
             success: true,
+            cached: false,
             data: dummyProfile1,
         });
 

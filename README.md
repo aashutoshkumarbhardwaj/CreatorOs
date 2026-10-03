@@ -246,6 +246,7 @@ EMAIL_SECURE=false
 INSTAGRAM_APP_SECRET=your_instagram_app_secret
 INSTAGRAM_PUBLIC_PROVIDER=public_html
 INSTAGRAM_LOOKUP_COOLDOWN_SECONDS=30
+INSTAGRAM_PROFILE_CACHE_TTL_SECONDS=600
 ```
 
 ### Copy Environment File
@@ -277,6 +278,7 @@ Required setup:
 1. Set `INSTAGRAM_PUBLIC_PROVIDER` in `.env`.
 2. If using `python_public`, ensure Python 3 is installed and set `INSTAGRAM_PYTHON_PATH` if needed.
 3. Optionally adjust `INSTAGRAM_LOOKUP_COOLDOWN_SECONDS` for per-user cooldown.
+4. Optionally adjust `INSTAGRAM_PROFILE_CACHE_TTL_SECONDS` for how long successful profile lookups are cached (default 600 seconds). Cache is keyed by lowercased username, uses Redis when available with an in-memory fallback, and cached hits include `cached: true` without counting against the per-user cooldown. Errors are never cached.
 
 The profile lookup endpoint is protected and available at:
 
