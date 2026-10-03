@@ -11,6 +11,7 @@ const qrCodeSchema = new mongoose.Schema(
             ref: "User",
             required: true,
             index: true,
+            immutable: true,
         },
         label: {
             type: String,
