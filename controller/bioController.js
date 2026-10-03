@@ -79,6 +79,12 @@ const saveBioProfile = asyncHandler(async (req, res) => {
     }
 
     const { handle, name, bio, tags, avatarUrl, links, theme, layout, socials } = req.body;
+    if (typeof bio === "string" && bio.length > 500) {
+        return res.status(400).json({ success: false, message: 'Bio cannot exceed 500 characters' });
+    }
+    if (Array.isArray(tags) && tags.length > 20) {
+        return res.status(400).json({ success: false, message: 'Tags cannot exceed 20 entries' });
+    }
     const requestedHandle = handle || userDoc.alias || userDoc.name;
     const handleValidation = validateHandle(requestedHandle);
 
