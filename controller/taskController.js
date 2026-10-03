@@ -426,7 +426,7 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
   const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
-    const task = mockTasks.find((t) => t._id === taskId);
+    const task = mockTasks.find((t) => t._id === taskId && String(t.creatorId) === String(creatorId));
     if (!task) return res.status(404).json({ success: false, error: "Task not found." });
     task.isArchived = !task.isArchived;
     task.archivedAt = task.isArchived ? new Date() : null;
