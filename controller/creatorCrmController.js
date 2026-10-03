@@ -573,12 +573,18 @@ const getMediaKit = asyncHandler(async (req, res) => {
 
 const updateMediaKit = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const { displayName, bio, stats, packages } = req.body;
+  const allowed = ["displayName", "bio", "stats", "packages"];
+  const updateData = {};
+  for (const field of allowed) {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  }
 
   const mediaKit = await CrmMediaKit.findOneAndUpdate(
     { creatorId: userId },
-    { $set: { displayName, bio, stats, packages } },
-    { new: true, upsert: true }
+    { $set: updateData, $setOnInsert: { creatorId: userId } },
+    { new: true, upsert: true, runValidators: true }
   );
 
   res.json({ success: true, data: mediaKit });
