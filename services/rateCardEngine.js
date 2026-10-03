@@ -76,7 +76,21 @@ function calculateSponsorshipQuote({
     };
   }
 
-  const baseDeliverablesSum = deliverables.reduce((sum, d) => sum + (Number(d.basePrice) || 0), 0);
+  for (const d of deliverables) {
+    const price = Number(d.basePrice);
+    if (!Number.isFinite(price) || price < 0) {
+      throw new Error("Each deliverable must have a valid non-negative basePrice");
+    }
+  }
+
+  for (const pct of [twoDiscountPercent, threePlusDiscountPercent]) {
+    const n = Number(pct);
+    if (!Number.isFinite(n) || n < 0 || n > 100) {
+      throw new Error("Discount percent must be a number between 0 and 100");
+    }
+  }
+
+  const baseDeliverablesSum = deliverables.reduce((sum, d) => sum + Number(d.basePrice), 0);
 
   const usageFactor = USAGE_RIGHTS_MULTIPLIERS[usageRightsOption] || 0;
   const usageSurcharge = Number((baseDeliverablesSum * usageFactor).toFixed(2));

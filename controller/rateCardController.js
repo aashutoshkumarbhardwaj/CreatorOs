@@ -215,9 +215,10 @@ exports.calculateQuote = async (req, res) => {
       quote,
     });
   } catch (error) {
-    return res.status(500).json({
+    const isValidation = /basePrice|Discount percent/i.test(error.message || "");
+    return res.status(isValidation ? 400 : 500).json({
       success: false,
-      message: "Failed to compute quote",
+      message: isValidation ? error.message : "Failed to compute quote",
       error: error.message,
     });
   }
