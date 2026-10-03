@@ -494,16 +494,29 @@ const createInvoice = asyncHandler(async (req, res) => {
   const count = await CrmInvoice.countDocuments({ creatorId: userId });
   const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
 
-  const invoice = await CrmInvoice.create({
-    creatorId: userId,
-    invoiceNumber,
-    companyName,
-    invoiceName,
-    amount: Number(amount),
-    status: status || "pending",
-    dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 14),
-    notes,
-  });
+  const existing = await CrmInvoice.findOne({ creatorId: userId, invoiceNumber });
+  if (existing) {
+    return res.status(409).json({ success: false, message: "Invoice number already exists" });
+  }
+
+  let invoice;
+  try {
+    invoice = await CrmInvoice.create({
+      creatorId: userId,
+      invoiceNumber,
+      companyName,
+      invoiceName,
+      amount: Number(amount),
+      status: status || "pending",
+      dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 14),
+      notes,
+    });
+  } catch (err) {
+    if (err && err.code === 11000) {
+      return res.status(409).json({ success: false, message: "Invoice number already exists" });
+    }
+    throw err;
+  }
 
   res.status(201).json({ success: true, data: invoice });
 });
