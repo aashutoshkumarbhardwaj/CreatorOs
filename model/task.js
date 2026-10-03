@@ -119,6 +119,7 @@ const taskSchema = new mongoose.Schema(
     estimatedHours: {
       type: Number,
       default: 0,
+      min: [0, 'Estimated hours cannot be negative'],
     },
     spentHours: {
       type: Number,
