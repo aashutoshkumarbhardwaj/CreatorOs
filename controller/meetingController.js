@@ -3,6 +3,39 @@ const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
 const { generateState, validateState } = require("../utils/oauthState");
+const { createRedisClient } = require("../utils/redisClient");
+
+const redis = createRedisClient();
+const memoryLocks = new Set();
+
+async function acquireLock(key, ttlSeconds) {
+  if (!redis) {
+    if (memoryLocks.has(key)) return false;
+    memoryLocks.add(key);
+    setTimeout(() => memoryLocks.delete(key), ttlSeconds * 1000);
+    return true;
+  }
+  try {
+    const result = await redis.set(key, "1", "EX", ttlSeconds, "NX");
+    return result === "OK";
+  } catch (err) {
+    console.error("[Mutex] Redis lock error:", err);
+    return false;
+  }
+}
+
+async function releaseLock(key) {
+  if (!redis) {
+    memoryLocks.delete(key);
+    return;
+  }
+  try {
+    await redis.del(key);
+  } catch (err) {
+    console.error("[Mutex] Redis unlock error:", err);
+  }
+}
+
 
 /**
  * Helper to slugify string titles.
@@ -474,47 +507,71 @@ exports.createBooking = async (req, res) => {
 
     if (!allowedDays.includes(weekdayMap[localParts.weekday]) || localStartMinutes < windowStart || localEndMinutes > windowEnd) {
       return res.status(409).json({ success: false, message: "This time is outside the event availability window" });
+    } 
+    // Conflict check & 2PC Lock
+    const lockKey = `calendar_lock:${creator._id}`;
+    const acquired = await acquireLock(lockKey, 15);
+    if (!acquired) {
+      return res.status(409).json({ success: false, message: "Server is busy processing another booking for this creator. Please try again in a few seconds." });
     }
 
-    // Conflict check
-    const existingConflict = await MeetingBooking.findOne({
-      userId: creator._id,
-      status: "scheduled",
-      startTime: { $lt: end },
-      endTime: { $gt: start },
-    });
+    let booking = null;
+    try {
+      const existingConflict = await MeetingBooking.findOne({
+        userId: creator._id,
+        status: "scheduled",
+        startTime: { $lt: end },
+        endTime: { $gt: start },
+      });
 
-    if (existingConflict) {
-      return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+      if (existingConflict) {
+        return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+      }
+
+      // 2PC Phase 1: Create pending booking
+      booking = await MeetingBooking.create({
+        userId: creator._id,
+        eventTypeId: eventType._id,
+        attendeeName,
+        attendeeEmail,
+        attendeeNotes: attendeeNotes || "",
+        answers: answers || [],
+        startTime: start,
+        endTime: end,
+        timeZone: timeZone || "UTC",
+        status: "pending_sync",
+        locationType: eventType.locationType,
+      });
+
+      // 2PC Phase 2: External Google Calendar API
+      const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
+        title: `${eventType.title} with ${attendeeName}`,
+        description: `Meeting arranged via CreatorOS
+
+Notes: ${attendeeNotes || "None"}`,
+        startTime: start,
+        endTime: end,
+        attendeeName,
+        attendeeEmail,
+        locationType: eventType.locationType,
+        locationDetails: eventType.locationDetails,
+      });
+
+      // 2PC Commit
+      booking.status = "scheduled";
+      booking.meetingLink = gCalResult.meetingLink;
+      booking.googleEventId = gCalResult.eventId;
+      await booking.save();
+
+    } catch (err) {
+      // 2PC Rollback
+      if (booking) {
+        await MeetingBooking.deleteOne({ _id: booking._id });
+      }
+      throw err;
+    } finally {
+      await releaseLock(lockKey);
     }
-
-    // Sync with Google Calendar service
-    const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
-      title: `${eventType.title} with ${attendeeName}`,
-      description: `Meeting arranged via CreatorOS\n\nNotes: ${attendeeNotes || "None"}`,
-      startTime: start,
-      endTime: end,
-      attendeeName,
-      attendeeEmail,
-      locationType: eventType.locationType,
-      locationDetails: eventType.locationDetails,
-    });
-
-    const booking = await MeetingBooking.create({
-      userId: creator._id,
-      eventTypeId: eventType._id,
-      attendeeName,
-      attendeeEmail,
-      attendeeNotes: attendeeNotes || "",
-      answers: answers || [],
-      startTime: start,
-      endTime: end,
-      timeZone: timeZone || "UTC",
-      status: "scheduled",
-      locationType: eventType.locationType,
-      meetingLink: gCalResult.meetingLink,
-      googleEventId: gCalResult.eventId,
-    });
 
     return res.status(201).json({
       success: true,
