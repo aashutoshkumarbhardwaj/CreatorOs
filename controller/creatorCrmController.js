@@ -310,6 +310,9 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid brand ID" });
   
   const allowedFields = ["companyName", "category", "contactName", "contactEmail", "contactPhone", "website", "socialLinks", "status", "notes"];
   const updateData = {};
@@ -396,6 +399,9 @@ const createDeal = asyncHandler(async (req, res) => {
 
 const updateDeal = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
 
   const allowedFields = ["dealName", "companyName", "category", "contactName", "contactEmail", "stage", "amount", "deliverables", "statusTag", "notes"];
   const updateData = {};
