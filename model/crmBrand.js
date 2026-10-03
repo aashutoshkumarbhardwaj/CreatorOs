@@ -45,6 +45,7 @@ const crmBrandSchema = new mongoose.Schema(
     contactEmail: {
       type: String,
       trim: true,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email address'],
     },
     contactPhone: {
       type: String,
