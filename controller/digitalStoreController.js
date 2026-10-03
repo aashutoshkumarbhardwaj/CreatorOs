@@ -152,6 +152,11 @@ exports.getProductDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
+    const isPublicRoute = (req.originalUrl || "").includes("/public/");
+    if (isPublicRoute && product.status !== "active") {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
     return res.status(200).json({ success: true, product });
   } catch (error) {
     return res.status(500).json({
