@@ -16,8 +16,8 @@ const validateEventType = validateRequest([
     .withMessage('Slug must contain only letters, numbers, and hyphens'),
   body('duration')
     .optional()
-    .isInt({ min: 1, max: 1440 })
-    .withMessage('Duration must be between 1 and 1440 minutes'),
+    .isInt({ min: 5, max: 480 })
+    .withMessage('Duration must be between 5 and 480 minutes'),
   body('price')
     .optional()
     .isFloat({ min: 0 })
