@@ -253,7 +253,44 @@ class MockContentOsModel {
         const idx = mockItems.findIndex((item) => item._id?.toString() === id?.toString());
         if (idx === -1) return null;
         const current = mockItems[idx];
-        const updatedData = { ...current, ...(update.$set || update), updatedAt: new Date() };
+        const updatedData = JSON.parse(JSON.stringify(current));
+
+        if (update.$set) {
+            for (const key of Object.keys(update.$set)) {
+                if (key.includes(".")) {
+                    const parts = key.split(".");
+                    let obj = updatedData;
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!obj[parts[i]]) obj[parts[i]] = {};
+                        obj = obj[parts[i]];
+                    }
+                    obj[parts[parts.length - 1]] = update.$set[key];
+                } else {
+                    updatedData[key] = update.$set[key];
+                }
+            }
+        } else if (!update.$push && !update.$pull) {
+            Object.assign(updatedData, update);
+        }
+
+        if (update.$push) {
+            for (const key of Object.keys(update.$push)) {
+                if (!updatedData[key]) updatedData[key] = [];
+                updatedData[key].push(update.$push[key]);
+            }
+        }
+
+        if (update.$pull) {
+            for (const key of Object.keys(update.$pull)) {
+                if (Array.isArray(updatedData[key])) {
+                    const matchKey = Object.keys(update.$pull[key])[0];
+                    const matchValue = update.$pull[key][matchKey];
+                    updatedData[key] = updatedData[key].filter(item => item[matchKey] !== matchValue && item[matchKey]?.toString() !== matchValue?.toString());
+                }
+            }
+        }
+
+        updatedData.updatedAt = new Date();
         mockItems[idx] = new MockContentOsModel(updatedData);
         return mockItems[idx];
     }
