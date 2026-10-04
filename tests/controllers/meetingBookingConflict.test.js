@@ -247,4 +247,68 @@ describe("Meeting Booking Conflict Detection (Issue #1289)", () => {
     expect(res.body.success).toBe(true);
     expect(res.body.booking).toBeDefined();
   });
+
+  it("7. should reject a booking that starts inside the window but crosses local midnight", async () => {
+    // Default availability is Mon-Fri 09:00-17:00 UTC. 2026-10-01 is a Thursday.
+    // 23:30 -> 00:30 used to pass because start and end were compared independently.
+    const req = {
+      params: { alias: "alex", slug: "60-min-session" },
+      body: {
+        attendeeName: "Night Owl",
+        attendeeEmail: "night@example.com",
+        startTime: "2026-10-01T23:30:00.000Z",
+      },
+    };
+    const res = createMockRes();
+
+    await meetingController.createBooking(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.body.message).toMatch(/outside the event availability window/i);
+    expect(await MeetingBooking.countDocuments({ userId: creator._id })).toBe(0);
+  });
+
+  it("8. should honour bufferAfter when checking for conflicts, like slot generation does", async () => {
+    const bufferedType = await EventType.create({
+      userId: creator._id,
+      title: "Buffered Call",
+      slug: "buffered-call",
+      duration: 60,
+      bufferAfter: 15,
+      isActive: true,
+      locationType: "google_meet",
+    });
+
+    // Existing: 09:00 to 10:00 UTC, so the host is blocked until 10:15
+    await MeetingBooking.create({
+      userId: creator._id,
+      eventTypeId: bufferedType._id,
+      attendeeName: "Existing Attendee",
+      attendeeEmail: "existing@example.com",
+      startTime: new Date("2026-10-01T09:00:00.000Z"),
+      endTime: new Date("2026-10-01T10:00:00.000Z"),
+      status: "scheduled",
+    });
+
+    const tooSoon = createMockRes();
+    await meetingController.createBooking(
+      {
+        params: { alias: "alex", slug: "buffered-call" },
+        body: { attendeeName: "Too Soon", attendeeEmail: "soon@example.com", startTime: "2026-10-01T10:00:00.000Z" },
+      },
+      tooSoon
+    );
+    expect(tooSoon.status).toHaveBeenCalledWith(409);
+    expect(tooSoon.body.message).toMatch(/no longer available/i);
+
+    const afterBuffer = createMockRes();
+    await meetingController.createBooking(
+      {
+        params: { alias: "alex", slug: "buffered-call" },
+        body: { attendeeName: "After Buffer", attendeeEmail: "after@example.com", startTime: "2026-10-01T10:15:00.000Z" },
+      },
+      afterBuffer
+    );
+    expect(afterBuffer.status).toHaveBeenCalledWith(201);
+  });
 });

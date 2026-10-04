@@ -76,6 +76,17 @@ function localDayName(dateString) {
   return days[new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 12)).getUTCDay()];
 }
 
+function localDateString(date, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function formatTimeInZone(date, timeZone) {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone,
@@ -90,5 +101,6 @@ module.exports = {
   parseTimeParts,
   zonedDateTimeToUtc,
   localDayName,
+  localDateString,
   formatTimeInZone,
 };
