@@ -295,6 +295,88 @@ describe("Meeting Controller & Google Calendar Service", () => {
       expect(res.redirect).toHaveBeenCalledWith("https://calendar.example/auth");
     });
 
+    it("passes the raw user id (not a pre-wrapped state) to getAuthUrl", async () => {
+      const getAuthUrl = jest
+        .spyOn(GoogleCalendarService, "getAuthUrl")
+        .mockReturnValue("https://calendar.example/auth");
+
+      await meetingController.connectGoogleCalendar(req, res);
+
+      expect(getAuthUrl).toHaveBeenCalledTimes(1);
+      expect(getAuthUrl.mock.calls[0][0]).toBe(userId);
+    });
+
+    describe("Google Calendar OAuth callback", () => {
+      const savedEnv = {};
+      const keys = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_CALENDAR_REDIRECT_URI", "GOOGLE_CALLBACK_URL"];
+
+      beforeEach(() => {
+        keys.forEach((k) => { savedEnv[k] = process.env[k]; });
+        process.env.GOOGLE_CLIENT_ID = "client-id";
+        process.env.GOOGLE_CLIENT_SECRET = "client-secret";
+        process.env.GOOGLE_CALENDAR_REDIRECT_URI = "http://localhost:3000/api/meetings/google/callback";
+        delete process.env.GOOGLE_CALLBACK_URL;
+      });
+
+      afterEach(() => {
+        keys.forEach((k) => {
+          if (savedEnv[k] === undefined) delete process.env[k];
+          else process.env[k] = savedEnv[k];
+        });
+      });
+
+      it("completes the round trip: state issued by connect is accepted by the callback", async () => {
+        const authUrl = GoogleCalendarService.getAuthUrl(userId);
+        const state = new URL(authUrl).searchParams.get("state");
+        const handleCallback = jest
+          .spyOn(GoogleCalendarService, "handleCallback")
+          .mockResolvedValue({ success: true, mock: false });
+        req.query = { code: "auth-code", state };
+
+        await meetingController.googleCalendarCallback(req, res);
+
+        expect(handleCallback).toHaveBeenCalledWith("auth-code", state);
+        expect(res.redirect).toHaveBeenCalledWith("/services/meetings?googleConnected=1");
+      });
+
+      it("redirects with an error and stores nothing when the state is forged", async () => {
+        const update = jest.fn();
+        const original = User.findByIdAndUpdate;
+        User.findByIdAndUpdate = update;
+        const fetchSpy = (global.fetch = jest.fn());
+        req.query = { code: "auth-code", state: userId };
+
+        await meetingController.googleCalendarCallback(req, res);
+
+        expect(update).not.toHaveBeenCalled();
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining("/services/meetings?error="));
+        User.findByIdAndUpdate = original;
+        delete global.fetch;
+      });
+
+      it("rejects a callback without an authorization code", async () => {
+        const handleCallback = jest.spyOn(GoogleCalendarService, "handleCallback");
+        req.query = { state: "whatever" };
+
+        await meetingController.googleCalendarCallback(req, res);
+
+        expect(handleCallback).not.toHaveBeenCalled();
+        expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining("/services/meetings?error="));
+      });
+
+      it("does not accept a bare user id in mock mode (public route)", async () => {
+        delete process.env.GOOGLE_CLIENT_ID;
+        const handleCallback = jest.spyOn(GoogleCalendarService, "handleCallback");
+        req.query = { code: "x", state: userId };
+
+        await meetingController.googleCalendarCallback(req, res);
+
+        expect(handleCallback).not.toHaveBeenCalled();
+        expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining("/services/meetings?error="));
+      });
+    });
+
     it("uses the JWT user id when disconnecting Google Calendar", async () => {
       const findByIdAndUpdate = jest.fn().mockResolvedValue({});
       const original = User.findByIdAndUpdate;

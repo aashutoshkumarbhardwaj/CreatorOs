@@ -2,7 +2,6 @@ const EventType = require("../model/eventType");
 const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
-const { generateState, validateState } = require("../utils/oauthState");
 
 /**
  * Helper to slugify string titles.
@@ -220,8 +219,9 @@ exports.getGoogleCalendarStatus = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     const tokens = user.googleCalendarTokens || {};
-    const state = generateState(req.user.id.toString());
-    const authUrl = GoogleCalendarService.getAuthUrl(state);
+    // GoogleCalendarService signs and wraps the user id into the OAuth state
+    // itself, so it must receive the raw user id (not a pre-built state).
+    const authUrl = GoogleCalendarService.getAuthUrl(req.user.id.toString());
 
     return res.status(200).json({
       success: true,
@@ -236,8 +236,7 @@ exports.getGoogleCalendarStatus = async (req, res) => {
 
 exports.connectGoogleCalendar = async (req, res) => {
   try {
-    const state = generateState(req.user.id.toString());
-    const authUrl = GoogleCalendarService.getAuthUrl(state);
+    const authUrl = GoogleCalendarService.getAuthUrl(req.user.id.toString());
     if (authUrl) {
       return res.redirect(authUrl);
     }
@@ -251,13 +250,16 @@ exports.connectGoogleCalendar = async (req, res) => {
 exports.googleCalendarCallback = async (req, res) => {
   try {
     const { code, state } = req.query;
-    const userId = validateState(state);
 
-    if (!userId) {
-      return res.redirect("/services/meetings?error=" + encodeURIComponent("Invalid or expired OAuth state. Please try connecting again."));
+    // In mock mode (no Google credentials) the connect endpoint completes the
+    // flow itself. Never accept a bare user id here: this route is public.
+    if (!GoogleCalendarService.isConfigured() || typeof code !== "string" || !code) {
+      return res.redirect("/services/meetings?error=" + encodeURIComponent("Invalid Google Calendar callback. Please try connecting again."));
     }
 
-    await GoogleCalendarService.handleCallback(code || "mock_code", userId);
+    // handleCallback verifies the signed state (signature + expiry) and throws
+    // if it is invalid, which is reported via the catch block below.
+    await GoogleCalendarService.handleCallback(code, state);
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
     return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
