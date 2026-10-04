@@ -581,24 +581,42 @@ async function updatePerformance(req, res) {
         const { impressions, views, engagementRate, clicks, likes, shares } = req.body;
         const userId = req.user.id;
 
+        const parsed = {};
+        const counters = { impressions, views, clicks, likes, shares };
+        for (const [key, value] of Object.entries(counters)) {
+          if (value === undefined) continue;
+          const n = Number(value);
+          if (!Number.isFinite(n) || n < 0) {
+            return res.status(400).json({ success: false, message: `${key} must be a valid non-negative number.` });
+          }
+          parsed[key] = n;
+        }
+        if (engagementRate !== undefined) {
+          const rate = Number(engagementRate);
+          if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+            return res.status(400).json({ success: false, message: "engagementRate must be between 0 and 100." });
+          }
+          parsed.engagementRate = rate;
+        }
+
         const existing = await ContentOsModel.findById(id);
         if (!existing || existing.userId?.toString() !== userId.toString()) {
             return res.status(404).json({ success: false, message: "Item not found." });
         }
 
         const newPerformance = {
-            impressions: impressions !== undefined ? Number(impressions) : existing.performance?.impressions || 0,
-            views: views !== undefined ? Number(views) : existing.performance?.views || 0,
-            engagementRate: engagementRate !== undefined ? Number(engagementRate) : existing.performance?.engagementRate || 0,
-            clicks: clicks !== undefined ? Number(clicks) : existing.performance?.clicks || 0,
-            likes: likes !== undefined ? Number(likes) : existing.performance?.likes || 0,
-            shares: shares !== undefined ? Number(shares) : existing.performance?.shares || 0,
+            impressions: parsed.impressions !== undefined ? parsed.impressions : existing.performance?.impressions || 0,
+            views: parsed.views !== undefined ? parsed.views : existing.performance?.views || 0,
+            engagementRate: parsed.engagementRate !== undefined ? parsed.engagementRate : existing.performance?.engagementRate || 0,
+            clicks: parsed.clicks !== undefined ? parsed.clicks : existing.performance?.clicks || 0,
+            likes: parsed.likes !== undefined ? parsed.likes : existing.performance?.likes || 0,
+            shares: parsed.shares !== undefined ? parsed.shares : existing.performance?.shares || 0,
         };
 
         const updatedItem = await ContentOsModel.findByIdAndUpdate(
             id,
             { performance: newPerformance },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         return res.json({ success: true, item: updatedItem, message: "Performance metrics updated." });
