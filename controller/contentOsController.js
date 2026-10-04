@@ -274,7 +274,12 @@ async function updateItem(req, res) {
             performance: body.performance !== undefined ? { ...existing.performance, ...body.performance } : existing.performance,
         };
 
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, updateData, { new: true });
+        // runValidators: findByIdAndUpdate skips the schema's enums by default, so a
+        // status, type, platform or priority outside them was stored as sent.
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true,
+        });
 
         try {
             await syncScheduledContent({ userId, item: updatedItem, previousItem: existing });
@@ -284,6 +289,9 @@ async function updateItem(req, res) {
 
         return res.json({ success: true, item: updatedItem, message: "Item updated successfully." });
     } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CastError") {
+            return res.status(400).json({ success: false, message: err.message });
+        }
         console.error("Error updating Content OS item:", err);
         return res.status(500).json({ success: false, message: "Server error updating item." });
     }
@@ -548,7 +556,7 @@ async function rescheduleItem(req, res) {
         const updatedItem = await ContentOsModel.findByIdAndUpdate(
             id,
             { scheduledAt: updatedDate, status: newStatus },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (newStatus === "scheduled") {
@@ -567,6 +575,9 @@ async function rescheduleItem(req, res) {
 
         return res.json({ success: true, item: updatedItem, message: "Content item rescheduled successfully." });
     } catch (err) {
+        if (err.name === "ValidationError" || err.name === "CastError") {
+            return res.status(400).json({ success: false, message: err.message });
+        }
         console.error("Error rescheduling item:", err);
         return res.status(500).json({ success: false, message: "Server error rescheduling item." });
     }
