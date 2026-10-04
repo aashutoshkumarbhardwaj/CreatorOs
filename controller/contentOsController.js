@@ -248,33 +248,51 @@ async function updateItem(req, res) {
             platforms = [body.platform];
         }
 
-        const scriptDetails = {
-            ...existing.scriptDetails,
-            ...(body.scriptDetails || {}),
-        };
-        const { wordCount, estimatedReadTime } = computeScriptMetrics(scriptDetails);
-        scriptDetails.wordCount = wordCount;
-        scriptDetails.estimatedReadTime = estimatedReadTime;
+        const updateSet = {};
+        if (body.title !== undefined) updateSet.title = body.title;
+        if (body.description !== undefined) updateSet.description = body.description;
+        if (body.type !== undefined) updateSet.type = body.type;
+        if (body.status !== undefined) updateSet.status = body.status;
+        if (body.platform !== undefined) updateSet.platform = body.platform;
+        if (body.platforms !== undefined || body.platform !== undefined) {
+            updateSet.platforms = platforms.length > 0 ? platforms : ["general"];
+        }
+        if (body.priority !== undefined) updateSet.priority = body.priority;
+        if (body.folderId !== undefined) updateSet.folderId = body.folderId;
+        if (body.tags !== undefined) updateSet.tags = tags;
+        if (body.mediaAssets !== undefined) updateSet.mediaAssets = body.mediaAssets;
+        
+        if (body.scheduledAt !== undefined) {
+            updateSet.scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
+        }
+        if (body.deadlineAt !== undefined) {
+            updateSet.deadlineAt = body.deadlineAt ? new Date(body.deadlineAt) : null;
+        }
+        if (body.status === "published" && !existing.publishedAt) {
+            updateSet.publishedAt = new Date();
+        }
 
-        const updateData = {
-            title: body.title !== undefined ? body.title : existing.title,
-            description: body.description !== undefined ? body.description : existing.description,
-            type: body.type !== undefined ? body.type : existing.type,
-            status: body.status !== undefined ? body.status : existing.status,
-            platform: body.platform !== undefined ? body.platform : existing.platform,
-            platforms: platforms.length > 0 ? platforms : ["general"],
-            priority: body.priority !== undefined ? body.priority : existing.priority,
-            folderId: body.folderId !== undefined ? body.folderId : existing.folderId,
-            tags,
-            scriptDetails,
-            mediaAssets: body.mediaAssets !== undefined ? body.mediaAssets : existing.mediaAssets,
-            scheduledAt: body.scheduledAt !== undefined ? (body.scheduledAt ? new Date(body.scheduledAt) : null) : existing.scheduledAt,
-            deadlineAt: body.deadlineAt !== undefined ? (body.deadlineAt ? new Date(body.deadlineAt) : null) : existing.deadlineAt,
-            publishedAt: body.status === "published" && !existing.publishedAt ? new Date() : existing.publishedAt,
-            performance: body.performance !== undefined ? { ...existing.performance, ...body.performance } : existing.performance,
-        };
+        if (body.scriptDetails !== undefined) {
+            const scriptDetails = {
+                ...existing.scriptDetails,
+                ...body.scriptDetails,
+            };
+            const { wordCount, estimatedReadTime } = computeScriptMetrics(scriptDetails);
+            
+            for (const [k, v] of Object.entries(body.scriptDetails || {})) {
+                updateSet[`scriptDetails.${k}`] = v;
+            }
+            updateSet["scriptDetails.wordCount"] = wordCount;
+            updateSet["scriptDetails.estimatedReadTime"] = estimatedReadTime;
+        }
 
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, updateData, { new: true });
+        if (body.performance !== undefined) {
+            for (const [k, v] of Object.entries(body.performance || {})) {
+                updateSet[`performance.${k}`] = v;
+            }
+        }
+
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { $set: updateSet }, { new: true });
 
         try {
             await syncScheduledContent({ userId, item: updatedItem, previousItem: existing });
@@ -586,18 +604,17 @@ async function updatePerformance(req, res) {
             return res.status(404).json({ success: false, message: "Item not found." });
         }
 
-        const newPerformance = {
-            impressions: impressions !== undefined ? Number(impressions) : existing.performance?.impressions || 0,
-            views: views !== undefined ? Number(views) : existing.performance?.views || 0,
-            engagementRate: engagementRate !== undefined ? Number(engagementRate) : existing.performance?.engagementRate || 0,
-            clicks: clicks !== undefined ? Number(clicks) : existing.performance?.clicks || 0,
-            likes: likes !== undefined ? Number(likes) : existing.performance?.likes || 0,
-            shares: shares !== undefined ? Number(shares) : existing.performance?.shares || 0,
-        };
+        const updateSet = {};
+        if (impressions !== undefined) updateSet["performance.impressions"] = Number(impressions);
+        if (views !== undefined) updateSet["performance.views"] = Number(views);
+        if (engagementRate !== undefined) updateSet["performance.engagementRate"] = Number(engagementRate);
+        if (clicks !== undefined) updateSet["performance.clicks"] = Number(clicks);
+        if (likes !== undefined) updateSet["performance.likes"] = Number(likes);
+        if (shares !== undefined) updateSet["performance.shares"] = Number(shares);
 
         const updatedItem = await ContentOsModel.findByIdAndUpdate(
             id,
-            { performance: newPerformance },
+            { $set: updateSet },
             { new: true }
         );
 
@@ -637,8 +654,11 @@ async function addComment(req, res) {
             createdAt: new Date(),
         };
 
-        const comments = [...(existing.comments || []), newComment];
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments }, { new: true });
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { $push: { comments: newComment } },
+            { new: true }
+        );
 
         return res.status(201).json({ success: true, comment: newComment, item: updatedItem, message: "Comment added successfully." });
     } catch (err) {
@@ -660,11 +680,11 @@ async function deleteComment(req, res) {
             return res.status(404).json({ success: false, message: "Item not found." });
         }
 
-        const updatedComments = (existing.comments || []).filter(
-            (c) => c._id?.toString() !== commentId.toString()
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { $pull: { comments: { _id: commentId } } },
+            { new: true }
         );
-
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments: updatedComments }, { new: true });
 
         return res.json({ success: true, item: updatedItem, message: "Comment deleted successfully." });
     } catch (err) {

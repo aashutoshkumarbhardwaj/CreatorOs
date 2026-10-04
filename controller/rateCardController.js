@@ -102,12 +102,29 @@ exports.getRateCards = async (req, res) => {
 exports.getPublicRateCard = async (req, res) => {
   try {
     const { slug } = req.params;
-    const card = await CreatorRateCard.findOne({ slug, isPublic: true });
-    if (!card) {
+    const { creatorId } = req.query;
+    const matches = await CreatorRateCard.find({ slug, isPublic: true }).lean();
+    if (!matches || matches.length === 0) {
       return res.status(404).json({ success: false, message: "Public rate card not found" });
     }
 
-    return res.status(200).json({ success: true, card });
+    let card = matches[0];
+    if (matches.length > 1) {
+      if (creatorId) {
+        card = matches.find((c) => String(c.creatorId) === String(creatorId));
+        if (!card) {
+          return res.status(404).json({ success: false, message: "Public rate card not found" });
+        }
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: "Multiple public rate cards share this slug. Specify creatorId to resolve the correct card.",
+        });
+      }
+    }
+
+    const { agencyCommissionPercent, ...publicCard } = card;
+    return res.status(200).json({ success: true, card: publicCard });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error fetching rate card", error: error.message });
   }

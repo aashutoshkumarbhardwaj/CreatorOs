@@ -36,7 +36,10 @@ async function findCreatorByAliasOrName(identifier) {
   }
 
   if (!creator && identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    creator = await User.findById(identifier);
+    const byId = await User.findById(identifier);
+    if (byId && byId.role === "creator") {
+      creator = byId;
+    }
   }
   return creator;
 }
@@ -93,7 +96,7 @@ exports.getAvailableSlots = async (req, res) => {
       userId: creator._id,
       status: "scheduled",
       startTime: { $gte: startOfDay, $lt: startOfNextDay },
-    });
+    }).lean();
 
     const now = new Date();
     const candidateSlots = [];

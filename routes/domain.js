@@ -43,7 +43,12 @@ router.post("/verify", protect, asyncHandler(async (req, res) => {
         // Mock verification: check if it points to our generic app domain
         // Or if in mock mode, just accept it
         const mockVerification = process.env.MOCK_DOMAIN_VERIFICATION === "true";
-        const isVerified = records.includes("cname.creatoros.com") || mockVerification;
+        const isVerified =
+            records.some(
+                (record) =>
+                    String(record).trim().toLowerCase().replace(/\.+$/, "") ===
+                    "cname.creatoros.com"
+            ) || mockVerification;
 
         if (isVerified) {
             const userId = req.user.id || req.user._id;

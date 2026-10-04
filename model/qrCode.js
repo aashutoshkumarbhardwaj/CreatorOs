@@ -74,6 +74,7 @@ const qrCodeSchema = new mongoose.Schema(
         totalScans: {
             type: Number,
             default: 0,
+            min : 0,
         },
         scanHistory: [
             {
