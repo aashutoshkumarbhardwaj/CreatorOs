@@ -637,8 +637,14 @@ async function addComment(req, res) {
             createdAt: new Date(),
         };
 
-        const comments = [...(existing.comments || []), newComment];
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments }, { new: true });
+        // $push rather than writing back the array read above: two comments posted
+        // at the same time both read the same list, and the second write dropped
+        // the first comment.
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { $push: { comments: newComment } },
+            { new: true }
+        );
 
         return res.status(201).json({ success: true, comment: newComment, item: updatedItem, message: "Comment added successfully." });
     } catch (err) {
@@ -660,11 +666,13 @@ async function deleteComment(req, res) {
             return res.status(404).json({ success: false, message: "Item not found." });
         }
 
-        const updatedComments = (existing.comments || []).filter(
-            (c) => c._id?.toString() !== commentId.toString()
+        // $pull for the same reason as addComment: rewriting the array could
+        // resurrect a comment deleted concurrently or drop one added meanwhile.
+        const updatedItem = await ContentOsModel.findByIdAndUpdate(
+            id,
+            { $pull: { comments: { _id: commentId } } },
+            { new: true }
         );
-
-        const updatedItem = await ContentOsModel.findByIdAndUpdate(id, { comments: updatedComments }, { new: true });
 
         return res.json({ success: true, item: updatedItem, message: "Comment deleted successfully." });
     } catch (err) {
