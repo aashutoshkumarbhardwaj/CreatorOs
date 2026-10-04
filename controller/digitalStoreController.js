@@ -14,6 +14,29 @@ function createSlug(title) {
 }
 
 /**
+ * Fields that must never reach anyone but the product's owner: the file URL is
+ * the paid asset itself (handing it out bypasses the whole token/refund flow)
+ * and the coupon list contains every discount code with its limits.
+ */
+const OWNER_ONLY_FIELDS = ["fileUrl", "coupons"];
+
+function viewerIdOf(req) {
+  if (!req || !req.user) return null;
+  return req.user._id ? String(req.user._id) : String(req.user);
+}
+
+function isProductOwner(req, product) {
+  const viewerId = viewerIdOf(req);
+  return Boolean(viewerId) && String(product.creatorId) === viewerId;
+}
+
+function toPublicProduct(product) {
+  const plain = typeof product.toObject === "function" ? product.toObject() : { ...product };
+  OWNER_ONLY_FIELDS.forEach((field) => delete plain[field]);
+  return plain;
+}
+
+/**
  * Create a new digital product
  */
 exports.createProduct = async (req, res) => {
@@ -93,16 +116,24 @@ exports.getProducts = async (req, res) => {
   try {
     const { creatorId, status, category, page = 1, limit = 20 } = req.query;
     const query = {};
+    const viewerId = viewerIdOf(req);
 
     if (creatorId) {
       query.creatorId = creatorId;
-    } else if (req.user && req.user._id) {
-      query.creatorId = req.user._id;
+    } else if (viewerId) {
+      query.creatorId = viewerId;
     }
 
-    if (status) {
-      query.status = status;
-    } else if (!req.user || (req.user._id && String(query.creatorId) !== String(req.user._id))) {
+    // Only a creator looking at their own catalogue may see drafts/archived
+    // items, choose a status filter, or receive owner-only fields. Everyone else
+    // gets active products only, whatever ?status= they ask for.
+    const isOwnerView = Boolean(viewerId) && String(query.creatorId) === viewerId;
+
+    if (isOwnerView) {
+      if (status) {
+        query.status = status;
+      }
+    } else {
       query.status = "active";
     }
 
@@ -111,10 +142,15 @@ exports.getProducts = async (req, res) => {
     }
 
     const skip = (Number(page) - 1) * Number(limit);
-    const [products, total] = await Promise.all([
-      DigitalProduct.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
-      DigitalProduct.countDocuments(query),
-    ]);
+    let listing = DigitalProduct.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
+    if (!isOwnerView) {
+      listing = listing.select(OWNER_ONLY_FIELDS.map((field) => `-${field}`).join(" "));
+    }
+
+    const [found, total] = await Promise.all([listing, DigitalProduct.countDocuments(query)]);
+    // Defence in depth: besides not selecting the fields, strip them from every
+    // item so a schema default (e.g. `coupons: []`) can never reappear for non-owners.
+    const products = isOwnerView ? found : found.map(toPublicProduct);
 
     return res.status(200).json({
       success: true,
@@ -148,11 +184,17 @@ exports.getProductDetails = async (req, res) => {
       product = await DigitalProduct.findOne({ slug: idOrSlug.toLowerCase() });
     }
 
-    if (!product) {
+    const owner = product ? isProductOwner(req, product) : false;
+
+    // Non-owners cannot see (or even confirm the existence of) unpublished products.
+    if (!product || (!owner && product.status !== "active")) {
       return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    return res.status(200).json({ success: true, product });
+    return res.status(200).json({
+      success: true,
+      product: owner ? product : toPublicProduct(product),
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -240,6 +282,46 @@ exports.deleteProduct = async (req, res) => {
 };
 
 /**
+ * Atomically claim one use of a coupon.
+ *
+ * `applyCoupon` only reads the in-memory product, so with parallel checkouts every
+ * request sees the same `timesUsed` and the limit is exceeded. The check and the
+ * increment must be a single conditional write: the filter only matches while the
+ * coupon is still active, unexpired and below its limit.
+ */
+async function claimCouponUse(productId, coupon) {
+  const match = {
+    code: coupon.code,
+    active: true,
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }],
+  };
+
+  if (coupon.usageLimit) {
+    match.usageLimit = coupon.usageLimit;
+    match.timesUsed = { $lt: coupon.usageLimit };
+  }
+
+  const claimed = await DigitalProduct.findOneAndUpdate(
+    { _id: productId, status: "active", coupons: { $elemMatch: match } },
+    { $inc: { "coupons.$.timesUsed": 1 } },
+    { new: true }
+  );
+
+  return Boolean(claimed);
+}
+
+async function releaseCouponUse(productId, coupon) {
+  try {
+    await DigitalProduct.updateOne(
+      { _id: productId, "coupons.code": coupon.code },
+      { $inc: { "coupons.$.timesUsed": -1 } }
+    );
+  } catch (error) {
+    console.error("Failed to release coupon use after a failed checkout:", error);
+  }
+}
+
+/**
  * Purchase checkout simulation / order completion
  */
 exports.createCheckoutOrder = async (req, res) => {
@@ -266,6 +348,13 @@ exports.createCheckoutOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: couponResult.error });
     }
 
+    // Claim the coupon use BEFORE creating the order so concurrent buyers cannot
+    // all pass the usage-limit check against the same stale count.
+    const coupon = couponResult.coupon;
+    if (coupon && !(await claimCouponUse(product._id, coupon))) {
+      return res.status(409).json({ success: false, message: "Coupon usage limit reached" });
+    }
+
     const downloadToken = product.generateDownloadToken();
     const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
@@ -276,7 +365,7 @@ exports.createCheckoutOrder = async (req, res) => {
       customerName: customerName || "Customer",
       amountPaid: couponResult.finalPrice,
       currency: product.currency,
-      appliedCoupon: couponResult.coupon ? couponResult.coupon.code : null,
+      appliedCoupon: coupon ? coupon.code : null,
       discountAmount: couponResult.discount,
       paymentProvider,
       paymentId,
@@ -284,15 +373,26 @@ exports.createCheckoutOrder = async (req, res) => {
       downloadTokens: [downloadToken],
     });
 
-    await order.save();
-
-    // Update product stats
-    product.totalSales += 1;
-    product.totalRevenue += couponResult.finalPrice;
-    if (couponResult.coupon) {
-      couponResult.coupon.timesUsed += 1;
+    try {
+      await order.save();
+    } catch (error) {
+      if (coupon) {
+        await releaseCouponUse(product._id, coupon);
+      }
+      throw error;
     }
-    await product.save();
+
+    // Counters are incremented atomically. Saving the whole product document here
+    // would overwrite concurrent sales/coupon updates with stale values, and a
+    // failure at this point must not turn an already-created order into a 500.
+    try {
+      await DigitalProduct.updateOne(
+        { _id: product._id },
+        { $inc: { totalSales: 1, totalRevenue: couponResult.finalPrice } }
+      );
+    } catch (error) {
+      console.error(`Order ${order._id} was created but product stats could not be updated:`, error);
+    }
 
     return res.status(201).json({
       success: true,
@@ -315,6 +415,38 @@ exports.createCheckoutOrder = async (req, res) => {
 };
 
 /**
+ * Why a download token cannot be used right now (null when it can).
+ */
+function describeDownloadDenial(order, token, now = new Date()) {
+  if (!order) {
+    return { status: 404, message: "Download token not found" };
+  }
+
+  if (order.orderStatus === "refunded") {
+    return { status: 403, message: "Order has been refunded. Download access revoked." };
+  }
+
+  const tokenRecord = order.downloadTokens.find((t) => t.token === token);
+  if (!tokenRecord) {
+    return { status: 404, message: "Invalid download token" };
+  }
+
+  if (tokenRecord.revoked) {
+    return { status: 403, message: "Download token has been revoked" };
+  }
+
+  if (now > new Date(tokenRecord.expiresAt)) {
+    return { status: 410, message: "Download link has expired" };
+  }
+
+  if (tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
+    return { status: 429, message: "Maximum download limit reached for this token" };
+  }
+
+  return null;
+}
+
+/**
  * Validate and consume a secure download token
  */
 exports.validateAndConsumeDownload = async (req, res) => {
@@ -325,35 +457,9 @@ exports.validateAndConsumeDownload = async (req, res) => {
     }
 
     const order = await DigitalOrder.findOne({ "downloadTokens.token": token });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Download token not found" });
-    }
-
-    if (order.orderStatus === "refunded") {
-      return res.status(403).json({
-        success: false,
-        message: "Order has been refunded. Download access revoked.",
-      });
-    }
-
-    const tokenRecord = order.downloadTokens.find((t) => t.token === token);
-    if (!tokenRecord) {
-      return res.status(404).json({ success: false, message: "Invalid download token" });
-    }
-
-    if (tokenRecord.revoked) {
-      return res.status(403).json({ success: false, message: "Download token has been revoked" });
-    }
-
-    if (new Date() > new Date(tokenRecord.expiresAt)) {
-      return res.status(410).json({ success: false, message: "Download link has expired" });
-    }
-
-    if (tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
-      return res.status(429).json({
-        success: false,
-        message: "Maximum download limit reached for this token",
-      });
+    const denial = describeDownloadDenial(order, token);
+    if (denial) {
+      return res.status(denial.status).json({ success: false, message: denial.message });
     }
 
     const product = await DigitalProduct.findById(order.productId);
@@ -361,8 +467,41 @@ exports.validateAndConsumeDownload = async (req, res) => {
       return res.status(404).json({ success: false, message: "Associated product file missing" });
     }
 
-    tokenRecord.downloadCount += 1;
-    await order.save();
+    // Consume one download with a single conditional write. Reading the counter,
+    // checking it and saving the order lets parallel requests all pass the check
+    // and overwrite each other's increment, so the limit (and a refund that lands
+    // in between) is not enforced. The filter re-checks every condition at write time.
+    const observed = order.downloadTokens.find((t) => t.token === token);
+    const now = new Date();
+    const consumed = await DigitalOrder.findOneAndUpdate(
+      {
+        _id: order._id,
+        orderStatus: { $ne: "refunded" },
+        downloadTokens: {
+          $elemMatch: {
+            token,
+            revoked: false,
+            expiresAt: { $gt: now },
+            maxDownloads: observed.maxDownloads,
+            downloadCount: { $lt: observed.maxDownloads },
+          },
+        },
+      },
+      { $inc: { "downloadTokens.$.downloadCount": 1 } },
+      { new: true }
+    );
+
+    if (!consumed) {
+      // Lost a race (another download used the last slot, or a refund/revoke landed).
+      const latest = await DigitalOrder.findOne({ _id: order._id });
+      const reason = describeDownloadDenial(latest, token) || {
+        status: 409,
+        message: "Download state changed, please try again",
+      };
+      return res.status(reason.status).json({ success: false, message: reason.message });
+    }
+
+    const tokenRecord = consumed.downloadTokens.find((t) => t.token === token);
 
     return res.status(200).json({
       success: true,
@@ -388,28 +527,26 @@ exports.refundOrder = async (req, res) => {
     const creatorId = req.user && req.user._id ? req.user._id : req.user;
     const { orderId } = req.params;
 
-    const order = await DigitalOrder.findOne({ _id: orderId, creatorId });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
-    }
+    // Flip the order to "refunded" and revoke every token in ONE conditional write.
+    // Exactly one concurrent request can win it, so revenue is adjusted once, and a
+    // later whole-document save can no longer put a refunded order back to "completed".
+    const order = await DigitalOrder.findOneAndUpdate(
+      { _id: orderId, creatorId, orderStatus: { $ne: "refunded" } },
+      { $set: { orderStatus: "refunded", "downloadTokens.$[].revoked": true } },
+      { new: true }
+    );
 
-    if (order.orderStatus === "refunded") {
+    if (!order) {
+      const existing = await DigitalOrder.findOne({ _id: orderId, creatorId });
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+      }
       return res.status(400).json({ success: false, message: "Order already refunded" });
     }
 
-    order.orderStatus = "refunded";
-    order.downloadTokens.forEach((t) => {
-      t.revoked = true;
-    });
-
-    await order.save();
-
-    // Adjust product revenue
-    const product = await DigitalProduct.findById(order.productId);
-    if (product) {
-      product.totalRevenue = Math.max(0, product.totalRevenue - order.amountPaid);
-      await product.save();
-    }
+    // Adjust product revenue atomically, never below zero.
+    await DigitalProduct.updateOne({ _id: order.productId }, { $inc: { totalRevenue: -order.amountPaid } });
+    await DigitalProduct.updateOne({ _id: order.productId, totalRevenue: { $lt: 0 } }, { $set: { totalRevenue: 0 } });
 
     return res.status(200).json({
       success: true,
