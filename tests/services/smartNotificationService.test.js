@@ -217,6 +217,51 @@ describe("smartNotificationService", () => {
             expect(await Notification.countDocuments({ userId: testUserId })).toBe(0);
         });
 
+        it("should suppress notification when every requested channel is disabled", async () => {
+            await smartNotificationService.updatePreferences(testUserId, {
+                channels: {
+                    inApp: false,
+                    email: false,
+                    push: false,
+                    sms: false,
+                },
+            });
+
+            const notif = await smartNotificationService.sendNotification(testUserId, {
+                title: "Disabled Channels",
+                message: "This should not be delivered through a fallback channel",
+                category: "system",
+            });
+
+            expect(notif.status).toBe("suppressed");
+            expect(notif.channels).toEqual([]);
+            expect(notif.metadata.suppressionReason).toBe("no_enabled_channels");
+            expect(notif.deliveryLogs).toEqual([]);
+        });
+
+        it("should not fall back to in-app when the requested channel is disabled", async () => {
+            await smartNotificationService.updatePreferences(testUserId, {
+                channels: {
+                    inApp: false,
+                    email: false,
+                    push: false,
+                    sms: false,
+                },
+            });
+
+            const notif = await smartNotificationService.sendNotification(testUserId, {
+                title: "Email Opt-Out",
+                message: "This should remain suppressed",
+                category: "system",
+                channels: ["email"],
+            });
+
+            expect(notif.status).toBe("suppressed");
+            expect(notif.channels).toEqual([]);
+            expect(notif.metadata.suppressionReason).toBe("no_enabled_channels");
+            expect(notif.deliveryLogs).toEqual([]);
+        });
+
         it("should suppress notification if category disabled by creator", async () => {
             await smartNotificationService.updatePreferences(testUserId, {
                 categories: { marketing: false },

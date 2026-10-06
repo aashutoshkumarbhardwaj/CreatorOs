@@ -859,14 +859,15 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 async function startServer() {
-    // Start the HTTP server immediately
-    app.listen(port, () => {
-        const url = process.env.APP_URL || `http://localhost:${port}`;
-        console.log(`🚀 Server is running on ${url}`);
-    });
+    try {
+        // Start the HTTP server immediately
+        app.listen(port, () => {
+            const url = process.env.APP_URL || `http://localhost:${port}`;
+            console.log(`🚀 Server is running on ${url}`);
+        });
 
-    // Connect to the database. `connectDB` will handle exit on failure.
-    await connectDB();
+        // Connect to the database. `connectDB` will handle exit on failure.
+        await connectDB();
 
         // Initialize background workers after the database is ready
         require("./workers/analyticsRefreshWorker");

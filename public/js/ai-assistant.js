@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSend = document.getElementById("btn-send-chat");
     const platformSelect = document.getElementById("select-platform");
     const toneSelect = document.getElementById("select-tone");
+    const lengthSelect = document.getElementById("select-length");
     const historyList = document.getElementById("history-list");
     const btnNewChat = document.getElementById("btn-new-chat");
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
@@ -167,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     prompt,
                     platform: platformSelect?.value || "general",
                     tone: toneSelect?.value || "energetic",
+                    length: lengthSelect?.value || "medium",
                     chatId: currentChatId,
                 }),
             });

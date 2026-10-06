@@ -16,7 +16,7 @@
       <div id="gcal-status-badge" style="padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #e2e8f0; color: #475569;">
         Checking Google Cal...
       </div>
-      <button type="button" class="crm-btn-primary" onclick="openEventTypeModal()" style="background: #6366f1; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+      <button type="button" class="crm-btn-primary" id="btn-new-event-type" style="background: #6366f1; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;">
         + New Event Type
       </button>
     </div>
@@ -24,13 +24,13 @@
 
   <!-- NAVIGATION TABS -->
   <div style="display: flex; gap: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px;">
-    <button type="button" class="tab-btn active" id="tab-event-types" onclick="switchTab('event-types')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; border-bottom: 3px solid #6366f1; color: #6366f1; cursor: pointer;">
+    <button type="button" class="tab-btn active" id="tab-event-types" data-tab="event-types" style="padding: 10px 20px; font-weight: 600; border: none; background: none; border-bottom: 3px solid #6366f1; color: #6366f1; cursor: pointer;">
       Event Types
     </button>
-    <button type="button" class="tab-btn" id="tab-bookings" onclick="switchTab('bookings')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
+    <button type="button" class="tab-btn" id="tab-bookings" data-tab="bookings" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
       Booked Calls (<span id="upcoming-count">0</span>)
     </button>
-    <button type="button" class="tab-btn" id="tab-settings" onclick="switchTab('settings')" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
+    <button type="button" class="tab-btn" id="tab-settings" data-tab="settings" style="padding: 10px 20px; font-weight: 600; border: none; background: none; color: #64748b; cursor: pointer;">
       Google Calendar & Settings
     </button>
   </div>
@@ -71,7 +71,7 @@
         <a id="btn-connect-gcal" href="/api/meetings/google/connect" class="crm-btn-primary" style="display: inline-block; text-decoration: none; padding: 12px 20px; background: #4285f4; color: white; border-radius: 8px; font-weight: 600;">
           Sync with Google Calendar
         </a>
-        <button id="btn-disconnect-gcal" onclick="disconnectGCal()" style="display: none; padding: 12px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        <button id="btn-disconnect-gcal" type="button" style="display: none; padding: 12px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
           Disconnect Google Calendar
         </button>
       </div>
@@ -85,10 +85,10 @@
   <div style="background: white; border-radius: 16px; width: 100%; max-width: 540px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h2 id="modal-title" style="margin: 0; font-size: 20px;">New Event Type</h2>
-      <button onclick="closeEventTypeModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      <button id="btn-close-modal" type="button" aria-label="Close dialog" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
     </div>
 
-    <form id="event-type-form" onsubmit="saveEventType(event)">
+    <form id="event-type-form">
       <input type="hidden" id="event-type-id" value="">
 
       <div style="margin-bottom: 14px;">
@@ -133,25 +133,64 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 12px;">
-        <button type="button" onclick="closeEventTypeModal()" style="padding: 10px 18px; background: #e2e8f0; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button type="button" id="btn-cancel-modal" style="padding: 10px 18px; background: #e2e8f0; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
         <button type="submit" style="padding: 10px 18px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Save Event Type</button>
       </div>
     </form>
   </div>
 </div>
 
-<script>
+<script nonce="<%= nonce %>">
 let eventTypes = [];
 let bookingsData = { upcoming: [], past: [] };
 let currentUserAlias = '<%= typeof user !== "undefined" && (user.alias || user.name) ? (user.alias || user.name.toLowerCase().replace(/\s+/g, "-")) : "creator" %>';
 
 document.addEventListener('DOMContentLoaded', () => {
+  bindStaticHandlers();
+  bindDelegatedHandlers();
+
   loadEventTypes();
   loadBookings();
   loadGoogleStatus();
 });
 
+// Content Security Policy blocks inline event handler attributes (script-src-attr),
+// so every control is wired up here instead of via onclick/onsubmit in the markup.
+function bindStaticHandlers() {
+  document.getElementById('btn-new-event-type')?.addEventListener('click', () => openEventTypeModal());
+  document.getElementById('btn-close-modal')?.addEventListener('click', closeEventTypeModal);
+  document.getElementById('btn-cancel-modal')?.addEventListener('click', closeEventTypeModal);
+  document.getElementById('btn-disconnect-gcal')?.addEventListener('click', disconnectGCal);
+  document.getElementById('event-type-form')?.addEventListener('submit', saveEventType);
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+// Cards are rebuilt via innerHTML on every render, so their buttons are handled by
+// delegation on the stable parent containers rather than re-bound each time.
+function bindDelegatedHandlers() {
+  document.getElementById('event-types-grid')?.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-action]');
+    if (!trigger) return;
+
+    const { action, id, url } = trigger.dataset;
+    if (action === 'create-event-type') openEventTypeModal();
+    if (action === 'copy-link') copyBookingLink(url);
+    if (action === 'delete-event-type') deleteEventType(id);
+  });
+
+  document.getElementById('upcoming-bookings-list')?.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-action="cancel-booking"]');
+    if (!trigger) return;
+    cancelBooking(trigger.dataset.id);
+  });
+}
+
 function switchTab(tabName) {
+  if (!tabName) return;
+
   document.getElementById('sec-event-types').style.display = tabName === 'event-types' ? 'block' : 'none';
   document.getElementById('sec-bookings').style.display = tabName === 'bookings' ? 'block' : 'none';
   document.getElementById('sec-settings').style.display = tabName === 'settings' ? 'block' : 'none';
@@ -187,7 +226,7 @@ function renderEventTypes() {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: white; border-radius: 12px; border: 1px solid #e2e8f0;">
         <p style="color: #64748b; font-size: 16px; margin-bottom: 16px;">You haven't created any event types yet.</p>
-        <button onclick="openEventTypeModal()" style="padding: 10px 18px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        <button type="button" data-action="create-event-type" style="padding: 10px 18px; background: #6366f1; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
           + Create First Event Type
         </button>
       </div>
@@ -198,7 +237,7 @@ function renderEventTypes() {
   container.innerHTML = eventTypes.map(et => {
     const bookingUrl = `${window.location.origin}/book/${currentUserAlias}/${et.slug}`;
     return `
-      <div style="background: white; border: 1px solid #e2e8f0; border-top: 4px solid ${et.color || '#6366f1'}; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-space-between;">
+      <div style="background: white; border: 1px solid #e2e8f0; border-top: 4px solid ${et.color || '#6366f1'}; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
             <h3 style="margin: 0; font-size: 18px; font-weight: 700;">${et.title}</h3>
@@ -215,13 +254,13 @@ function renderEventTypes() {
         </div>
 
         <div style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 14px; display: flex; gap: 8px;">
-          <button onclick="copyBookingLink('${bookingUrl}')" style="flex: 1; padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+          <button type="button" data-action="copy-link" data-url="${bookingUrl}" style="flex: 1; padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
             📋 Copy Link
           </button>
-          <a href="${bookingUrl}" target="_blank" style="padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; text-decoration: none; color: #334155; font-weight: 600;">
+          <a href="${bookingUrl}" target="_blank" rel="noopener noreferrer" style="padding: 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; text-decoration: none; color: #334155; font-weight: 600;">
             🔗 View
           </a>
-          <button onclick="deleteEventType('${et._id}')" style="padding: 8px; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 6px; cursor: pointer;">
+          <button type="button" data-action="delete-event-type" data-id="${et._id}" aria-label="Delete event type" style="padding: 8px; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 6px; cursor: pointer;">
             🗑
           </button>
         </div>
@@ -278,12 +317,12 @@ function renderBookingCard(b, isUpcoming) {
 
       <div style="display: flex; gap: 10px; align-items: center;">
         ${b.meetingLink ? `
-          <a href="${b.meetingLink}" target="_blank" style="padding: 8px 16px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
+          <a href="${b.meetingLink}" target="_blank" rel="noopener noreferrer" style="padding: 8px 16px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">
             🎥 Join Call
           </a>
         ` : ''}
         ${isUpcoming ? `
-          <button onclick="cancelBooking('${b._id}')" style="padding: 8px 14px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: 600; cursor: pointer;">
+          <button type="button" data-action="cancel-booking" data-id="${b._id}" style="padding: 8px 14px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: 600; cursor: pointer;">
             Cancel
           </button>
         ` : `<span style="font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: #f1f5f9; color: #64748b;">${b.status.toUpperCase()}</span>`}

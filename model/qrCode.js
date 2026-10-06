@@ -45,7 +45,7 @@ const qrCodeSchema = new mongoose.Schema(
         design: {
             foregroundColor: {
                 type: String,
-                default: "#000000",
+                default: "#37D6C8",
             },
             backgroundColor: {
                 type: String,
@@ -74,6 +74,7 @@ const qrCodeSchema = new mongoose.Schema(
         totalScans: {
             type: Number,
             default: 0,
+            min : 0,
         },
         scanHistory: [
             {

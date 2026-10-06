@@ -9,11 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const time = document.getElementById("conversationTime");
     const body = document.getElementById("conversationBody");
 
-    const replyBtn = document.getElementById("replyBtn");
     const archiveBtn = document.getElementById("archiveBtn");
     const importantBtn = document.getElementById("importantBtn");
     const readBtn = document.getElementById("readBtn");
-    const replyBox = document.getElementById("replyBox");
 
     let selectedCard = null;
 
@@ -111,8 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (time) time.textContent = card.dataset.time || "";
         if (body) body.textContent = card.dataset.body || "";
 
-        if (replyBox) replyBox.value = "";
-
         if (readBtn) {
             readBtn.textContent =
                 card.dataset.read === "true"
@@ -129,34 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Automatically select first message
     if (cards.length > 0) {
         openMessage(cards[0]);
-    }
-
-    // ===========================
-    // REPLY
-    // ===========================
-
-    if (replyBtn) {
-
-        replyBtn.addEventListener("click", () => {
-
-            if (!selectedCard) {
-                alert("Select a message first.");
-                return;
-            }
-
-            const reply = replyBox.value.trim();
-
-            if (reply === "") {
-                alert("Please write a reply.");
-                return;
-            }
-
-            alert("Reply sent successfully! (Mock)");
-
-            replyBox.value = "";
-
-        });
-
     }
 
     // ===========================

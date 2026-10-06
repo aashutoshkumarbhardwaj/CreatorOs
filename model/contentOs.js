@@ -90,12 +90,12 @@ const contentOsSchema = new mongoose.Schema(
             default: null,
         },
         performance: {
-            impressions: { type: Number, default: 0 },
-            views: { type: Number, default: 0 },
-            engagementRate: { type: Number, default: 0 },
-            clicks: { type: Number, default: 0 },
-            likes: { type: Number, default: 0 },
-            shares: { type: Number, default: 0 },
+            impressions: { type: Number, default: 0, min: [0, 'impressions cannot be negative'] },
+            views: { type: Number, default: 0, min: [0, 'views cannot be negative'] },
+            engagementRate: { type: Number, default: 0, min: [0, 'engagementRate cannot be negative'], max: [100, 'engagementRate cannot exceed 100'] },
+            clicks: { type: Number, default: 0, min: [0, 'clicks cannot be negative'] },
+            likes: { type: Number, default: 0, min: [0, 'likes cannot be negative'] },
+            shares: { type: Number, default: 0, min: [0, 'shares cannot be negative'] },
         },
         comments: [
             {
@@ -253,7 +253,44 @@ class MockContentOsModel {
         const idx = mockItems.findIndex((item) => item._id?.toString() === id?.toString());
         if (idx === -1) return null;
         const current = mockItems[idx];
-        const updatedData = { ...current, ...(update.$set || update), updatedAt: new Date() };
+        const updatedData = JSON.parse(JSON.stringify(current));
+
+        if (update.$set) {
+            for (const key of Object.keys(update.$set)) {
+                if (key.includes(".")) {
+                    const parts = key.split(".");
+                    let obj = updatedData;
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!obj[parts[i]]) obj[parts[i]] = {};
+                        obj = obj[parts[i]];
+                    }
+                    obj[parts[parts.length - 1]] = update.$set[key];
+                } else {
+                    updatedData[key] = update.$set[key];
+                }
+            }
+        } else if (!update.$push && !update.$pull) {
+            Object.assign(updatedData, update);
+        }
+
+        if (update.$push) {
+            for (const key of Object.keys(update.$push)) {
+                if (!updatedData[key]) updatedData[key] = [];
+                updatedData[key].push(update.$push[key]);
+            }
+        }
+
+        if (update.$pull) {
+            for (const key of Object.keys(update.$pull)) {
+                if (Array.isArray(updatedData[key])) {
+                    const matchKey = Object.keys(update.$pull[key])[0];
+                    const matchValue = update.$pull[key][matchKey];
+                    updatedData[key] = updatedData[key].filter(item => item[matchKey] !== matchValue && item[matchKey]?.toString() !== matchValue?.toString());
+                }
+            }
+        }
+
+        updatedData.updatedAt = new Date();
         mockItems[idx] = new MockContentOsModel(updatedData);
         return mockItems[idx];
     }

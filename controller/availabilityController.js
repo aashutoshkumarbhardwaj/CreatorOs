@@ -19,13 +19,27 @@ function slugify(text) {
 }
 
 async function findCreatorByAliasOrName(identifier) {
-  let creator = await User.findOne({ alias: identifier });
+  let creator = await User.findOne({
+    $or: [
+      { alias: identifier },
+      { nameSlug: identifier.toLowerCase() }
+    ],
+    role: "creator"
+  });
+
+  // Graceful fallback for legacy users without a nameSlug
   if (!creator) {
-    const users = await User.find({ role: "creator" });
-    creator = users.find((u) => slugify(u.name) === identifier.toLowerCase() || u.alias === identifier);
+    creator = await User.findOne({
+      name: { $regex: new RegExp("^" + identifier.replace(/-/g, '.*') + "$", "i") },
+      role: "creator"
+    });
   }
+
   if (!creator && identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    creator = await User.findById(identifier);
+    const byId = await User.findById(identifier);
+    if (byId && byId.role === "creator") {
+      creator = byId;
+    }
   }
   return creator;
 }
@@ -82,7 +96,7 @@ exports.getAvailableSlots = async (req, res) => {
       userId: creator._id,
       status: "scheduled",
       startTime: { $gte: startOfDay, $lt: startOfNextDay },
-    });
+    }).lean();
 
     const now = new Date();
     const candidateSlots = [];
@@ -115,3 +129,4 @@ exports.getAvailableSlots = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+

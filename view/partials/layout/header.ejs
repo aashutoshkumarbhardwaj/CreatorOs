@@ -18,7 +18,7 @@
     <% } %>
 </head>
 <body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>" <%- typeof bodyAttributes !== 'undefined' ? bodyAttributes : '' %>>
-    <div class="dashboard-layout <%= typeof layoutClass !== 'undefined' ? layoutClass : '' %>">
+    <div class="dashboard-layout <%= typeof layoutClass !== 'undefined' ? layoutClass : '' %>" id="dashboardLayout">
         <%- include('./sidebar', { activeNav: typeof activeNav !== 'undefined' ? activeNav : 'dashboard' }) %>
         <main class="<%= typeof mainClass !== 'undefined' ? mainClass : 'main' %>" id="main-content" tabindex="-1">
             <%- include('./topbar', { user: typeof user !== 'undefined' ? user : { initials: 'U', name: 'User' } }) %>

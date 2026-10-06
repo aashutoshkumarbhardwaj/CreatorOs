@@ -22,12 +22,14 @@ const {
   validateCreateNotification,
 } = require("../middleware/validators/smartNotificationValidator");
 
+const { sanitizeNoSqlQuery } = require("../middleware/validators/common");
+
 // UI View Pages
 router.get("/services/smart-notifications", protect, renderSmartNotificationsPage);
 router.get("/notifications", protect, renderSmartNotificationsPage);
 
 // API Endpoints
-router.get("/api/notifications", protect, getNotifications);
+router.get("/api/notifications", protect, sanitizeNoSqlQuery(), getNotifications);
 router.get("/api/notifications/unread-count", protect, getUnreadCount);
 router.get("/api/notifications/preferences", protect, getPreferences);
 router.put("/api/notifications/preferences", protect, preventContributorWrites, validatePreferences, updatePreferences);

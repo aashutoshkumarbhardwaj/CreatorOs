@@ -13,8 +13,8 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Build the Tailwind CSS file
-RUN npm run build:css
+# Build Tailwind CSS and validate runtime JavaScript syntax
+RUN npm run build
 
 # Expose the application port
 EXPOSE 3000

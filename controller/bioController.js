@@ -79,6 +79,9 @@ const saveBioProfile = asyncHandler(async (req, res) => {
     }
 
     const { handle, name, bio, tags, avatarUrl, links, theme, layout, socials } = req.body;
+    if (Array.isArray(links) && links.length > 50) {
+        return res.status(400).json({ success: false, message: 'Links cannot exceed 50 entries' });
+    }
     const requestedHandle = handle || userDoc.alias || userDoc.name;
     const handleValidation = validateHandle(requestedHandle);
 

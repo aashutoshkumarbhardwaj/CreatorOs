@@ -42,15 +42,37 @@ function mockReqRes(options = {}) {
 
 describe('Smart Notification Validators', () => {
   describe('validatePreferences', () => {
-    it('should pass validation with valid preferences', async () => {
+    it('should pass validation with schema-compatible preferences', async () => {
       const { req, res, next } = mockReqRes({
         method: 'PUT',
         url: '/api/notifications/preferences',
         body: {
-          frequency: 'daily_digest',
           channels: {
             email: true,
+            sms: false,
             inApp: false,
+            push: true,
+          },
+          categories: {
+            system: true,
+            engagement: true,
+            content: false,
+            analytics: true,
+            marketing: false,
+          },
+          quietHours: {
+            enabled: true,
+            startTime: '22:00',
+            endTime: '08:00',
+            timezone: 'UTC',
+          },
+          intelligentScheduling: {
+            enabled: true,
+            preferredWindow: 'morning',
+          },
+          deduplication: {
+            enabled: true,
+            windowMinutes: 30,
           },
         },
       });
@@ -59,12 +81,92 @@ describe('Smart Notification Validators', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it('should fail when frequency is invalid', async () => {
+    it('should fail when a channel setting is not boolean', async () => {
       const { req, res, next } = mockReqRes({
         method: 'PUT',
         url: '/api/notifications/preferences',
         body: {
-          frequency: 'invalid_frequency',
+          channels: {
+            sms: 'false',
+          },
+        },
+      });
+
+      await validatePreferences(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when categories is not an object', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'PUT',
+        url: '/api/notifications/preferences',
+        body: {
+          categories: ['system', 'content'],
+        },
+      });
+
+      await validatePreferences(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when a category setting is not boolean', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'PUT',
+        url: '/api/notifications/preferences',
+        body: {
+          categories: {
+            marketing: 'false',
+          },
+        },
+      });
+
+      await validatePreferences(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when quiet hours use an invalid time', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'PUT',
+        url: '/api/notifications/preferences',
+        body: {
+          quietHours: {
+            startTime: '25:00',
+          },
+        },
+      });
+
+      await validatePreferences(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when preferred window is outside the schema enum', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'PUT',
+        url: '/api/notifications/preferences',
+        body: {
+          intelligentScheduling: {
+            preferredWindow: 'night',
+          },
+        },
+      });
+
+      await validatePreferences(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should fail when deduplication window is outside the schema range', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'PUT',
+        url: '/api/notifications/preferences',
+        body: {
+          deduplication: {
+            windowMinutes: 1441,
+          },
         },
       });
 

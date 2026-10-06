@@ -53,3 +53,8 @@ coverage/
 
 # Vault file uploads (persisted user files — not committed)
 uploads/
+
+# Scratch / accidental files
+scratch.*
+prs.json
+*.debug.js

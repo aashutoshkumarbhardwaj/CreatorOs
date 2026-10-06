@@ -138,8 +138,8 @@ const dropZone = document.getElementById('drop-zone');
                         sizeLine = 'Size: ' + formatSize(data.size) + ' (compressed from ' + formatSize(data.originalSize) + ', -' + savedPct + '%)';
                     }
                     statusEl.innerHTML = '<strong>Upload successful!</strong><br>File: ' + data.filename + '<br>' + sizeLine +
-                        ' <button type="button" class="rename-uploaded-btn" data-filename="' + data.path + '" style="margin-left:1rem;">Rename</button>' +
-                        ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.path + '" style="margin-left:0.5rem;">Delete</button>';
+                        ' <button type="button" class="rename-uploaded-btn" data-filename="' + data.filename + '" style="margin-left:1rem;">Rename</button>' +
+                        ' <button type="button" class="delete-uploaded-btn" data-filename="' + data.filename + '" style="margin-left:0.5rem;">Delete</button>';
                     statusEl.style.display = 'block';
 
                     var renBtn = statusEl.querySelector('.rename-uploaded-btn');

@@ -302,17 +302,33 @@ const createTask = asyncHandler(async (req, res) => {
  */
 const updateTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
+
+  const allowedFields = [
+    "title", "description", "status", "priority", "category",
+    "tags", "startDate", "dueDate", "estimatedHours",
+    "subtasks"
+  ];
+
+  const updates = {};
+  const body = req.body || {};
+  for (const field of allowedFields) {
+    if (body[field] !== undefined) {
+      updates[field] = body[field];
+    }
+  }
 
   if (isMockMode()) {
     const idx = mockTasks.findIndex((t) => t._id === taskId);
     if (idx === -1) return res.status(404).json({ success: false, error: "Task not found." });
 
-    const updated = { ...mockTasks[idx], ...req.body, updatedAt: new Date() };
+    const updated = { ...mockTasks[idx], ...updates, updatedAt: new Date() };
     mockTasks[idx] = updated;
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, req.body, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { $set: updates }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -321,6 +337,7 @@ const updateTask = asyncHandler(async (req, res) => {
  */
 const updateTaskStatus = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
   const { status } = req.body;
 
   if (isMockMode()) {
@@ -330,7 +347,8 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { status }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -339,6 +357,7 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
  */
 const updateSubtasks = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
   const { subtasks } = req.body;
 
   if (isMockMode()) {
@@ -348,7 +367,8 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findByIdAndUpdate(taskId, { subtasks }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { subtasks }, { new: true });
+  if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
 
@@ -358,7 +378,30 @@ const updateSubtasks = asyncHandler(async (req, res) => {
 const logTaskTime = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
   const { durationMinutes } = req.body;
-  const hours = Number(durationMinutes) / 60;
+
+  if (
+    durationMinutes === undefined ||
+    durationMinutes === null ||
+    (typeof durationMinutes !== "number" && typeof durationMinutes !== "string") ||
+    (typeof durationMinutes === "string" && durationMinutes.trim() === "")
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: "durationMinutes must be a positive finite number.",
+      message: "durationMinutes must be a positive finite number.",
+    });
+  }
+
+  const parsedDuration = Number(durationMinutes);
+  if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: "durationMinutes must be a positive finite number.",
+      message: "durationMinutes must be a positive finite number.",
+    });
+  }
+
+  const hours = parsedDuration / 60;
 
   if (isMockMode()) {
     const task = mockTasks.find((t) => t._id === taskId);
@@ -380,6 +423,7 @@ const logTaskTime = asyncHandler(async (req, res) => {
  */
 const toggleArchiveTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
     const task = mockTasks.find((t) => t._id === taskId);
@@ -389,7 +433,7 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  const taskDoc = await Task.findOne({ _id: taskId, creatorId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   taskDoc.isArchived = !taskDoc.isArchived;
   await taskDoc.save();
@@ -401,13 +445,15 @@ const toggleArchiveTask = asyncHandler(async (req, res) => {
  */
 const deleteTask = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
 
   if (isMockMode()) {
     mockTasks = mockTasks.filter((t) => t._id !== taskId);
     return res.json({ success: true, message: "Task deleted successfully." });
   }
 
-  await Task.findByIdAndDelete(taskId);
+  const deleted = await Task.findOneAndDelete({ _id: taskId, creatorId });
+  if (!deleted) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, message: "Task deleted successfully." });
 });
 
@@ -415,7 +461,10 @@ const deleteTask = asyncHandler(async (req, res) => {
  * GET /api/tasks/export/calendar - Export calendar feed
  */
 const exportCalendar = asyncHandler(async (req, res) => {
-  const tasks = isMockMode() ? mockTasks : await Task.find({ isArchived: false }).lean();
+  const creatorId = req.user?.id || "mock-user-123";
+  const tasks = isMockMode()
+    ? mockTasks
+    : await Task.find({ creatorId, isArchived: false }).lean();
   const calendarEvents = tasks.map((t) => ({
     id: t._id,
     title: t.title,

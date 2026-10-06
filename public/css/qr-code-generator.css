@@ -124,7 +124,7 @@
     height: 2.2rem;
     border: 2px solid var(--border, #111);
     border-radius: 0.65rem;
-    background: var(--accent, #2dd4bf);
+    background: var(--accent-teal, #37D6C8);
     font-weight: 900;
 }
 
@@ -163,7 +163,7 @@
 }
 
 .mode-btn.active {
-    background: var(--accent, #14b8a6);
+    background: var(--accent-teal, #37D6C8);
     color: #031615;
 }
 
@@ -238,7 +238,7 @@
 
 .preset-btn.active,
 .primary-action {
-    background: var(--accent, #14b8a6);
+    background: var(--accent-teal, #37D6C8);
     color: #031615;
 }
 
@@ -254,7 +254,7 @@
 }
 
 .preview-panel {
-    background: color-mix(in srgb, var(--accent, #14b8a6) 24%, var(--card-bg, #fff));
+    background: color-mix(in srgb, var(--accent-teal, #37D6C8) 24%, var(--card-bg, #fff));
 }
 
 .preview-stage {
@@ -305,7 +305,7 @@
     position: relative;
     z-index: 1;
     width: min(100%, 360px);
-    background: #fff;
+    background: var(--card-bg, #fff);
     border: 2px solid var(--border, #111);
     padding: 1rem;
     transform: rotate(-1deg);
@@ -360,15 +360,15 @@
 .telemetry-panel {
     margin: 2rem 0;
     padding: 1.75rem;
-    background: #151515;
-    color: #f8fafc;
-    border: 2px solid #000;
-    box-shadow: 6px 6px 0 #000;
+    background: var(--bg-secondary, #EFE8DC);
+    color: var(--text, #111);
+    border: 2px solid var(--border, #111);
+    box-shadow: 6px 6px 0 var(--border, #111);
 }
 
 .telemetry-panel .eyebrow,
 .telemetry-panel h2 {
-    color: #2dd4bf;
+    color: var(--accent-teal, #37D6C8);
 }
 
 .telemetry-stats {
@@ -378,15 +378,15 @@
 
 .telemetry-stats div,
 .scan-feed {
-    border: 1px solid #3f3f46;
-    background: #242424;
+    border: 1px solid var(--border, #111);
+    background: var(--card-bg, #fff);
     padding: 1rem;
 }
 
 .telemetry-stats span,
 .scan-feed p {
     display: block;
-    color: #a1a1aa;
+    color: var(--muted, #64748b);
     font-size: 0.75rem;
     text-transform: uppercase;
     font-weight: 800;
@@ -402,12 +402,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
-    border-top: 1px solid #3f3f46;
+    border-top: 1px solid var(--border, #111);
     padding: 0.75rem 0;
 }
 
 .scan-row span:first-child {
-    color: #2dd4bf;
+    color: var(--accent-teal, #37D6C8);
     font-weight: 800;
 }
 

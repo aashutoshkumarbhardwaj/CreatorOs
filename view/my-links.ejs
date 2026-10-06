@@ -229,6 +229,51 @@
         </div>
     </div>
 
+    <!-- ── QR Code Modal ─────────────────────────────────────────────────────── -->
+    <div class="qr-modal-wrap" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle" style="display:none;">
+        <div class="qr-backdrop" id="qrBackdrop"></div>
+        <div class="qr-modal">
+            <div class="qr-modal-head">
+                <div>
+                    <h3 id="qrModalTitle">QR Code</h3>
+                    <p id="qrModalUrl"></p>
+                </div>
+                <button type="button" class="qr-close" id="qrClose" aria-label="Close QR modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="qr-preview" id="qrPreview">
+                <div class="qr-preview-placeholder" id="qrPlaceholder">
+                    <div class="qr-spinner"></div>
+                    <span>Generating QR…</span>
+                </div>
+            </div>
+
+            <div class="qr-actions">
+                <a class="qr-btn qr-btn-primary" id="qrDownload" href="#" download>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download PNG
+                </a>
+                <button type="button" class="qr-btn qr-btn-secondary" id="qrCloseMobile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/pages/my-links.js"></script>
     <script nonce="<%= nonce %>">
         const sidebarToggle = document.getElementById('sidebarToggle');
         const dashboardLayout = document.getElementById('dashboardLayout');

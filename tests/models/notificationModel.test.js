@@ -58,5 +58,44 @@ describe("Smart Notification Models", () => {
                 })
             ).rejects.toThrow();
         });
+
+        it("should enforce unique compound index on userId and deduplicationKey", async () => {
+            await Notification.syncIndexes();
+            const userId = new mongoose.Types.ObjectId();
+            await Notification.create({
+                userId,
+                title: "First Notification",
+                message: "First Message",
+                deduplicationKey: "dedup_test_key_1",
+            });
+
+            await expect(
+                Notification.create({
+                    userId,
+                    title: "Second Notification",
+                    message: "Second Message",
+                    deduplicationKey: "dedup_test_key_1",
+                })
+            ).rejects.toThrow();
+        });
+
+        it("should allow multiple notifications without deduplicationKey for the same user", async () => {
+            await Notification.syncIndexes();
+            const userId = new mongoose.Types.ObjectId();
+            const notif1 = await Notification.create({
+                userId,
+                title: "No Dedup 1",
+                message: "Message 1",
+            });
+
+            const notif2 = await Notification.create({
+                userId,
+                title: "No Dedup 2",
+                message: "Message 2",
+            });
+
+            expect(notif1._id).toBeDefined();
+            expect(notif2._id).toBeDefined();
+        });
     });
 });

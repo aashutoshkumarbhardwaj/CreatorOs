@@ -2,6 +2,40 @@ const EventType = require("../model/eventType");
 const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
+const { generateState, validateState } = require("../utils/oauthState");
+const { createRedisClient } = require("../utils/redisClient");
+
+const redis = createRedisClient();
+const memoryLocks = new Set();
+
+async function acquireLock(key, ttlSeconds) {
+  if (!redis) {
+    if (memoryLocks.has(key)) return false;
+    memoryLocks.add(key);
+    setTimeout(() => memoryLocks.delete(key), ttlSeconds * 1000);
+    return true;
+  }
+  try {
+    const result = await redis.set(key, "1", "EX", ttlSeconds, "NX");
+    return result === "OK";
+  } catch (err) {
+    console.error("[Mutex] Redis lock error:", err);
+    return false;
+  }
+}
+
+async function releaseLock(key) {
+  if (!redis) {
+    memoryLocks.delete(key);
+    return;
+  }
+  try {
+    await redis.del(key);
+  } catch (err) {
+    console.error("[Mutex] Redis unlock error:", err);
+  }
+}
+
 
 /**
  * Helper to slugify string titles.
@@ -28,13 +62,27 @@ function publicErrorMessage(error) {
 }
 
 async function findCreatorByAliasOrName(identifier) {
-  let creator = await User.findOne({ alias: identifier });
+  let creator = await User.findOne({
+    $or: [
+      { alias: identifier },
+      { nameSlug: identifier.toLowerCase() }
+    ],
+    role: "creator"
+  });
+
+  // Graceful fallback for legacy users without a nameSlug
   if (!creator) {
-    const users = await User.find({ role: "creator" });
-    creator = users.find((u) => slugify(u.name) === identifier.toLowerCase() || u.alias === identifier);
+    creator = await User.findOne({
+      name: { $regex: new RegExp("^" + identifier.replace(/-/g, '.*') + "$", "i") },
+      role: "creator"
+    });
   }
+
   if (!creator && identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    creator = await User.findById(identifier);
+    const byId = await User.findById(identifier);
+    if (byId && byId.role === "creator") {
+      creator = byId;
+    }
   }
   return creator;
 }
@@ -45,7 +93,7 @@ async function findCreatorByAliasOrName(identifier) {
 
 exports.getEventTypes = async (req, res) => {
   try {
-    const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, count: eventTypes.length, data: eventTypes });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
@@ -65,12 +113,12 @@ exports.createEventType = async (req, res) => {
 
     let slug = baseSlug;
     let count = 1;
-    while (await EventType.findOne({ userId: req.user._id, slug })) {
+    while (await EventType.findOne({ userId: req.user.id, slug })) {
       slug = `${baseSlug}-${count++}`;
     }
 
     const eventType = await EventType.create({
-      userId: req.user._id,
+      userId: req.user.id,
       title,
       slug,
       description: description || "",
@@ -100,23 +148,34 @@ exports.createEventType = async (req, res) => {
 exports.updateEventType = async (req, res) => {
   try {
     const { id } = req.params;
-    let eventType = await EventType.findOne({ _id: id, userId: req.user._id });
+    let eventType = await EventType.findOne({ _id: id, userId: req.user.id });
 
     if (!eventType) {
       return res.status(404).json({ success: false, message: "Event type not found" });
     }
 
-    if (req.body.title && req.body.title !== eventType.title) {
-      let baseSlug = slugify(req.body.title);
+    const allowedFields = [
+      "title", "description", "duration", "locationType", "locationDetails",
+      "price", "currency", "color",
+      "availability", "bufferBefore", "bufferAfter", "customQuestions", "isActive",
+    ];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map((field) => [field, req.body[field]])
+    );
+
+    if (updates.title && updates.title !== eventType.title) {
+      let baseSlug = slugify(updates.title);
       let slug = baseSlug;
       let count = 1;
-      while (await EventType.findOne({ userId: req.user._id, slug, _id: { $ne: id } })) {
+      while (await EventType.findOne({ userId: req.user.id, slug, _id: { $ne: id } })) {
         slug = `${baseSlug}-${count++}`;
       }
-      req.body.slug = slug;
+      updates.slug = slug;
     }
 
-    eventType = await EventType.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+    eventType = await EventType.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: eventType });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
@@ -126,7 +185,7 @@ exports.updateEventType = async (req, res) => {
 exports.deleteEventType = async (req, res) => {
   try {
     const { id } = req.params;
-    const eventType = await EventType.findOneAndDelete({ _id: id, userId: req.user._id });
+    const eventType = await EventType.findOneAndDelete({ _id: id, userId: req.user.id });
 
     if (!eventType) {
       return res.status(404).json({ success: false, message: "Event type not found" });
@@ -144,7 +203,7 @@ exports.deleteEventType = async (req, res) => {
 
 exports.getUserBookings = async (req, res) => {
   try {
-    const bookings = await MeetingBooking.find({ userId: req.user._id })
+    const bookings = await MeetingBooking.find({ userId: req.user.id })
       .populate("eventTypeId", "title duration color price locationType")
       .sort({ startTime: 1 });
 
@@ -174,7 +233,7 @@ exports.cancelBooking = async (req, res) => {
     }
 
     // Check ownership if requested by logged in user
-    if (req.user && booking.userId.toString() !== req.user._id.toString()) {
+    if (req.user && booking.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({ success: false, message: "Unauthorized to cancel this booking" });
     }
 
@@ -195,9 +254,10 @@ exports.cancelBooking = async (req, res) => {
 
 exports.getGoogleCalendarStatus = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     const tokens = user.googleCalendarTokens || {};
-    const authUrl = GoogleCalendarService.getAuthUrl(req.user._id.toString());
+    const state = generateState(req.user.id.toString());
+    const authUrl = GoogleCalendarService.getAuthUrl(state);
 
     return res.status(200).json({
       success: true,
@@ -212,12 +272,12 @@ exports.getGoogleCalendarStatus = async (req, res) => {
 
 exports.connectGoogleCalendar = async (req, res) => {
   try {
-    const authUrl = GoogleCalendarService.getAuthUrl(req.user._id.toString());
+    const state = generateState(req.user.id.toString());
+    const authUrl = GoogleCalendarService.getAuthUrl(state);
     if (authUrl) {
       return res.redirect(authUrl);
     }
-    // If not configured, activate mock connection directly
-    await GoogleCalendarService.handleCallback("mock_code", req.user._id.toString());
+    await GoogleCalendarService.handleCallback("mock_code", req.user.id.toString());
     return res.redirect("/services/meetings?googleConnected=1");
   } catch (error) {
     return res.redirect("/services/meetings?error=" + encodeURIComponent(publicErrorMessage(error)));
@@ -227,10 +287,10 @@ exports.connectGoogleCalendar = async (req, res) => {
 exports.googleCalendarCallback = async (req, res) => {
   try {
     const { code, state } = req.query;
-    const userId = state || req.user?._id?.toString();
+    const userId = validateState(state);
 
     if (!userId) {
-      return res.redirect("/login");
+      return res.redirect("/services/meetings?error=" + encodeURIComponent("Invalid or expired OAuth state. Please try connecting again."));
     }
 
     await GoogleCalendarService.handleCallback(code || "mock_code", userId);
@@ -242,7 +302,7 @@ exports.googleCalendarCallback = async (req, res) => {
 
 exports.disconnectGoogleCalendar = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(req.user.id, {
       googleCalendarTokens: {
         accessToken: null,
         refreshToken: null,
@@ -348,7 +408,7 @@ exports.getAvailableSlots = async (req, res) => {
       userId: creator._id,
       status: "scheduled",
       startTime: { $gte: startOfDay, $lte: endOfDay },
-    });
+    }).lean();
 
     const now = new Date();
     const candidateSlots = [];
@@ -412,47 +472,109 @@ exports.createBooking = async (req, res) => {
 
     const end = new Date(start.getTime() + eventType.duration * 60 * 1000);
 
-    // Conflict check
-    const existingConflict = await MeetingBooking.findOne({
-      userId: creator._id,
-      status: "scheduled",
-      $or: [
-        { startTime: { $lt: end, $gte: start } },
-        { endTime: { $gt: start, $lte: end } },
-      ],
-    });
-
-    if (existingConflict) {
-      return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+    const availability = eventType.availability || {};
+    const availabilityTimeZone = availability.timeZone || "UTC";
+    let localParts;
+    try {
+      localParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: availabilityTimeZone,
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(start).reduce((parts, part) => {
+        parts[part.type] = part.value;
+        return parts;
+      }, {});
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Event availability timezone is invalid" });
     }
 
-    // Sync with Google Calendar service
-    const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
-      title: `${eventType.title} with ${attendeeName}`,
-      description: `Meeting arranged via CreatorOS\n\nNotes: ${attendeeNotes || "None"}`,
-      startTime: start,
-      endTime: end,
-      attendeeName,
-      attendeeEmail,
-      locationType: eventType.locationType,
-      locationDetails: eventType.locationDetails,
-    });
+    const weekdayMap = { Sun: "sun", Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri", Sat: "sat" };
+    const allowedDays = availability.days || ["mon", "tue", "wed", "thu", "fri"];
+    const localStartMinutes = Number(localParts.hour) * 60 + Number(localParts.minute);
+    const [startHour, startMinute] = (availability.startTime || "09:00").split(":").map(Number);
+    const [endHour, endMinute] = (availability.endTime || "17:00").split(":").map(Number);
+    const windowStart = startHour * 60 + startMinute;
+    const windowEnd = endHour * 60 + endMinute;
+    const endLocalParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: availabilityTimeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(end).reduce((parts, part) => {
+      parts[part.type] = part.value;
+      return parts;
+    }, {});
+    const localEndMinutes = Number(endLocalParts.hour) * 60 + Number(endLocalParts.minute);
 
-    const booking = await MeetingBooking.create({
-      userId: creator._id,
-      eventTypeId: eventType._id,
-      attendeeName,
-      attendeeEmail,
-      attendeeNotes: attendeeNotes || "",
-      answers: answers || [],
-      startTime: start,
-      endTime: end,
-      timeZone: timeZone || "UTC",
-      status: "scheduled",
-      locationType: eventType.locationType,
-      meetingLink: gCalResult.meetingLink,
-      googleEventId: gCalResult.eventId,
-    });
+    if (!allowedDays.includes(weekdayMap[localParts.weekday]) || localStartMinutes < windowStart || localEndMinutes > windowEnd) {
+      return res.status(409).json({ success: false, message: "This time is outside the event availability window" });
+    } 
+    // Conflict check & 2PC Lock
+    const lockKey = `calendar_lock:${creator._id}`;
+    const acquired = await acquireLock(lockKey, 15);
+    if (!acquired) {
+      return res.status(409).json({ success: false, message: "Server is busy processing another booking for this creator. Please try again in a few seconds." });
+    }
+
+    let booking = null;
+    try {
+      const existingConflict = await MeetingBooking.findOne({
+        userId: creator._id,
+        status: "scheduled",
+        startTime: { $lt: end },
+        endTime: { $gt: start },
+      });
+
+      if (existingConflict) {
+        return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+      }
+
+      // 2PC Phase 1: Create pending booking
+      booking = await MeetingBooking.create({
+        userId: creator._id,
+        eventTypeId: eventType._id,
+        attendeeName,
+        attendeeEmail,
+        attendeeNotes: attendeeNotes || "",
+        answers: answers || [],
+        startTime: start,
+        endTime: end,
+        timeZone: timeZone || "UTC",
+        status: "pending_sync",
+        locationType: eventType.locationType,
+      });
+
+      // 2PC Phase 2: External Google Calendar API
+      const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
+        title: `${eventType.title} with ${attendeeName}`,
+        description: `Meeting arranged via CreatorOS
+
+Notes: ${attendeeNotes || "None"}`,
+        startTime: start,
+        endTime: end,
+        attendeeName,
+        attendeeEmail,
+        locationType: eventType.locationType,
+        locationDetails: eventType.locationDetails,
+      });
+
+      // 2PC Commit
+      booking.status = "scheduled";
+      booking.meetingLink = gCalResult.meetingLink;
+      booking.googleEventId = gCalResult.eventId;
+      await booking.save();
+
+    } catch (err) {
+      // 2PC Rollback
+      if (booking) {
+        await MeetingBooking.deleteOne({ _id: booking._id });
+      }
+      throw err;
+    } finally {
+      await releaseLock(lockKey);
+    }
 
     return res.status(201).json({
       success: true,
@@ -472,3 +594,5 @@ exports.createBooking = async (req, res) => {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
+
+

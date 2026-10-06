@@ -97,6 +97,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const healthRoutes = require("./routes/health");
+const sponsorshipCalculatorRoutes = require("./routes/sponsorshipCalculator");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
 // Generate a per-request nonce before Helmet so early exits (CSRF/validation)
@@ -248,6 +249,7 @@ app.use("/api/urls", protect, urlRoutes);
 app.use("/api/ai", aiRoute);
 app.use("/api/analytics", protect, analyticsRoutes);
 app.use("/api/instagram", instagramRoutes);
+app.use("/api/sponsorship", protect, sponsorshipCalculatorRoutes);
 
 // API Documentation
 const swaggerUi = require("swagger-ui-express");
@@ -538,9 +540,7 @@ app.get(
       .select("name email alias bio")
       .lean();
 
-    const bioProfile = userDoc?.alias
-      ? await BioProfile.findOne({ userId: req.user.id }).lean()
-      : null;
+    const bioProfile = await BioProfile.findOne({ userId: req.user.id }).lean();
 
     return res.render("bio-editor", {
       services,
@@ -652,10 +652,10 @@ app.post(
     const updateData = {
       userId: userDoc._id,
       handle: userHandle,
-      name: name || userDoc.name,
-      bio: bio || userDoc.bio,
+      name: name !== undefined ? name : userDoc.name,
+      bio: bio !== undefined ? bio : (userDoc.bio || ''),
       tags: tags || [],
-      avatarUrl: avatarUrl || userDoc.avatar,
+      avatarUrl: avatarUrl !== undefined ? avatarUrl : (userDoc.avatar || null),
       links: links || [],
       ...(theme !== undefined && { theme }),
       ...(layout !== undefined && { layout }),
@@ -669,8 +669,8 @@ app.post(
 
     const bioProfile = await BioProfile.findOneAndUpdate(
       { userId: userDoc._id },
-      updateData,
-      { new: true, upsert: true },
+      { $set: updateData },
+      { new: true, upsert: true, runValidators: true },
     );
 
     await invalidateProfileCache(userHandle);
@@ -861,6 +861,14 @@ app.get(
       return res.render("file-upload");
     }
 
+    if (service.key === "sponsorship-calculator") {
+      return res.render("sponsorship-calculator", {
+        service,
+        services,
+        user: buildAccountViewModel(null, req.user),
+      });
+    }
+
     return res.render("coming-soon", { service });
   }),
 );
@@ -1014,6 +1022,7 @@ app.get("/sitemap.xml", (req, res) => {
     "/my-links",
     "/dm-automation",
     "/services/creator-crm",
+    "/services/sponsorship-calculator",
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

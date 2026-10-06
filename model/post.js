@@ -19,9 +19,9 @@ const postSchema = new mongoose.Schema(
         postId: { type: String, required: true },
         caption: { type: String },
         mediaUrl: { type: String },
-        likes: { type: Number, default: 0 },
-        comments: { type: Number, default: 0 },
-        views: { type: Number, default: 0 },
+        likes: { type: Number, default: 0, min: [0, 'likes cannot be negative'] },
+        comments: { type: Number, default: 0, min: [0, 'comments cannot be negative'] },
+        views: { type: Number, default: 0, min: [0, 'views cannot be negative'] },
         postedAt: { type: Date },
     },
     { timestamps: true }

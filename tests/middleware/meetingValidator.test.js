@@ -20,6 +20,7 @@ function mockReqRes(options = {}) {
       return accept.includes(type);
     },
   };
+
   const res = {
     statusCode: 200,
     status(code) {
@@ -36,6 +37,7 @@ function mockReqRes(options = {}) {
       return this;
     },
   };
+
   const next = jest.fn();
   return { req, res, next };
 }
@@ -71,6 +73,64 @@ describe('Meeting Validators', () => {
       await validateEventType(req, res, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(422);
+    });
+
+    it('should reject duration below 5 minutes', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'POST',
+        url: '/api/meetings/event-types',
+        body: {
+          title: 'Short Call',
+          duration: 4,
+        },
+      });
+
+      await validateEventType(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should reject duration above 480 minutes', async () => {
+      const { req, res, next } = mockReqRes({
+        method: 'POST',
+        url: '/api/meetings/event-types',
+        body: {
+          title: 'Long Call',
+          duration: 481,
+        },
+      });
+
+      await validateEventType(req, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(422);
+    });
+
+    it('should accept duration at the model boundaries', async () => {
+      const lower = mockReqRes({
+        method: 'POST',
+        url: '/api/meetings/event-types',
+        body: {
+          title: '5 Min Call',
+          duration: 5,
+        },
+      });
+
+      await validateEventType(lower.req, lower.res, lower.next);
+      expect(lower.next).toHaveBeenCalled();
+
+      const upper = mockReqRes({
+        method: 'POST',
+        url: '/api/meetings/event-types',
+        body: {
+          title: '480 Min Call',
+          duration: 480,
+        },
+      });
+
+      await validateEventType(upper.req, upper.res, upper.next);
+      expect(upper.next).toHaveBeenCalled();
     });
   });
 
@@ -121,7 +181,9 @@ describe('Meeting Validators', () => {
       await validateCreateBooking(req, res, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(422);
-      expect(res.body.errors.some((error) => error.field === 'attendeeName')).toBe(true);
+      expect(res.body.errors.some((error) => error.field === 'attendeeName')).toBe(
+        true
+      );
     });
 
     it('should fail when start time is missing', async () => {
@@ -137,7 +199,9 @@ describe('Meeting Validators', () => {
       await validateCreateBooking(req, res, next);
       expect(next).not.toHaveBeenCalled();
       expect(res.statusCode).toBe(422);
-      expect(res.body.errors.some((error) => error.field === 'startTime')).toBe(true);
+      expect(res.body.errors.some((error) => error.field === 'startTime')).toBe(
+        true
+      );
     });
   });
 });

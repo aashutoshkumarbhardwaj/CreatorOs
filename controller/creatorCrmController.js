@@ -1,4 +1,5 @@
 const asyncHandler = require("../utils/asyncHandler");
+const mongoose = require("mongoose");
 const CrmBrand = require("../model/crmBrand");
 const CrmDeal = require("../model/crmDeal");
 const CrmInvoice = require("../model/crmInvoice");
@@ -248,9 +249,9 @@ const getCrmData = asyncHandler(async (req, res) => {
   }
 
   const [deals, brands, invoices, mediaKit] = await Promise.all([
-    CrmDeal.find(dealQuery).sort({ createdAt: -1 }),
-    CrmBrand.find(brandQuery).sort({ createdAt: -1 }),
-    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }),
+    CrmDeal.find(dealQuery).sort({ createdAt: -1 }).lean(),
+    CrmBrand.find(brandQuery).sort({ createdAt: -1 }).lean(),
+    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }).lean(),
     CrmMediaKit.findOne({ creatorId: userId }),
   ]);
 
@@ -279,7 +280,7 @@ const getCrmData = asyncHandler(async (req, res) => {
 // ── BRAND CONTROLLERS ──
 const getBrands = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: brands });
 });
 
@@ -309,9 +310,18 @@ const createBrand = asyncHandler(async (req, res) => {
 
 const updateBrand = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+  
+  const allowedFields = ["companyName", "category", "contactName", "contactEmail", "contactPhone", "website", "socialLinks", "status", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const brand = await CrmBrand.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -320,6 +330,8 @@ const updateBrand = asyncHandler(async (req, res) => {
 });
 
 const deleteBrand = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid brand ID" });
   const userId = getUserId(req);
   const brand = await CrmBrand.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!brand) return res.status(404).json({ success: false, message: "Brand not found" });
@@ -327,6 +339,8 @@ const deleteBrand = asyncHandler(async (req, res) => {
 });
 
 const addContactHistory = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid brand ID" });
   const userId = getUserId(req);
   const { type, note } = req.body;
 
@@ -351,7 +365,7 @@ const addContactHistory = asyncHandler(async (req, res) => {
 // ── DEAL CONTROLLERS ──
 const getDeals = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: deals });
 });
 
@@ -382,9 +396,18 @@ const createDeal = asyncHandler(async (req, res) => {
 
 const updateDeal = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  const allowedFields = ["dealName", "companyName", "category", "contactName", "contactEmail", "stage", "amount", "deliverables", "statusTag", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const deal = await CrmDeal.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -393,6 +416,8 @@ const updateDeal = asyncHandler(async (req, res) => {
 });
 
 const deleteDeal = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
   const userId = getUserId(req);
   const deal = await CrmDeal.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
@@ -400,6 +425,8 @@ const deleteDeal = asyncHandler(async (req, res) => {
 });
 
 const addTaskToDeal = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
   const userId = getUserId(req);
   const { title, dueDate, priority } = req.body;
 
@@ -452,7 +479,7 @@ const addContractToDeal = asyncHandler(async (req, res) => {
 // ── INVOICE CONTROLLERS ──
 const getInvoices = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: invoices });
 });
 
@@ -483,9 +510,18 @@ const createInvoice = asyncHandler(async (req, res) => {
 
 const updateInvoice = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
+
+  const allowedFields = ["companyName", "invoiceName", "invoiceNumber", "amount", "status", "dueDate", "notes"];
+  const updateData = {};
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
-    { $set: req.body },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -494,6 +530,8 @@ const updateInvoice = asyncHandler(async (req, res) => {
 });
 
 const deleteInvoice = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid invoice ID" });
   const userId = getUserId(req);
   const invoice = await CrmInvoice.findOneAndDelete({ _id: req.params.id, creatorId: userId });
   if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
@@ -501,6 +539,8 @@ const deleteInvoice = asyncHandler(async (req, res) => {
 });
 
 const markInvoicePaid = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid invoice ID" });
   const userId = getUserId(req);
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
@@ -533,11 +573,11 @@ const getMediaKit = asyncHandler(async (req, res) => {
 
 const updateMediaKit = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const { bio, stats, packages } = req.body;
+  const { displayName, bio, stats, packages } = req.body;
 
   const mediaKit = await CrmMediaKit.findOneAndUpdate(
     { creatorId: userId },
-    { $set: { bio, stats, packages } },
+    { $set: { displayName, bio, stats, packages } },
     { new: true, upsert: true }
   );
 
@@ -567,3 +607,4 @@ module.exports = {
   getMediaKit,
   updateMediaKit,
 };
+

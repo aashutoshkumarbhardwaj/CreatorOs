@@ -1,0 +1,222 @@
+<%- include('partials/layout/header', {
+  activeNav: 'sponsorship-calculator',
+  title: 'Sponsorship Rate Calculator',
+  extraHead: '<link rel="stylesheet" href="/css/sponsorship-calculator.css"><script src="/js/pages/sponsorship-calculator.js" defer></script>'
+}) %>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD HEAD -->
+      <div class="dashboard-head">
+        <div>
+          <h1>💰 Sponsorship Rate Calculator</h1>
+          <p>Calculate your brand collaboration rates based on your performance metrics and campaign requirements.</p>
+        </div>
+      </div>
+
+      <!-- CALCULATOR CONTAINER -->
+      <div class="calculator-container">
+        
+        <!-- INPUT SECTION -->
+        <div class="calculator-input-section">
+          <div class="panel-retro">
+            <div class="panel-retro-title-row">
+              <h2>📊 Creator Performance Metrics</h2>
+            </div>
+            
+            <form id="sponsorship-calculator-form">
+              <div class="calculator-form-grid">
+                
+                <!-- Basic Metrics -->
+                <div class="crm-form-group">
+                  <label>Number of Followers *</label>
+                  <input type="number" name="followers" required placeholder="e.g. 25000" min="0" />
+                  <span class="input-hint">Your total follower count</span>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Average Views per Post/Reel *</label>
+                  <input type="number" name="avgViews" required placeholder="e.g. 18000" min="0" />
+                  <span class="input-hint">Average views on your content</span>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Engagement Rate (%) *</label>
+                  <input type="number" name="engagementRate" required placeholder="e.g. 5.2" min="0" max="100" step="0.1" />
+                  <span class="input-hint">Your engagement rate percentage</span>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Creator Niche *</label>
+                  <select name="niche" required>
+                    <option value="">Select your niche</option>
+                    <option value="technology">Technology</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="education">Education</option>
+                    <option value="fintech">Fintech</option>
+                    <option value="beauty">Beauty & Fashion</option>
+                    <option value="fitness">Fitness & Health</option>
+                    <option value="food">Food & Cooking</option>
+                    <option value="travel">Travel</option>
+                    <option value="business">Business & Entrepreneurship</option>
+                    <option value="entertainment">Entertainment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <!-- Campaign Details -->
+                <div class="calculator-section-header">
+                  <h3>📋 Campaign Details</h3>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Content Type *</label>
+                  <select name="contentType" required>
+                    <option value="">Select content type</option>
+                    <option value="reel">Instagram Reel</option>
+                    <option value="post">Instagram Post</option>
+                    <option value="story">Instagram Story</option>
+                    <option value="video">YouTube Video</option>
+                    <option value="tiktok">TikTok Video</option>
+                    <option value="linkedin">LinkedIn Post</option>
+                    <option value="twitter">Twitter/X Post</option>
+                  </select>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Number of Deliverables *</label>
+                  <input type="number" name="deliverables" required placeholder="e.g. 3" min="1" max="50" />
+                  <span class="input-hint">Total number of content pieces</span>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Campaign Duration (days) *</label>
+                  <input type="number" name="campaignDuration" required placeholder="e.g. 30" min="1" max="365" />
+                  <span class="input-hint">Campaign length in days</span>
+                </div>
+
+                <!-- Usage Rights -->
+                <div class="calculator-section-header">
+                  <h3>📜 Usage Rights & Exclusivity</h3>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Usage Rights *</label>
+                  <select name="usageRights" required>
+                    <option value="">Select usage rights</option>
+                    <option value="standard">Standard (30 days)</option>
+                    <option value="extended">Extended (90 days)</option>
+                    <option value="perpetual">Perpetual (Forever)</option>
+                    <option value="exclusive">Exclusive (All platforms)</option>
+                  </select>
+                </div>
+
+                <div class="crm-form-group">
+                  <label>Exclusivity Requirements *</label>
+                  <select name="exclusivity" required>
+                    <option value="">Select exclusivity</option>
+                    <option value="none">No exclusivity</option>
+                    <option value="category">Category exclusive (30 days)</option>
+                    <option value="category_extended">Category exclusive (90 days)</option>
+                    <option value="brand">Brand exclusive (90 days)</option>
+                    <option value="brand_extended">Brand exclusive (1 year)</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <div class="calculator-actions">
+                <button type="button" class="crm-btn-secondary" onclick="resetCalculator()">
+                  Reset
+                </button>
+                <button type="submit" class="crm-btn-primary">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  Calculate Rate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div class="calculator-results-section">
+          <div class="panel-retro" id="results-panel" style="display: none;">
+            <div class="panel-retro-title-row">
+              <h2>💵 Rate Estimation</h2>
+              <span class="badge-retro" id="calculation-badge">CALCULATED</span>
+            </div>
+
+            <!-- Main Rate Display -->
+            <div class="rate-display">
+              <div class="rate-range">
+                <div class="rate-item rate-min">
+                  <span class="rate-label">Minimum Rate</span>
+                  <span class="rate-value" id="min-rate">₹0</span>
+                </div>
+                <div class="rate-item rate-recommended">
+                  <span class="rate-label">Recommended Rate</span>
+                  <span class="rate-value" id="recommended-rate">₹0</span>
+                </div>
+                <div class="rate-item rate-max">
+                  <span class="rate-label">Maximum Rate</span>
+                  <span class="rate-value" id="max-rate">₹0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="explanation-section">
+              <h3>📝 Rate Explanation</h3>
+              <div class="explanation-content" id="rate-explanation">
+                <!-- Dynamic explanation will be inserted here -->
+              </div>
+            </div>
+
+            <!-- Pricing Breakdown -->
+            <div class="breakdown-section">
+              <h3>📊 Pricing Breakdown</h3>
+              <div class="breakdown-table" id="pricing-breakdown">
+                <!-- Dynamic breakdown will be inserted here -->
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="results-actions">
+              <button type="button" class="crm-btn-secondary" onclick="exportResults()">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export Results
+              </button>
+              <button type="button" class="crm-btn-primary" onclick="addToCrm()">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                Add to CRM
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="panel-retro empty-state" id="empty-state">
+            <div class="empty-state-content">
+              <div class="empty-icon">🧮</div>
+              <h3>Ready to Calculate Your Rate?</h3>
+              <p>Fill in your creator metrics and campaign details to get an estimated sponsorship rate range.</p>
+              <div class="empty-tips">
+                <p><strong>Tips for accurate results:</strong></p>
+                <ul>
+                  <li>Use your average metrics from the last 30 days</li>
+                  <li>Be specific about content type and deliverables</li>
+                  <li>Consider usage rights impact on pricing</li>
+                  <li>Higher engagement rates typically command higher rates</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<%- include('partials/layout/footer') %>

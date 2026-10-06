@@ -13,6 +13,10 @@ const chatSchema = z.object({
     .enum(["energetic", "professional", "witty", "persuasive", "minimalist", "educational"])
     .optional()
     .default("energetic"),
+  length: z
+    .enum(["short", "medium", "long"])
+    .optional()
+    .default("medium"),
   chatId: z.string().optional(),
 });
 

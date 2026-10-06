@@ -11,7 +11,6 @@ const dmQueue = dmQueueService && dmQueueService.dmQueue;
 const processedEvents = new Map();
 const EVENT_TTL_MS = 5 * 60 * 1000;
 
-// Periodic cleanup of expired event IDs
 const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [eventId, timestamp] of processedEvents) {
@@ -34,6 +33,15 @@ function markProcessed(eventId) {
 
 function clearProcessedEvents() {
   processedEvents.clear();
+}
+
+function buildEventId(senderId, recipientId, message, timestamp) {
+  const messageId = message?.mid;
+  const stableIdentity = messageId
+    ? `${recipientId}:${senderId}:mid:${messageId}`
+    : `${recipientId}:${senderId}:message:${message?.text || ""}:timestamp:${timestamp || ""}`;
+
+  return crypto.createHash("sha256").update(stableIdentity).digest("hex");
 }
 
 // Verify the webhook from Meta
@@ -134,12 +142,8 @@ async function enqueueDmEvent(eventId, senderId, messageText, recipientId) {
 // Handle incoming webhook events
 const handleWebhook = asyncHandler(async (req, res, next) => {
   const body = req.body || {};
-
-  // Check for duplicate event using X-Event-ID header or payload-level deduplication
-  const headerEventId = req.headers["x-event-id"];
   let enqueueFailed = false;
 
-  // Check if it's a page or instagram event
   if (body.object === "instagram") {
     if (body.entry && body.entry.length > 0) {
       for (const entry of body.entry) {
@@ -151,15 +155,14 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
             const timestamp = webhookEvent?.timestamp;
 
             if (senderId && message && message.text) {
-              // Build a unique event ID from sender + message + timestamp for deduplication
-              const eventId =
-                headerEventId ||
-                crypto
-                  .createHash("sha256")
-                  .update(
-                    `${senderId}:${message.mid || message.text}:${timestamp || Date.now()}`,
-                  )
-                  .digest("hex");
+              // Deduplicate each platform message independently. A request-level
+              // X-Event-ID cannot safely identify multiple messages in one request.
+              const eventId = buildEventId(
+                senderId,
+                recipientId,
+                message,
+                timestamp,
+              );
 
               if (hasProcessed(eventId)) {
                 console.log(`[Webhook] Duplicate event ${eventId}, skipping`);
@@ -170,7 +173,6 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
                 `[Webhook] Received message from ${senderId}: ${message.text}`,
               );
 
-              // Enqueue first; only mark processed after a successful add so Meta can retry on failure.
               try {
                 await enqueueDmEvent(
                   eventId,
@@ -192,13 +194,11 @@ const handleWebhook = asyncHandler(async (req, res, next) => {
     }
 
     if (enqueueFailed) {
-      // Ask Meta to retry; successfully enqueued events stay marked and will be skipped.
       return res.status(503).send("SERVICE_UNAVAILABLE");
     }
 
     return res.status(200).send("EVENT_RECEIVED");
   } else {
-    // Return a '404 Not Found' if event is not from a supported object
     return res.sendStatus(404);
   }
 });
@@ -210,4 +210,5 @@ module.exports = {
   hasProcessed,
   markProcessed,
   clearProcessedEvents,
+  buildEventId,
 };
