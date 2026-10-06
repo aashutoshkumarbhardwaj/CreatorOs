@@ -377,6 +377,7 @@ const updateSubtasks = asyncHandler(async (req, res) => {
  */
 const logTaskTime = asyncHandler(async (req, res) => {
   const taskId = req.params.id;
+  const creatorId = req.user?.id || "mock-user-123";
   const { durationMinutes } = req.body;
 
   if (
@@ -410,7 +411,11 @@ const logTaskTime = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  if (!mongoose.Types.ObjectId.isValid(taskId)) {
+    return res.status(400).json({ success: false, error: "Invalid task ID." });
+  }
+
+  const taskDoc = await Task.findOne({ _id: taskId, creatorId });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
 
   taskDoc.spentHours = Math.round(((taskDoc.spentHours || 0) + hours) * 100) / 100;
