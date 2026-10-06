@@ -22,6 +22,7 @@ const urlSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     index: true,
+    immutable: true,
   },
   totalClicks: {
     type: Number,
