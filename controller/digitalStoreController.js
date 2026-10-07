@@ -86,12 +86,30 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+function parsePage(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return DEFAULT_PAGE;
+  return parsed;
+}
+
+function parseLimit(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LIMIT;
+  return Math.min(parsed, MAX_LIMIT);
+}
+
 /**
  * List products for creator or public storefront
  */
 exports.getProducts = async (req, res) => {
   try {
-    const { creatorId, status, category, page = 1, limit = 20 } = req.query;
+    const { creatorId, status, category } = req.query;
+    const page = parsePage(req.query.page);
+    const limit = parseLimit(req.query.limit);
     const query = {};
 
     if (creatorId) {
@@ -110,9 +128,9 @@ exports.getProducts = async (req, res) => {
       query.category = category;
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const skip = (page - 1) * limit;
     const [products, total] = await Promise.all([
-      DigitalProduct.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      DigitalProduct.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
       DigitalProduct.countDocuments(query),
     ]);
 
@@ -120,8 +138,8 @@ exports.getProducts = async (req, res) => {
       success: true,
       count: products.length,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
+      page,
+      pages: Math.ceil(total / limit),
       products,
     });
   } catch (error) {
@@ -140,13 +158,20 @@ exports.getProducts = async (req, res) => {
 exports.getProductDetails = async (req, res) => {
   try {
     const { idOrSlug } = req.params;
-    let product;
+    const isPublic = req.route?.path?.includes("/public/") || !req.user;
+    const query = {};
 
     if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
-      product = await DigitalProduct.findById(idOrSlug);
+      query._id = idOrSlug;
     } else {
-      product = await DigitalProduct.findOne({ slug: idOrSlug.toLowerCase() });
+      query.slug = idOrSlug.toLowerCase();
     }
+
+    if (isPublic) {
+      query.status = "active";
+    }
+
+    const product = await DigitalProduct.findOne(query);
 
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });

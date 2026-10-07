@@ -6,6 +6,7 @@ const crmMediaKitSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       unique: true,
       index: true,
     },
@@ -19,14 +20,14 @@ const crmMediaKitSchema = new mongoose.Schema(
       default: "Tech & Lifestyle Creator building high-impact brand partnerships.",
     },
     stats: {
-      followers: { type: Number, default: 125000 },
+      followers: { type: Number, default: 125000, min: 0 },
       engagementRate: { type: String, default: "4.8%" },
-      avgViews: { type: Number, default: 45000 },
+      avgViews: { type: Number, default: 45000, min: 0 },
     },
     packages: [
       {
         name: { type: String, required: true },
-        price: { type: Number, required: true },
+        price: { type: Number, required: true, min: [0, 'Package price cannot be negative'] },
         description: { type: String, default: "" },
       },
     ],

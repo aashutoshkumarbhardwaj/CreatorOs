@@ -1,5 +1,5 @@
 const CreatorRateCard = require("../model/creatorRateCard");
-const { calculateBaselineRate, calculateSponsorshipQuote } = require("../services/rateCardEngine");
+const { calculateBaselineRate, calculateSponsorshipQuote, validateSponsorshipQuoteInputs } = require("../services/rateCardEngine");
 
 function createSlug(title) {
   return title
@@ -102,12 +102,29 @@ exports.getRateCards = async (req, res) => {
 exports.getPublicRateCard = async (req, res) => {
   try {
     const { slug } = req.params;
-    const card = await CreatorRateCard.findOne({ slug, isPublic: true });
-    if (!card) {
+    const { creatorId } = req.query;
+    const matches = await CreatorRateCard.find({ slug, isPublic: true }).lean();
+    if (!matches || matches.length === 0) {
       return res.status(404).json({ success: false, message: "Public rate card not found" });
     }
 
-    return res.status(200).json({ success: true, card });
+    let card = matches[0];
+    if (matches.length > 1) {
+      if (creatorId) {
+        card = matches.find((c) => String(c.creatorId) === String(creatorId));
+        if (!card) {
+          return res.status(404).json({ success: false, message: "Public rate card not found" });
+        }
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: "Multiple public rate cards share this slug. Specify creatorId to resolve the correct card.",
+        });
+      }
+    }
+
+    const { agencyCommissionPercent, ...publicCard } = card;
+    return res.status(200).json({ success: true, card: publicCard });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error fetching rate card", error: error.message });
   }
@@ -192,6 +209,13 @@ exports.deleteRateCard = async (req, res) => {
  */
 exports.calculateQuote = async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body must be a valid JSON object",
+      });
+    }
+
     const {
       deliverables,
       usageRightsOption,
@@ -201,13 +225,36 @@ exports.calculateQuote = async (req, res) => {
       threePlusDiscountPercent,
     } = req.body;
 
+    if (deliverables === undefined || deliverables === null) {
+      return res.status(400).json({
+        success: false,
+        message: "deliverables is required and must be an array",
+      });
+    }
+
+    try {
+      validateSponsorshipQuoteInputs({
+        deliverables,
+        usageRightsOption,
+        exclusivityOption,
+        twoDiscountPercent,
+        threePlusDiscountPercent,
+      });
+    } catch (valError) {
+      return res.status(400).json({
+        success: false,
+        message: valError.message,
+      });
+    }
+
     const quote = calculateSponsorshipQuote({
       deliverables,
       usageRightsOption,
       exclusivityOption,
-      whitelistingAllowed,
-      twoDiscountPercent,
-      threePlusDiscountPercent,
+      whitelistingAllowed: Boolean(whitelistingAllowed),
+      twoDiscountPercent: twoDiscountPercent !== undefined ? Number(twoDiscountPercent) : 10,
+      threePlusDiscountPercent:
+        threePlusDiscountPercent !== undefined ? Number(threePlusDiscountPercent) : 20,
     });
 
     return res.status(200).json({

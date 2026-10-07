@@ -10,6 +10,7 @@ const qrCodeSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
+            immutable: true,
             index: true,
         },
         label: {
@@ -74,6 +75,7 @@ const qrCodeSchema = new mongoose.Schema(
         totalScans: {
             type: Number,
             default: 0,
+            min : 0,
         },
         scanHistory: [
             {

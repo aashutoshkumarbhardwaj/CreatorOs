@@ -135,20 +135,23 @@ exports.addDependency = async (req, res) => {
       });
     }
 
-    // Add prerequisite to blockedBy
-    if (!task.blockedBy.includes(prerequisiteTaskId)) {
-      task.blockedBy.push(prerequisiteTaskId);
-      if (prerequisite.status !== "completed") {
-        task.status = "blocked";
-      }
-      await task.save();
+    // Add prerequisite to blockedBy atomically
+    const updatePayload = { $addToSet: { blockedBy: prerequisiteTaskId } };
+    if (prerequisite.status !== "completed") {
+      updatePayload.$set = { status: "blocked" };
     }
+    const updatedTask = await TeamTask.findOneAndUpdate(
+      { _id: taskId, creatorId },
+      updatePayload,
+      { new: true }
+    );
+    if (!updatedTask) return res.status(404).json({ success: false, message: "Task not found" });
 
-    // Add task to prerequisite's dependents
-    if (!prerequisite.dependents.includes(taskId)) {
-      prerequisite.dependents.push(taskId);
-      await prerequisite.save();
-    }
+    // Add task to prerequisite's dependents atomically
+    await TeamTask.findOneAndUpdate(
+      { _id: prerequisiteTaskId, creatorId },
+      { $addToSet: { dependents: taskId } }
+    );
 
     return res.status(200).json({
       success: true,
@@ -169,29 +172,38 @@ exports.updateTaskStatus = async (req, res) => {
     const { id } = req.params;
     const { status, loggedHours } = req.body;
 
-    const task = await TeamTask.findOne({ _id: id, creatorId });
-    if (!task) {
+    const updatePayload = { $set: {} };
+    if (status) updatePayload.$set.status = status;
+    if (status === "completed") {
+      updatePayload.$set.completedAt = new Date();
+    }
+    if (loggedHours !== undefined) {
+      updatePayload.$inc = { loggedHours: Number(loggedHours) };
+    }
+    
+    // If $set is empty, we must delete it to avoid Mongoose validation errors
+    if (Object.keys(updatePayload.$set).length === 0) {
+      delete updatePayload.$set;
+    }
+
+    const updatedTask = await TeamTask.findOneAndUpdate(
+      { _id: id, creatorId },
+      updatePayload,
+      { new: true }
+    );
+    if (!updatedTask) {
       return res.status(404).json({ success: false, message: "Task not found" });
     }
 
-    if (status) task.status = status;
-    if (loggedHours !== undefined) task.loggedHours += Number(loggedHours);
-
-    if (status === "completed") {
-      task.completedAt = new Date();
-    }
-
-    await task.save();
-
     let unblocked = [];
     if (status === "completed") {
-      unblocked = await cascadeUnblockTasks(task._id);
+      unblocked = await cascadeUnblockTasks(updatedTask._id);
     }
 
     return res.status(200).json({
       success: true,
       message: "Task updated",
-      task,
+      task: updatedTask,
       unblockedDownstreamCount: unblocked.length,
       unblockedTasks: unblocked.map((u) => ({ id: u._id, title: u.title, status: u.status })),
     });

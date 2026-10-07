@@ -12,6 +12,7 @@ const eventTypeSchema = new mongoose.Schema(
       required: true,
       immutable: true,
       index: true,
+      immutable: true,
     },
     title: {
       type: String,
@@ -35,7 +36,7 @@ const eventTypeSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: true,
-      default: 30, // in minutes
+      default: 30,
       min: 5,
       max: 480,
     },

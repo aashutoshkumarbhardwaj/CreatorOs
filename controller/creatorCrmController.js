@@ -249,9 +249,9 @@ const getCrmData = asyncHandler(async (req, res) => {
   }
 
   const [deals, brands, invoices, mediaKit] = await Promise.all([
-    CrmDeal.find(dealQuery).sort({ createdAt: -1 }),
-    CrmBrand.find(brandQuery).sort({ createdAt: -1 }),
-    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }),
+    CrmDeal.find(dealQuery).sort({ createdAt: -1 }).lean(),
+    CrmBrand.find(brandQuery).sort({ createdAt: -1 }).lean(),
+    CrmInvoice.find(invoiceQuery).sort({ createdAt: -1 }).lean(),
     CrmMediaKit.findOne({ creatorId: userId }),
   ]);
 
@@ -280,7 +280,7 @@ const getCrmData = asyncHandler(async (req, res) => {
 // ── BRAND CONTROLLERS ──
 const getBrands = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const brands = await CrmBrand.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: brands });
 });
 
@@ -365,7 +365,7 @@ const addContactHistory = asyncHandler(async (req, res) => {
 // ── DEAL CONTROLLERS ──
 const getDeals = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const deals = await CrmDeal.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: deals });
 });
 
@@ -434,29 +434,40 @@ const addTaskToDeal = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Task title is required" });
   }
 
-  const deal = await CrmDeal.findOne({ _id: req.params.id, creatorId: userId });
-  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
+  const deal = await CrmDeal.findOneAndUpdate(
+    { _id: req.params.id, creatorId: userId },
+    { $push: { tasks: { title, dueDate, priority: priority || "medium" } } },
+    { new: true }
+  );
 
-  deal.tasks.push({ title, dueDate, priority: priority || "medium" });
-  await deal.save();
+  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
   res.status(201).json({ success: true, data: deal });
 });
 
 const toggleDealTask = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return res.status(400).json({ success: false, message: "Invalid deal ID" });
+
   const userId = getUserId(req);
   const { id, taskId } = req.params;
 
   const deal = await CrmDeal.findOne({ _id: id, creatorId: userId });
   if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
+  if (!mongoose.Types.ObjectId.isValid(taskId))
+    return res.status(400).json({ success: false, message: "Invalid task ID" });
+
   const task = deal.tasks.id(taskId);
   if (!task) return res.status(404).json({ success: false, message: "Task not found" });
 
-  task.completed = !task.completed;
-  await deal.save();
+  const updatedDeal = await CrmDeal.findOneAndUpdate(
+    { _id: id, creatorId: userId, "tasks._id": taskId },
+    { $set: { "tasks.$.completed": !task.completed } },
+    { new: true }
+  );
 
-  res.json({ success: true, data: deal });
+  res.json({ success: true, data: updatedDeal || deal });
 });
 
 const addContractToDeal = asyncHandler(async (req, res) => {
@@ -467,11 +478,13 @@ const addContractToDeal = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Contract title is required" });
   }
 
-  const deal = await CrmDeal.findOne({ _id: req.params.id, creatorId: userId });
-  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
+  const deal = await CrmDeal.findOneAndUpdate(
+    { _id: req.params.id, creatorId: userId },
+    { $push: { contracts: { title, status: status || "draft", fileUrl } } },
+    { new: true }
+  );
 
-  deal.contracts.push({ title, status: status || "draft", fileUrl });
-  await deal.save();
+  if (!deal) return res.status(404).json({ success: false, message: "Deal not found" });
 
   res.status(201).json({ success: true, data: deal });
 });
@@ -479,7 +492,7 @@ const addContractToDeal = asyncHandler(async (req, res) => {
 // ── INVOICE CONTROLLERS ──
 const getInvoices = asyncHandler(async (req, res) => {
   const userId = getUserId(req);
-  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 });
+  const invoices = await CrmInvoice.find({ creatorId: userId }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: invoices });
 });
 

@@ -369,7 +369,7 @@ describe("Meeting Controller & Google Calendar Service", () => {
       req.body = {
         attendeeName: "Jane Doe",
         attendeeEmail: "jane@example.com",
-        startTime: "2026-09-20T10:00:00.000Z",
+        startTime: "2026-09-21T10:00:00.000Z",
       };
 
       const originalFindOneUser = User.findOne;
@@ -383,13 +383,18 @@ describe("Meeting Controller & Google Calendar Service", () => {
         .mockResolvedValueOnce(eventType)
         .mockResolvedValueOnce(null);
       MeetingBooking.findOne = jest.fn().mockResolvedValue(null);
-      MeetingBooking.create = jest.fn();
+      MeetingBooking.create = jest.fn().mockResolvedValue({ _id: "fakeBookingId" });
+      MeetingBooking.deleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
       GoogleCalendarService.createCalendarEvent = jest.fn().mockRejectedValue(providerError);
 
       await meetingController.createBooking(req, res);
+      
+      
+      
 
       expect(GoogleCalendarService.createCalendarEvent).toHaveBeenCalledTimes(1);
-      expect(MeetingBooking.create).not.toHaveBeenCalled();
+      expect(MeetingBooking.create).toHaveBeenCalledTimes(1);
+      expect(MeetingBooking.deleteOne).toHaveBeenCalledTimes(1);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({

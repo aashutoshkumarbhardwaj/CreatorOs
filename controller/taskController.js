@@ -410,11 +410,13 @@ const logTaskTime = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findById(taskId);
+  const taskDoc = await Task.findOneAndUpdate(
+    { _id: taskId },
+    { $inc: { spentHours: hours } },
+    { new: true }
+  );
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
 
-  taskDoc.spentHours = Math.round(((taskDoc.spentHours || 0) + hours) * 100) / 100;
-  await taskDoc.save();
   res.json({ success: true, task: taskDoc });
 });
 
