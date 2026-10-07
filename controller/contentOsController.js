@@ -472,6 +472,10 @@ async function deleteFolder(req, res) {
         }
 
         await ContentFolderModel.findByIdAndDelete(id);
+        await ContentOsModel.updateMany(
+            { userId: req.user.id, folderId: id },
+            { $set: { folderId: null } }
+        );
         return res.json({ success: true, message: "Folder deleted successfully." });
     } catch (err) {
         console.error("Error deleting folder:", err);
