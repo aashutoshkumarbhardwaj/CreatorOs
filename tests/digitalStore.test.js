@@ -402,4 +402,115 @@ describe("Digital Store & Monetization Engine Unit Tests", () => {
       data.products.forEach((p) => expect(p.status).toBe("active"));
     });
   });
+
+  describe("Digital Store updateProduct Slug Deduplication", () => {
+    let updateCreatorId;
+    let productA;
+    let productB;
+
+    beforeEach(async () => {
+      updateCreatorId = new mongoose.Types.ObjectId();
+      productA = await DigitalProduct.create({
+        creatorId: updateCreatorId,
+        title: "Masterclass Video Course",
+        slug: "masterclass-video-course",
+        price: 99,
+        fileUrl: "https://example.com/course.zip",
+        status: "active",
+      });
+
+      productB = await DigitalProduct.create({
+        creatorId: updateCreatorId,
+        title: "Beginner Video Course",
+        slug: "beginner-video-course",
+        price: 49,
+        fileUrl: "https://example.com/beginner.zip",
+        status: "active",
+      });
+    });
+
+    afterEach(async () => {
+      await DigitalProduct.deleteMany({ creatorId: updateCreatorId });
+    });
+
+    function createMockRes() {
+      const res = {};
+      res.status = jest.fn().mockReturnValue(res);
+      res.json = jest.fn().mockReturnValue(res);
+      return res;
+    }
+
+    it("should update product title and update slug when new title has no conflicts", async () => {
+      const req = {
+        user: { _id: updateCreatorId },
+        params: { id: productB._id.toString() },
+        body: { title: "Intermediate Video Course" },
+      };
+      const res = createMockRes();
+
+      await digitalStoreController.updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      const data = res.json.mock.calls[0][0];
+      expect(data.success).toBe(true);
+      expect(data.product.title).toBe("Intermediate Video Course");
+      expect(data.product.slug).toBe("intermediate-video-course");
+
+      const saved = await DigitalProduct.findById(productB._id);
+      expect(saved.slug).toBe("intermediate-video-course");
+    });
+
+    it("should deduplicate slug when updated title collides with existing product belonging to same creator", async () => {
+      const req = {
+        user: { _id: updateCreatorId },
+        params: { id: productB._id.toString() },
+        body: { title: "Masterclass Video Course" },
+      };
+      const res = createMockRes();
+
+      await digitalStoreController.updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      const data = res.json.mock.calls[0][0];
+      expect(data.success).toBe(true);
+      expect(data.product.title).toBe("Masterclass Video Course");
+      expect(data.product.slug).toBe("masterclass-video-course-1");
+
+      const saved = await DigitalProduct.findById(productB._id);
+      expect(saved.slug).toBe("masterclass-video-course-1");
+    });
+
+    it("should not modify slug when updating non-title fields", async () => {
+      const req = {
+        user: { _id: updateCreatorId },
+        params: { id: productA._id.toString() },
+        body: { price: 129, description: "Updated masterclass description" },
+      };
+      const res = createMockRes();
+
+      await digitalStoreController.updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      const data = res.json.mock.calls[0][0];
+      expect(data.success).toBe(true);
+      expect(data.product.price).toBe(129);
+      expect(data.product.slug).toBe("masterclass-video-course");
+    });
+
+    it("should not append duplicate suffix when title is unchanged", async () => {
+      const req = {
+        user: { _id: updateCreatorId },
+        params: { id: productA._id.toString() },
+        body: { title: "Masterclass Video Course", price: 109 },
+      };
+      const res = createMockRes();
+
+      await digitalStoreController.updateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      const data = res.json.mock.calls[0][0];
+      expect(data.success).toBe(true);
+      expect(data.product.slug).toBe("masterclass-video-course");
+    });
+  });
 });
