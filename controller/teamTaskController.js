@@ -27,15 +27,17 @@ exports.createTeamTask = async (req, res) => {
     
     // IDOR / BAC Fix: Verify all blockers belong to the same creator before allowing dependency linkage
     let validBlockers = [];
+    let initialStatus = "todo";
     if (hasBlockers) {
-      const blockers = await TeamTask.find({ _id: { $in: blockedByIds }, creatorId });
-      if (blockers.length !== blockedByIds.length) {
+      const uniqueBlockerIds = [...new Set(blockedByIds.map((id) => String(id)))];
+      const blockers = await TeamTask.find({ _id: { $in: uniqueBlockerIds }, creatorId });
+      if (blockers.length !== uniqueBlockerIds.length) {
         return res.status(403).json({ success: false, message: "One or more blocking tasks do not exist or you do not have permission to access them." });
       }
       validBlockers = blockers.map(b => b._id);
+      const hasUncompletedBlockers = blockers.some((b) => b.status !== "completed");
+      initialStatus = hasUncompletedBlockers ? "blocked" : "todo";
     }
-    
-    const initialStatus = hasBlockers ? "blocked" : "todo";
 
     const task = new TeamTask({
       creatorId,
@@ -156,7 +158,7 @@ exports.addDependency = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Dependency link established",
-      task,
+      task: updatedTask,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Failed to add dependency", error: error.message });
