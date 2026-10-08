@@ -236,7 +236,8 @@ describe("Meeting Controller & Google Calendar Service", () => {
     });
 
     it("uses the JWT user id when listing bookings", async () => {
-      const sort = jest.fn().mockResolvedValue([]);
+      const lean = jest.fn().mockResolvedValue([]);
+      const sort = jest.fn().mockReturnValue({ lean });
       const populate = jest.fn().mockReturnValue({ sort });
       const find = jest.spyOn(MeetingBooking, "find").mockReturnValue({ populate });
 
