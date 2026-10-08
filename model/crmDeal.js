@@ -48,6 +48,7 @@ const crmDealSchema = new mongoose.Schema(
       required: true,
       immutable: true,
       index: true,
+      immutable: true,
     },
     brandId: {
       type: mongoose.Schema.Types.ObjectId,

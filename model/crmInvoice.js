@@ -8,6 +8,7 @@ const crmInvoiceSchema = new mongoose.Schema(
       required: true,
       immutable: true,
       index: true,
+      immutable: true,
     },
     dealId: {
       type: mongoose.Schema.Types.ObjectId,
