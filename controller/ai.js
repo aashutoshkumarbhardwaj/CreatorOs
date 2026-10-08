@@ -13,8 +13,12 @@ if (process.env.OPENAI_API_KEY) {
 const handleAiRequest = asyncHandler(async (req, res) => {
     const { prompt } = req.body;
     
-    if (!prompt) {
+    if (typeof prompt !== "string" || !prompt.trim()) {
         return res.status(400).json({ success: false, message: "Prompt is required" });
+    }
+
+    if (prompt.trim().length > 2000) {
+        return res.status(400).json({ success: false, message: "Prompt cannot exceed 2000 characters" });
     }
 
     if (openai) { // Real API call
