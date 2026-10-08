@@ -57,82 +57,7 @@ if (REDIS_URI) {
 
     dmWorker = new Worker(
       "dm-automation-queue",
-      async (job) => {
-        const { senderId, recipientId, message, eventId } = job.data;
-
-        console.log(`[Worker] Processing job ${job.id} for sender ${senderId}`);
-
-        try {
-          const creator = await Creator.findOne({
-            platform: "instagram",
-            platformId: recipientId,
-          });
-          if (!creator) {
-            console.warn(
-              `[Worker] No creator found for recipientId ${recipientId}, skipping job ${job.id}`,
-            );
-            return { skipped: true, reason: "unknown_creator" };
-          }
-
-          const triggers = await DmTrigger.find({
-            creatorId: creator.userId,
-            isActive: true,
-          });
-          const normalizedMessage = (message || "").toLowerCase();
-          const matchedTrigger = triggers.find((t) =>
-            normalizedMessage.includes(t.keyword),
-          );
-
-          if (!matchedTrigger) {
-            console.log(
-              `[Worker] No matching trigger for job ${job.id}, skipping reply`,
-            );
-            return { skipped: true, reason: "no_matching_trigger" };
-          }
-
-          const deliveryEventId = eventId || job.id;
-          const reservation = await reserveDmDelivery(
-            creator._id,
-            deliveryEventId,
-          );
-
-          if (!reservation.claimed) {
-            return {
-              skipped: true,
-              reason:
-                reservation.delivery.status === "sent"
-                  ? "already_sent"
-                  : "already_reserved",
-            };
-          }
-
-          try {
-            const responseText = matchedTrigger.responseUrl;
-            const result = await sendInstagramDM(senderId, responseText, {
-              accessToken: creator.accessToken,
-            });
-
-            await markDmDeliverySent(
-              creator._id,
-              deliveryEventId,
-              result.messageId,
-            );
-
-            console.log(`[Worker] Successfully processed job ${job.id}`);
-            return result;
-          } catch (error) {
-            await releaseDmDelivery(creator._id, deliveryEventId);
-            throw error;
-          }
-        } catch (error) {
-          if (error.status === 429 || error.code === 429) {
-            console.warn(
-              `[Worker] Rate limited on job ${job.id}. Will retry...`,
-            );
-          }
-          throw error;
-        }
-      },
+      (job) => processDmJob(job),
       {
         connection: workerConnection,
         limiter: {
@@ -173,6 +98,139 @@ if (REDIS_URI) {
 
 if (UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN) {
   console.log("📦 Upstash Redis REST client configured.");
+}
+
+const DM_DELIVERY_IN_PROGRESS = "DM_DELIVERY_IN_PROGRESS";
+const MARK_SENT_ATTEMPTS = 3;
+const DEFAULT_MARK_RETRY_DELAY_MS = 100;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * The reply has already been delivered when this runs, so a failure here must
+ * never fail the job: BullMQ would retry it and the follower would get the DM
+ * again. Retry briefly, then log loudly and move on.
+ */
+async function recordDmDeliverySent(creatorId, eventId, messageId, retryDelayMs) {
+  for (let attempt = 1; attempt <= MARK_SENT_ATTEMPTS; attempt++) {
+    try {
+      await markDmDeliverySent(creatorId, eventId, messageId);
+      return true;
+    } catch (error) {
+      if (attempt === MARK_SENT_ATTEMPTS) {
+        console.error(
+          `[Worker] DM ${eventId} was delivered but could not be recorded as sent after ${attempt} attempts: ${error.message}`,
+        );
+        return false;
+      }
+      await sleep(retryDelayMs * attempt);
+    }
+  }
+  return false;
+}
+
+/**
+ * Release a reservation after a send that did not happen. If the release itself
+ * fails (e.g. database outage) the lease expiry lets the next retry recover the
+ * delivery, so the original send error is the one that must reach BullMQ.
+ */
+async function releaseQuietly(creatorId, eventId, claimId) {
+  try {
+    await releaseDmDelivery(creatorId, eventId, claimId);
+  } catch (error) {
+    console.error(
+      `[Worker] Could not release DM reservation ${eventId}; it will be recovered when its lease expires: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * Process one queued Instagram DM automation job.
+ *
+ * Delivery guarantees (the reservation row is a lease, see dmDeliveryService):
+ *  - Only the worker holding the live lease sends the reply.
+ *  - If the send fails, the reservation is released and the job is retried.
+ *  - Once the send succeeds, nothing can fail the job or release the
+ *    reservation, so a database hiccup can no longer cause a duplicate DM.
+ *  - If another worker holds a live lease the job FAILS (and is retried later)
+ *    instead of completing as "skipped": if that worker dies, the retry takes
+ *    the delivery over rather than the reply being silently dropped.
+ *  - A crash after sending but before recording leaves a stale lease; the retry
+ *    after expiry may then resend. That at-least-once window is deliberate:
+ *    Graph API calls have no idempotency key, and a duplicate beats a lost reply.
+ */
+async function processDmJob(job, options = {}) {
+  const { senderId, recipientId, message, eventId } = job.data;
+  const retryDelayMs = options.markRetryDelayMs ?? DEFAULT_MARK_RETRY_DELAY_MS;
+
+  console.log(`[Worker] Processing job ${job.id} for sender ${senderId}`);
+
+  try {
+    const creator = await Creator.findOne({
+      platform: "instagram",
+      platformId: recipientId,
+    });
+    if (!creator) {
+      console.warn(
+        `[Worker] No creator found for recipientId ${recipientId}, skipping job ${job.id}`,
+      );
+      return { skipped: true, reason: "unknown_creator" };
+    }
+
+    const triggers = await DmTrigger.find({
+      creatorId: creator.userId,
+      isActive: true,
+    });
+    const normalizedMessage = (message || "").toLowerCase();
+    const matchedTrigger = triggers.find((t) =>
+      normalizedMessage.includes(t.keyword),
+    );
+
+    if (!matchedTrigger) {
+      console.log(
+        `[Worker] No matching trigger for job ${job.id}, skipping reply`,
+      );
+      return { skipped: true, reason: "no_matching_trigger" };
+    }
+
+    const deliveryEventId = eventId || job.id;
+    const reservation = await reserveDmDelivery(creator._id, deliveryEventId);
+
+    if (!reservation.claimed) {
+      if (reservation.delivery.status === "sent") {
+        return { skipped: true, reason: "already_sent" };
+      }
+
+      const inProgress = new Error(
+        `DM delivery ${deliveryEventId} is held by another worker; retrying after its lease expires`,
+      );
+      inProgress.code = DM_DELIVERY_IN_PROGRESS;
+      throw inProgress;
+    }
+
+    const { claimId } = reservation.delivery;
+
+    let result;
+    try {
+      result = await sendInstagramDM(senderId, matchedTrigger.responseUrl, {
+        accessToken: creator.accessToken,
+      });
+    } catch (error) {
+      await releaseQuietly(creator._id, deliveryEventId, claimId);
+      throw error;
+    }
+
+    // The DM is out: from here on this job must succeed.
+    await recordDmDeliverySent(creator._id, deliveryEventId, result.messageId, retryDelayMs);
+
+    console.log(`[Worker] Successfully processed job ${job.id}`);
+    return result;
+  } catch (error) {
+    if (error.status === 429 || error.code === 429) {
+      console.warn(`[Worker] Rate limited on job ${job.id}. Will retry...`);
+    }
+    throw error;
+  }
 }
 
 async function sendInstagramDM(recipientId, text, options = {}) {
@@ -251,4 +309,4 @@ async function sendInstagramDM(recipientId, text, options = {}) {
   return { success: true, messageId: data?.message_id || null };
 }
 
-module.exports = { dmQueue, sendInstagramDM };
+module.exports = { dmQueue, sendInstagramDM, processDmJob, DM_DELIVERY_IN_PROGRESS };
