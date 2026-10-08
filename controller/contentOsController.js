@@ -117,7 +117,7 @@ async function listItems(req, res) {
             items = items.filter(
                 (item) =>
                     item.title.toLowerCase().includes(term) ||
-                    item.description.toLowerCase().includes(term) ||
+                    (item.description || "").toLowerCase().includes(term) ||
                     (item.tags && item.tags.some((t) => t.toLowerCase().includes(term)))
             );
         }
