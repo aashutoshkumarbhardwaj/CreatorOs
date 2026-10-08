@@ -15,6 +15,7 @@ const {
 } = require("../../controller/contentOsController");
 const ContentOs = require("../../model/contentOs");
 const ContentFolder = require("../../model/contentFolder");
+const ScheduledContent = require("../../model/scheduledContent");
 const User = require("../../model/user");
 
 describe("contentOsController", () => {
@@ -144,7 +145,11 @@ describe("contentOsController", () => {
         });
 
         it("should convert an item stage", async () => {
-            const item = await ContentOs.create({ userId: testUserId, title: "Idea to Script", status: "idea" });
+            const item = await ContentOs.create({
+                userId: testUserId,
+                title: "Idea to Script",
+                status: "idea",
+            });
             mockReq.params.id = item._id;
             mockReq.body = { targetStatus: "scripting", targetType: "script" };
 
@@ -158,6 +163,35 @@ describe("contentOsController", () => {
                     }),
                 })
             );
+        });
+
+        it("should sync scheduled content when converting an item to scheduled", async () => {
+            const item = await ContentOs.create({
+                userId: testUserId,
+                title: "Scheduled Post",
+                status: "ready",
+                type: "post",
+                platform: "instagram",
+                scheduledAt: new Date(Date.now() + 86400000),
+            });
+
+            mockReq.params.id = item._id;
+            mockReq.body = { targetStatus: "scheduled", targetType: "post" };
+
+            await convertItem(mockReq, mockRes);
+
+            expect(mockRes.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    item: expect.objectContaining({
+                        status: "scheduled",
+                    }),
+                })
+            );
+
+            expect(
+                await ScheduledContent.findOne({ contentOsId: item._id })
+            ).not.toBeNull();
         });
     });
 

@@ -364,6 +364,11 @@ async function convertItem(req, res) {
             { new: true, runValidators: true }
         );
 
+        await syncScheduledContent({
+            userId: req.user.id,
+            item: updated
+        });
+
         return res.json({ success: true, item: updated, message: `Converted item to ${newStatus}.` });
     } catch (err) {
         console.error("Error converting Content OS item:", err);
