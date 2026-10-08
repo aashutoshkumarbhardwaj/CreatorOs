@@ -23,8 +23,8 @@ const resendVerificationSchema = z.object({
 
 const collaborationInviteSchema = z.object({
   email: z.string().email('Invalid email format'),
-  projectName: z.string().optional(),
-  message: z.string().optional(),
+  projectName: z.string().max(150, 'Project name cannot exceed 150 characters').optional(),
+  message: z.string().max(2000, 'Message cannot exceed 2000 characters').optional(),
 });
 
 const collaborationAcceptSchema = z.object({
