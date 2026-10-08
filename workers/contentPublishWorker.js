@@ -16,40 +16,73 @@ async function publishToPlatform(item) {
 }
 
 /**
- * Reclaim documents stuck in `publishing` after the lease TTL expires
- * (crashed worker, killed process, etc.). Resets to `scheduled` for another
- * attempt, or `failed` once max attempts are exhausted.
+ * Filter matching `publishing` documents whose lease has expired
+ * (crashed worker, killed process, etc.).
+ * @param {Date} leaseCutoff
+ */
+function staleLeaseFilter(leaseCutoff) {
+    return {
+        status: 'publishing',
+        $or: [
+            { publishingStartedAt: { $lte: leaseCutoff } },
+            {
+                $and: [
+                    {
+                        $or: [
+                            { publishingStartedAt: null },
+                            { publishingStartedAt: { $exists: false } },
+                        ],
+                    },
+                    { updatedAt: { $lte: leaseCutoff } },
+                ],
+            },
+        ],
+    };
+}
+
+/**
+ * Reclaim documents stuck in `publishing` after the lease TTL expires.
+ *
+ * Every transition is a single atomic findOneAndUpdate so a document is never
+ * visible in an intermediate state to other instances:
+ *   1. leases that already used up all attempts go straight to `failed`
+ *      (they must never pass through `scheduled`, otherwise another instance
+ *      could claim and publish them beyond MAX_PUBLISH_ATTEMPTS, and the
+ *      follow-up `failed` write would then clobber a successful publish);
+ *   2. the remaining expired leases go back to `scheduled` for another attempt.
  * @param {Date} [now=new Date()]
  * @returns {Promise<{ reclaimed: number, failed: number }>}
  */
 async function reclaimStalePublishingLeases(now = new Date()) {
     const leaseCutoff = new Date(now.getTime() - PUBLISH_LEASE_MS);
+    const staleFilter = staleLeaseFilter(leaseCutoff);
     let reclaimed = 0;
     let failed = 0;
 
     while (true) {
-        const stale = await ScheduledContent.findOneAndUpdate(
-            {
-                status: 'publishing',
-                $or: [
-                    { publishingStartedAt: { $lte: leaseCutoff } },
-                    {
-                        $and: [
-                            {
-                                $or: [
-                                    { publishingStartedAt: null },
-                                    { publishingStartedAt: { $exists: false } },
-                                ],
-                            },
-                            { updatedAt: { $lte: leaseCutoff } },
-                        ],
-                    },
-                ],
-            },
+        const exhausted = await ScheduledContent.findOneAndUpdate(
+            { ...staleFilter, publishAttempts: { $gte: MAX_PUBLISH_ATTEMPTS } },
             {
                 $set: {
-                    // Temporary marker so concurrent reclaim loops do not double-pick;
-                    // immediately rewritten below based on attempt count.
+                    status: 'failed',
+                    errorMessage: `Publishing lease expired after ${MAX_PUBLISH_ATTEMPTS} attempts`,
+                    publishingStartedAt: null,
+                    publishedBy: null,
+                },
+            },
+            { new: false }
+        );
+
+        if (!exhausted) break;
+        failed++;
+    }
+
+    while (true) {
+        const retryable = await ScheduledContent.findOneAndUpdate(
+            // `$not: { $gte }` also matches legacy documents without the counter.
+            { ...staleFilter, publishAttempts: { $not: { $gte: MAX_PUBLISH_ATTEMPTS } } },
+            {
+                $set: {
                     status: 'scheduled',
                     publishedBy: null,
                     publishingStartedAt: null,
@@ -58,23 +91,8 @@ async function reclaimStalePublishingLeases(now = new Date()) {
             { new: false }
         );
 
-        if (!stale) break;
-
-        const attempts = stale.publishAttempts || 0;
-        if (attempts >= MAX_PUBLISH_ATTEMPTS) {
-            await ScheduledContent.findByIdAndUpdate(stale._id, {
-                $set: {
-                    status: 'failed',
-                    errorMessage: `Publishing lease expired after ${MAX_PUBLISH_ATTEMPTS} attempts`,
-                    publishingStartedAt: null,
-                    publishedBy: null,
-                },
-            });
-            failed++;
-        } else {
-            // Already reset to scheduled by the atomic claim above.
-            reclaimed++;
-        }
+        if (!retryable) break;
+        reclaimed++;
     }
 
     return { reclaimed, failed };
@@ -97,7 +115,9 @@ async function publishDueContent() {
                 $set: {
                     status: 'publishing',
                     publishedBy: INSTANCE_ID,
-                    publishingStartedAt: now,
+                    // Stamp each claim with its own time. Reusing the timestamp captured at the
+                    // start of the run would make later claims in a long run look stale already.
+                    publishingStartedAt: new Date(),
                 },
                 $inc: { publishAttempts: 1 },
             },
@@ -106,21 +126,43 @@ async function publishDueContent() {
 
         if (!claimedItem) break;
 
+        // Fence all follow-up writes to this exact claim. publishAttempts is bumped on every
+        // claim, so if the lease was reclaimed (and possibly re-claimed or cancelled) while
+        // this worker was talking to the platform, these writes become no-ops instead of
+        // overwriting the newer state.
+        const claimFence = {
+            _id: claimedItem._id,
+            status: 'publishing',
+            publishAttempts: claimedItem.publishAttempts,
+        };
+
         try {
             const publishResult = await publishToPlatform(claimedItem);
-            await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
-                $set: {
-                    status: 'published',
-                    publishedAt: new Date(),
-                    platformPostId: publishResult.postId,
-                    errorMessage: null,
-                    publishingStartedAt: null,
+            const finalized = await ScheduledContent.findOneAndUpdate(
+                claimFence,
+                {
+                    $set: {
+                        status: 'published',
+                        publishedAt: new Date(),
+                        platformPostId: publishResult.postId,
+                        errorMessage: null,
+                        publishingStartedAt: null,
+                    },
                 },
-            });
-            publishedCount++;
+                { new: true }
+            );
+
+            if (finalized) {
+                publishedCount++;
+            } else {
+                console.warn(
+                    `[ContentPublishWorker] Lease for item ${claimedItem._id} was lost before the publish result ` +
+                    `(${publishResult.postId}) could be recorded; leaving the newer state untouched.`
+                );
+            }
         } catch (error) {
             console.error(`[ContentPublishWorker] Platform publish failed for item ${claimedItem._id}:`, error.message);
-            await ScheduledContent.findByIdAndUpdate(claimedItem._id, {
+            await ScheduledContent.findOneAndUpdate(claimFence, {
                 $set: {
                     status: 'failed',
                     errorMessage: error.message,

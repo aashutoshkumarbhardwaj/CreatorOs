@@ -2,7 +2,8 @@ jest.mock("../model/contentOs", () => ({}));
 jest.mock("../model/scheduledContent", () => ({
     findOne: jest.fn(),
     find: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
+    findById: jest.fn(),
+    findOneAndUpdate: jest.fn(),
     create: jest.fn(),
 }));
 
@@ -66,7 +67,7 @@ describe("contentOsScheduler", () => {
             status: "scheduled",
         };
         ScheduledContentModel.findOne.mockResolvedValue(existingSchedule);
-        ScheduledContentModel.findByIdAndUpdate.mockResolvedValue({
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue({
             ...existingSchedule,
             scheduledAt: new Date("2026-10-02T10:00:00.000Z"),
         });
@@ -82,16 +83,18 @@ describe("contentOsScheduler", () => {
 
         await syncScheduledContent({ userId, item });
 
-        expect(ScheduledContentModel.findByIdAndUpdate).toHaveBeenCalledWith(
-            "schedule-1",
+        expect(ScheduledContentModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: "schedule-1", status: "scheduled" },
             {
-                userId,
-                contentOsId,
-                caption: "Updated post\n\nUpdated body",
-                platform: "instagram",
-                timezone: "Asia/Kolkata",
-                scheduledAt: item.scheduledAt,
-                status: "scheduled",
+                $set: {
+                    userId,
+                    contentOsId,
+                    caption: "Updated post\n\nUpdated body",
+                    platform: "instagram",
+                    timezone: "Asia/Kolkata",
+                    scheduledAt: item.scheduledAt,
+                    status: "scheduled",
+                },
             },
             { new: true }
         );
@@ -108,7 +111,7 @@ describe("contentOsScheduler", () => {
         const limit = jest.fn().mockResolvedValue([legacySchedule]);
         const sort = jest.fn().mockReturnValue({ limit });
         ScheduledContentModel.find.mockReturnValue({ sort });
-        ScheduledContentModel.findByIdAndUpdate.mockResolvedValue(legacySchedule);
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue(legacySchedule);
 
         const previousItem = {
             _id: contentOsId,
@@ -126,22 +129,18 @@ describe("contentOsScheduler", () => {
 
         await syncScheduledContent({ userId, item, previousItem });
 
-        expect(ScheduledContentModel.findByIdAndUpdate).toHaveBeenCalledWith(
-            "legacy-1",
-            expect.objectContaining({ contentOsId, scheduledAt: item.scheduledAt }),
+        expect(ScheduledContentModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: "legacy-1", status: "scheduled" },
+            { $set: expect.objectContaining({ contentOsId, scheduledAt: item.scheduledAt }) },
             { new: true }
         );
         expect(ScheduledContentModel.create).not.toHaveBeenCalled();
     });
 
     test("cancels an existing scheduled job when the content is no longer scheduled", async () => {
-        const save = jest.fn().mockResolvedValue({ _id: "schedule-1", status: "cancelled" });
-        const existingSchedule = {
-            _id: "schedule-1",
-            status: "scheduled",
-            save,
-        };
+        const existingSchedule = { _id: "schedule-1", status: "scheduled" };
         ScheduledContentModel.findOne.mockResolvedValue(existingSchedule);
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue({ _id: "schedule-1", status: "cancelled" });
 
         await syncScheduledContent({
             userId,
@@ -152,7 +151,97 @@ describe("contentOsScheduler", () => {
             },
         });
 
-        expect(existingSchedule.status).toBe("cancelled");
-        expect(save).toHaveBeenCalledTimes(1);
+        expect(ScheduledContentModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: "schedule-1", status: { $in: ["scheduled", "failed"] } },
+            { $set: { status: "cancelled", errorMessage: null } },
+            { new: true }
+        );
+    });
+
+    test.each(["publishing", "published"])(
+        "does not rewind a %s job back to scheduled when the item is edited",
+        async (status) => {
+            const existingSchedule = { _id: "schedule-1", status };
+            ScheduledContentModel.findOne.mockResolvedValue(existingSchedule);
+
+            const result = await syncScheduledContent({
+                userId,
+                item: {
+                    _id: contentOsId,
+                    title: "Edited after publish",
+                    platform: "instagram",
+                    scheduledAt: new Date("2026-10-01T10:00:00.000Z"),
+                    status: "scheduled",
+                },
+            });
+
+            expect(result).toBe(existingSchedule);
+            expect(ScheduledContentModel.findOneAndUpdate).not.toHaveBeenCalled();
+            expect(ScheduledContentModel.create).not.toHaveBeenCalled();
+        }
+    );
+
+    test("starts a fresh delivery cycle when a failed job is scheduled again", async () => {
+        ScheduledContentModel.findOne.mockResolvedValue({ _id: "schedule-1", status: "failed", timezone: "UTC" });
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue({ _id: "schedule-1", status: "scheduled" });
+
+        await syncScheduledContent({
+            userId,
+            item: {
+                _id: contentOsId,
+                title: "Retry",
+                platform: "instagram",
+                scheduledAt: new Date("2026-10-05T10:00:00.000Z"),
+                status: "scheduled",
+            },
+        });
+
+        expect(ScheduledContentModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: "schedule-1", status: "failed" },
+            {
+                $set: expect.objectContaining({
+                    status: "scheduled",
+                    errorMessage: null,
+                    publishAttempts: 0,
+                    publishedBy: null,
+                    publishingStartedAt: null,
+                }),
+            },
+            { new: true }
+        );
+    });
+
+    test("keeps the worker's state when it claims the job between the read and the update", async () => {
+        ScheduledContentModel.findOne.mockResolvedValue({ _id: "schedule-1", status: "scheduled", timezone: "UTC" });
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue(null); // compare-and-set lost the race
+        const current = { _id: "schedule-1", status: "publishing" };
+        ScheduledContentModel.findById.mockResolvedValue(current);
+
+        const result = await syncScheduledContent({
+            userId,
+            item: {
+                _id: contentOsId,
+                title: "Edit",
+                platform: "instagram",
+                scheduledAt: new Date("2026-10-05T10:00:00.000Z"),
+                status: "scheduled",
+            },
+        });
+
+        expect(result).toBe(current);
+    });
+
+    test("does not cancel a job that is already being published", async () => {
+        ScheduledContentModel.findOne.mockResolvedValue({ _id: "schedule-1", status: "publishing" });
+        ScheduledContentModel.findOneAndUpdate.mockResolvedValue(null);
+        const current = { _id: "schedule-1", status: "publishing" };
+        ScheduledContentModel.findById.mockResolvedValue(current);
+
+        const result = await syncScheduledContent({
+            userId,
+            item: { _id: contentOsId, status: "ready", scheduledAt: null },
+        });
+
+        expect(result).toBe(current);
     });
 });
