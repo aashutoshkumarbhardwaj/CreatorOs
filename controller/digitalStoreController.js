@@ -1,5 +1,6 @@
 const { DigitalProduct, DigitalOrder } = require("../model/digitalProduct");
 const crypto = require("crypto");
+const store = require("../services/digitalStoreService");
 
 /**
  * Helper to slugify product titles safely
@@ -129,10 +130,13 @@ exports.getProducts = async (req, res) => {
     }
 
     const skip = (page - 1) * limit;
-    const [products, total] = await Promise.all([
+    const [foundProducts, total] = await Promise.all([
       DigitalProduct.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
       DigitalProduct.countDocuments(query),
     ]);
+
+    // Only the owning creator may see fileUrl / coupons / revenue; everyone else gets a safe view.
+    const products = foundProducts.map((p) => (store.isProductOwner(req.user, p) ? p : store.toPublicProduct(p)));
 
     return res.status(200).json({
       success: true,
@@ -175,6 +179,14 @@ exports.getProductDetails = async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    if (!store.isProductOwner(req.user, product)) {
+      // Authenticated non-owners must not see drafts/archived products or secrets either.
+      if (product.status !== "active") {
+        return res.status(404).json({ success: false, message: "Product not found" });
+      }
+      return res.status(200).json({ success: true, product: store.toPublicProduct(product) });
     }
 
     return res.status(200).json({ success: true, product });
@@ -278,19 +290,14 @@ exports.createCheckoutOrder = async (req, res) => {
       });
     }
 
-    const product = await DigitalProduct.findById(productId);
-    if (!product || product.status !== "active") {
-      return res.status(404).json({
-        success: false,
-        message: "Active product not found",
-      });
+    // Coupon limit check + sales/revenue/coupon counters are one atomic update (no lost updates,
+    // no coupon over-redemption under concurrent checkouts).
+    const sale = await store.reserveSale(productId, couponCode);
+    if (sale.error) {
+      return res.status(sale.error.status).json({ success: false, message: sale.error.message });
     }
 
-    const couponResult = product.applyCoupon(couponCode);
-    if (couponResult.error) {
-      return res.status(400).json({ success: false, message: couponResult.error });
-    }
-
+    const { product, couponResult, couponId } = sale;
     const downloadToken = product.generateDownloadToken();
     const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
@@ -309,15 +316,13 @@ exports.createCheckoutOrder = async (req, res) => {
       downloadTokens: [downloadToken],
     });
 
-    await order.save();
-
-    // Update product stats
-    product.totalSales += 1;
-    product.totalRevenue += couponResult.finalPrice;
-    if (couponResult.coupon) {
-      couponResult.coupon.timesUsed += 1;
+    try {
+      await order.save();
+    } catch (saveError) {
+      // The sale was already counted: undo it so stats/coupons never drift from real orders.
+      await store.releaseSale(product._id, couponResult.finalPrice, couponId);
+      throw saveError;
     }
-    await product.save();
 
     return res.status(201).json({
       success: true,
@@ -349,52 +354,25 @@ exports.validateAndConsumeDownload = async (req, res) => {
       return res.status(400).json({ success: false, message: "Token is required" });
     }
 
-    const order = await DigitalOrder.findOne({ "downloadTokens.token": token });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Download token not found" });
+    // Validation and the download counter increment are one atomic conditional update, so the
+    // per-token limit cannot be exceeded by parallel requests and refunds take effect immediately.
+    const consumed = await store.consumeDownloadToken(token);
+    if (consumed.error) {
+      return res.status(consumed.error.status).json({ success: false, message: consumed.error.message });
     }
 
-    if (order.orderStatus === "refunded") {
-      return res.status(403).json({
-        success: false,
-        message: "Order has been refunded. Download access revoked.",
-      });
-    }
-
-    const tokenRecord = order.downloadTokens.find((t) => t.token === token);
-    if (!tokenRecord) {
-      return res.status(404).json({ success: false, message: "Invalid download token" });
-    }
-
-    if (tokenRecord.revoked) {
-      return res.status(403).json({ success: false, message: "Download token has been revoked" });
-    }
-
-    if (new Date() > new Date(tokenRecord.expiresAt)) {
-      return res.status(410).json({ success: false, message: "Download link has expired" });
-    }
-
-    if (tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
-      return res.status(429).json({
-        success: false,
-        message: "Maximum download limit reached for this token",
-      });
-    }
-
-    const product = await DigitalProduct.findById(order.productId);
+    const product = await DigitalProduct.findById(consumed.order.productId);
     if (!product) {
+      await store.releaseDownload(consumed.order._id, consumed.index);
       return res.status(404).json({ success: false, message: "Associated product file missing" });
     }
-
-    tokenRecord.downloadCount += 1;
-    await order.save();
 
     return res.status(200).json({
       success: true,
       message: "Download authorized",
       fileUrl: product.fileUrl,
       fileName: product.title,
-      remainingDownloads: tokenRecord.maxDownloads - tokenRecord.downloadCount,
+      remainingDownloads: consumed.remaining,
     });
   } catch (error) {
     return res.status(500).json({
@@ -413,28 +391,11 @@ exports.refundOrder = async (req, res) => {
     const creatorId = req.user && req.user._id ? req.user._id : req.user;
     const { orderId } = req.params;
 
-    const order = await DigitalOrder.findOne({ _id: orderId, creatorId });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+    const result = await store.refundOrderOnce(orderId, creatorId);
+    if (result.error) {
+      return res.status(result.error.status).json({ success: false, message: result.error.message });
     }
-
-    if (order.orderStatus === "refunded") {
-      return res.status(400).json({ success: false, message: "Order already refunded" });
-    }
-
-    order.orderStatus = "refunded";
-    order.downloadTokens.forEach((t) => {
-      t.revoked = true;
-    });
-
-    await order.save();
-
-    // Adjust product revenue
-    const product = await DigitalProduct.findById(order.productId);
-    if (product) {
-      product.totalRevenue = Math.max(0, product.totalRevenue - order.amountPaid);
-      await product.save();
-    }
+    const order = result.order;
 
     return res.status(200).json({
       success: true,
