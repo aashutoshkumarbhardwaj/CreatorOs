@@ -10,6 +10,7 @@ const engagementHistorySchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Creator",
             required: true,
+            immutable: true,
         },
         snapshotId: {
             type: mongoose.Schema.Types.ObjectId,
