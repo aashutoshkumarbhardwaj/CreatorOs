@@ -189,7 +189,7 @@ exports.updateTaskStatus = async (req, res) => {
     const updatedTask = await TeamTask.findOneAndUpdate(
       { _id: id, creatorId },
       updatePayload,
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updatedTask) {
       return res.status(404).json({ success: false, message: "Task not found" });
