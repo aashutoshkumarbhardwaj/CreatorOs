@@ -98,6 +98,8 @@ const aiAssistantRoutes = require("./routes/aiAssistantRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const healthRoutes = require("./routes/health");
 const sponsorshipCalculatorRoutes = require("./routes/sponsorshipCalculator");
+const rateCardRoutes = require("./routes/rateCardRoutes");
+const sponsorshipScenarioRoutes = require("./routes/sponsorshipScenarioRoutes");
 const { generateCsrf, verifyCsrf } = require("./middleware/csrf");
 
 // Generate a per-request nonce before Helmet so early exits (CSRF/validation)
@@ -250,6 +252,8 @@ app.use("/api/ai", aiRoute);
 app.use("/api/analytics", protect, analyticsRoutes);
 app.use("/api/instagram", instagramRoutes);
 app.use("/api/sponsorship", protect, sponsorshipCalculatorRoutes);
+app.use("/api/rate-cards", rateCardRoutes);
+app.use("/api/sponsorship-scenarios", sponsorshipScenarioRoutes);
 
 // API Documentation
 const swaggerUi = require("swagger-ui-express");
@@ -862,7 +866,7 @@ app.get(
     }
 
     if (service.key === "sponsorship-calculator") {
-      return res.render("sponsorship-calculator", {
+      return res.render("sponsorship-scenarios", {
         service,
         services,
         user: buildAccountViewModel(null, req.user),

@@ -31,6 +31,8 @@ const EXCLUSIVITY_MULTIPLIERS = {
   days_180: 1.0, // +100%
 };
 
+const PRICING_RULE_VERSION = "1.0.0";
+
 /**
  * Calculate recommended baseline rate from impressions and engagement
  */
@@ -229,6 +231,7 @@ function calculateSponsorshipQuote({
 }
 
 module.exports = {
+  PRICING_RULE_VERSION,
   NICHE_BENCHMARK_CPM,
   USAGE_RIGHTS_MULTIPLIERS,
   EXCLUSIVITY_MULTIPLIERS,

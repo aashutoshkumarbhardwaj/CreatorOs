@@ -1,0 +1,241 @@
+.sponsorship-scenarios {
+  --scenario-gap: 1.25rem;
+}
+
+.scenario-status {
+  min-height: 1.4rem;
+  margin: .5rem 0;
+  color: var(--text);
+}
+
+.scenario-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--scenario-gap);
+  align-items: start;
+}
+
+.scenario-panel,
+.proposal-panel {
+  padding: 1.25rem;
+  min-width: 0;
+}
+
+.scenario-form-grid,
+.proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.scenario-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .45rem;
+  color: var(--text);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.scenario-field input,
+.scenario-field select,
+.scenario-field textarea,
+.scenario-list select {
+  width: 100%;
+  min-width: 0;
+  padding: .65rem .75rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.scenario-field textarea {
+  resize: vertical;
+}
+
+.scenario-span-2,
+.proposal-wide {
+  grid-column: 1 / -1;
+}
+
+fieldset.scenario-field {
+  margin: 0;
+  padding: .8rem;
+  border: 1px solid var(--border);
+}
+
+.scenario-choice-list,
+.scenario-list {
+  display: grid;
+  gap: .65rem;
+}
+
+.scenario-choice,
+.scenario-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-width: 0;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.scenario-choice span,
+.scenario-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.scenario-choice small,
+.scenario-row-price {
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
+.scenario-list {
+  margin: .6rem 0 1rem;
+}
+
+.scenario-row button,
+.scenario-actions button,
+.scenario-panel > button {
+  min-height: 2.5rem;
+}
+
+.scenario-row button {
+  padding: .35rem .55rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.scenario-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+
+.scenario-actions button,
+.scenario-panel > button,
+.scenario-add-deliverable {
+  padding: .65rem .9rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font: inherit;
+}
+
+.scenario-toggle {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.manual-deliverable {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(6rem, .7fr) minmax(0, 1.2fr) auto;
+  gap: .5rem;
+  margin-bottom: .6rem;
+}
+
+.manual-deliverable select,
+.manual-deliverable input {
+  width: 100%;
+  min-width: 0;
+  padding: .55rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.manual-deliverable button {
+  width: 2.5rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.scenario-comparison {
+  max-width: 100%;
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.scenario-comparison table {
+  width: 100%;
+  min-width: 540px;
+  border-collapse: collapse;
+  color: var(--text);
+  text-align: left;
+}
+
+.scenario-comparison th,
+.scenario-comparison td {
+  padding: .65rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.scenario-comparison th:first-child {
+  width: 9rem;
+}
+
+.proposal-panel {
+  margin-top: var(--scenario-gap);
+}
+
+.proposal-source-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 24rem);
+  gap: .75rem;
+  align-items: center;
+}
+
+#proposal-scenario {
+  padding: .65rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .scenario-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .scenario-form-grid,
+  .proposal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scenario-span-2,
+  .proposal-wide {
+    grid-column: auto;
+  }
+
+  .manual-deliverable {
+    grid-template-columns: minmax(0, 1fr) minmax(5rem, .65fr) auto;
+  }
+
+  .manual-deliverable input[name="description"] {
+    grid-column: 1 / 3;
+  }
+
+  .proposal-source-row {
+    grid-template-columns: 1fr;
+  }
+}
