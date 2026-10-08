@@ -597,6 +597,10 @@ const exportQrCode = asyncHandler(async (req, res) => {
         });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid QR code ID', error: 'Invalid QR code ID' });
+    }
+
     const doc = await QrCode.findById(req.params.id);
     if (!doc) {
         return res.status(404).json({ success: false, message: 'QR code not found', error: 'QR code not found' });
@@ -638,6 +642,9 @@ const exportQrCode = asyncHandler(async (req, res) => {
  * @param {object} res
  */
 const updateQrCode = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid QR code ID', error: 'Invalid QR code ID' });
+    }
     const doc = await QrCode.findById(req.params.id);
     if (!doc) {
         return res.status(404).json({ success: false, message: 'QR code not found', error: 'QR code not found' });
@@ -710,6 +717,9 @@ const updateQrCode = asyncHandler(async (req, res) => {
  * @param {object} res
  */
 const deleteQrCode = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid QR code ID', error: 'Invalid QR code ID' });
+    }
     const doc = await QrCode.findById(req.params.id);
     if (!doc) {
         return res.status(404).json({ success: false, message: 'QR code not found', error: 'QR code not found' });
@@ -729,6 +739,9 @@ const deleteQrCode = asyncHandler(async (req, res) => {
  * @param {object} res
  */
 const getQrAnalytics = asyncHandler(async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid QR code ID', error: 'Invalid QR code ID' });
+    }
     const doc = await QrCode.findById(req.params.id).lean();
     if (!doc) {
         return res.status(404).json({ success: false, message: 'QR code not found', error: 'QR code not found' });
