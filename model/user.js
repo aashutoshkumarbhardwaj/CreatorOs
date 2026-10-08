@@ -73,6 +73,14 @@ const userSchema = new mongoose.Schema(
             default: null,
             select: false,
         },
+
+        // Time-step of the last TOTP code that was accepted. A code is single-use
+        // (RFC 6238 section 5.2): any code for a step at or below this value is a replay.
+        twoFactorLastUsedStep: {
+            type: Number,
+            default: null,
+            select: false,
+        },
         
         preferences: {
             appearanceMode: { type: String, enum: ['light', 'dark', 'system'], default: 'light' },
@@ -204,6 +212,30 @@ function normalizeId(id) {
     return id?.toString?.() || id;
 }
 
+function matchesValue(actual, expected) {
+    if (expected === null) {
+        return actual === null || actual === undefined;
+    }
+
+    const isOperatorObject =
+        expected &&
+        typeof expected === "object" &&
+        !Array.isArray(expected) &&
+        !(expected instanceof Date) &&
+        !(expected instanceof RegExp) &&
+        Object.keys(expected).some((key) => key.startsWith("$"));
+
+    if (isOperatorObject) {
+        return Object.entries(expected).every(([operator, operand]) => {
+            if (operator === "$lt") return actual !== null && actual !== undefined && actual < operand;
+            if (operator === "$ne") return actual !== operand;
+            return false;
+        });
+    }
+
+    return actual === expected;
+}
+
 function matchesQuery(user, query = {}) {
     return Object.entries(query).every(([key, value]) => {
         if (key === "$or") {
@@ -213,7 +245,7 @@ function matchesQuery(user, query = {}) {
             return value.$regex.test(user.name);
         }
         if (key === "_id") return normalizeId(user._id) === normalizeId(value);
-        return user[key] === value;
+        return matchesValue(user[key], value);
     });
 }
 
@@ -301,6 +333,20 @@ class MockUserModel {    constructor(data = {}) {
         };
 
         return query;
+    }
+
+    // Single conditional update, mirroring Mongoose's updateOne result shape.
+    // The lookup and the write happen without an await in between, so concurrent
+    // callers cannot both match the same condition.
+    static async updateOne(query = {}, update = {}) {
+        const user = mockUsers.find((candidate) => matchesQuery(candidate, query));
+        if (!user) return { acknowledged: true, matchedCount: 0, modifiedCount: 0 };
+
+        if (update.$set) {
+            Object.assign(user, update.$set);
+        }
+        user.updatedAt = new Date();
+        return { acknowledged: true, matchedCount: 1, modifiedCount: 1 };
     }
 
     static async findByIdAndUpdate(id, update = {}, options = {}) {

@@ -15,7 +15,7 @@ const {
     getRemainingResetLockoutTime,
 } = require("../utils/loginAttemptManager");
 const { isEmailTransportConfigured } = require("../utils/email");
-const { verifyTotp } = require("../utils/totp");
+const { consumeTotp } = require("../utils/twoFactor");
 
 const CONTRIBUTOR_NAME = "Contributor";
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -406,15 +406,17 @@ const login = asyncHandler(async (req, res, next) => {
         });
     }
 
-    await clearLoginAttempts(normalizedEmail);
-
+    // The failed-attempt counter must survive until the login is COMPLETE. Clearing
+    // it here, after the password check but before the second factor, let anyone who
+    // knows the password reset the lockout on every request and guess the 6-digit
+    // code without limit.
     if (user.twoFactorEnabled) {
         if (!otp) {
             const pendingToken = createPending2FAToken(user, { remember });
             return respondRequires2FA(req, res, pendingToken);
         }
 
-        if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, otp)) {
+        if (!(await consumeTotp(User, user, otp))) {
             await recordFailedLoginAttempt(normalizedEmail);
             if (wantsHtml(req)) {
                 return res.status(401).render("login", {
@@ -425,6 +427,8 @@ const login = asyncHandler(async (req, res, next) => {
             return res.status(401).json({ success: false, requires2FA: true, message: INVALID_2FA_ERROR });
         }
     }
+
+    await clearLoginAttempts(normalizedEmail);
 
     const { token } = await issueAuthenticatedSession(res, user, { remember });
 
@@ -478,7 +482,7 @@ const verifyLogin2FA = asyncHandler(async (req, res) => {
         return res.status(429).json({ success: false, message: lockoutMessage });
     }
 
-    if (!otp || !verifyTotp(user.twoFactorSecret, otp)) {
+    if (!otp || !(await consumeTotp(User, user, otp))) {
         await recordFailedLoginAttempt(normalizedEmail);
         if (wantsHtml(req)) {
             return res.status(401).render("login", { error: INVALID_2FA_ERROR, requires2FA: true });

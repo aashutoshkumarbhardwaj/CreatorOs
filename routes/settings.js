@@ -7,7 +7,8 @@ const User = require('../model/user');
 const { preventContributorWrites } = require('../middleware/auth');
 const { validate, updateProfileSchema } = require('../middleware/validators');
 const { isEmailTransportConfigured, sendDeletionConfirmationEmail } = require('../utils/email');
-const { verifyTotp } = require('../utils/totp');
+const { verifyTotpStep } = require('../utils/totp');
+const { consumeTotp } = require('../utils/twoFactor');
 const { deleteAccount } = require('../services/accountDeletionService');
 
 const asyncHandler = fn => (req, res, next) =>
@@ -152,19 +153,22 @@ router.put('/security/2fa', preventContributorWrites, asyncHandler(async (req, r
             });
         }
 
-        if (!otp || !verifyTotp(sharedSecret, otp)) {
+        const acceptedStep = otp ? verifyTotpStep(sharedSecret, otp) : null;
+        if (acceptedStep === null) {
             return res.status(401).json({ error: 'Invalid or missing authenticator code' });
         }
 
         user.twoFactorSecret = sharedSecret;
         user.twoFactorEnabled = true;
+        // The code used to enable 2FA is spent: it cannot be replayed to log in.
+        user.twoFactorLastUsedStep = acceptedStep;
     } else {
         // Disabling an active 2FA configuration still requires a valid OTP challenge.
         if (user.twoFactorEnabled) {
             if (!user.twoFactorSecret) {
                 return res.status(400).json({ error: 'Two-factor authentication is misconfigured' });
             }
-            if (!otp || !verifyTotp(user.twoFactorSecret, otp)) {
+            if (!otp || !(await consumeTotp(User, user, otp))) {
                 return res.status(401).json({ error: 'Invalid or missing authenticator code' });
             }
         }
