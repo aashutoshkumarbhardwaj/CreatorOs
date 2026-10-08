@@ -23,6 +23,20 @@ const dmDeliverySchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // A reservation is a LEASE, not a permanent lock: if the worker that holds it crashes or
+    // stalls, another attempt may take it over once the lease has expired.
+    leaseExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    attempts: {
+      type: Number,
+      default: 1,
+    },
+    sentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
