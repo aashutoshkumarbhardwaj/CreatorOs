@@ -215,14 +215,26 @@ exports.updateProduct = async (req, res) => {
       "coupons",
     ];
 
+    const isTitleChanged =
+      req.body.title !== undefined &&
+      typeof req.body.title === "string" &&
+      req.body.title.trim() !== "" &&
+      req.body.title.trim() !== product.title;
+
     allowedUpdates.forEach((field) => {
       if (req.body[field] !== undefined) {
         product[field] = req.body[field];
       }
     });
 
-    if (req.body.title && req.body.title !== product.title) {
-      product.slug = createSlug(req.body.title);
+    if (isTitleChanged) {
+      let baseSlug = createSlug(product.title) || "digital-product";
+      let slug = baseSlug;
+      let counter = 1;
+      while (await DigitalProduct.findOne({ creatorId, slug, _id: { $ne: product._id } })) {
+        slug = `${baseSlug}-${counter++}`;
+      }
+      product.slug = slug;
     }
 
     await product.save();
