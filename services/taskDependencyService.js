@@ -100,8 +100,11 @@ async function cascadeUnblockTasks(completedTaskId) {
     const depTask = await TeamTask.findById(depId).populate("blockedBy");
     if (!depTask) continue;
 
+    // Filter out null/deleted blockers in case any were removed
+    const validBlockers = (depTask.blockedBy || []).filter(Boolean);
+
     // Check if all tasks in blockedBy are completed
-    const allBlockersResolved = depTask.blockedBy.every((blocker) => blocker.status === "completed");
+    const allBlockersResolved = validBlockers.every((blocker) => blocker.status === "completed");
 
     if (allBlockersResolved && depTask.status === "blocked") {
       depTask.status = "todo";

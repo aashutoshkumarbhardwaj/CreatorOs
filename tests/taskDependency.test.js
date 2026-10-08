@@ -1,5 +1,8 @@
-const { topologicalSort } = require("../services/taskDependencyService");
+const { topologicalSort, cascadeUnblockTasks } = require("../services/taskDependencyService");
+const TeamTask = require("../model/teamTaskDependency");
 const mongoose = require("mongoose");
+
+jest.mock("../model/teamTaskDependency");
 
 describe("Team Task Dependency & DAG Engine Unit Tests", () => {
   describe("topologicalSort (Kahn Algorithm)", () => {
@@ -51,6 +54,41 @@ describe("Team Task Dependency & DAG Engine Unit Tests", () => {
       expect(sorted).toHaveLength(3);
       // Assembly must be last
       expect(sorted[2]._id).toBe(task3Id);
+    });
+  });
+
+  describe("cascadeUnblockTasks", () => {
+    it("should safely unblock dependent task and tolerate null/deleted blockers in blockedBy", async () => {
+      const completedTaskId = new mongoose.Types.ObjectId().toString();
+      const dependentTaskId = new mongoose.Types.ObjectId().toString();
+
+      TeamTask.findById.mockImplementation((id) => {
+        if (id === completedTaskId) {
+          return Promise.resolve({
+            _id: completedTaskId,
+            status: "completed",
+            dependents: [dependentTaskId],
+          });
+        }
+        if (id === dependentTaskId) {
+          return {
+            populate: jest.fn().mockResolvedValue({
+              _id: dependentTaskId,
+              status: "blocked",
+              // Simulates one deleted blocker populated as null and one completed blocker
+              blockedBy: [null, { _id: completedTaskId, status: "completed" }],
+              save: jest.fn().mockResolvedValue(true),
+            }),
+          };
+        }
+        return Promise.resolve(null);
+      });
+
+      const unblocked = await cascadeUnblockTasks(completedTaskId);
+
+      expect(unblocked).toHaveLength(1);
+      expect(unblocked[0].status).toBe("todo");
+      expect(unblocked[0].save).toHaveBeenCalled();
     });
   });
 });
