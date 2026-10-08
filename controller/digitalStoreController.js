@@ -311,13 +311,23 @@ exports.createCheckoutOrder = async (req, res) => {
 
     await order.save();
 
-    // Update product stats
-    product.totalSales += 1;
-    product.totalRevenue += couponResult.finalPrice;
+    // Update product stats atomically to prevent race conditions
+    const updateQuery = {
+      $inc: {
+        totalSales: 1,
+        totalRevenue: couponResult.finalPrice,
+      },
+    };
+    let arrayFilters = undefined;
     if (couponResult.coupon) {
-      couponResult.coupon.timesUsed += 1;
+      updateQuery.$inc["coupons.$[elem].timesUsed"] = 1;
+      arrayFilters = [{ "elem.code": couponResult.coupon.code }];
     }
-    await product.save();
+    await DigitalProduct.updateOne(
+      { _id: product._id },
+      updateQuery,
+      arrayFilters ? { arrayFilters } : {}
+    );
 
     return res.status(201).json({
       success: true,
@@ -361,7 +371,7 @@ exports.validateAndConsumeDownload = async (req, res) => {
       });
     }
 
-    const tokenRecord = order.downloadTokens.find((t) => t.token === token);
+    let tokenRecord = order.downloadTokens.find((t) => t.token === token);
     if (!tokenRecord) {
       return res.status(404).json({ success: false, message: "Invalid download token" });
     }
@@ -386,8 +396,27 @@ exports.validateAndConsumeDownload = async (req, res) => {
       return res.status(404).json({ success: false, message: "Associated product file missing" });
     }
 
-    tokenRecord.downloadCount += 1;
-    await order.save();
+    // Atomically increment the download count to prevent concurrent download limits bypass
+    const updatedOrder = await DigitalOrder.findOneAndUpdate(
+      {
+        _id: order._id,
+        "downloadTokens.token": token,
+        "downloadTokens.downloadCount": { $lt: tokenRecord.maxDownloads }
+      },
+      {
+        $inc: { "downloadTokens.$.downloadCount": 1 }
+      },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(429).json({
+        success: false,
+        message: "Maximum download limit reached for this token",
+      });
+    }
+    
+    tokenRecord = updatedOrder.downloadTokens.find(t => t.token === token);
 
     return res.status(200).json({
       success: true,
@@ -429,12 +458,11 @@ exports.refundOrder = async (req, res) => {
 
     await order.save();
 
-    // Adjust product revenue
-    const product = await DigitalProduct.findById(order.productId);
-    if (product) {
-      product.totalRevenue = Math.max(0, product.totalRevenue - order.amountPaid);
-      await product.save();
-    }
+    // Adjust product revenue atomically
+    await DigitalProduct.updateOne(
+      { _id: order.productId },
+      { $inc: { totalRevenue: -order.amountPaid } }
+    );
 
     return res.status(200).json({
       success: true,
