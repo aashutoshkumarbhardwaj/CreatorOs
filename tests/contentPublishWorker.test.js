@@ -155,4 +155,48 @@ describe('Content Publish Worker', () => {
         expect(refreshed.status).toBe('failed');
         expect(refreshed.errorMessage).toContain('Publishing lease expired');
     });
+
+    it('fails an exhausted stale lease without ever re-publishing it', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const exhausted = await ScheduledContent.create({
+            userId,
+            caption: 'Exhausted and stale',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'dead-worker',
+            publishingStartedAt: new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000),
+            publishAttempts: MAX_PUBLISH_ATTEMPTS,
+        });
+
+        const publishedCount = await publishDueContent();
+        expect(publishedCount).toBe(0);
+
+        const refreshed = await ScheduledContent.findById(exhausted._id);
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.publishAttempts).toBe(MAX_PUBLISH_ATTEMPTS);
+        expect(refreshed.platformPostId).toBeNull();
+        expect(refreshed.publishedBy).toBeNull();
+    });
+
+    it('reclaims legacy stale rows that have no publishAttempts field', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        // Insert through the raw collection so the schema default (0) is not applied.
+        const { insertedId } = await ScheduledContent.collection.insertOne({
+            userId,
+            caption: 'Legacy row without attempts counter',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'dead-worker',
+            publishingStartedAt: new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000),
+        });
+
+        const result = await reclaimStalePublishingLeases();
+        expect(result.reclaimed).toBeGreaterThanOrEqual(1);
+
+        const refreshed = await ScheduledContent.findById(insertedId);
+        expect(refreshed.status).toBe('scheduled');
+        expect(refreshed.publishedBy).toBeNull();
+    });
 });

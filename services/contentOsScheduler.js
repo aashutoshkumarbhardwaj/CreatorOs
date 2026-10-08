@@ -1,12 +1,37 @@
 const ContentOsModel = require("../model/contentOs");
 const ScheduledContentModel = require("../model/scheduledContent");
 
+/**
+ * A ScheduledContent row is owned by the publish worker once it leaves the
+ * "scheduled" state, so Content OS may only rewrite or cancel it while it is
+ * still safe to do so:
+ *  - "publishing" is in flight on a worker (rewriting it would let another
+ *    worker claim it again and send the post twice),
+ *  - "published" has already been delivered (rewriting it back to "scheduled"
+ *    would make the worker publish the same post again).
+ */
+const EDITABLE_STATUSES = ["scheduled", "failed", "cancelled"];
+const CANCELLABLE_STATUSES = ["scheduled", "failed"];
+
 function buildCaption(item) {
     return item.title + (item.description ? "\n\n" + item.description : "");
 }
 
 function isScheduledItem(item) {
     return Boolean(item?.scheduledAt && item?.status === "scheduled");
+}
+
+/**
+ * An already-published row is only re-queued when the creator deliberately moved
+ * the item to a different, future time. An unrelated edit (title, tags, notes...)
+ * keeps the same scheduledAt and must never trigger a second publish.
+ */
+function isDeliberateReschedule(scheduledContent, item) {
+    const next = new Date(item.scheduledAt).getTime();
+    const previous = scheduledContent.scheduledAt
+        ? new Date(scheduledContent.scheduledAt).getTime()
+        : NaN;
+    return Number.isFinite(next) && next !== previous && next > Date.now();
 }
 
 async function findLegacyScheduledContent(userId, previousItem) {
@@ -21,6 +46,22 @@ async function findLegacyScheduledContent(userId, previousItem) {
     }).sort({ createdAt: 1 }).limit(2);
 
     return matches.length === 1 ? matches[0] : null;
+}
+
+async function createScheduledContent(scheduleData) {
+    try {
+        return await ScheduledContentModel.create(scheduleData);
+    } catch (err) {
+        // A concurrent sync already created the row for this Content OS item
+        // (unique index on userId + contentOsId): reuse it instead of failing.
+        if (err && err.code === 11000) {
+            return ScheduledContentModel.findOne({
+                userId: scheduleData.userId,
+                contentOsId: scheduleData.contentOsId,
+            });
+        }
+        throw err;
+    }
 }
 
 async function syncScheduledContent({ userId, item, previousItem = null }) {
@@ -47,24 +88,61 @@ async function syncScheduledContent({ userId, item, previousItem = null }) {
             status: "scheduled",
         };
 
-        if (scheduledContent) {
-            return ScheduledContentModel.findByIdAndUpdate(
-                scheduledContent._id,
-                scheduleData,
-                { new: true }
-            );
+        if (!scheduledContent) {
+            return createScheduledContent(scheduleData);
         }
 
-        return ScheduledContentModel.create(scheduleData);
+        // In flight on a worker: leave it alone.
+        if (scheduledContent.status === "publishing") {
+            return scheduledContent;
+        }
+
+        if (scheduledContent.status === "published") {
+            // Already delivered: never resurrect it unless the creator moved it
+            // to a new future time on purpose.
+            if (!isDeliberateReschedule(scheduledContent, item)) {
+                return scheduledContent;
+            }
+
+            const requeued = await ScheduledContentModel.findOneAndUpdate(
+                { _id: scheduledContent._id, status: "published" },
+                {
+                    $set: {
+                        ...scheduleData,
+                        publishAttempts: 0,
+                        platformPostId: null,
+                        publishedAt: null,
+                        publishedBy: null,
+                        publishingStartedAt: null,
+                        errorMessage: null,
+                    },
+                },
+                { new: true }
+            );
+            return requeued || ScheduledContentModel.findById(scheduledContent._id);
+        }
+
+        // Compare-and-set on the status: if a worker claimed the row between our
+        // read and this write, the filter no longer matches and nothing is
+        // overwritten.
+        const updated = await ScheduledContentModel.findOneAndUpdate(
+            { _id: scheduledContent._id, status: { $in: EDITABLE_STATUSES } },
+            scheduleData,
+            { new: true }
+        );
+        return updated || ScheduledContentModel.findById(scheduledContent._id);
     }
 
-    if (scheduledContent && !["published", "cancelled"].includes(scheduledContent.status)) {
-        scheduledContent.status = "cancelled";
-        scheduledContent.errorMessage = null;
-        return scheduledContent.save();
+    if (!scheduledContent || !CANCELLABLE_STATUSES.includes(scheduledContent.status)) {
+        return scheduledContent;
     }
 
-    return scheduledContent;
+    const cancelled = await ScheduledContentModel.findOneAndUpdate(
+        { _id: scheduledContent._id, status: { $in: CANCELLABLE_STATUSES } },
+        { $set: { status: "cancelled", errorMessage: null } },
+        { new: true }
+    );
+    return cancelled || ScheduledContentModel.findById(scheduledContent._id);
 }
 
 module.exports = {
