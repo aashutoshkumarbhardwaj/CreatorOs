@@ -31,6 +31,11 @@ const PasswordResetToken = require("../model/passwordResetToken");
 const Upload = require("../model/upload");
 const VaultFile = require("../model/vaultFile");
 const ContributorSession = require("../model/contributorSession");
+const BioProfile = require("../model/bioProfile");
+const CreatorRateCard = require("../model/creatorRateCard");
+const { DigitalProduct, DigitalOrder } = require("../model/digitalProduct");
+const TeamTask = require("../model/teamTaskDependency");
+const DmDelivery = require("../model/dmDelivery");
 
 const isMockDb = () => process.env.USE_MOCK_DB === "true";
 
@@ -38,34 +43,52 @@ function applySession(query, session) {
     return session ? query.session(session) : query;
 }
 
-async function deleteDirectUserData(session, userId) {
-    const userIdModels = [
-        [Url, { userId }],
-        [Invite, { inviter: userId }],
-        [Task, { creatorId: userId }],
-        [DmTrigger, { creatorId: userId }],
-        [Sponsor, { creatorId: userId }],
-        [CrmBrand, { creatorId: userId }],
-        [CrmDeal, { creatorId: userId }],
-        [CrmInvoice, { creatorId: userId }],
-        [CrmMediaKit, { creatorId: userId }],
-        [EventType, { userId }],
-        [MeetingBooking, { userId }],
-        [Notification, { userId }],
-        [NotificationPreference, { userId }],
-        [AiInsight, { userId }],
-        [AssistantChat, { userId }],
-        [ContentOs, { userId }],
-        [ContentFolder, { userId }],
-        [QrCode, { userId }],
-        [ScheduledContent, { userId }],
-        [PasswordResetToken, { userId }],
-        [Upload, { userId }],
-        [VaultFile, { userId }],
-    ];
+/**
+ * Every model whose documents are owned by a User, with the field that holds
+ * the owner's User _id. Adding a user-owned model without registering it here
+ * leaves that data behind after "Delete account" (public pages stay live,
+ * customer PII is orphaned) - tests/services/accountDeletionCoverage.test.js
+ * fails when a schema references User/Creator and is missing from this list.
+ */
+const USER_OWNED_MODELS = [
+    [Url, "userId"],
+    [Invite, "inviter"],
+    [Task, "creatorId"],
+    [TeamTask, "creatorId"],
+    [DmTrigger, "creatorId"],
+    [Sponsor, "creatorId"],
+    [CrmBrand, "creatorId"],
+    [CrmDeal, "creatorId"],
+    [CrmInvoice, "creatorId"],
+    [CrmMediaKit, "creatorId"],
+    [EventType, "userId"],
+    [MeetingBooking, "userId"],
+    [Notification, "userId"],
+    [NotificationPreference, "userId"],
+    [AiInsight, "userId"],
+    [AssistantChat, "userId"],
+    [ContentOs, "userId"],
+    [ContentFolder, "userId"],
+    [QrCode, "userId"],
+    [ScheduledContent, "userId"],
+    [PasswordResetToken, "userId"],
+    [Upload, "userId"],
+    [VaultFile, "userId"],
+    [BioProfile, "userId"],
+    [CreatorRateCard, "creatorId"],
+    [DigitalProduct, "creatorId"],
+    [DigitalOrder, "creatorId"],
+];
 
-    for (const [Model, filter] of userIdModels) {
-        await applySession(Model.deleteMany(filter), session);
+/**
+ * Models owned by a Creator (social account) document rather than directly by
+ * the User; they are keyed by Creator._id and removed with the Creator.
+ */
+const CREATOR_OWNED_MODELS = [AnalyticsSnapshot, EngagementHistory, Post, DmDelivery];
+
+async function deleteDirectUserData(session, userId) {
+    for (const [Model, ownerField] of USER_OWNED_MODELS) {
+        await applySession(Model.deleteMany({ [ownerField]: userId }), session);
     }
 
     await applySession(
@@ -85,9 +108,7 @@ async function deleteCreatorData(session, userId) {
         return;
     }
 
-    const creatorOwnedModels = [AnalyticsSnapshot, EngagementHistory, Post];
-
-    for (const Model of creatorOwnedModels) {
+    for (const Model of CREATOR_OWNED_MODELS) {
         await applySession(Model.deleteMany({ creatorId: { $in: creatorIds } }), session);
     }
 
@@ -211,4 +232,6 @@ async function deleteAccount(user) {
 
 module.exports = {
     deleteAccount,
+    USER_OWNED_MODELS,
+    CREATOR_OWNED_MODELS,
 };
