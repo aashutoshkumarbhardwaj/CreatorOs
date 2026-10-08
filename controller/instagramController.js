@@ -174,6 +174,126 @@ async function getInstagramProfile(req, res) {
     }
 }
 
+/**
+ * @function verifyInstagramWebhook
+ * @description Handles the Meta webhook verification handshake (GET).
+ * Meta sends hub.mode, hub.verify_token, and hub.challenge; we must echo
+ * hub.challenge back if the verify_token matches.
+ */
+function verifyInstagramWebhook(req, res) {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode === 'subscribe' && token === process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN) {
+        console.log('[Webhook] Instagram webhook verified.');
+        return res.status(200).send(challenge);
+    }
+
+    return res.status(403).json({ success: false, message: 'Webhook verification failed.' });
+}
+
+/**
+ * @function handleInstagramWebhook
+ * @description Processes incoming Instagram webhook events (POST).
+ *
+ * Handles two webhook fields:
+ *  - `comments`  → triggers comment-to-DM automation (OpenReply-style)
+ *  - `messages`  → triggers inbound DM automation (existing dmQueueService flow)
+ *
+ * Meta requires a 200 response within 20 s or it will retry.
+ */
+async function handleInstagramWebhook(req, res) {
+    // Respond immediately to Meta — processing happens asynchronously
+    res.status(200).send('EVENT_RECEIVED');
+
+    try {
+        const body = req.body;
+        if (body?.object !== 'instagram') {
+            return;
+        }
+
+        const Creator = require('../model/creator');
+        const { dmQueue } = require('../services/dmQueueService');
+        const { handleCommentTrigger } = require('../services/commentDmService');
+
+        for (const entry of body?.entry || []) {
+            const creatorIgId = entry.id;
+
+            // Resolve creator from their Instagram page ID
+            const creator = await Creator.findOne({ platform: 'instagram', platformId: creatorIgId });
+            if (!creator) {
+                console.warn(`[Webhook] No creator found for Instagram page ID ${creatorIgId}`);
+                continue;
+            }
+
+            for (const change of entry?.changes || []) {
+                const field = change.field;
+                const value = change.value || {};
+
+                if (field === 'comments') {
+                    // Comment-to-DM: dispatch comment trigger handling
+                    const commentId = value.id;
+                    const commentText = value.text || '';
+                    const commenterId = value.from?.id;
+                    const commenterUsername = value.from?.username || '';
+                    const postId = value.media?.id;
+
+                    if (!commentId || !commenterId || !postId) {
+                        console.warn('[Webhook] Incomplete comment event, skipping.', value);
+                        continue;
+                    }
+
+                    handleCommentTrigger({
+                        commentId,
+                        commentText,
+                        commenterId,
+                        commenterUsername,
+                        postId,
+                        creatorIgId,
+                        creator,
+                    }).then((result) => {
+                        if (!result.skipped) {
+                            console.log(`[Webhook] Comment DM sent: ${JSON.stringify(result)}`);
+                        }
+                    }).catch((err) => {
+                        console.error(`[Webhook] Comment DM error for comment ${commentId}:`, err.message);
+                    });
+
+                } else if (field === 'messages') {
+                    // Inbound DM: existing queue-based automation
+                    const messaging = value.messaging?.[0];
+                    if (!messaging) continue;
+
+                    const senderId = messaging.sender?.id;
+                    const recipientId = messaging.recipient?.id;
+                    const messageText = messaging.message?.text;
+
+                    if (!senderId || !recipientId) continue;
+
+                    const eventId = messaging.message?.mid || messaging.timestamp?.toString();
+
+                    await dmQueue.add('process-dm', {
+                        senderId,
+                        recipientId,
+                        message: messageText,
+                        eventId,
+                    }, {
+                        attempts: 3,
+                        backoff: { type: 'exponential', delay: 2000 },
+                        removeOnComplete: true,
+                        removeOnFail: false,
+                    });
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[Webhook] Unhandled webhook processing error:', err.message);
+    }
+}
+
 module.exports = {
     getInstagramProfile,
+    verifyInstagramWebhook,
+    handleInstagramWebhook,
 };
