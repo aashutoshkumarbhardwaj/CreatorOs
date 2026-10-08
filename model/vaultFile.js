@@ -25,6 +25,7 @@ const vaultFileSchema = new mongoose.Schema(
     size: {
       type: Number,
       required: true,
+      min: [0, 'File size cannot be negative'],
     },
     mimetype: {
       type: String,
