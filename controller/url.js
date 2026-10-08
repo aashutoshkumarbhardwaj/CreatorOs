@@ -593,7 +593,7 @@ const handleGetAnalytics = asyncHandler(async (req, res) => {
       });
   }
 
-  if (entry.userId && entry.userId?.toString() !== req.user.id) {
+  if (entry.userId && entry.userId.toString() !== req.user?.id) {
     return res
       .status(403)
       .json({
