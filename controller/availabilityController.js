@@ -1,6 +1,7 @@
 const EventType = require("../model/eventType");
 const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
+const escapeRegex = require("../utils/escapeRegex");
 const {
   parseDateParts,
   zonedDateTimeToUtc,
@@ -30,7 +31,7 @@ async function findCreatorByAliasOrName(identifier) {
   // Graceful fallback for legacy users without a nameSlug
   if (!creator) {
     creator = await User.findOne({
-      name: { $regex: new RegExp("^" + identifier.replace(/-/g, '.*') + "$", "i") },
+      name: { $regex: new RegExp("^" + escapeRegex(identifier).replace(/-/g, '.*') + "$", "i") },
       role: "creator"
     });
   }
