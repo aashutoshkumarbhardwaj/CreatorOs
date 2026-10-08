@@ -51,6 +51,14 @@ const sendMessage = asyncHandler(async (req, res) => {
   const userId = req.user?.id || req.user?._id;
   const { prompt, platform, tone, length, chatId } = req.validatedBody || req.body;
 
+  if (typeof prompt !== "string" || !prompt.trim()) {
+    return res.status(400).json({ success: false, message: "Prompt is required" });
+  }
+
+  if (chatId && !mongoose.Types.ObjectId.isValid(chatId)) {
+    return res.status(400).json({ success: false, message: "Invalid chat ID" });
+  }
+
   let chatDoc = null;
   if (chatId) {
     chatDoc = await AssistantChat.findOne({ _id: chatId, userId });
