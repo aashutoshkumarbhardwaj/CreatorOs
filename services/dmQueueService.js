@@ -7,6 +7,7 @@ const {
   markDmDeliverySent,
   releaseDmDelivery,
 } = require("./dmDeliveryService");
+const { matchDmTrigger } = require("../utils/dmTriggerMatch");
 
 const REDIS_URI = process.env.REDIS_URI || process.env.REDIS_URL;
 const { UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN } = process.env;
@@ -78,10 +79,7 @@ if (REDIS_URI) {
             creatorId: creator.userId,
             isActive: true,
           });
-          const normalizedMessage = (message || "").toLowerCase();
-          const matchedTrigger = triggers.find((t) =>
-            normalizedMessage.includes(t.keyword),
-          );
+          const matchedTrigger = matchDmTrigger(triggers, message);
 
           if (!matchedTrigger) {
             console.log(
