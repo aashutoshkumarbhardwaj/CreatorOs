@@ -327,7 +327,7 @@ const updateTask = asyncHandler(async (req, res) => {
     return res.json({ success: true, task: updated });
   }
 
-  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { $set: updates }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { $set: updates }, { new: true, runValidators: true });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
@@ -347,7 +347,7 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { status }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { status }, { new: true, runValidators: true });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
@@ -367,7 +367,7 @@ const updateSubtasks = asyncHandler(async (req, res) => {
     return res.json({ success: true, task });
   }
 
-  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { subtasks }, { new: true });
+  const taskDoc = await Task.findOneAndUpdate({ _id: taskId, creatorId }, { subtasks }, { new: true, runValidators: true });
   if (!taskDoc) return res.status(404).json({ success: false, error: "Task not found." });
   res.json({ success: true, task: taskDoc });
 });
