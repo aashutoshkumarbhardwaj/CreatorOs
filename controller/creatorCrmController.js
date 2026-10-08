@@ -5,13 +5,10 @@ const CrmDeal = require("../model/crmDeal");
 const CrmInvoice = require("../model/crmInvoice");
 const CrmMediaKit = require("../model/crmMediaKit");
 const User = require("../model/user");
+const escapeRegex = require("../utils/escapeRegex");
 
 function getUserId(req) {
   return req.user?.id || req.user?._id;
-}
-
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function seedInitialCrmData(userId) {
