@@ -294,10 +294,25 @@ const calculateSponsorshipRate = asyncHandler(async (req, res) => {
             message: 'All required fields must be provided'
         });
     }
+
+    const numFollowers = Number(followers);
+    const numAvgViews = Number(avgViews);
+    const numEngagementRate = Number(engagementRate);
+    const numDeliverables = Number(deliverables);
+    const numCampaignDuration = Number(campaignDuration);
+
+    if (!Number.isFinite(numFollowers) || !Number.isFinite(numAvgViews) ||
+        !Number.isFinite(numEngagementRate) || !Number.isFinite(numDeliverables) ||
+        !Number.isFinite(numCampaignDuration)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Numeric fields must contain valid numbers'
+        });
+    }
     
     // Validate numeric ranges
-    if (followers < 0 || avgViews < 0 || engagementRate < 0 || engagementRate > 100 ||
-        deliverables < 1 || deliverables > 50 || campaignDuration < 1 || campaignDuration > 365) {
+    if (numFollowers < 0 || numAvgViews < 0 || numEngagementRate < 0 || numEngagementRate > 100 ||
+        numDeliverables < 1 || numDeliverables > 50 || numCampaignDuration < 1 || numCampaignDuration > 365) {
         return res.status(400).json({
             success: false,
             message: 'Invalid numeric values provided'
@@ -306,14 +321,14 @@ const calculateSponsorshipRate = asyncHandler(async (req, res) => {
     
     try {
         // Calculate multipliers
-        const baseRate = calculateBaseRate(followers, niche);
-        const engagementMultiplier = calculateEngagementMultiplier(engagementRate);
-        const viewsMultiplier = calculateViewsMultiplier(avgViews);
+        const baseRate = calculateBaseRate(numFollowers, niche);
+        const engagementMultiplier = calculateEngagementMultiplier(numEngagementRate);
+        const viewsMultiplier = calculateViewsMultiplier(numAvgViews);
         const contentMultiplier = calculateContentTypeMultiplier(contentType);
         const usageMultiplier = calculateUsageRightsMultiplier(usageRights);
         const exclusivityMultiplier = calculateExclusivityMultiplier(exclusivity);
-        const durationAdjustment = calculateDurationAdjustment(campaignDuration);
-        const deliverableAdjustment = calculateDeliverableAdjustment(deliverables);
+        const durationAdjustment = calculateDurationAdjustment(numCampaignDuration);
+        const deliverableAdjustment = calculateDeliverableAdjustment(numDeliverables);
         
         // Calculate single deliverable rate
         const singleDeliverableRate = Math.round(
@@ -328,7 +343,7 @@ const calculateSponsorshipRate = asyncHandler(async (req, res) => {
         );
         
         // Calculate total rate for all deliverables
-        const totalRate = singleDeliverableRate * deliverables;
+        const totalRate = singleDeliverableRate * numDeliverables;
         
         // Calculate rate range (±15% for negotiation room)
         const minRate = Math.round(totalRate * 0.85);
