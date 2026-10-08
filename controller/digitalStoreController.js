@@ -45,6 +45,14 @@ exports.createProduct = async (req, res) => {
       });
     }
 
+    const parsedPrice = Number(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a valid non-negative number.",
+      });
+    }
+
     let baseSlug = createSlug(title) || "digital-product";
     let slug = baseSlug;
     let counter = 1;
@@ -58,7 +66,7 @@ exports.createProduct = async (req, res) => {
       slug,
       description,
       category: category || "other",
-      price: Number(price),
+      price: parsedPrice,
       currency: currency || "USD",
       fileUrl,
       fileSize: fileSize || 0,
