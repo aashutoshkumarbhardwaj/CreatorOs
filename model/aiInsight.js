@@ -11,6 +11,7 @@ const aiInsightSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       index: true,
+      immutable: true,
     },
     niche: {
       type: String,

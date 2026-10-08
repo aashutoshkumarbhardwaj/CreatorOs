@@ -6,6 +6,7 @@ const dmTriggerSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
         index: true,
+        immutable: true,
     },
     keyword: {
         type: String,
