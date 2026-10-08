@@ -7,6 +7,7 @@ const {
   localDayName,
   formatTimeInZone,
 } = require("../utils/timeZone");
+const { buildBlockingBookingQuery } = require("../utils/bookingConflicts");
 
 function slugify(text) {
   return text
@@ -92,11 +93,18 @@ exports.getAvailableSlots = async (req, res) => {
     const bufferBeforeMs = (eventType.bufferBefore || 0) * 60 * 1000;
     const bufferAfterMs = (eventType.bufferAfter || 0) * 60 * 1000;
 
-    const existingBookings = await MeetingBooking.find({
-      userId: creator._id,
-      status: "scheduled",
-      startTime: { $gte: startOfDay, $lt: startOfNextDay },
-    }).lean();
+    // Same blocking rule as createBooking (scheduled + fresh pending_sync, buffer-aware). The
+    // range is widened by the buffers so a booking that starts the previous evening or ends
+    // just after midnight still hides the slots its buffer overlaps.
+    const existingBookings = await MeetingBooking.find(
+      buildBlockingBookingQuery({
+        userId: creator._id,
+        start: startOfDay,
+        end: startOfNextDay,
+        bufferBeforeMs,
+        bufferAfterMs,
+      })
+    ).lean();
 
     const now = new Date();
     const candidateSlots = [];
