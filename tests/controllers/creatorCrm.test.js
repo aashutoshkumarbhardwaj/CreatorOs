@@ -43,6 +43,10 @@ jest.mock("../../model/crmInvoice", () => {
   };
 });
 
+jest.mock("../../utils/invoiceNumber", () => ({
+  generateInvoiceNumber: jest.fn(),
+}));
+
 jest.mock("../../model/crmMediaKit", () => {
   return {
     findOne: jest.fn(),
@@ -55,6 +59,7 @@ const CrmBrand = require("../../model/crmBrand");
 const CrmDeal = require("../../model/crmDeal");
 const CrmInvoice = require("../../model/crmInvoice");
 const CrmMediaKit = require("../../model/crmMediaKit");
+const { generateInvoiceNumber } = require("../../utils/invoiceNumber");
 const {
   getCrmData,
   createBrand,
@@ -68,6 +73,7 @@ const {
   deleteDeal,
   toggleDealTask,
   createInvoice,
+  updateInvoice,
   getInvoices,
   markInvoicePaid,
   getMediaKit,
@@ -104,9 +110,9 @@ describe("Creator CRM Controller", () => {
       CrmBrand.insertMany.mockResolvedValue([{ companyName: "Adobe Creative Cloud", _id: "507f1f77bcf86cd799439011" }]);
       CrmDeal.insertMany.mockResolvedValue([]);
       CrmInvoice.insertMany.mockResolvedValue([]);
-      CrmDeal.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([{ dealName: "Test Deal", amount: 5000 }]) });
-      CrmBrand.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([{ companyName: "Test Brand" }]) });
-      CrmInvoice.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([{ amount: 1000, status: "pending" }]) });
+      CrmDeal.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([{ dealName: "Test Deal", amount: 5000 }]) }) });
+      CrmBrand.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([{ companyName: "Test Brand" }]) }) });
+      CrmInvoice.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([{ amount: 1000, status: "pending" }]) }) });
       CrmMediaKit.findOne.mockResolvedValue({ bio: "Creator Bio" });
 
       await getCrmData(req, res);
@@ -133,9 +139,9 @@ describe("Creator CRM Controller", () => {
       req.query = { q: "a+(b)" };
       CrmDeal.countDocuments.mockResolvedValue(1);
       CrmBrand.countDocuments.mockResolvedValue(1);
-      CrmDeal.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
-      CrmBrand.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
-      CrmInvoice.find.mockReturnValue({ sort: jest.fn().mockResolvedValue([]) });
+      CrmDeal.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }) });
+      CrmBrand.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }) });
+      CrmInvoice.find.mockReturnValue({ sort: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }) });
       CrmMediaKit.findOne.mockResolvedValue(null);
 
       await getCrmData(req, res);
@@ -352,15 +358,88 @@ describe("Creator CRM Controller", () => {
   });
 
   describe("Invoices CRUD", () => {
-    it("creates an invoice", async () => {
+    it("creates an invoice with a number from the invoice number generator", async () => {
       req.body = { companyName: "Skillshare", invoiceName: "Annual Sub", amount: 12000 };
-      CrmInvoice.countDocuments.mockResolvedValue(0);
-      CrmInvoice.create.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", invoiceNumber: "INV-2026-001", ...req.body });
+      generateInvoiceNumber.mockResolvedValue("INV-2026-007");
+      CrmInvoice.create.mockResolvedValue({ _id: "507f1f77bcf86cd799439011", invoiceNumber: "INV-2026-007", ...req.body });
 
       await createInvoice(req, res);
 
-      expect(CrmInvoice.create).toHaveBeenCalledWith(expect.objectContaining({ companyName: "Skillshare", amount: 12000 }));
+      expect(generateInvoiceNumber).toHaveBeenCalledWith(userId);
+      expect(CrmInvoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({ companyName: "Skillshare", amount: 12000, invoiceNumber: "INV-2026-007" })
+      );
       expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    it("never derives the invoice number from the invoice count", async () => {
+      req.body = { companyName: "Skillshare", invoiceName: "Annual Sub", amount: 12000 };
+      generateInvoiceNumber.mockResolvedValue("INV-2026-001");
+      CrmInvoice.create.mockResolvedValue({ _id: "507f1f77bcf86cd799439011" });
+
+      await createInvoice(req, res);
+
+      expect(CrmInvoice.countDocuments).not.toHaveBeenCalled();
+    });
+
+    describe("updateInvoice invoice number", () => {
+      const invoiceId = "507f1f77bcf86cd799439011";
+      const findOneResult = (value) => ({
+        select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(value) }),
+      });
+
+      beforeEach(() => {
+        req.params = { id: invoiceId };
+      });
+
+      it("rejects a number that another invoice of the same creator already uses", async () => {
+        req.body = { invoiceNumber: "INV-2026-002" };
+        CrmInvoice.findOne.mockReturnValue(findOneResult({ _id: "507f1f77bcf86cd799439022" }));
+
+        await updateInvoice(req, res);
+
+        expect(CrmInvoice.findOne).toHaveBeenCalledWith({
+          creatorId: userId,
+          invoiceNumber: "INV-2026-002",
+          _id: { $ne: invoiceId },
+        });
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(CrmInvoice.findOneAndUpdate).not.toHaveBeenCalled();
+      });
+
+      it("rejects an empty invoice number", async () => {
+        req.body = { invoiceNumber: "   " };
+
+        await updateInvoice(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(CrmInvoice.findOneAndUpdate).not.toHaveBeenCalled();
+      });
+
+      it("saves a free invoice number, trimmed", async () => {
+        req.body = { invoiceNumber: "  INV-2026-050 " };
+        CrmInvoice.findOne.mockReturnValue(findOneResult(null));
+        CrmInvoice.findOneAndUpdate.mockResolvedValue({ _id: invoiceId, invoiceNumber: "INV-2026-050" });
+
+        await updateInvoice(req, res);
+
+        expect(CrmInvoice.findOneAndUpdate).toHaveBeenCalledWith(
+          { _id: invoiceId, creatorId: userId },
+          { $set: { invoiceNumber: "INV-2026-050" } },
+          { new: true, runValidators: true }
+        );
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: { _id: invoiceId, invoiceNumber: "INV-2026-050" } });
+      });
+
+      it("does not look for number clashes when the number is not being changed", async () => {
+        req.body = { notes: "Paid by wire" };
+        CrmInvoice.findOneAndUpdate.mockResolvedValue({ _id: invoiceId, notes: "Paid by wire" });
+
+        await updateInvoice(req, res);
+
+        expect(CrmInvoice.findOne).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ success: true, data: { _id: invoiceId, notes: "Paid by wire" } });
+      });
     });
 
     it("marks invoice as paid", async () => {
