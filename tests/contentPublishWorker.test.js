@@ -155,4 +155,32 @@ describe('Content Publish Worker', () => {
         expect(refreshed.status).toBe('failed');
         expect(refreshed.errorMessage).toContain('Publishing lease expired');
     });
+
+    it('never lets a concurrent publisher claim an exhausted stale lease (atomic reclaim)', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const exhausted = await ScheduledContent.create({
+            userId,
+            caption: 'Exhausted and racing',
+            timezone: 'UTC',
+            scheduledAt: new Date(Date.now() - 5 * 60 * 1000),
+            status: 'publishing',
+            publishedBy: 'dead-worker',
+            publishingStartedAt: new Date(Date.now() - PUBLISH_LEASE_MS - 60 * 1000),
+            publishAttempts: MAX_PUBLISH_ATTEMPTS,
+        });
+
+        // Run the reclaimer and several publishers at the same time.
+        await Promise.all([
+            reclaimStalePublishingLeases(),
+            publishDueContent(),
+            publishDueContent(),
+            publishDueContent(),
+        ]);
+
+        const refreshed = await ScheduledContent.findById(exhausted._id);
+        expect(refreshed.status).toBe('failed');
+        expect(refreshed.publishAttempts).toBe(MAX_PUBLISH_ATTEMPTS);
+        expect(refreshed.platformPostId).toBeNull();
+        expect(refreshed.errorMessage).toContain('Publishing lease expired');
+    });
 });

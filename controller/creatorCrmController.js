@@ -5,6 +5,7 @@ const CrmDeal = require("../model/crmDeal");
 const CrmInvoice = require("../model/crmInvoice");
 const CrmMediaKit = require("../model/crmMediaKit");
 const User = require("../model/user");
+const { generateInvoiceNumber } = require("../utils/invoiceNumber");
 
 function getUserId(req) {
   return req.user?.id || req.user?._id;
@@ -504,8 +505,9 @@ const createInvoice = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Company name, invoice name, and amount are required" });
   }
 
-  const count = await CrmInvoice.countDocuments({ creatorId: userId });
-  const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(3, "0")}`;
+  // Never derive the number from the invoice count: it collides after any delete and
+  // under concurrent requests. See utils/invoiceNumber.js.
+  const invoiceNumber = await generateInvoiceNumber(userId);
 
   const invoice = await CrmInvoice.create({
     creatorId: userId,
@@ -531,6 +533,26 @@ const updateInvoice = asyncHandler(async (req, res) => {
       updateData[field] = req.body[field];
     }
   });
+
+  if (updateData.invoiceNumber !== undefined) {
+    const invoiceNumber = String(updateData.invoiceNumber).trim();
+    if (!invoiceNumber) {
+      return res.status(400).json({ success: false, message: "Invoice number cannot be empty" });
+    }
+    updateData.invoiceNumber = invoiceNumber;
+
+    const clash = await CrmInvoice.findOne({
+      creatorId: userId,
+      invoiceNumber,
+      _id: { $ne: req.params.id },
+    })
+      .select("_id")
+      .lean();
+
+    if (clash) {
+      return res.status(409).json({ success: false, message: "Invoice number is already in use" });
+    }
+  }
 
   const invoice = await CrmInvoice.findOneAndUpdate(
     { _id: req.params.id, creatorId: userId },
