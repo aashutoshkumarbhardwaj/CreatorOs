@@ -135,6 +135,126 @@ async function isDuplicateNotification(userId, deduplicationKey, category, windo
 }
 
 /**
+ * Maximum number of attempts to claim a deduplication key before giving up.
+ * Each retry only happens after an expired holder of the key has been retired,
+ * so more than a couple of rounds means we are racing other writers.
+ */
+const DEDUP_CLAIM_MAX_ATTEMPTS = 3;
+
+/**
+ * How long a notification may stay in the transient "sending" state before it
+ * is considered abandoned (crashed worker / request) and is handed back to the
+ * scheduler.
+ */
+const STALE_SENDING_LEASE_MS = 5 * 60 * 1000;
+
+/**
+ * @param {Error} err
+ * @returns {Boolean} true when the error is a MongoDB duplicate-key violation.
+ */
+function isDuplicateKeyError(err) {
+    return Boolean(
+        err &&
+            (err.code === 11000 ||
+                (typeof err.message === "string" && err.message.includes("E11000")))
+    );
+}
+
+/**
+ * Build a "suppressed" notification record.
+ *
+ * Suppressed records are an audit trail only. They must NEVER carry the
+ * `deduplicationKey` field: the (userId, deduplicationKey) unique index is the
+ * lock that guarantees one live notification per key, and a suppressed row
+ * holding the key would either violate that index or block the real
+ * notification from ever being created.
+ */
+function createSuppressedNotification(userId, base, reason, deliveryLogs, extraMetadata = {}) {
+    const { deduplicationKey, metadata = {}, ...rest } = base;
+    return Notification.create({
+        userId,
+        ...rest,
+        channels: [],
+        status: "suppressed",
+        metadata: {
+            ...metadata,
+            ...(deduplicationKey ? { deduplicationKey } : {}),
+            suppressionReason: reason,
+            ...extraMetadata,
+        },
+        deliveryLogs,
+    });
+}
+
+/**
+ * Atomically create a notification while claiming its deduplication key.
+ *
+ * The unique (userId, deduplicationKey) index is used as the claim, so two
+ * concurrent senders can never both pass a "find then create" check. When the
+ * key is already held:
+ *   - by a notification created inside the deduplication window -> duplicate;
+ *   - by one older than the window -> its key is retired (moved into
+ *     metadata) and the claim is retried, so a key can be reused once the
+ *     window has elapsed instead of failing with E11000 forever.
+ *
+ * @param {String|ObjectId} userId
+ * @param {Object} doc - Notification fields (may include `deduplicationKey`).
+ * @param {Object} options
+ * @param {Boolean} options.enabled - Whether deduplication is active for the user.
+ * @param {Number} options.windowMinutes - Deduplication window.
+ * @returns {Promise<{notification: Document|null, duplicateOf: ObjectId|null}>}
+ */
+async function createNotificationClaimingKey(userId, doc, { enabled, windowMinutes }) {
+    const { deduplicationKey, ...rest } = doc;
+
+    // No key, or deduplication turned off: nothing to claim. The key (if any)
+    // is kept in metadata only so it never collides on the unique index.
+    if (!deduplicationKey || !enabled) {
+        const metadata = deduplicationKey
+            ? { ...(rest.metadata || {}), deduplicationKey }
+            : rest.metadata;
+        return {
+            notification: await Notification.create({ userId, ...rest, metadata }),
+            duplicateOf: null,
+        };
+    }
+
+    let lastError;
+    for (let attempt = 0; attempt < DEDUP_CLAIM_MAX_ATTEMPTS; attempt++) {
+        try {
+            const notification = await Notification.create({ userId, ...rest, deduplicationKey });
+            return { notification, duplicateOf: null };
+        } catch (err) {
+            if (!isDuplicateKeyError(err)) throw err;
+            lastError = err;
+        }
+
+        const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000);
+        const holder = await Notification.findOne({ userId, deduplicationKey })
+            .select("_id createdAt")
+            .lean();
+
+        if (!holder) continue; // Holder was deleted in the meantime: retry the claim.
+
+        if (holder.createdAt >= windowStart) {
+            return { notification: null, duplicateOf: holder._id };
+        }
+
+        // Holder is outside the window: retire its key (conditionally, so a
+        // concurrent retire/claim cannot be undone) and retry.
+        await Notification.updateOne(
+            { _id: holder._id, deduplicationKey, createdAt: { $lt: windowStart } },
+            {
+                $unset: { deduplicationKey: "" },
+                $set: { "metadata.retiredDeduplicationKey": deduplicationKey },
+            }
+        );
+    }
+
+    throw lastError;
+}
+
+/**
  * Send or schedule a smart notification.
  * @param {String|ObjectId} userId
  * @param {Object} payload
@@ -153,63 +273,20 @@ async function sendNotification(userId, payload) {
     } = payload;
 
     const prefs = await getOrCreatePreferences(userId);
+    const base = { title, message, category, priority, deduplicationKey, metadata };
 
     // 1. Category preference check
     if (prefs.categories && !prefs.categories[category]) {
-        return Notification.create({
-            userId,
-            title,
-            message,
-            category,
-            priority,
-            channels: [],
-            status: "suppressed",
-            deduplicationKey,
-            metadata: { ...metadata, suppressionReason: "category_disabled" },
-            deliveryLogs: [
-                {
-                    channel: "in_app",
-                    status: "skipped",
-                    error: `Category '${category}' is disabled in user preferences`,
-                },
-            ],
-        });
+        return createSuppressedNotification(userId, base, "category_disabled", [
+            {
+                channel: "in_app",
+                status: "skipped",
+                error: `Category '${category}' is disabled in user preferences`,
+            },
+        ]);
     }
 
-    // 2. Deduplication check
-    const dedupEnabled = prefs.deduplication?.enabled ?? true;
-    const windowMinutes = prefs.deduplication?.windowMinutes ?? 15;
-    if (dedupEnabled && deduplicationKey) {
-        const isDup = await isDuplicateNotification(
-            userId,
-            deduplicationKey,
-            category,
-            windowMinutes
-        );
-
-        if (isDup) {
-            return Notification.create({
-                userId,
-                title,
-                message,
-                category,
-                priority,
-                channels: [],
-                status: "suppressed",
-                deduplicationKey,
-                metadata: { ...metadata, suppressionReason: "duplicate_suppressed" },
-                deliveryLogs: [
-                    {
-                        channel: "in_app",
-                        status: "skipped",
-                        error: "Duplicate notification suppressed by deduplication filter",
-                    },
-                ],
-            });
-        }
-    }
-
-    // 3. Determine active channels based on preferences
+    // 2. Determine active channels based on preferences
     const targetChannels =
         requestedChannels && requestedChannels.length > 0
             ? requestedChannels
@@ -231,21 +308,10 @@ async function sendNotification(userId, payload) {
     }
 
     if (activeChannels.length === 0) {
-        return Notification.create({
-            userId,
-            title,
-            message,
-            category,
-            priority,
-            channels: [],
-            status: "suppressed",
-            deduplicationKey,
-            metadata: { ...metadata, suppressionReason: "no_enabled_channels" },
-            deliveryLogs: [],
-        });
+        return createSuppressedNotification(userId, base, "no_enabled_channels", []);
     }
 
-    // 4. Determine whether the notification is explicitly scheduled or deferred by quiet hours.
+    // 3. Determine whether the notification is explicitly scheduled or deferred by quiet hours.
     const now = new Date();
     let finalStatus = "sent";
     let targetScheduledFor = scheduledFor ? new Date(scheduledFor) : now;
@@ -269,40 +335,87 @@ async function sendNotification(userId, payload) {
         schedulingReason = "quiet_hours";
     }
 
-    const deliveryLogs = [];
+    // 4. Claim the deduplication key and persist the notification in ONE atomic
+    //    write, BEFORE any delivery side effect. Immediate sends are stored as
+    //    "sending" (a lease the scheduler can reclaim if we crash) and promoted
+    //    to "sent" once delivery has finished.
+    const dedupEnabled = prefs.deduplication?.enabled ?? true;
+    const windowMinutes = prefs.deduplication?.windowMinutes ?? 15;
 
-    // 5. Channel delivery handling
-    if (finalStatus === "sent") {
-        deliveryLogs.push(
-            ...(await deliverToChannels(userId, activeChannels, title, message))
-        );
-    } else {
-        deliveryLogs.push({
+    const deferredLogs = [
+        {
             channel: "in_app",
             status: "delayed",
             error:
                 schedulingReason === "scheduled_for_future"
                     ? "Deferred until scheduledFor"
                     : "Deferred due to active Quiet Hours",
-        });
+        },
+    ];
+
+    const { notification, duplicateOf } = await createNotificationClaimingKey(
+        userId,
+        {
+            title,
+            message,
+            category,
+            priority,
+            channels: activeChannels,
+            status: finalStatus === "sent" ? "sending" : "scheduled",
+            scheduledFor: targetScheduledFor,
+            sentAt: null,
+            deduplicationKey,
+            metadata,
+            deliveryLogs: finalStatus === "sent" ? [] : deferredLogs,
+        },
+        { enabled: dedupEnabled, windowMinutes }
+    );
+
+    if (!notification) {
+        return createSuppressedNotification(
+            userId,
+            base,
+            "duplicate_suppressed",
+            [
+                {
+                    channel: "in_app",
+                    status: "skipped",
+                    error: "Duplicate notification suppressed by deduplication filter",
+                },
+            ],
+            { duplicateOf }
+        );
     }
 
-    const notification = await Notification.create({
-        userId,
-        title,
-        message,
-        category,
-        priority,
-        channels: activeChannels,
-        status: finalStatus,
-        scheduledFor: targetScheduledFor,
-        sentAt: finalStatus === "sent" ? now : null,
-        deduplicationKey,
-        metadata,
-        deliveryLogs,
-    });
+    if (finalStatus !== "sent") {
+        return notification;
+    }
 
-    return notification;
+    // 5. Channel delivery handling (we exclusively own this notification now).
+    let deliveryLogs;
+    let finishedStatus = "sent";
+    try {
+        deliveryLogs = await deliverToChannels(userId, activeChannels, title, message);
+    } catch (err) {
+        finishedStatus = "failed";
+        deliveryLogs = [{ channel: "in_app", status: "failed", error: err.message }];
+    }
+
+    const finished = await Notification.findOneAndUpdate(
+        { _id: notification._id, status: "sending" },
+        {
+            $set: {
+                status: finishedStatus,
+                sentAt: finishedStatus === "sent" ? new Date() : null,
+            },
+            $push: { deliveryLogs: { $each: deliveryLogs } },
+        },
+        { new: true }
+    );
+
+    // If the lease was reclaimed while we were delivering, return whatever the
+    // scheduler has made of it rather than clobbering it.
+    return finished || Notification.findById(notification._id);
 }
 
 /**
@@ -582,8 +695,36 @@ async function getNotificationAnalytics(userId) {
 }
 
 /**
+ * Hand notifications that have been stuck in the transient "sending" state for
+ * longer than the lease back to the scheduler. A worker (or request) that
+ * crashed after claiming a notification would otherwise leave it in "sending"
+ * forever, since only "scheduled" rows are ever picked up.
+ * @param {Date} [now=new Date()]
+ * @param {Number} [leaseMs=STALE_SENDING_LEASE_MS]
+ * @returns {Promise<Number>} number of notifications reclaimed
+ */
+async function reclaimStaleSendingNotifications(now = new Date(), leaseMs = STALE_SENDING_LEASE_MS) {
+    const result = await Notification.updateMany(
+        { status: "sending", updatedAt: { $lt: new Date(now.getTime() - leaseMs) } },
+        {
+            $set: { status: "scheduled" },
+            $push: {
+                deliveryLogs: {
+                    channel: "in_app",
+                    status: "delayed",
+                    error: "Reclaimed after a stale 'sending' lease expired",
+                },
+            },
+        }
+    );
+    return result?.modifiedCount ?? 0;
+}
+
+/**
  * Process due scheduled notifications. Claims each notification before delivery
- * so concurrent workers cannot send the same notification simultaneously.
+ * so concurrent workers cannot send the same notification simultaneously, and
+ * fences the final write to the claim so a worker whose lease was reclaimed
+ * cannot overwrite the result of the worker that took over.
  * @returns {Promise<Object>}
  */
 async function processDueScheduledNotifications() {
@@ -591,6 +732,8 @@ async function processDueScheduledNotifications() {
     let processed = 0;
     let sent = 0;
     let failed = 0;
+
+    const reclaimed = await reclaimStaleSendingNotifications(now);
 
     while (true) {
         const notification = await Notification.findOneAndUpdate(
@@ -610,6 +753,9 @@ async function processDueScheduledNotifications() {
         if (!notification) break;
         processed++;
 
+        // Fencing token: any reclaim + re-claim changes updatedAt.
+        const claim = { _id: notification._id, status: "sending", updatedAt: notification.updatedAt };
+
         try {
             const logs = await deliverToChannels(
                 notification.userId,
@@ -617,24 +763,31 @@ async function processDueScheduledNotifications() {
                 notification.title,
                 notification.message
             );
-            notification.deliveryLogs.push(...logs);
-            notification.status = "sent";
-            notification.sentAt = new Date();
-            await notification.save();
-            sent++;
+            const done = await Notification.findOneAndUpdate(
+                claim,
+                {
+                    $set: { status: "sent", sentAt: new Date() },
+                    $push: { deliveryLogs: { $each: logs } },
+                },
+                { new: true }
+            );
+            if (done) sent++;
         } catch (err) {
-            notification.status = "failed";
-            notification.deliveryLogs.push({
-                channel: "in_app",
-                status: "failed",
-                error: err.message,
-            });
-            await notification.save();
-            failed++;
+            const done = await Notification.findOneAndUpdate(
+                claim,
+                {
+                    $set: { status: "failed" },
+                    $push: {
+                        deliveryLogs: { channel: "in_app", status: "failed", error: err.message },
+                    },
+                },
+                { new: true }
+            );
+            if (done) failed++;
         }
     }
 
-    return { processed, sent, failed };
+    return { processed, sent, failed, reclaimed };
 }
 
 module.exports = {
@@ -653,4 +806,5 @@ module.exports = {
     deleteNotification,
     getNotificationAnalytics,
     processDueScheduledNotifications,
+    reclaimStaleSendingNotifications,
 };

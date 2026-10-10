@@ -1,5 +1,15 @@
 const { DigitalProduct, DigitalOrder } = require("../model/digitalProduct");
 const crypto = require("crypto");
+const {
+  reserveCouponRedemption,
+  releaseCouponRedemption,
+  recordSale,
+  reverseSaleRevenue,
+  evaluateDownloadAccess,
+  consumeDownload,
+  claimRefund,
+  mergeCouponsPreservingUsage,
+} = require("../services/digitalStoreService");
 
 /**
  * Helper to slugify product titles safely
@@ -216,9 +226,15 @@ exports.updateProduct = async (req, res) => {
     ];
 
     allowedUpdates.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        product[field] = req.body[field];
+      if (req.body[field] === undefined) return;
+
+      if (field === "coupons") {
+        // timesUsed is server-owned; editing a product must not reset redemption counts.
+        product.coupons = mergeCouponsPreservingUsage(product.coupons, req.body.coupons);
+        return;
       }
+
+      product[field] = req.body[field];
     });
 
     if (req.body.title && req.body.title !== product.title) {
@@ -291,6 +307,17 @@ exports.createCheckoutOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: couponResult.error });
     }
 
+    // Reserve the coupon redemption atomically: the usage limit is enforced by the database,
+    // so concurrent checkouts cannot all pass the same stale in-memory check.
+    let reservedCoupon = null;
+    if (couponResult.coupon) {
+      const reserved = await reserveCouponRedemption(product._id, couponResult.coupon);
+      if (!reserved) {
+        return res.status(400).json({ success: false, message: "Coupon usage limit reached" });
+      }
+      reservedCoupon = couponResult.coupon;
+    }
+
     const downloadToken = product.generateDownloadToken();
     const paymentId = `pay_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
@@ -309,15 +336,24 @@ exports.createCheckoutOrder = async (req, res) => {
       downloadTokens: [downloadToken],
     });
 
-    await order.save();
-
-    // Update product stats
-    product.totalSales += 1;
-    product.totalRevenue += couponResult.finalPrice;
-    if (couponResult.coupon) {
-      couponResult.coupon.timesUsed += 1;
+    try {
+      await order.save();
+    } catch (orderError) {
+      // The order was never created, so give the reserved redemption back.
+      if (reservedCoupon) {
+        await releaseCouponRedemption(product._id, reservedCoupon).catch((releaseError) =>
+          console.error("Failed to release coupon redemption:", releaseError)
+        );
+      }
+      throw orderError;
     }
-    await product.save();
+
+    // Update product stats with atomic increments instead of overwriting read-modify-write values.
+    try {
+      await recordSale(product._id, couponResult.finalPrice);
+    } catch (statsError) {
+      console.error("Order saved but product stats update failed:", statsError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -350,35 +386,9 @@ exports.validateAndConsumeDownload = async (req, res) => {
     }
 
     const order = await DigitalOrder.findOne({ "downloadTokens.token": token });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Download token not found" });
-    }
-
-    if (order.orderStatus === "refunded") {
-      return res.status(403).json({
-        success: false,
-        message: "Order has been refunded. Download access revoked.",
-      });
-    }
-
-    const tokenRecord = order.downloadTokens.find((t) => t.token === token);
-    if (!tokenRecord) {
-      return res.status(404).json({ success: false, message: "Invalid download token" });
-    }
-
-    if (tokenRecord.revoked) {
-      return res.status(403).json({ success: false, message: "Download token has been revoked" });
-    }
-
-    if (new Date() > new Date(tokenRecord.expiresAt)) {
-      return res.status(410).json({ success: false, message: "Download link has expired" });
-    }
-
-    if (tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
-      return res.status(429).json({
-        success: false,
-        message: "Maximum download limit reached for this token",
-      });
+    const denial = evaluateDownloadAccess(order, token);
+    if (denial) {
+      return res.status(denial.status).json({ success: false, message: denial.message });
     }
 
     const product = await DigitalProduct.findById(order.productId);
@@ -386,8 +396,23 @@ exports.validateAndConsumeDownload = async (req, res) => {
       return res.status(404).json({ success: false, message: "Associated product file missing" });
     }
 
-    tokenRecord.downloadCount += 1;
-    await order.save();
+    // Consume one download atomically. The limit, revocation, expiry and refund state are
+    // re-checked by the database, so parallel requests cannot exceed maxDownloads or keep
+    // downloading after a refund.
+    const preCheckRecord = order.downloadTokens.find((t) => t.token === token);
+    const consumedOrder = await consumeDownload(order._id, preCheckRecord);
+    if (!consumedOrder) {
+      const freshOrder = await DigitalOrder.findById(order._id);
+      const freshDenial = evaluateDownloadAccess(freshOrder, token);
+      return res
+        .status(freshDenial ? freshDenial.status : 409)
+        .json({
+          success: false,
+          message: freshDenial ? freshDenial.message : "Download state changed, please retry",
+        });
+    }
+
+    const tokenRecord = consumedOrder.downloadTokens.find((t) => t.token === token);
 
     return res.status(200).json({
       success: true,
@@ -413,28 +438,17 @@ exports.refundOrder = async (req, res) => {
     const creatorId = req.user && req.user._id ? req.user._id : req.user;
     const { orderId } = req.params;
 
-    const order = await DigitalOrder.findOne({ _id: orderId, creatorId });
+    // Only one concurrent refund can win this claim, so revenue is reversed exactly once.
+    const order = await claimRefund(orderId, creatorId);
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
-    }
-
-    if (order.orderStatus === "refunded") {
+      const existing = await DigitalOrder.findOne({ _id: orderId, creatorId });
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+      }
       return res.status(400).json({ success: false, message: "Order already refunded" });
     }
 
-    order.orderStatus = "refunded";
-    order.downloadTokens.forEach((t) => {
-      t.revoked = true;
-    });
-
-    await order.save();
-
-    // Adjust product revenue
-    const product = await DigitalProduct.findById(order.productId);
-    if (product) {
-      product.totalRevenue = Math.max(0, product.totalRevenue - order.amountPaid);
-      await product.save();
-    }
+    await reverseSaleRevenue(order.productId, order.amountPaid);
 
     return res.status(200).json({
       success: true,
