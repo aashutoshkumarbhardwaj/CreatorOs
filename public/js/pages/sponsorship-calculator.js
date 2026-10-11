@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('sponsorship-calculator-form');
     const resultsPanel = document.getElementById('results-panel');
     const emptyState = document.getElementById('empty-state');
+
+    const resetButton = document.getElementById("reset-calculator-btn");
+    const exportButton = document.getElementById("export-results-btn");
+    const addToCrmButton = document.getElementById("add-to-crm-btn");
+
+    resetButton.addEventListener("click", resetCalculator);
+    exportButton.addEventListener("click", exportResults);
+    addToCrmButton.addEventListener("click", addToCrm);
     
     // Form submission handler
     form.addEventListener('submit', async function(e) {
