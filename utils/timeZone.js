@@ -66,6 +66,32 @@ function zonedDateTimeToUtc(dateString, timeString, timeZone) {
   let result = new Date(utcGuess.getTime() - getOffsetMs(utcGuess, timeZone));
   const correctedOffset = getOffsetMs(result, timeZone);
   result = new Date(utcGuess.getTime() - correctedOffset);
+
+  const localParts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(result)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)])
+  );
+
+  if (
+    localParts.year !== dateParts.year ||
+    localParts.month !== dateParts.month ||
+    localParts.day !== dateParts.day ||
+    localParts.hour !== timeParts.hour ||
+    localParts.minute !== timeParts.minute
+  ) {
+    return null;
+  }
+
   return result;
 }
 

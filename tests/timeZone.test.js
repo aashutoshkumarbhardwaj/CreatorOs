@@ -29,6 +29,16 @@ describe("meeting availability timezone helpers", () => {
     expect(winter.toISOString()).toBe("2026-01-01T14:00:00.000Z");
   });
 
+  test("rejects nonexistent local times in a spring DST gap", () => {
+    const beforeGap = zonedDateTimeToUtc("2027-03-14", "01:30", "America/New_York");
+    const gap = zonedDateTimeToUtc("2027-03-14", "02:30", "America/New_York");
+    const afterGap = zonedDateTimeToUtc("2027-03-14", "03:30", "America/New_York");
+
+    expect(beforeGap.toISOString()).toBe("2027-03-14T06:30:00.000Z");
+    expect(gap).toBeNull();
+    expect(afterGap.toISOString()).toBe("2027-03-14T07:30:00.000Z");
+  });
+
   test("derives weekday from the requested local calendar date", () => {
     expect(localDayName("2026-09-14")).toBe("mon");
     expect(localDayName("2026-09-13")).toBe("sun");
