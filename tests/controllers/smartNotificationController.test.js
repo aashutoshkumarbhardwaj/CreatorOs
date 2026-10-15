@@ -113,6 +113,63 @@ describe("smartNotificationController & API Integration", () => {
             expect(getRes.body.notifications.length).toBe(1);
             expect(getRes.body.unreadCount).toBe(1);
         });
+
+        it("should filter notifications by status=unread", async () => {
+            await Notification.create({
+                userId: testUser._id,
+                title: "Unread Item",
+                message: "This is unread",
+                status: "sent",
+            });
+            await Notification.create({
+                userId: testUser._id,
+                title: "Read Item",
+                message: "This is read",
+                status: "read",
+                readAt: new Date(),
+            });
+
+            const res = await request(app)
+                .get("/api/notifications?status=unread")
+                .set("Cookie", [`token=${authToken}`]);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.notifications.length).toBe(1);
+            expect(res.body.notifications[0].title).toBe("Unread Item");
+            expect(res.body.unreadCount).toBe(1);
+        });
+    });
+
+    describe("GET /api/notifications/unread-count", () => {
+        it("should return the unread notifications count for the user", async () => {
+            await Notification.create({
+                userId: testUser._id,
+                title: "Unread 1",
+                message: "Message 1",
+                status: "sent",
+            });
+            await Notification.create({
+                userId: testUser._id,
+                title: "Unread 2",
+                message: "Message 2",
+                status: "sent",
+            });
+            await Notification.create({
+                userId: testUser._id,
+                title: "Already Read",
+                message: "Message 3",
+                status: "read",
+                readAt: new Date(),
+            });
+
+            const res = await request(app)
+                .get("/api/notifications/unread-count")
+                .set("Cookie", [`token=${authToken}`]);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.count).toBe(2);
+        });
     });
 
     describe("POST /api/notifications/test", () => {

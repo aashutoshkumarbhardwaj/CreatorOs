@@ -2,6 +2,7 @@ const NotificationPreference = require("../model/notificationPreference");
 const Notification = require("../model/notification");
 const User = require("../model/user");
 const { isEmailTransportConfigured, createTransporter } = require("../utils/email");
+const escapeRegex = require("../utils/escapeRegex");
 
 /**
  * Get or create default notification preferences for a user.
@@ -372,28 +373,71 @@ async function deliverToChannels(userId, channels, title, message) {
 }
 
 /**
+ * Get count of unread notifications for a user.
+ * @param {String|ObjectId} userId
+ * @returns {Promise<Number>}
+ */
+async function getUnreadCount(userId) {
+    return Notification.countDocuments({
+        userId,
+        readAt: null,
+        status: { $in: ["sent", "delivered", "pending"] },
+    });
+}
+
+/**
  * Get notification history for a user.
  * @param {String|ObjectId} userId
  * @param {Object} filters
  * @returns {Promise<Object>}
  */
 async function getNotificationHistory(userId, filters = {}) {
-    const { page = 1, limit = 20, category, status } = filters;
+    const { page = 1, limit = 20, category, channel, status, search } = filters;
     const query = { userId };
-    if (category) query.category = category;
-    if (status) query.status = status;
 
-    const skip = (page - 1) * limit;
-    const [notifications, total] = await Promise.all([
-        Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    if (category && category !== "all") {
+        query.category = category;
+    }
+    if (channel && channel !== "all") {
+        query.channels = channel;
+    }
+    if (status && status !== "all") {
+        if (status === "unread") {
+            query.readAt = null;
+            query.status = { $in: ["sent", "delivered", "pending"] };
+        } else if (status === "read") {
+            query.readAt = { $ne: null };
+        } else if (status === "archived") {
+            query.status = "archived";
+        } else {
+            query.status = status;
+        }
+    }
+
+    if (search && typeof search === "string" && search.trim()) {
+        const escaped = escapeRegex(search.trim());
+        query.$or = [
+            { title: { $regex: escaped, $options: "i" } },
+            { message: { $regex: escaped, $options: "i" } },
+        ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 20);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [notifications, total, unreadCount] = await Promise.all([
+        Notification.find(query).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
         Notification.countDocuments(query),
+        getUnreadCount(userId),
     ]);
 
     return {
         notifications,
         total,
-        page,
-        pages: Math.ceil(total / limit),
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        unreadCount,
     };
 }
 
@@ -646,6 +690,7 @@ module.exports = {
     sendNotification,
     deliverToChannels,
     getNotificationHistory,
+    getUnreadCount,
     markAsRead,
     markAllAsRead,
     trackEngagement,
