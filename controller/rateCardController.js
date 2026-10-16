@@ -6,7 +6,8 @@ function createSlug(title) {
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-");
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -27,14 +28,15 @@ exports.createRateCard = async (req, res) => {
       notes,
     } = req.body;
 
-    if (!title || !deliverables || deliverables.length === 0) {
+    if (!title || typeof title !== "string" || !title.trim() || !deliverables || deliverables.length === 0) {
       return res.status(400).json({
         success: false,
         message: "title and at least one deliverable are required",
       });
     }
 
-    let baseSlug = createSlug(title) || "rate-card";
+    const trimmedTitle = title.trim();
+    let baseSlug = createSlug(trimmedTitle) || "rate-card";
     let slug = baseSlug;
     let counter = 1;
     while (await CreatorRateCard.findOne({ creatorId, slug })) {
@@ -43,7 +45,7 @@ exports.createRateCard = async (req, res) => {
 
     const card = new CreatorRateCard({
       creatorId,
-      title,
+      title: trimmedTitle,
       slug,
       niche: niche || "tech",
       currency: currency || "USD",
@@ -143,8 +145,27 @@ exports.updateRateCard = async (req, res) => {
       return res.status(404).json({ success: false, message: "Rate card not found" });
     }
 
+    if (req.body.title !== undefined) {
+      if (typeof req.body.title !== "string" || !req.body.title.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Title cannot be empty",
+        });
+      }
+      const newTitle = req.body.title.trim();
+      if (newTitle !== card.title) {
+        card.title = newTitle;
+        let baseSlug = createSlug(newTitle) || "rate-card";
+        let slug = baseSlug;
+        let counter = 1;
+        while (await CreatorRateCard.findOne({ creatorId, slug, _id: { $ne: card._id } })) {
+          slug = `${baseSlug}-${counter++}`;
+        }
+        card.slug = slug;
+      }
+    }
+
     const fields = [
-      "title",
       "niche",
       "currency",
       "deliverables",
@@ -160,10 +181,6 @@ exports.updateRateCard = async (req, res) => {
         card[f] = req.body[f];
       }
     });
-
-    if (req.body.title && req.body.title !== card.title) {
-      card.slug = createSlug(req.body.title);
-    }
 
     await card.save();
 
