@@ -75,6 +75,7 @@ const crmDealSchema = new mongoose.Schema(
     contactEmail: {
       type: String,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
     stage: {
       type: String,
