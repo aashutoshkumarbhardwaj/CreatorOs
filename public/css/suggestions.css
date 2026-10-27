@@ -819,3 +819,134 @@
   .suggestions-page .platform-grid { grid-template-columns: repeat(2, 1fr); }
   .suggestions-page .tone-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── AI Caption & Hashtag Studio: Dark Mode ── */
+
+[data-theme="dark"] .suggestions-page {
+  color: #f5f1ea;
+}
+
+[data-theme="dark"] .suggestions-page .breadcrumb,
+[data-theme="dark"] .suggestions-page .page-head,
+[data-theme="dark"] .suggestions-page .col-input,
+[data-theme="dark"] .suggestions-page .col-output,
+[data-theme="dark"] .suggestions-page .col-right,
+[data-theme="dark"] .suggestions-page .right-panel,
+[data-theme="dark"] .suggestions-page .output-header,
+[data-theme="dark"] .suggestions-page .caption-card,
+[data-theme="dark"] .suggestions-page .usage-box,
+[data-theme="dark"] .suggestions-page .history-item,
+[data-theme="dark"] .suggestions-page .audio-row,
+[data-theme="dark"] .suggestions-page .status-banner {
+  background: #1e1e1e;
+  color: #f5f1ea;
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .field-textarea,
+[data-theme="dark"] .suggestions-page .field-select,
+[data-theme="dark"] .suggestions-page .platform-chip,
+[data-theme="dark"] .suggestions-page .tone-chip,
+[data-theme="dark"] .suggestions-page .length-btn,
+[data-theme="dark"] .suggestions-page .output-action-btn,
+[data-theme="dark"] .suggestions-page .caption-btn,
+[data-theme="dark"] .suggestions-page .hashtag-chip,
+[data-theme="dark"] .suggestions-page .emoji-chip {
+  background: #292929;
+  color: #f5f1ea;
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .field-textarea,
+[data-theme="dark"] .suggestions-page .field-select {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .suggestions-page .page-title,
+[data-theme="dark"] .suggestions-page .output-title,
+[data-theme="dark"] .suggestions-page .caption-text,
+[data-theme="dark"] .suggestions-page .empty-title,
+[data-theme="dark"] .suggestions-page .history-item-topic,
+[data-theme="dark"] .suggestions-page .audio-name,
+[data-theme="dark"] .suggestions-page .usage-pct,
+[data-theme="dark"] .suggestions-page .field-label,
+[data-theme="dark"] .suggestions-page .breadcrumb-page,
+[data-theme="dark"] .suggestions-page .status-banner-copy strong {
+  color: #f5f1ea;
+}
+
+[data-theme="dark"] .suggestions-page .page-sub,
+[data-theme="dark"] .suggestions-page .breadcrumb-sep,
+[data-theme="dark"] .suggestions-page .char-count,
+[data-theme="dark"] .suggestions-page .usage-label,
+[data-theme="dark"] .suggestions-page .usage-sub,
+[data-theme="dark"] .suggestions-page .caption-meta-stats,
+[data-theme="dark"] .suggestions-page .empty-state,
+[data-theme="dark"] .suggestions-page .empty-sub,
+[data-theme="dark"] .suggestions-page .history-item-top,
+[data-theme="dark"] .suggestions-page .audio-sub,
+[data-theme="dark"] .suggestions-page .status-banner-copy span,
+[data-theme="dark"] .suggestions-page .panel-empty {
+  color: #b8b8b8;
+}
+
+[data-theme="dark"] .suggestions-page .field-textarea::placeholder {
+  color: #aaa;
+}
+
+[data-theme="dark"] .suggestions-page .platform-chip:hover,
+[data-theme="dark"] .suggestions-page .tone-chip:hover,
+[data-theme="dark"] .suggestions-page .caption-tag,
+[data-theme="dark"] .suggestions-page .keyword-chip,
+[data-theme="dark"] .suggestions-page .cta-card,
+[data-theme="dark"] .suggestions-page .history-item:hover,
+[data-theme="dark"] .suggestions-page .audio-row:hover {
+  background: #383838;
+  color: #f5f1ea;
+}
+
+[data-theme="dark"] .suggestions-page .caption-tag {
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .caption-btn.secondary {
+  background: #292929;
+  color: #c7d2fe;
+}
+
+[data-theme="dark"] .suggestions-page .keyword-chip {
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .usage-bar-bg {
+  background: #383838;
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .mobile-nav {
+  background: #1e1e1e;
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .mobile-nav-item {
+  color: #b8b8b8;
+}
+
+[data-theme="dark"] .suggestions-page .mobile-nav-item.active {
+  background: var(--warning-500, #f59e0b);
+  color: #000;
+  border-color: #777;
+}
+
+[data-theme="dark"] .suggestions-page .status-banner.error {
+  background: #3a2020;
+}
+
+[data-theme="dark"] .suggestions-page .status-banner.template {
+  background: #38301a;
+}
+
+[data-theme="dark"] .suggestions-page .spinner {
+  border-color: #777;
+  border-top-color: #f5f1ea;
+}
