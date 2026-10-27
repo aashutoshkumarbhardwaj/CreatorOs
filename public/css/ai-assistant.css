@@ -493,3 +493,155 @@
     color: #334155;
     min-height: 80px;
 }
+
+/* AI Creator Assistant — Dark Mode */
+[data-theme="dark"] .ai-assistant-wrapper {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .assistant-header-card,
+[data-theme="dark"] .assistant-history-panel,
+[data-theme="dark"] .workspace-container {
+    background: var(--card-bg, #1e293b);
+    border-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .assistant-header-title h1,
+[data-theme="dark"] .history-header h3 {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .assistant-header-title p,
+[data-theme="dark"] .control-label {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .history-item {
+    background: #263449;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .history-item:hover,
+[data-theme="dark"] .history-item.active {
+    background: #312e81;
+    border-color: #6366f1;
+}
+
+[data-theme="dark"] .history-item-title {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .workspace-nav-tabs,
+[data-theme="dark"] .chat-controls-bar {
+    background: #172033;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .tab-btn {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .tab-btn.active {
+    background: #263449;
+    color: #a5b4fc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .control-select,
+[data-theme="dark"] .chat-input-field,
+[data-theme="dark"] .tool-input-textarea {
+    background: #172033;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+[data-theme="dark"] .control-select option {
+    background: #172033;
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .messages-thread {
+    background: #111827;
+}
+
+[data-theme="dark"] .bubble-content {
+    background: #263449;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .chat-bubble.assistant .bubble-content {
+    background: #1e293b;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .structured-widget {
+    background: #172033;
+    border-color: #475569;
+}
+
+[data-theme="dark"] .metric-pill,
+[data-theme="dark"] .btn-action-sm {
+    background: #263449;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn-action-sm:hover {
+    background: #334155;
+    color: #c7d2fe;
+    border-color: #818cf8;
+}
+
+[data-theme="dark"] .chips-container,
+[data-theme="dark"] .chat-input-bar {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .chip-btn {
+    background: #263449;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .chip-btn:hover {
+    background: #312e81;
+    color: #e0e7ff;
+    border-color: #818cf8;
+}
+
+[data-theme="dark"] .tool-card {
+    background: #1e293b;
+    border-color: #475569;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .tool-card-title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .tool-output-box {
+    background: #172033;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn-delete-chat {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .btn-delete-chat:hover {
+    color: #f87171;
+}
+
+[data-theme="dark"] .chat-input-field::placeholder,
+[data-theme="dark"] .tool-input-textarea::placeholder {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .chat-input-field:focus,
+[data-theme="dark"] .tool-input-textarea:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
