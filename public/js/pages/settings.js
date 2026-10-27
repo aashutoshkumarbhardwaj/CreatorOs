@@ -104,7 +104,8 @@
         const prefs = userData.preferences || {};
         body.classList.remove('density-compact', 'density-tactile', 'appearance-light', 'appearance-dark', 'no-motion');
         body.classList.add(`density-${prefs.interfaceDensity || 'tactile'}`);
-        const resolved = resolveAppearance(prefs.appearanceMode || 'light');
+        const savedAppearance = localStorage.getItem('creatorosAppearance');
+        const resolved = resolveAppearance(savedAppearance || prefs.appearanceMode || 'light');
         body.classList.add(`appearance-${resolved}`);
         
         if (resolved === 'dark') {
