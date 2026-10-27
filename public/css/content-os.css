@@ -957,3 +957,128 @@
     border-top: 2px dashed #000;
     padding-top: 1rem;
 }
+
+
+/* Content OS - Dark Mode */
+[data-theme="dark"] .content-os-wrapper {
+    color: #f5f1ea;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-box,
+[data-theme="dark"] .content-os-wrapper .os-header-card,
+[data-theme="dark"] .content-os-wrapper .kanban-col,
+[data-theme="dark"] .content-os-wrapper .kanban-card,
+[data-theme="dark"] .content-os-wrapper .idea-card,
+[data-theme="dark"] .content-os-wrapper .folder-card,
+[data-theme="dark"] .content-os-wrapper .neo-modal-box,
+[data-theme="dark"] .content-os-wrapper .cal-week-col,
+[data-theme="dark"] .content-os-wrapper .script-list li {
+    background: #1e1e1e;
+    color: #f5f1ea;
+    border-color: #777;
+    box-shadow: 4px 4px 0 #080808;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-btn,
+[data-theme="dark"] .content-os-wrapper .neo-input,
+[data-theme="dark"] .content-os-wrapper .neo-select,
+[data-theme="dark"] .content-os-wrapper .neo-textarea,
+[data-theme="dark"] .content-os-wrapper .os-tab-btn,
+[data-theme="dark"] .content-os-wrapper .cal-view-switcher,
+[data-theme="dark"] .content-os-wrapper .cal-view-btn,
+[data-theme="dark"] .content-os-wrapper .cal-day-cell,
+[data-theme="dark"] .content-os-wrapper .platform-check-pill,
+[data-theme="dark"] .content-os-wrapper .tag-pill,
+[data-theme="dark"] .content-os-wrapper .plat-badge {
+    background-color: #292929;
+    color: #f5f1ea;
+    border-color: #777;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-btn.secondary {
+    background: #383838;
+    color: #f5f1ea;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-btn.primary,
+[data-theme="dark"] .content-os-wrapper .os-tab-btn.active,
+[data-theme="dark"] .content-os-wrapper .cal-view-btn.active {
+    background: #6366f1;
+    color: #fff;
+}
+
+[data-theme="dark"] .content-os-wrapper .os-stat-card,
+[data-theme="dark"] .content-os-wrapper .cal-filter-toolbar,
+[data-theme="dark"] .content-os-wrapper .comment-bubble,
+[data-theme="dark"] .content-os-wrapper .perf-pill,
+[data-theme="dark"] .content-os-wrapper .script-list li {
+    background: #292929;
+    color: #f5f1ea;
+}
+
+[data-theme="dark"] .content-os-wrapper .os-header-title p,
+[data-theme="dark"] .content-os-wrapper .stat-label,
+[data-theme="dark"] .content-os-wrapper .cal-subtitle,
+[data-theme="dark"] .content-os-wrapper .comment-meta,
+[data-theme="dark"] .content-os-wrapper .idea-desc,
+[data-theme="dark"] .content-os-wrapper .script-field-group label,
+[data-theme="dark"] .content-os-wrapper .hour-label {
+    color: #b8b8b8;
+}
+
+[data-theme="dark"] .content-os-wrapper .stat-value,
+[data-theme="dark"] .content-os-wrapper .script-title-field {
+    color: #f5f1ea;
+}
+
+[data-theme="dark"] .content-os-wrapper .script-title-field {
+    background: transparent;
+}
+
+[data-theme="dark"] .content-os-wrapper .os-stats-grid,
+[data-theme="dark"] .content-os-wrapper .idea-footer,
+[data-theme="dark"] .content-os-wrapper .script-sidebar-header,
+[data-theme="dark"] .content-os-wrapper .script-editor-header,
+[data-theme="dark"] .content-os-wrapper .modal-header,
+[data-theme="dark"] .content-os-wrapper .modal-footer,
+[data-theme="dark"] .content-os-wrapper .calendar-grid-header {
+    border-color: #777;
+}
+
+[data-theme="dark"] .content-os-wrapper .timeline-hour-row {
+    background: #1e1e1e;
+    border-color: #555;
+}
+
+[data-theme="dark"] .content-os-wrapper .os-tab-btn:hover,
+[data-theme="dark"] .content-os-wrapper .cal-view-btn:hover {
+    background: #383838;
+    color: #fff;
+}
+
+[data-theme="dark"] .content-os-wrapper .script-list li.active,
+[data-theme="dark"] .content-os-wrapper .script-list li:hover {
+    background: #3730a3;
+    color: #fff;
+}
+
+[data-theme="dark"] .content-os-wrapper .ai-output-box {
+    background: #292929;
+    color: #f5f1ea;
+    border-color: #777;
+    box-shadow: 4px 4px 0 #080808;
+}
+
+[data-theme="dark"] .content-os-wrapper .ai-output-header {
+    border-color: #777;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-modal-box {
+    background: #1e1e1e;
+    color: #f5f1ea;
+}
+
+[data-theme="dark"] .content-os-wrapper .neo-input::placeholder,
+[data-theme="dark"] .content-os-wrapper .neo-textarea::placeholder {
+    color: #aaa;
+}
