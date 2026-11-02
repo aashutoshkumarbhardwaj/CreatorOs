@@ -290,6 +290,12 @@ class MockContentOsModel {
             }
         }
 
+        if (options.runValidators) {
+            const paths = Object.keys(update.$set || update).filter((key) => !key.startsWith("$"));
+            const validationError = new MongooseContentOsModel(updatedData).validateSync(paths);
+            if (validationError) throw validationError;
+        }
+
         updatedData.updatedAt = new Date();
         mockItems[idx] = new MockContentOsModel(updatedData);
         return mockItems[idx];
