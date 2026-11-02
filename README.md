@@ -261,7 +261,7 @@ CreatorOS uses a **Custom JWT Authentication System** (via HTTP-only cookie or B
 - **Primary Auth**: Requires `JWT_SECRET` and `SESSION_SECRET`.
 - **Google SSO**: Optional via `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL`.
 
-For full details on authentication flows, token handling, and role-based access control, see [Authentication Documentation (`docs/AUTH.md`)](file:///d:/GSSoC/CreatorOs/CreatorOs/docs/AUTH.md).
+For full details on authentication flows, token handling, and role-based access control, see [Authentication Documentation (`docs/AUTH.md`)](docs/AUTH.md).
 
 ### Instagram Profile Fetching
 

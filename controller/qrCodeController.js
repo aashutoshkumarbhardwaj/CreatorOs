@@ -7,6 +7,7 @@ const services = require('../services.config');
 const asyncHandler = require('../utils/asyncHandler');
 const { isValidUrl } = require('../utils/validators');
 const { assertSafePublicHttpUrl } = require('../utils/ssrf');
+const qrGenerator = require('../utils/qrGenerator');
 const {
     resolveErrorCorrection,
     buildEncodedUrl,
@@ -14,7 +15,7 @@ const {
     generatePng,
     generatePdf,
     parseDeviceFromUa,
-} = require('../utils/qrGenerator');
+} = qrGenerator;
 
 const BATCH_SIZE_CAP = 50;
 const PATTERN_PRESETS = ['A', 'B', 'C', 'D', 'E'];
@@ -367,6 +368,46 @@ const createQrCode = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @function cleanupBatch
+ * @description Cleans up QR code documents created for a failed batch.
+ * @param {mongoose.Types.ObjectId|string} batchId
+ * @param {string} [userId]
+ * @returns {Promise<void>}
+ */
+async function cleanupBatch(batchId, userId) {
+    if (!batchId) return;
+    try {
+        const query = { batchId };
+        if (userId) {
+            query.userId = userId;
+        }
+        if (typeof QrCode.deleteMany === 'function') {
+            await QrCode.deleteMany(query);
+        }
+    } catch (cleanupErr) {
+        console.error('[qr-batch-cleanup] Failed to cleanup batch documents:', cleanupErr);
+    }
+}
+
+/**
+ * @function createArchiveInstance
+ * @description Instantiates a zip archive stream.
+ * @returns {Promise<object>}
+ */
+async function createArchiveInstance() {
+    const archiverModule = await import('archiver');
+    const archiver = archiverModule.default || archiverModule;
+    const ZipArchive = archiverModule.ZipArchive;
+    if (typeof archiver === 'function') {
+        return archiver('zip', { zlib: { level: 9 } });
+    }
+    if (typeof ZipArchive === 'function') {
+        return new ZipArchive({ zlib: { level: 9 } });
+    }
+    throw new Error('Failed to load archiver: no valid archive constructor found');
+}
+
+/**
  * @function batchCreateQrCodes
  * @description POST /services/qr-code-generator/batch — create many + zip download.
  * @param {object} req
@@ -440,42 +481,104 @@ const batchCreateQrCodes = asyncHandler(async (req, res) => {
         });
     }
 
-    // Stream a zip of PNG + SVG for each created code
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="qr-batch-${batchId.toString().slice(-8)}.zip"`
-    );
-    res.setHeader('X-QR-Created-Count', String(created.length));
-    res.setHeader('X-QR-Failed-Count', String(failed.length));
-    // Expose failed list via header for small batches (UI also gets JSON alternative via Accept)
-    if (failed.length) {
-        res.setHeader('X-QR-Failed', encodeURIComponent(JSON.stringify(failed.slice(0, 20))));
-    }
+    let archive = null;
+    try {
+        // Stream a zip of PNG + SVG for each created code
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="qr-batch-${batchId.toString().slice(-8)}.zip"`
+        );
+        res.setHeader('X-QR-Created-Count', String(created.length));
+        res.setHeader('X-QR-Failed-Count', String(failed.length));
+        // Expose failed list via header for small batches (UI also gets JSON alternative via Accept)
+        if (failed.length) {
+            res.setHeader('X-QR-Failed', encodeURIComponent(JSON.stringify(failed.slice(0, 20))));
+        }
 
-    const { default: archiver, ZipArchive } = await import('archiver');
-    const archive = typeof archiver === 'function'
-        ? archiver('zip', { zlib: { level: 9 } })
-        : new ZipArchive({ zlib: { level: 9 } });
-    archive.on('warning', (err) => {
-        if (err.code === 'ENOENT') return;
+        const resolveArchiveFactory = (typeof qrController !== 'undefined' && qrController.createArchiveInstance) || createArchiveInstance;
+        archive = await resolveArchiveFactory();
+
+        let streamErr = null;
+        if (typeof archive.on === 'function') {
+            archive.on('warning', (err) => {
+                if (err && err.code === 'ENOENT') return;
+                streamErr = err;
+            });
+            archive.on('error', (err) => {
+                streamErr = err;
+            });
+        }
+        if (typeof res.on === 'function') {
+            res.on('error', (err) => {
+                streamErr = err;
+            });
+        }
+
+        if (typeof archive.pipe === 'function') {
+            archive.pipe(res);
+        }
+
+        for (const doc of created) {
+            if (streamErr) throw streamErr;
+            const plain = doc.toObject ? doc.toObject() : doc;
+            const nameBase = (plain.label || plain.shortId || plain._id.toString()).replace(/[^\w.-]+/g, '_');
+            const png = await (qrGenerator.generatePng || generatePng)(plain, baseUrl);
+            if (streamErr) throw streamErr;
+            const svg = await (qrGenerator.generateSvg || generateSvg)(plain, baseUrl);
+            if (streamErr) throw streamErr;
+            if (typeof archive.append === 'function') {
+                archive.append(png, { name: `${nameBase}.png` });
+                archive.append(svg, { name: `${nameBase}.svg` });
+            }
+        }
+
+        if (streamErr) throw streamErr;
+
+        if (typeof archive.finalize === 'function') {
+            await new Promise((resolve, reject) => {
+                if (typeof archive.on === 'function') {
+                    archive.on('warning', (err) => {
+                        if (err && err.code === 'ENOENT') return;
+                        reject(err);
+                    });
+                    archive.on('error', (err) => {
+                        reject(err);
+                    });
+                }
+                if (typeof res.on === 'function') {
+                    res.on('error', (err) => {
+                        reject(err);
+                    });
+                }
+                Promise.resolve(archive.finalize()).then(resolve, reject);
+            });
+        }
+    } catch (err) {
+        await cleanupBatch(batchId, req.user?.id);
+
+        if (archive && typeof archive.abort === 'function') {
+            try {
+                archive.abort();
+            } catch (_) {}
+        }
+
+        if (res.headersSent) {
+            if (typeof res.destroy === 'function') {
+                res.destroy(err);
+            } else if (typeof res.end === 'function') {
+                res.end();
+            }
+        } else if (typeof res.removeHeader === 'function') {
+            res.removeHeader('Content-Disposition');
+            res.removeHeader('Content-Type');
+            res.removeHeader('X-QR-Created-Count');
+            res.removeHeader('X-QR-Failed-Count');
+            res.removeHeader('X-QR-Failed');
+        }
+
         throw err;
-    });
-    archive.on('error', (err) => {
-        throw err;
-    });
-    archive.pipe(res);
-
-    for (const doc of created) {
-        const plain = doc.toObject ? doc.toObject() : doc;
-        const nameBase = (plain.label || plain.shortId || plain._id.toString()).replace(/[^\w.-]+/g, '_');
-        const png = await generatePng(plain, baseUrl);
-        const svg = await generateSvg(plain, baseUrl);
-        archive.append(png, { name: `${nameBase}.png` });
-        archive.append(svg, { name: `${nameBase}.svg` });
     }
-
-    await archive.finalize();
 });
 
 /**
@@ -708,7 +811,7 @@ const handleQrRedirect = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = {
+const qrController = {
     qrWriteLimiter,
     renderQrGeneratorPage,
     createQrCode,
@@ -719,4 +822,8 @@ module.exports = {
     getQrAnalytics,
     getQrTelemetry,
     handleQrRedirect,
+    cleanupBatch,
+    createArchiveInstance,
 };
+
+module.exports = qrController;

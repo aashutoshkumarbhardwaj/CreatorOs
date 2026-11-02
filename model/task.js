@@ -123,6 +123,7 @@ const taskSchema = new mongoose.Schema(
     spentHours: {
       type: Number,
       default: 0,
+      min: 0,
     },
     subtasks: [subtaskSchema],
     dependencies: [

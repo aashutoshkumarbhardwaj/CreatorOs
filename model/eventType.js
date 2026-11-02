@@ -10,6 +10,7 @@ const eventTypeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
       immutable: true,
     },
@@ -35,7 +36,7 @@ const eventTypeSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: true,
-      default: 30, // in minutes
+      default: 30,
       min: 5,
       max: 480,
     },

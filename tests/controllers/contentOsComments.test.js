@@ -16,7 +16,7 @@ describe('Content OS comments', () => {
   const realFindById = User.findById;
 
   beforeEach(async () => {
-    await mongoose.connection.collection('contentos').deleteMany({}).catch(() => {});
+    await ContentOsModel.deleteMany({});
     userId = new mongoose.Types.ObjectId();
     User.findById = () => ({ select: () => ({ lean: async () => ({ name: 'Rio' }) }) });
     item = await ContentOsModel.create({ userId, title: 'Launch video' });

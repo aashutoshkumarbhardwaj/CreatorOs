@@ -26,6 +26,7 @@ const crmBrandSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
     },
     companyName: {
@@ -72,6 +73,8 @@ const crmBrandSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+crmBrandSchema.index({ creatorId: 1, createdAt: -1 });
 
 module.exports =
   mongoose.models.CrmBrand || mongoose.model("CrmBrand", crmBrandSchema);

@@ -5,10 +5,14 @@ const mongoose = require("mongoose");
  * @description Mongoose schema definition for user.
  */
 const userSchema = new mongoose.Schema(
-    {
-        name: {
+    {        name: {
         type: String,
         required: true,
+        },
+
+        nameSlug: {
+            type: String,
+            index: true,
         },
 
         email: {
@@ -172,11 +176,25 @@ const userSchema = new mongoose.Schema(
             unique: true,
             index: true,
         },
-    },
-    {
+    },    {
         timestamps: true,
     }
 );
+
+userSchema.pre("save", function (next) {
+    if (this.isModified("name") || !this.nameSlug) {
+        if (this.name) {
+            this.nameSlug = this.name
+                .toString()
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, "-")
+                .replace(/[^\w\-]+/g, "")
+                .replace(/\-\-+/g, "-");
+        }
+    }
+    next();
+});
 
 const MongooseUserModel = mongoose.models.User || mongoose.model("User", userSchema);
 
@@ -188,16 +206,22 @@ function normalizeId(id) {
 
 function matchesQuery(user, query = {}) {
     return Object.entries(query).every(([key, value]) => {
+        if (key === "$or") {
+            return value.some((condition) => matchesQuery(user, condition));
+        }
+        if (key === "name" && value && value.$regex) {
+            return value.$regex.test(user.name);
+        }
         if (key === "_id") return normalizeId(user._id) === normalizeId(value);
         return user[key] === value;
     });
 }
 
-class MockUserModel {
-    constructor(data = {}) {
+class MockUserModel {    constructor(data = {}) {
         Object.assign(this, data);
         this._id = data._id || new mongoose.Types.ObjectId();
         this.email = data.email?.toLowerCase?.().trim?.() || data.email;
+        this.nameSlug = data.nameSlug || (data.name ? data.name.toString().toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w\-]+/g, "").replace(/\-\-+/g, "-") : null);
         this.authProvider = data.authProvider || "local";
         this.role = data.role || "creator";
         this.preferences = data.preferences || {
@@ -390,3 +414,6 @@ module.exports = new Proxy(MongooseUserModel, {
         return Reflect.construct(target, args);
     },
 });
+
+
+

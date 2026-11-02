@@ -90,12 +90,12 @@ const contentOsSchema = new mongoose.Schema(
             default: null,
         },
         performance: {
-            impressions: { type: Number, default: 0 },
-            views: { type: Number, default: 0 },
-            engagementRate: { type: Number, default: 0 },
-            clicks: { type: Number, default: 0 },
-            likes: { type: Number, default: 0 },
-            shares: { type: Number, default: 0 },
+            impressions: { type: Number, default: 0, min: [0, 'impressions cannot be negative'] },
+            views: { type: Number, default: 0, min: [0, 'views cannot be negative'] },
+            engagementRate: { type: Number, default: 0, min: [0, 'engagementRate cannot be negative'], max: [100, 'engagementRate cannot exceed 100'] },
+            clicks: { type: Number, default: 0, min: [0, 'clicks cannot be negative'] },
+            likes: { type: Number, default: 0, min: [0, 'likes cannot be negative'] },
+            shares: { type: Number, default: 0, min: [0, 'shares cannot be negative'] },
         },
         comments: [
             {
@@ -253,18 +253,44 @@ class MockContentOsModel {
         const idx = mockItems.findIndex((item) => item._id?.toString() === id?.toString());
         if (idx === -1) return null;
         const current = mockItems[idx];
-        const { $push, $pull, $set, ...plain } = update || {};
-        const updatedData = { ...current, ...($set || plain), updatedAt: new Date() };
-        // The controller appends and removes comments atomically; mirror that here.
-        if ($push && $push.comments) {
-            updatedData.comments = [...(current.comments || []), $push.comments];
+        const updatedData = JSON.parse(JSON.stringify(current));
+
+        if (update.$set) {
+            for (const key of Object.keys(update.$set)) {
+                if (key.includes(".")) {
+                    const parts = key.split(".");
+                    let obj = updatedData;
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        if (!obj[parts[i]]) obj[parts[i]] = {};
+                        obj = obj[parts[i]];
+                    }
+                    obj[parts[parts.length - 1]] = update.$set[key];
+                } else {
+                    updatedData[key] = update.$set[key];
+                }
+            }
+        } else if (!update.$push && !update.$pull) {
+            Object.assign(updatedData, update);
         }
-        if ($pull && $pull.comments) {
-            const removeId = $pull.comments._id?.toString();
-            updatedData.comments = (updatedData.comments || []).filter(
-                (c) => c._id?.toString() !== removeId
-            );
+
+        if (update.$push) {
+            for (const key of Object.keys(update.$push)) {
+                if (!updatedData[key]) updatedData[key] = [];
+                updatedData[key].push(update.$push[key]);
+            }
         }
+
+        if (update.$pull) {
+            for (const key of Object.keys(update.$pull)) {
+                if (Array.isArray(updatedData[key])) {
+                    const matchKey = Object.keys(update.$pull[key])[0];
+                    const matchValue = update.$pull[key][matchKey];
+                    updatedData[key] = updatedData[key].filter(item => item[matchKey] !== matchValue && item[matchKey]?.toString() !== matchValue?.toString());
+                }
+            }
+        }
+
+        updatedData.updatedAt = new Date();
         mockItems[idx] = new MockContentOsModel(updatedData);
         return mockItems[idx];
     }
@@ -283,6 +309,43 @@ class MockContentOsModel {
             return true;
         });
         return results.length;
+    }
+
+    static async updateMany(query = {}, update = {}) {
+        let modifiedCount = 0;
+        for (let i = 0; i < mockItems.length; i++) {
+            const item = mockItems[i];
+            if (query.userId && item.userId?.toString() !== query.userId?.toString()) continue;
+            if (query.folderId !== undefined) {
+                if (query.folderId === null && item.folderId !== null) continue;
+                if (query.folderId !== null && item.folderId?.toString() !== query.folderId?.toString()) continue;
+            }
+            if (query.status && item.status !== query.status) continue;
+            if (query.type && item.type !== query.type) continue;
+
+            const updatedData = JSON.parse(JSON.stringify(item));
+            if (update.$set) {
+                for (const key of Object.keys(update.$set)) {
+                    if (key.includes(".")) {
+                        const parts = key.split(".");
+                        let obj = updatedData;
+                        for (let p = 0; p < parts.length - 1; p++) {
+                            if (!obj[parts[p]]) obj[parts[p]] = {};
+                            obj = obj[parts[p]];
+                        }
+                        obj[parts[parts.length - 1]] = update.$set[key];
+                    } else {
+                        updatedData[key] = update.$set[key];
+                    }
+                }
+            } else if (!update.$push && !update.$pull) {
+                Object.assign(updatedData, update);
+            }
+            updatedData.updatedAt = new Date();
+            mockItems[i] = new MockContentOsModel(updatedData);
+            modifiedCount++;
+        }
+        return { acknowledged: true, modifiedCount };
     }
 
     static async deleteMany(query = {}) {
@@ -365,6 +428,7 @@ ContentOsModel.create = (...args) => getActiveModel().create(...args);
 ContentOsModel.findByIdAndUpdate = (...args) => getActiveModel().findByIdAndUpdate(...args);
 ContentOsModel.findByIdAndDelete = (...args) => getActiveModel().findByIdAndDelete(...args);
 ContentOsModel.countDocuments = (...args) => getActiveModel().countDocuments(...args);
+ContentOsModel.updateMany = (...args) => getActiveModel().updateMany(...args);
 ContentOsModel.deleteMany = (...args) => getActiveModel().deleteMany(...args);
 ContentOsModel.seedForUser = (...args) =>
     getActiveModel().seedForUser && getActiveModel().seedForUser(...args);

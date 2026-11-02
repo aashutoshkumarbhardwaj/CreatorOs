@@ -1,5 +1,6 @@
 const { fetchInstagramProfile, InstagramProfileError, validateUsername } = require('../utils/instagramProfileService');
 const { getInstagramLookupCooldownSeconds } = require('../utils/instagramCooldown');
+const { getInstagramProfileCacheTtlSeconds } = require('../utils/instagramProfileCacheTtl');
 const { createRedisClient } = require('../utils/redisClient');
 
 const redis = createRedisClient();
@@ -120,8 +121,12 @@ function sendInstagramError(res, error) {
 /**
  * @function getInstagramProfile
  * @description Retrieves public profile information from Instagram.
- * Checks Redis cache first (30-min TTL) to avoid redundant network requests,
- * then enforces a distributed per-user cooldown before hitting Instagram.
+ * Checks the cache first (Redis, or in-memory when Redis is unavailable) to
+ * avoid redundant network requests. The TTL is configurable via
+ * INSTAGRAM_PROFILE_CACHE_TTL_SECONDS (default 600s; 0 disables caching).
+ * Cache hits skip the per-user cooldown and are flagged with cached: true.
+ * Only successful profiles are cached - a thrown InstagramProfileError
+ * (e.g. PRIVATE_PROFILE_UNSUPPORTED) is never written to the cache.
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
@@ -131,29 +136,37 @@ async function getInstagramProfile(req, res) {
     try {
         const username = validateUsername(req.query.username);
         const cacheKey = `ig:profile:${username}`;
-        const cachedProfile = redis
-            ? await redis.get(cacheKey)
-            : getMemoryValue(cacheKey);
+        const cacheTtlSeconds = getInstagramProfileCacheTtlSeconds({ allowZero: true });
 
-        if (cachedProfile) {
-            return res.json({
-                success: true,
-                data: JSON.parse(cachedProfile),
-            });
+        if (cacheTtlSeconds > 0) {
+            const cachedProfile = redis
+                ? await redis.get(cacheKey)
+                : getMemoryValue(cacheKey);
+
+            if (cachedProfile) {
+                return res.json({
+                    success: true,
+                    cached: true,
+                    data: JSON.parse(cachedProfile),
+                });
+            }
         }
 
         await assertLookupAllowed(req);
 
         const profile = await fetchInstagramProfile(username);
 
-        if (redis) {
-            await redis.set(cacheKey, JSON.stringify(profile), 'EX', 1800); // 30 minutes TTL
-        } else {
-            setMemoryValue(cacheKey, JSON.stringify(profile), 1800);
+        if (cacheTtlSeconds > 0) {
+            if (redis) {
+                await redis.set(cacheKey, JSON.stringify(profile), 'EX', cacheTtlSeconds);
+            } else {
+                setMemoryValue(cacheKey, JSON.stringify(profile), cacheTtlSeconds);
+            }
         }
 
         return res.json({
             success: true,
+            cached: false,
             data: profile,
         });
     } catch (error) {

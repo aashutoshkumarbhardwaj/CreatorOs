@@ -292,10 +292,10 @@ Real-world use cases:
 ## 📚 Resources
 
 ### Useful Docs
-- [Project Architecture](./ARCHITECTURE.md)
-- [API Documentation](./API.md)
-- [Automation Guide](./ AUTOMATION.md)
-- [Deployment Guide](./DEPLOYMENT.md)
+- [Authentication](./docs/AUTH.md)
+- [Async Error Handling](./docs/ASYNC_ERROR_HANDLING.md)
+- [Email Verification](./docs/EMAIL_VERIFICATION.md)
+- [Nginx Load Balancing](./NGINX_LOAD_BALANCING.md)
 
 ### Learning Resources
 - [GitHub Guides](https://guides.github.com/)

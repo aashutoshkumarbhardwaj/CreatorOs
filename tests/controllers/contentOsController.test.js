@@ -208,5 +208,82 @@ describe("contentOsController", () => {
                 })
             );
         });
+
+        it("should delete folder and reset folderId to null on associated content items", async () => {
+            const folder = await ContentFolder.create({
+                userId: testUserId,
+                name: "Sprint 1",
+                color: "#4338CA",
+            });
+            const otherFolder = await ContentFolder.create({
+                userId: testUserId,
+                name: "Sprint 2",
+                color: "#10B981",
+            });
+
+            const itemInFolder = await ContentOs.create({
+                userId: testUserId,
+                title: "Post in Folder 1",
+                folderId: folder._id,
+            });
+            const itemInOtherFolder = await ContentOs.create({
+                userId: testUserId,
+                title: "Post in Folder 2",
+                folderId: otherFolder._id,
+            });
+
+            mockReq.params.id = folder._id.toString();
+            await deleteFolder(mockReq, mockRes);
+
+            expect(mockRes.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    message: "Folder deleted successfully.",
+                })
+            );
+
+            // Verify folder is deleted
+            const deletedFolder = await ContentFolder.findById(folder._id);
+            expect(deletedFolder).toBeNull();
+
+            // Verify itemInFolder has folderId reset to null
+            const updatedItem = await ContentOs.findById(itemInFolder._id);
+            expect(updatedItem.folderId).toBeNull();
+
+            // Verify item in other folder is untouched
+            const otherItem = await ContentOs.findById(itemInOtherFolder._id);
+            expect(otherItem.folderId.toString()).toBe(otherFolder._id.toString());
+        });
+
+        it("should return 404 when deleting a non-existent folder", async () => {
+            mockReq.params.id = new mongoose.Types.ObjectId().toString();
+            await deleteFolder(mockReq, mockRes);
+
+            expect(mockRes.status).toHaveBeenCalledWith(404);
+            expect(mockRes.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: false,
+                    message: "Folder not found.",
+                })
+            );
+        });
+
+        it("should return 404 when deleting a folder owned by another user", async () => {
+            const anotherUserFolder = await ContentFolder.create({
+                userId: new mongoose.Types.ObjectId().toString(),
+                name: "Another User Folder",
+            });
+
+            mockReq.params.id = anotherUserFolder._id.toString();
+            await deleteFolder(mockReq, mockRes);
+
+            expect(mockRes.status).toHaveBeenCalledWith(404);
+            expect(mockRes.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: false,
+                    message: "Folder not found.",
+                })
+            );
+        });
     });
 });

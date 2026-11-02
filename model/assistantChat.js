@@ -11,6 +11,7 @@ const assistantChatSchema = new mongoose.Schema(
       ref: "User",
       required: true,
       index: true,
+      immutable: true,
     },
     title: {
       type: String,

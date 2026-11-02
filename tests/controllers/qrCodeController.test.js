@@ -7,11 +7,15 @@ jest.mock('../../model/qrCode', () => ({
     create: jest.fn(),
     updateOne: jest.fn(),
     deleteOne: jest.fn(),
+    deleteMany: jest.fn(),
     listForUser: jest.fn(),
 }));
 
+const { PassThrough } = require('stream');
 const mongoose = require('mongoose');
 const QrCode = require('../../model/qrCode');
+const qrController = require('../../controller/qrCodeController');
+const qrGenerator = require('../../utils/qrGenerator');
 const {
     createQrCode,
     batchCreateQrCodes,
@@ -23,33 +27,48 @@ const {
 } = require('../../controller/qrCodeController');
 
 function createMockRes() {
-    const res = {
-        statusCode: 200,
-        headers: {},
-        body: null,
-        redirectUrl: null,
-        status(code) {
-            this.statusCode = code;
-            return this;
-        },
-        json(data) {
-            this.body = data;
-            return this;
-        },
-        send(data) {
-            this.body = data;
-            return this;
-        },
-        setHeader(key, value) {
-            this.headers[key] = value;
-            return this;
-        },
-        redirect(url) {
-            this.redirectUrl = url;
-            return this;
-        },
+    const res = new PassThrough();
+    res.statusCode = 200;
+    res.headers = {};
+    res.body = null;
+    res.redirectUrl = null;
+    res.status = function(code) {
+        this.statusCode = code;
+        return this;
+    };
+    res.json = function(data) {
+        this.body = data;
+        return this;
+    };
+    res.send = function(data) {
+        this.body = data;
+        return this;
+    };
+    res.setHeader = function(key, value) {
+        this.headers[key] = value;
+        return this;
+    };
+    res.removeHeader = function(key) {
+        delete this.headers[key];
+        return this;
+    };
+    res.redirect = function(url) {
+        this.redirectUrl = url;
+        return this;
     };
     return res;
+}
+
+function createMockArchive() {
+    const archive = new PassThrough();
+    archive.append = jest.fn((data) => {
+        archive.push(Buffer.isBuffer(data) ? data : Buffer.from(String(data || '')));
+    });
+    archive.finalize = jest.fn(async () => {
+        archive.end();
+    });
+    archive.abort = jest.fn();
+    return archive;
 }
 
 describe('qrCodeController Unit & Validation Tests', () => {
@@ -58,6 +77,10 @@ describe('qrCodeController Unit & Validation Tests', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     describe('createQrCode', () => {
@@ -200,6 +223,322 @@ describe('qrCodeController Unit & Validation Tests', () => {
             expect(res.statusCode).toBe(400);
             expect(res.body.success).toBe(false);
             expect(res.body.message).toMatch(/capped at 50 URLs/i);
+        });
+
+        it('should successfully create QR codes and stream ZIP archive on valid batch', async () => {
+            QrCode.create.mockImplementation((data) => Promise.resolve({
+                ...data,
+                _id: new mongoose.Types.ObjectId(),
+                toObject() {
+                    return { ...data, _id: this._id };
+                },
+            }));
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const mockArchive = createMockArchive();
+            jest.spyOn(qrController, 'createArchiveInstance').mockResolvedValue(mockArchive);
+
+            const req = {
+                user: { id: testUserId },
+                body: {
+                    urls: 'https://example.com/alpha\nhttps://example.com/beta',
+                    labelPrefix: 'BatchTest',
+                    campaignName: 'SummerLaunch',
+                },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
+            const finishPromise = new Promise((resolve) => res.on('finish', resolve));
+
+            await batchCreateQrCodes(req, res);
+            await finishPromise;
+
+            expect(res.headers['Content-Type']).toBe('application/zip');
+            expect(res.headers['Content-Disposition']).toMatch(/attachment; filename="qr-batch-[a-f0-9]{8}\.zip"/);
+            expect(res.headers['X-QR-Created-Count']).toBe('2');
+            expect(res.headers['X-QR-Failed-Count']).toBe('0');
+            expect(Buffer.concat(chunks).length).toBeGreaterThan(0);
+            expect(QrCode.create).toHaveBeenCalledTimes(2);
+            expect(QrCode.deleteMany).not.toHaveBeenCalled();
+        });
+
+        it('should clean up saved QR code documents when ZIP archive initialization fails', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const archiveSpy = jest.spyOn(qrController, 'createArchiveInstance')
+                .mockRejectedValueOnce(new Error('Archiver initialization failed'));
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/link1\nhttps://example.com/link2' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Archiver initialization failed');
+
+            expect(QrCode.create).toHaveBeenCalledTimes(2);
+            expect(QrCode.deleteMany).toHaveBeenCalledWith({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            expect(res.headers['Content-Disposition']).toBeUndefined();
+            archiveSpy.mockRestore();
+        });
+
+        it('should clean up saved documents when PNG generation fails', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const mockArchive = createMockArchive();
+            jest.spyOn(qrController, 'createArchiveInstance').mockResolvedValue(mockArchive);
+
+            const pngSpy = jest.spyOn(qrGenerator, 'generatePng')
+                .mockRejectedValueOnce(new Error('Sharp PNG generation failed'));
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/p1\nhttps://example.com/p2' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Sharp PNG generation failed');
+
+            expect(QrCode.create).toHaveBeenCalledTimes(2);
+            expect(QrCode.deleteMany).toHaveBeenCalledWith({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            pngSpy.mockRestore();
+        });
+
+        it('should clean up saved documents when SVG generation fails', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const mockArchive = createMockArchive();
+            jest.spyOn(qrController, 'createArchiveInstance').mockResolvedValue(mockArchive);
+
+            const svgSpy = jest.spyOn(qrGenerator, 'generateSvg')
+                .mockRejectedValueOnce(new Error('QRCode SVG matrix failed'));
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/s1\nhttps://example.com/s2' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('QRCode SVG matrix failed');
+
+            expect(QrCode.create).toHaveBeenCalledTimes(2);
+            expect(QrCode.deleteMany).toHaveBeenCalledWith({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            svgSpy.mockRestore();
+        });
+
+        it('should clean up saved documents when archive finalization fails', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const mockArchive = new PassThrough();
+            mockArchive.append = jest.fn();
+            mockArchive.finalize = jest.fn().mockRejectedValue(new Error('Zlib stream compression error'));
+            mockArchive.abort = jest.fn();
+
+            const archiveSpy = jest.spyOn(qrController, 'createArchiveInstance')
+                .mockResolvedValueOnce(mockArchive);
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/f1' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Zlib stream compression error');
+
+            expect(QrCode.deleteMany).toHaveBeenCalledWith({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            expect(mockArchive.abort).toHaveBeenCalled();
+            archiveSpy.mockRestore();
+        });
+
+        it('should handle asynchronous archive error without unhandled exceptions and trigger cleanup', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            const mockArchive = new PassThrough();
+            mockArchive.append = jest.fn(() => {
+                mockArchive.emit('error', new Error('Async compression buffer overflow'));
+            });
+            mockArchive.finalize = jest.fn().mockResolvedValue();
+            mockArchive.abort = jest.fn();
+
+            const archiveSpy = jest.spyOn(qrController, 'createArchiveInstance')
+                .mockResolvedValueOnce(mockArchive);
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/async1' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Async compression buffer overflow');
+
+            expect(QrCode.deleteMany).toHaveBeenCalledWith({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            expect(mockArchive.abort).toHaveBeenCalled();
+            archiveSpy.mockRestore();
+        });
+
+        it('should only delete documents associated with the specific failed batch and user', async () => {
+            let capturedBatchId = null;
+            QrCode.create.mockImplementation((data) => {
+                capturedBatchId = data.batchId;
+                return Promise.resolve({
+                    ...data,
+                    _id: new mongoose.Types.ObjectId(),
+                    toObject() {
+                        return { ...data, _id: this._id };
+                    },
+                });
+            });
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            let executedDeleteQuery = null;
+            QrCode.deleteMany.mockImplementation((query) => {
+                executedDeleteQuery = query;
+                return Promise.resolve({ deletedCount: 2 });
+            });
+
+            const mockArchive = createMockArchive();
+            jest.spyOn(qrController, 'createArchiveInstance').mockResolvedValue(mockArchive);
+
+            const pngSpy = jest.spyOn(qrGenerator, 'generatePng')
+                .mockRejectedValueOnce(new Error('Targeted rendering failure'));
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/item1\nhttps://example.com/item2' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Targeted rendering failure');
+
+            expect(executedDeleteQuery).toEqual({
+                batchId: capturedBatchId,
+                userId: testUserId,
+            });
+            pngSpy.mockRestore();
+        });
+
+        it('should safely handle cleanup failure without masking the original error', async () => {
+            QrCode.create.mockImplementation((data) => Promise.resolve({
+                ...data,
+                _id: new mongoose.Types.ObjectId(),
+                toObject() {
+                    return { ...data, _id: this._id };
+                },
+            }));
+            QrCode.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
+
+            QrCode.deleteMany.mockRejectedValueOnce(new Error('Database network blip during cleanup'));
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+            const mockArchive = createMockArchive();
+            jest.spyOn(qrController, 'createArchiveInstance').mockResolvedValue(mockArchive);
+
+            const pngSpy = jest.spyOn(qrGenerator, 'generatePng')
+                .mockRejectedValueOnce(new Error('Primary generation failure'));
+
+            const req = {
+                user: { id: testUserId },
+                body: { urls: 'https://example.com/fail1' },
+                protocol: 'https',
+                get: () => 'creatoros.io',
+            };
+            const res = createMockRes();
+
+            await expect(batchCreateQrCodes(req, res)).rejects.toThrow('Primary generation failure');
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[qr-batch-cleanup] Failed to cleanup batch documents:',
+                expect.any(Error)
+            );
+
+            consoleErrorSpy.mockRestore();
+            pngSpy.mockRestore();
         });
     });
 

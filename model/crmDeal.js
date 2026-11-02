@@ -46,6 +46,7 @@ const crmDealSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
     },
     brandId: {
@@ -83,6 +84,7 @@ const crmDealSchema = new mongoose.Schema(
     amount: {
       type: Number,
       default: 0,
+      min: [0, 'Deal amount cannot be negative'],
     },
     deliverables: {
       type: String,
@@ -105,6 +107,8 @@ const crmDealSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+crmDealSchema.index({ creatorId: 1, createdAt: -1 });
 
 module.exports =
   mongoose.models.CrmDeal || mongoose.model("CrmDeal", crmDealSchema);

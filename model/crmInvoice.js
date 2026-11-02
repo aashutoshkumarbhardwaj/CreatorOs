@@ -6,6 +6,7 @@ const crmInvoiceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
     },
     dealId: {
@@ -30,6 +31,7 @@ const crmInvoiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: 0,
+      min: [0, 'Invoice amount cannot be negative'],
     },
     status: {
       type: String,

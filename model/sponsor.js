@@ -5,6 +5,7 @@ const sponsorSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+        immutable: true,
         index: true,
     },
     companyName: {
@@ -25,6 +26,7 @@ const sponsorSchema = new mongoose.Schema({
     value: {
         type: Number,
         default: 0,
+        min: [0, 'Sponsor value cannot be negative'],
     },
     notes: {
         type: String,
