@@ -24,19 +24,19 @@ describe('Content OS updates validate against the schema', () => {
     user: { id: userId.toString() },
   });
 
-  it('rejects an unknown status with 400 and keeps the stored one', async () => {
+  it.each([
+    ['status', 'banana', 'idea'],
+    ['platform', 'myspace', 'general'],
+    ['type', 'unknown', 'idea'],
+    ['priority', 'critical', 'medium'],
+  ])('rejects invalid %s without storing any part of the update', async (field, value, original) => {
     const res = mockRes();
-    await updateItem(req({ status: 'banana' }), res);
+    await updateItem(req({ [field]: value, title: 'Must not persist' }), res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect((await ContentOsModel.findById(item._id)).status).toBe('idea');
-  });
-
-  it('rejects an unknown platform with 400', async () => {
-    const res = mockRes();
-    await updateItem(req({ platform: 'myspace' }), res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
+    const stored = await ContentOsModel.findById(item._id);
+    expect(stored[field]).toBe(original);
+    expect(stored.title).toBe('Launch video');
   });
 
   it('still applies a valid update', async () => {
@@ -54,6 +54,8 @@ describe('Content OS updates validate against the schema', () => {
     await rescheduleItem(req({ scheduledAt: '2026-10-01T10:00:00Z', status: 'someday' }), res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect((await ContentOsModel.findById(item._id)).status).toBe('idea');
+    const stored = await ContentOsModel.findById(item._id);
+    expect(stored.status).toBe('idea');
+    expect(stored.scheduledAt).toBeNull();
   });
 });

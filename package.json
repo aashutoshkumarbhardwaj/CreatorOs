@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "build": "npm run build:css && node scripts/check-syntax.js",
+    "build": "npm run build:css && npm run check:syntax",
+    "check:syntax": "node scripts/checkSyntax.js",
     "seed:test-user": "node scripts/seedTestUser.js",
     "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",

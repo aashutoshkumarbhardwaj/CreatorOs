@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ScheduledContent = require('../model/scheduledContent');
+const Creator = require('../model/creator');
 const { isValidUrl } = require('../utils/validators');
 
 const DEFAULT_LIST_LIMIT = 20;
@@ -212,8 +213,15 @@ const bulkScheduleContent = asyncHandler(async (req, res) => {
             continue;
         }
 
+        const accountId = accountIdIdx !== -1 ? fields[accountIdIdx]?.trim() : "";
+
         if (mediaUrl && !isValidUrl(mediaUrl)) {
             results.errors.push({ row: i + 1, reason: 'mediaUrl must be a valid HTTP or HTTPS URL' });
+            continue;
+        }
+
+        if (accountId && !(await Creator.exists({ _id: accountId, userId: req.user.id }))) {
+            results.errors.push({ row: i + 1, reason: 'accountId does not belong to the authenticated user' });
             continue;
         }
 
@@ -224,7 +232,7 @@ const bulkScheduleContent = asyncHandler(async (req, res) => {
                 mediaUrl: mediaUrl || undefined,
                 timezone: 'UTC',
                 scheduledAt: scheduledDate,
-                accountId: accountIdIdx !== -1 && fields[accountIdIdx] ? fields[accountIdIdx] : undefined,
+                accountId: accountId || undefined,
                 platform: platformIdx !== -1 && fields[platformIdx] ? fields[platformIdx] : undefined,
                 status: 'scheduled',
             });

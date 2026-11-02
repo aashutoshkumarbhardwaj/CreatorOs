@@ -21,6 +21,7 @@ jest.mock("../../controller/auth", () => ({
 jest.mock("../../middleware/validators", () => ({
   signupValidator: (req, res, next) => next(),
   loginValidator: (req, res, next) => next(),
+  contributorLoginValidator: (req, res, next) => next(),
   resendVerificationValidator: (req, res, next) => next(),
 }));
 

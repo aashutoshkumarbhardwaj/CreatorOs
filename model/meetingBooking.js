@@ -10,6 +10,7 @@ const meetingBookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
     },
     eventTypeId: {
@@ -55,7 +56,7 @@ const meetingBookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["scheduled", "completed", "cancelled", "rescheduled"],
+      enum: ["pending_sync", "scheduled", "completed", "cancelled", "rescheduled"],
       default: "scheduled",
       index: true,
     },

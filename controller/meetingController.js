@@ -3,6 +3,39 @@ const MeetingBooking = require("../model/meetingBooking");
 const User = require("../model/user");
 const GoogleCalendarService = require("../services/googleCalendarService");
 const { generateState, validateState } = require("../utils/oauthState");
+const { createRedisClient } = require("../utils/redisClient");
+
+const redis = createRedisClient();
+const memoryLocks = new Set();
+
+async function acquireLock(key, ttlSeconds) {
+  if (!redis) {
+    if (memoryLocks.has(key)) return false;
+    memoryLocks.add(key);
+    setTimeout(() => memoryLocks.delete(key), ttlSeconds * 1000);
+    return true;
+  }
+  try {
+    const result = await redis.set(key, "1", "EX", ttlSeconds, "NX");
+    return result === "OK";
+  } catch (err) {
+    console.error("[Mutex] Redis lock error:", err);
+    return false;
+  }
+}
+
+async function releaseLock(key) {
+  if (!redis) {
+    memoryLocks.delete(key);
+    return;
+  }
+  try {
+    await redis.del(key);
+  } catch (err) {
+    console.error("[Mutex] Redis unlock error:", err);
+  }
+}
+
 
 /**
  * Helper to slugify string titles.
@@ -29,13 +62,27 @@ function publicErrorMessage(error) {
 }
 
 async function findCreatorByAliasOrName(identifier) {
-  let creator = await User.findOne({ alias: identifier });
+  let creator = await User.findOne({
+    $or: [
+      { alias: identifier },
+      { nameSlug: identifier.toLowerCase() }
+    ],
+    role: "creator"
+  });
+
+  // Graceful fallback for legacy users without a nameSlug
   if (!creator) {
-    const users = await User.find({ role: "creator" });
-    creator = users.find((u) => slugify(u.name) === identifier.toLowerCase() || u.alias === identifier);
+    creator = await User.findOne({
+      name: { $regex: new RegExp("^" + identifier.replace(/-/g, '.*') + "$", "i") },
+      role: "creator"
+    });
   }
+
   if (!creator && identifier.match(/^[0-9a-fA-F]{24}$/)) {
-    creator = await User.findById(identifier);
+    const byId = await User.findById(identifier);
+    if (byId && byId.role === "creator") {
+      creator = byId;
+    }
   }
   return creator;
 }
@@ -46,7 +93,7 @@ async function findCreatorByAliasOrName(identifier) {
 
 exports.getEventTypes = async (req, res) => {
   try {
-    const eventTypes = await EventType.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, count: eventTypes.length, data: eventTypes });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
@@ -361,7 +408,7 @@ exports.getAvailableSlots = async (req, res) => {
       userId: creator._id,
       status: "scheduled",
       startTime: { $gte: startOfDay, $lte: endOfDay },
-    });
+    }).lean();
 
     const now = new Date();
     const candidateSlots = [];
@@ -425,47 +472,109 @@ exports.createBooking = async (req, res) => {
 
     const end = new Date(start.getTime() + eventType.duration * 60 * 1000);
 
-    // Conflict check
-    const existingConflict = await MeetingBooking.findOne({
-      userId: creator._id,
-      status: "scheduled",
-      $or: [
-        { startTime: { $lt: end, $gte: start } },
-        { endTime: { $gt: start, $lte: end } },
-      ],
-    });
-
-    if (existingConflict) {
-      return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+    const availability = eventType.availability || {};
+    const availabilityTimeZone = availability.timeZone || "UTC";
+    let localParts;
+    try {
+      localParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: availabilityTimeZone,
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(start).reduce((parts, part) => {
+        parts[part.type] = part.value;
+        return parts;
+      }, {});
+    } catch (error) {
+      return res.status(400).json({ success: false, message: "Event availability timezone is invalid" });
     }
 
-    // Sync with Google Calendar service
-    const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
-      title: `${eventType.title} with ${attendeeName}`,
-      description: `Meeting arranged via CreatorOS\n\nNotes: ${attendeeNotes || "None"}`,
-      startTime: start,
-      endTime: end,
-      attendeeName,
-      attendeeEmail,
-      locationType: eventType.locationType,
-      locationDetails: eventType.locationDetails,
-    });
+    const weekdayMap = { Sun: "sun", Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri", Sat: "sat" };
+    const allowedDays = availability.days || ["mon", "tue", "wed", "thu", "fri"];
+    const localStartMinutes = Number(localParts.hour) * 60 + Number(localParts.minute);
+    const [startHour, startMinute] = (availability.startTime || "09:00").split(":").map(Number);
+    const [endHour, endMinute] = (availability.endTime || "17:00").split(":").map(Number);
+    const windowStart = startHour * 60 + startMinute;
+    const windowEnd = endHour * 60 + endMinute;
+    const endLocalParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: availabilityTimeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(end).reduce((parts, part) => {
+      parts[part.type] = part.value;
+      return parts;
+    }, {});
+    const localEndMinutes = Number(endLocalParts.hour) * 60 + Number(endLocalParts.minute);
 
-    const booking = await MeetingBooking.create({
-      userId: creator._id,
-      eventTypeId: eventType._id,
-      attendeeName,
-      attendeeEmail,
-      attendeeNotes: attendeeNotes || "",
-      answers: answers || [],
-      startTime: start,
-      endTime: end,
-      timeZone: timeZone || "UTC",
-      status: "scheduled",
-      locationType: eventType.locationType,
-      meetingLink: gCalResult.meetingLink,
-      googleEventId: gCalResult.eventId,
-    });
+    if (!allowedDays.includes(weekdayMap[localParts.weekday]) || localStartMinutes < windowStart || localEndMinutes > windowEnd) {
+      return res.status(409).json({ success: false, message: "This time is outside the event availability window" });
+    } 
+    // Conflict check & 2PC Lock
+    const lockKey = `calendar_lock:${creator._id}`;
+    const acquired = await acquireLock(lockKey, 15);
+    if (!acquired) {
+      return res.status(409).json({ success: false, message: "Server is busy processing another booking for this creator. Please try again in a few seconds." });
+    }
+
+    let booking = null;
+    try {
+      const existingConflict = await MeetingBooking.findOne({
+        userId: creator._id,
+        status: "scheduled",
+        startTime: { $lt: end },
+        endTime: { $gt: start },
+      });
+
+      if (existingConflict) {
+        return res.status(409).json({ success: false, message: "This time slot is no longer available. Please select another slot." });
+      }
+
+      // 2PC Phase 1: Create pending booking
+      booking = await MeetingBooking.create({
+        userId: creator._id,
+        eventTypeId: eventType._id,
+        attendeeName,
+        attendeeEmail,
+        attendeeNotes: attendeeNotes || "",
+        answers: answers || [],
+        startTime: start,
+        endTime: end,
+        timeZone: timeZone || "UTC",
+        status: "pending_sync",
+        locationType: eventType.locationType,
+      });
+
+      // 2PC Phase 2: External Google Calendar API
+      const gCalResult = await GoogleCalendarService.createCalendarEvent(creator, {
+        title: `${eventType.title} with ${attendeeName}`,
+        description: `Meeting arranged via CreatorOS
+
+Notes: ${attendeeNotes || "None"}`,
+        startTime: start,
+        endTime: end,
+        attendeeName,
+        attendeeEmail,
+        locationType: eventType.locationType,
+        locationDetails: eventType.locationDetails,
+      });
+
+      // 2PC Commit
+      booking.status = "scheduled";
+      booking.meetingLink = gCalResult.meetingLink;
+      booking.googleEventId = gCalResult.eventId;
+      await booking.save();
+
+    } catch (err) {
+      // 2PC Rollback
+      if (booking) {
+        await MeetingBooking.deleteOne({ _id: booking._id });
+      }
+      throw err;
+    } finally {
+      await releaseLock(lockKey);
+    }
 
     return res.status(201).json({
       success: true,
@@ -485,3 +594,5 @@ exports.createBooking = async (req, res) => {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
   }
 };
+
+

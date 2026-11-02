@@ -88,7 +88,7 @@ sequenceDiagram
 
 ## 4. Token Resolution & Middleware Security
 
-Authentication checks are handled primarily by [`middleware/auth.js`](file:///d:/GSSoC/CreatorOs/CreatorOs/middleware/auth.js).
+Authentication checks are handled primarily by [`middleware/auth.js`](../middleware/auth.js).
 
 ### Token Resolution Strategy
 1. **Cookie Priority**: Reads `req.cookies.token` (httpOnly cookie).
@@ -102,7 +102,7 @@ Authentication checks are handled primarily by [`middleware/auth.js`](file:///d:
 
 ## 5. Role-Based Access Control (RBAC)
 
-CreatorOS supports four primary roles enforced by dedicated middleware functions in [`middleware/auth.js`](file:///d:/GSSoC/CreatorOs/CreatorOs/middleware/auth.js):
+CreatorOS supports four primary roles enforced by dedicated middleware functions in [`middleware/auth.js`](../middleware/auth.js):
 
 | Role | Description | Permissions & Restrictions |
 | :--- | :--- | :--- |

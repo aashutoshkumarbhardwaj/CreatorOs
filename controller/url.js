@@ -3,8 +3,11 @@ const shortid = require("shortid");
 const QRCode = require("qrcode");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs"); // swap to 'bcrypt' if that's what model/user.js uses
+const net = require("net");
+const dns = require("dns").promises;
 const Url = require("../model/url");
 const { isValidUrl } = require("../utils/validators");
+const { assertSafePublicHttpUrl } = require("../utils/ssrf");
 const asyncHandler = require("../utils/asyncHandler");
 
 const MAX_TAGS_PER_LINK = 10;
@@ -30,75 +33,10 @@ function parseListLimit(value) {
   return Math.min(parsed, MAX_LINK_LIST_LIMIT);
 }
 
-function isPrivateIP(ip) {
-    if (net.isIPv6(ip)) {
-        return ip === '::1' || ip === '0:0:0:0:0:0:0:1';
-    }
-    const parts = ip.split('.').map(Number);
-    if (parts.length !== 4) return false;
-    // 10.0.0.0/8
-    if (parts[0] === 10) return true;
-    // 127.0.0.0/8
-    if (parts[0] === 127) return true;
-    // 169.254.0.0/16
-    if (parts[0] === 169 && parts[1] === 254) return true;
-    // 172.16.0.0/12
-    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
-    // 192.168.0.0/16
-    if (parts[0] === 192 && parts[1] === 168) return true;
-    // 0.0.0.0/8
-    if (parts[0] === 0) return true;
-    // 100.64.0.0/10 (CGNAT)
-    if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
-    // 198.18.0.0/15 (benchmarking)
-    if (parts[0] === 198 && parts[1] >= 18 && parts[1] <= 19) return true;
-    return false;
-}
-
-function isSSRFBlocked(hostname) {
-    // Block bare IP addresses in private ranges
-    if (net.isIP(hostname)) {
-        return isPrivateIP(hostname);
-    }
-    return false;
-}
-
-async function validateURL(urlString) {
-    let parsed;
-    try {
-        parsed = new URL(urlString);
-    } catch {
-        throw new Error('Invalid URL');
-    }
-
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        throw new Error('Only HTTP and HTTPS URLs are allowed');
-    }
-
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (isSSRFBlocked(hostname)) {
-        throw new Error('URL points to a private or internal network address');
-    }
-
-    // Resolve hostname to IP addresses and check each one
-    const addresses = await new Promise((resolve) => {
-        dns.lookup(hostname, { all: true }, (err, addrs) => {
-            if (err) resolve([]);
-            else resolve(addrs.map(a => a.address));
-        });
-    });
-
-    for (const addr of addresses) {
-        if (isPrivateIP(addr)) {
-            throw new Error('URL resolves to a private or internal network address');
-        }
-    }
-}
-
 async function fetchWebsiteTitle(url, fallback) {
   if (fallback) return fallback;
   try {
+    await assertSafePublicHttpUrl(url);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     const response = await fetch(url, {
@@ -213,6 +151,12 @@ async function handleGenerateShortURL(req, res) {
   } = req.body;
   const redirectUrl = redirectUrlField || url;
   const hostBaseEarly = `${req.protocol}://${req.get("host")}`;
+
+  try {
+    await assertSafePublicHttpUrl(redirectUrl);
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
 
   // Duplicate detection: same user, same destination, not archived.
   // `force: true` from the client bypasses this (user chose "create anyway").
@@ -340,16 +284,11 @@ async function handleListUserLinks(req, res) {
     limit: limit + 1,
     cursor,
     includeArchived,
+    archivedOnly: req.query?.archived === "only",
+    favoriteOnly: req.query?.favorite === "true",
   });
   const hasMore = entries.length > limit;
-  let pageEntries = hasMore ? entries.slice(0, limit) : entries;
-
-  if (req.query?.archived === "only") {
-    pageEntries = pageEntries.filter((e) => e.archived);
-  }
-  if (req.query?.favorite === "true") {
-    pageEntries = pageEntries.filter((e) => e.favorite);
-  }
+  const pageEntries = hasMore ? entries.slice(0, limit) : entries;
 
   const links = pageEntries.map((entry) => serializeLink(entry, hostBase));
   const userStats = await Url.getStatsForUser(userId);
@@ -444,6 +383,16 @@ const handleGenerateShortUrlRender = asyncHandler(async (req, res) => {
   const { redirectUrl, url, campaignName, qrFgColor, qrBgColor } = req.body;
   const inputUrl = redirectUrl || url;
 
+  try {
+    await assertSafePublicHttpUrl(inputUrl);
+  } catch (err) {
+    return res.status(400).render("home", {
+      urls: await Url.find({ userId: req.user?.id || null }).sort({ _id: -1 }).limit(20).lean(),
+      error: err.message,
+      id: null, shortUrl: null, qrCode: null, campaignName: ""
+    });
+  }
+
   if (!inputUrl || !isValidUrl(inputUrl)) {
     // Implement cursor-based pagination to avoid loading all records
     const pageSize = 20;
@@ -532,8 +481,8 @@ const handleGetQRCode = asyncHandler(async (req, res) => {
       light: entry.qrBgColor || "#ffffff",
     },
     errorCorrectionLevel: "M",
-    margin: 2,
-    width: 256,
+    margin: 4,
+    width: 512,
   });
 
   Url.findOneAndUpdate({ shortId }, { $set: { qrGenerated: true } }).catch(
@@ -698,11 +647,7 @@ const handleDeleteShortURL = asyncHandler(async (req, res) => {
       });
   }
 
-  if (Url.findByIdAndDelete) {
-    await Url.findByIdAndDelete(entry._id || shortId);
-  } else if (Url.deleteOne) {
-    await Url.deleteOne({ shortId });
-  }
+  await Url.findByIdAndDelete(entry._id);
 
   return res.json({
     success: true,
@@ -733,6 +678,11 @@ const handleUpdateShortURL = asyncHandler(async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Invalid destination URL" });
+    }
+    try {
+      await assertSafePublicHttpUrl(redirectUrl);
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
     }
     updates.redirectUrl = redirectUrl;
   }
@@ -869,10 +819,13 @@ const handleBulkImport = asyncHandler(async (req, res) => {
 
   for (const row of rows) {
     if (!row.redirectUrl || !isValidUrl(row.redirectUrl)) {
-      skipped.push({
-        input: row.redirectUrl || "(empty)",
-        reason: "Invalid URL",
-      });
+      skipped.push({ input: row.redirectUrl || "(empty)", reason: "Invalid URL" });
+      continue;
+    }
+    try {
+      await assertSafePublicHttpUrl(row.redirectUrl);
+    } catch (err) {
+      skipped.push({ input: row.redirectUrl, reason: err.message });
       continue;
     }
 

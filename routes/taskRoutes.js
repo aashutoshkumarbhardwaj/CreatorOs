@@ -17,11 +17,13 @@ const {
   deleteTask,
 } = require("../controller/taskController");
 
+const { sanitizeNoSqlQuery } = require("../middleware/validators/common");
+
 // Render Task Manager View Page
 router.get("/services/task-manager", protect, getTaskManagerPage);
 
 // Task API Endpoints
-router.get("/api/tasks", protect, getTasks);
+router.get("/api/tasks", protect, sanitizeNoSqlQuery(), getTasks);
 router.post("/api/tasks", protect, createTask);
 router.get("/api/tasks/export/calendar", protect, exportCalendarForCreator);
 router.get("/api/tasks/:id", protect, requireTaskOwnership, getTaskById);
