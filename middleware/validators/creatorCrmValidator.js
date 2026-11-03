@@ -52,7 +52,7 @@ const validateDeal = validateRequest([
   body('stage')
     .optional()
     .trim()
-    .isIn(['lead', 'contacted', 'negotiating', 'contract_sent', 'signed', 'delivering', 'completed', 'paid', 'lost'])
+    .isIn(['lead', 'outreach', 'negotiation', 'contract', 'closed_won', 'closed_lost'])
     .withMessage('Invalid deal stage'),
   body('amount')
     .optional()
