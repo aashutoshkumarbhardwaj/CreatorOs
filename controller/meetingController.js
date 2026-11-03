@@ -93,7 +93,7 @@ async function findCreatorByAliasOrName(identifier) {
 
 exports.getEventTypes = async (req, res) => {
   try {
-    const eventTypes = await EventType.find({ userId: req.user._id }).sort({ createdAt: -1 }).lean();
+    const eventTypes = await EventType.find({ userId: req.user.id || req.user._id }).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: eventTypes.length, data: eventTypes });
   } catch (error) {
     return res.status(500).json({ success: false, message: publicErrorMessage(error) });
