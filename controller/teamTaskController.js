@@ -6,7 +6,7 @@ const { wouldCreateCycle, topologicalSort, cascadeUnblockTasks } = require("../s
  */
 exports.createTeamTask = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const {
       title,
       description,
@@ -83,7 +83,7 @@ exports.createTeamTask = async (req, res) => {
  */
 exports.getTeamTasks = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { status, role, assignee } = req.query;
 
     const query = { creatorId };
@@ -111,7 +111,7 @@ exports.getTeamTasks = async (req, res) => {
  */
 exports.addDependency = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { taskId, prerequisiteTaskId } = req.body;
 
     if (!taskId || !prerequisiteTaskId) {
@@ -168,7 +168,7 @@ exports.addDependency = async (req, res) => {
  */
 exports.updateTaskStatus = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { id } = req.params;
     const { status, loggedHours } = req.body;
 
@@ -217,7 +217,7 @@ exports.updateTaskStatus = async (req, res) => {
  */
 exports.getExecutionOrder = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const tasks = await TeamTask.find({ creatorId });
 
     const ordered = topologicalSort(tasks);

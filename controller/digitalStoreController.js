@@ -18,7 +18,7 @@ function createSlug(title) {
  */
 exports.createProduct = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     if (!creatorId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -112,15 +112,16 @@ exports.getProducts = async (req, res) => {
     const limit = parseLimit(req.query.limit);
     const query = {};
 
+    const currentUserId = req.user ? (req.user.id || req.user._id) : null;
     if (creatorId) {
       query.creatorId = creatorId;
-    } else if (req.user && req.user._id) {
-      query.creatorId = req.user._id;
+    } else if (currentUserId) {
+      query.creatorId = currentUserId;
     }
 
     if (status) {
       query.status = status;
-    } else if (!req.user || (req.user._id && String(query.creatorId) !== String(req.user._id))) {
+    } else if (!currentUserId || String(query.creatorId) !== String(currentUserId)) {
       query.status = "active";
     }
 
@@ -192,7 +193,7 @@ exports.getProductDetails = async (req, res) => {
  */
 exports.updateProduct = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { id } = req.params;
 
     const product = await DigitalProduct.findOne({ _id: id, creatorId });
@@ -246,7 +247,7 @@ exports.updateProduct = async (req, res) => {
  */
 exports.deleteProduct = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { id } = req.params;
 
     const product = await DigitalProduct.findOneAndDelete({ _id: id, creatorId });
@@ -410,7 +411,7 @@ exports.validateAndConsumeDownload = async (req, res) => {
  */
 exports.refundOrder = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { orderId } = req.params;
 
     const order = await DigitalOrder.findOne({ _id: orderId, creatorId });
@@ -455,7 +456,7 @@ exports.refundOrder = async (req, res) => {
  */
 exports.getSalesReport = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
 
     const [products, orders] = await Promise.all([
       DigitalProduct.find({ creatorId }),

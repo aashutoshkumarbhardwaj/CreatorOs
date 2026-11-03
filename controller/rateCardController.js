@@ -14,7 +14,7 @@ function createSlug(title) {
  */
 exports.createRateCard = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const {
       title,
       niche,
@@ -79,7 +79,7 @@ exports.createRateCard = async (req, res) => {
  */
 exports.getRateCards = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const cards = await CreatorRateCard.find({ creatorId }).sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -135,7 +135,7 @@ exports.getPublicRateCard = async (req, res) => {
  */
 exports.updateRateCard = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { id } = req.params;
 
     const card = await CreatorRateCard.findOne({ _id: id, creatorId });
@@ -186,7 +186,7 @@ exports.updateRateCard = async (req, res) => {
  */
 exports.deleteRateCard = async (req, res) => {
   try {
-    const creatorId = req.user && req.user._id ? req.user._id : req.user;
+    const creatorId = req.user.id || req.user._id;
     const { id } = req.params;
 
     const card = await CreatorRateCard.findOneAndDelete({ _id: id, creatorId });
