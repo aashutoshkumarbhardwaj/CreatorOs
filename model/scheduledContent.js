@@ -27,7 +27,7 @@ const scheduledContentSchema = new mongoose.Schema(
         },
         platform: {
             type: String,
-            enum: ["instagram", "youtube", "twitter", "tiktok", "general"],
+            enum: ["instagram", "youtube", "twitter", "tiktok", "linkedin", "blog", "general"],
             default: "instagram",
         },
         platformPostId: {
