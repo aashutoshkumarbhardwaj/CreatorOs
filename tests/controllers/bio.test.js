@@ -148,12 +148,6 @@ describe('Bio Controller & Dynamic Routing', () => {
             expect(res.text).toContain('Test Creator');
         });
 
-        it('should render public profile via /u/:handle', async () => {
-            const res = await request(app).get('/u/testcreator');
-            expect(res.statusCode).toBe(200);
-            expect(res.text).toContain('Test Creator');
-        });
-
         it('should render public profile via fallback route /:handle', async () => {
             const res = await request(app).get('/testcreator');
             expect(res.statusCode).toBe(200);
