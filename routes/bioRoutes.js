@@ -30,7 +30,6 @@ router.post('/bio/track/:linkId', clickTrackerLimiter, trackLinkClick);
 // Dynamic Public Bio Profile Routes
 router.get('/@:handle', renderPublicBioProfile);
 router.get('/bio/:handle', renderPublicBioProfile);
-router.get('/u/:handle', renderPublicBioProfile);
 router.get('/b/:handle', renderPublicBioProfile);
 
 module.exports = router;
