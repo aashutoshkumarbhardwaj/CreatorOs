@@ -76,9 +76,15 @@ function getVerificationTokenExpiry() {
  * @returns {any}
  */
 function isVerificationTokenExpired(expiryDate) {
-    if (!expiryDate) return true;
+    // Reject tokens with no expiry date.
+    if (expiryDate === null || expiryDate === undefined) {
+        return true;
+    }
+
     const expiryTime = new Date(expiryDate).getTime();
-    return Number.isNaN(expiryTime) || expiryTime < Date.now();
+
+    // Reject invalid expiry dates and expired tokens.
+    return !Number.isFinite(expiryTime) || expiryTime <= Date.now();
 }
 /**
  * @function isGoogleAuthConfigured
