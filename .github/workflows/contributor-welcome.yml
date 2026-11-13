@@ -2,41 +2,57 @@ name: Contributor Welcome
 
 on:
   issues:
-    types: [assigned]
+    types:
+      - assigned
 
 permissions:
   contents: read
   issues: write
   pull-requests: write
 
-
 jobs:
   welcome:
+    name: Welcome New Assignee
     runs-on: ubuntu-latest
+
     steps:
-      - name: Send Welcome Message
+      - name: Post Welcome Comment
         uses: actions/github-script@v7
         with:
           script: |
-            const assignees = context.payload.issue.assignees
-              .map(a => `@${a.login}`)
+            const assignees = context.payload.issue.assignees || [];
+
+            if (assignees.length === 0) {
+              console.log("No assignees found.");
+              return;
+            }
+
+            const mentions = assignees
+              .map(user => `@${user.login}`)
               .join(", ");
 
-            const message = `
-            Hey ${assignees} 👋
+            const message = `## 🎉 Welcome, ${mentions}!
 
-            Thanks for taking up this issue in CreatorOS 🚀
+            Thank you for taking up this issue in **CreatorOS** 🚀
 
-            If you find this project useful, consider giving it a ⭐ on GitHub.
+            We're excited to have you contributing to the project.
 
-            It helps the project grow and motivates contributors.
+            ### Before you start
+            - 📖 Read the contribution guidelines.
+            - 🍴 Fork the repository and create a new branch.
+            - ✅ Keep your pull request focused on this issue.
+            - 💬 Feel free to ask questions if you need any help.
 
-            Happy coding! 🙌
+            ### Support the Project
+            If you enjoy contributing to **CreatorOS**, consider giving the repository a ⭐.
+            Your support helps the project grow and motivates contributors.
+
+            Happy Coding! 💙
             `;
 
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: message
+              body: message,
             });
