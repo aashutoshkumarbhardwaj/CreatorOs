@@ -1,10 +1,9 @@
+
 #!/usr/bin/env node
 
 /**
  * Simple Auto-Labeling Script
  * Detects issue type and applies appropriate labels
- * - Detects: bug, enhancement, documentation, question
- * - Marks incomplete issues
  */
 
 const { Octokit } = require("@octokit/rest");
@@ -13,42 +12,42 @@ const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
 });
 
-const owner = process.env.GITHUB_REPOSITORY_OWNER;
-const repo = process.env.GITHUB_REPOSITORY.split("/")[1];
+const [owner, repo] = (process.env.GITHUB_REPOSITORY || "").split("/");
 const issueNumber = process.env.GITHUB_EVENT_ISSUE_NUMBER;
 
 async function autoLabel() {
   try {
+    if (!owner || !repo || !issueNumber || !process.env.GITHUB_TOKEN) {
+      throw new Error("Missing required GitHub environment variables");
+    }
+
     const issue = await octokit.issues.get({
       owner,
       repo,
-      issue_number: issueNumber,
+      issue_number: Number(issueNumber),
     });
 
-    const { title, body } = issue.data;
+    const { title, body, labels } = issue.data;
+
     const content = `${title} ${body || ""}`.toLowerCase();
-    const currentLabels = issue.data.labels.map((l) => l.name);
+    const currentLabels = labels.map((label) => label.name);
 
     const labelsToAdd = [];
 
     // Detect issue type
-    if (content.includes("bug") || content.includes("error") || content.includes("broken")) {
+    if (/\b(bug|error|broken)\b/.test(content)) {
       if (!currentLabels.includes("bug")) {
         labelsToAdd.push("bug");
       }
-    } else if (
-      content.includes("feature") ||
-      content.includes("enhancement") ||
-      content.includes("request")
-    ) {
+    } else if (/\b(feature|enhancement|request)\b/.test(content)) {
       if (!currentLabels.includes("enhancement")) {
         labelsToAdd.push("enhancement");
       }
-    } else if (content.includes("doc") || content.includes("readme") || content.includes("guide")) {
+    } else if (/\b(documentation|docs|readme|guide)\b/.test(content)) {
       if (!currentLabels.includes("documentation")) {
         labelsToAdd.push("documentation");
       }
-    } else if (content.includes("?") || content.includes("how to") || content.includes("question")) {
+    } else if (content.includes("?") || /\b(how to|question)\b/.test(content)) {
       if (!currentLabels.includes("question")) {
         labelsToAdd.push("question");
       }
@@ -66,13 +65,16 @@ async function autoLabel() {
       await octokit.issues.addLabels({
         owner,
         repo,
-        issue_number: issueNumber,
+        issue_number: Number(issueNumber),
         labels: labelsToAdd,
       });
-      console.log(`✓ Added labels: ${labelsToAdd.join(", ")}`);
+
+      console.log(`Added labels: ${labelsToAdd.join(", ")}`);
+    } else {
+      console.log("No new labels to add.");
     }
   } catch (error) {
-    console.error("❌ Auto-label failed:", error.message);
+    console.error("Auto-label failed:", error.message);
     process.exit(1);
   }
 }
