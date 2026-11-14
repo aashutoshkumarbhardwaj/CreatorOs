@@ -1,36 +1,146 @@
-const express = require('express');
+
+"use strict";
+
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+
 const router = express.Router();
-const rateLimit = require('express-rate-limit');
-const { protect } = require('../middleware/auth');
+
+// --------------------------------------------------
+// MIDDLEWARE
+// --------------------------------------------------
+
+const { protect } = require("../middleware/auth");
+
 const {
     renderBioEditor,
     saveBioProfile,
     checkHandleAvailability,
     renderPublicBioProfile,
-    trackLinkClick
-} = require('../controller/bioController');
+    trackLinkClick,
+} = require("../controller/bioController");
 
-// Rate limiter for link click tracking
-const clickTrackerLimiter = rateLimit({
+// --------------------------------------------------
+// RATE LIMITERS
+// --------------------------------------------------
+
+// General API rate limiter
+const bioApiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: { success: false, message: 'Too many requests' },
-    standardHeaders: true,
+    limit: 100,
+    standardHeaders: "draft-8",
     legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many requests. Please try again later.",
+    },
 });
 
-// Protected Creator Editor & Management Routes
-router.get('/bio', protect, renderBioEditor);
-router.post('/bio/save', protect, saveBioProfile);
-router.get('/bio/check-handle/:handle', protect, checkHandleAvailability);
+// Profile update limiter
+const profileUpdateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many profile updates. Please try again later.",
+    },
+});
 
-// Click tracking
-router.post('/bio/track/:linkId', clickTrackerLimiter, trackLinkClick);
+// Handle availability limiter
+const handleCheckLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 40,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many handle checks. Please try again later.",
+    },
+});
 
-// Dynamic Public Bio Profile Routes
-router.get('/@:handle', renderPublicBioProfile);
-router.get('/bio/:handle', renderPublicBioProfile);
-router.get('/u/:handle', renderPublicBioProfile);
-router.get('/b/:handle', renderPublicBioProfile);
+// Public link tracking limiter
+const clickTrackerLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many link tracking requests.",
+    },
+});
+
+// --------------------------------------------------
+// PRIVATE CREATOR BIO ROUTES
+// --------------------------------------------------
+
+// Render creator bio editor
+router.get(
+    "/bio",
+    protect,
+    renderBioEditor
+);
+
+// Save or update creator bio profile
+router.post(
+    "/bio/save",
+    protect,
+    bioApiLimiter,
+    profileUpdateLimiter,
+    saveBioProfile
+);
+
+// Check username / handle availability
+router.get(
+    "/bio/check-handle/:handle",
+    protect,
+    handleCheckLimiter,
+    checkHandleAvailability
+);
+
+// --------------------------------------------------
+// PUBLIC BIO ANALYTICS ROUTES
+// --------------------------------------------------
+
+// Track clicks on public bio links
+router.post(
+    "/bio/track/:linkId",
+    clickTrackerLimiter,
+    trackLinkClick
+);
+
+// --------------------------------------------------
+// PUBLIC BIO PROFILE ROUTES
+// --------------------------------------------------
+
+// Primary public profile URL
+router.get(
+    "/@:handle",
+    renderPublicBioProfile
+);
+
+// Alternative profile URL
+router.get(
+    "/bio/:handle",
+    renderPublicBioProfile
+);
+
+// Short public profile URL
+router.get(
+    "/u/:handle",
+    renderPublicBioProfile
+);
+
+// Branded public profile URL
+router.get(
+    "/b/:handle",
+    renderPublicBioProfile
+);
+
+// --------------------------------------------------
+// EXPORT ROUTER
+// --------------------------------------------------
 
 module.exports = router;
