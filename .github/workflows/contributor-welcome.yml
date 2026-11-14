@@ -1,42 +1,39 @@
-name: Contributor Welcome
+#include <stdio.h>
 
-on:
-  issues:
-    types: [assigned]
+int main()
+{
+    int side1, side2, side3;
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
+    printf("Enter three sides: ");
+    scanf("%d %d %d", &side1, &side2, &side3);
 
+    // Check whether the sides are positive
+    if (side1 <= 0 || side2 <= 0 || side3 <= 0)
+    {
+        printf("Invalid triangle");
+    }
+    // Check the triangle inequality condition
+    else if (side1 + side2 <= side3 ||
+             side1 + side3 <= side2 ||
+             side2 + side3 <= side1)
+    {
+        printf("Invalid triangle");
+    }
+    // Check for an equilateral triangle
+    else if (side1 == side2 && side2 == side3)
+    {
+        printf("Equilateral triangle");
+    }
+    // Check for an isosceles triangle
+    else if (side1 == side2 || side2 == side3 || side1 == side3)
+    {
+        printf("Isosceles triangle");
+    }
+    // Otherwise, it is a scalene triangle
+    else
+    {
+        printf("Scalene triangle");
+    }
 
-jobs:
-  welcome:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Welcome Message
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const assignees = context.payload.issue.assignees
-              .map(a => `@${a.login}`)
-              .join(", ");
-
-            const message = `
-            Hey ${assignees} 👋
-
-            Thanks for taking up this issue in CreatorOS 🚀
-
-            If you find this project useful, consider giving it a ⭐ on GitHub.
-
-            It helps the project grow and motivates contributors.
-
-            Happy coding! 🙌
-            `;
-
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: message
-            });
+    return 0;
+}
