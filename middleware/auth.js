@@ -1,111 +1,224 @@
+
 const jwt = require("jsonwebtoken");
 const connectDB = require("../connect");
 const { wantsHtml } = require("../utils/requestType");
 const { isEmailTransportConfigured } = require("../utils/email");
 
+const MOCK_USER = {
+    id: "60d5ecb8b5c9c62b3c7b3999",
+    name: "Mock Creator",
+    email: "mock@creator.os",
+    role: "admin",
+};
+
+const isProduction = () => process.env.NODE_ENV === "production";
+
+const getToken = (req) => {
+    const authHeader = req.headers.authorization || "";
+    const bearerToken = authHeader.match(/^Bearer\s+(.+)$/i);
+
+    return req.cookies?.token || bearerToken?.[1]?.trim() || null;
+};
+
+const sendAuthError = (req, res, message, status = 401) => {
+    if (wantsHtml(req) && status === 401) {
+        return res.redirect("/login");
+    }
+
+    return res.status(status).json({
+        success: false,
+        message,
+        error: message,
+    });
+};
+
+const verifyToken = (token) => {
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not configured");
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+        algorithms: ["HS256"],
+    });
+
+    if (
+        !decoded ||
+        typeof decoded !== "object" ||
+        typeof decoded.id !== "string" ||
+        !decoded.role
+    ) {
+        throw new jwt.JsonWebTokenError("Invalid token payload");
+    }
+
+    return decoded;
+};
+
+const isPasswordChanged = (user, decoded) => {
+    if (!user.passwordChangedAt || !decoded.iat) {
+        return false;
+    }
+
+    const changedAt = Math.floor(
+        new Date(user.passwordChangedAt).getTime() / 1000
+    );
+
+    return changedAt > decoded.iat;
+};
+
+const checkVerification = (req, res, user, email) => {
+    if (
+        isProduction() &&
+        !user.isVerified &&
+        user.authProvider !== "google"
+    ) {
+        const query = new URLSearchParams({
+            email,
+            delivery: isEmailTransportConfigured()
+                ? "configured"
+                : "unavailable",
+        });
+
+        return res.redirect(
+            `/resend-verification?${query.toString()}`
+        );
+    }
+
+    return null;
+};
+
 /**
- * @function protect
- * @description Middleware to ensure the request is authenticated via a valid JWT token.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * Authentication middleware
  */
 const protect = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization || "";
-        const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-        const token = req.cookies.token || bearerToken;
+        const token = getToken(req);
 
+        // Mock authentication is restricted to non-production environments.
         if (!token) {
-            if (process.env.USE_MOCK_DB === "true" || !process.env.JWT_SECRET) {
-                req.user = { id: "60d5ecb8b5c9c62b3c7b3999", name: "Mock Creator", email: "mock@creator.os" };
+            if (
+                process.env.USE_MOCK_DB === "true" &&
+                !isProduction()
+            ) {
+                req.user = { ...MOCK_USER };
                 return next();
             }
-            if (wantsHtml(req)) return res.redirect("/login");
-            return res.status(401).json({
-                success: false,
-                message: "Authentication required",
-                error: "Authentication required",
-            });
+
+            return sendAuthError(
+                req,
+                res,
+                "Authentication required"
+            );
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let decoded;
+
+        try {
+            decoded = verifyToken(token);
+        } catch (error) {
+            if (error.message === "JWT_SECRET is not configured") {
+                return next(error);
+            }
+
+            return sendAuthError(
+                req,
+                res,
+                "Invalid or expired token"
+            );
+        }
 
         await connectDB();
 
+        // Guest contributor authentication
         if (decoded.role === "guest_contributor") {
             const ContributorSession = require("../model/contributorSession");
-            const session = await ContributorSession.findOne({ contributorId: decoded.id });
+
+            const session = await ContributorSession.findOne({
+                contributorId: decoded.id,
+            });
 
             if (!session) {
-                if (wantsHtml(req)) return res.redirect("/login");
-                return res.status(401).json({
-                    success: false,
-                    message: "Invalid session",
-                    error: "Invalid session",
-                });
-            }
-        } else {
-            const User = require("../model/user");
-            const user = await User.findOne({ email: decoded.email });
-
-            if (!user) {
-                if (wantsHtml(req)) return res.redirect("/login");
-                return res.status(401).json({
-                    success: false,
-                    message: "User not found",
-                    error: "User not found",
-                });
-            }
-
-            // Check if password was changed after token was issued
-            if (user.passwordChangedAt && decoded.iat) {
-                const passwordChangedAt = Math.floor(
-                    new Date(user.passwordChangedAt).getTime() / 1000
+                return sendAuthError(
+                    req,
+                    res,
+                    "Invalid session"
                 );
-                if (passwordChangedAt > decoded.iat) {
-                    if (wantsHtml(req)) return res.redirect("/login");
-                    return res.status(401).json({
-                        success: false,
-                        message: "Password recently changed. Please log in again.",
-                        error: "Password recently changed. Please log in again.",
-                    });
-                }
             }
 
-            const isProduction = process.env.NODE_ENV === "production";
-            const isMock = process.env.USE_MOCK_DB === "true";
-            if (isProduction && !isMock && !user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
-                const query = new URLSearchParams({
-                    email: decoded.email,
-                    delivery: isEmailTransportConfigured() ? 'configured' : 'unavailable',
-                });
+            req.user = {
+                ...decoded,
+                role: "guest_contributor",
+            };
 
-                return res.status(403).redirect(`/resend-verification?${query.toString()}`);
-            }
+            return next();
         }
 
-        req.user = decoded;
+        // Regular user authentication
+        const User = require("../model/user");
 
-        next();
-    } catch (error) {
-        if (wantsHtml(req)) return res.redirect("/login");
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired token",
-            error: "Invalid or expired token",
+        const user = await User.findOne({
+            email: decoded.email,
         });
+
+        if (!user) {
+            return sendAuthError(
+                req,
+                res,
+                "User not found"
+            );
+        }
+
+        if (user.isActive === false) {
+            return sendAuthError(
+                req,
+                res,
+                "Account is disabled",
+                403
+            );
+        }
+
+        // Invalidate tokens issued before password changes.
+        if (isPasswordChanged(user, decoded)) {
+            return sendAuthError(
+                req,
+                res,
+                "Password recently changed. Please log in again."
+            );
+        }
+
+        // Require email verification in production.
+        const verificationResponse = checkVerification(
+            req,
+            res,
+            user,
+            decoded.email
+        );
+
+        if (verificationResponse) {
+            return res.status(403).json
+                ? verificationResponse.status(403).redirect(
+                    verificationResponse.location
+                )
+                : verificationResponse;
+        }
+
+        // Use current database role instead of potentially stale JWT role.
+        req.user = {
+            ...decoded,
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            role: user.role,
+        };
+
+        return next();
+
+    } catch (error) {
+        return next(error);
     }
 };
 
 /**
- * @function requireAdmin
- * @description Middleware to ensure the authenticated user has administrative privileges.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * Admin authorization middleware
  */
 const requireAdmin = (req, res, next) => {
     if (!req.user || req.user.role !== "admin") {
@@ -120,15 +233,13 @@ const requireAdmin = (req, res, next) => {
 };
 
 /**
- * @function preventContributorWrites
- * @description Middleware to restrict contributor accounts from performing write operations.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {Promise<void>|void}
+ * Prevent contributors from modifying data
  */
 const preventContributorWrites = (req, res, next) => {
-    if (!req.user || req.user.role === "contributor" || req.user.role === "guest_contributor") {
+    if (
+        !req.user ||
+        ["contributor", "guest_contributor"].includes(req.user.role)
+    ) {
         return res.status(403).json({
             success: false,
             message: "Contributor accounts do not have permission to modify data.",
@@ -140,62 +251,72 @@ const preventContributorWrites = (req, res, next) => {
 };
 
 /**
- * @function redirectIfAuthenticated
- * @description Middleware for landing page to redirect already-authenticated users to /dashboard.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
+ * Redirect authenticated users to dashboard
  */
 const redirectIfAuthenticated = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization || "";
-        const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-        const token = req.cookies.token || bearerToken;
+        const token = getToken(req);
 
         if (!token) {
             return next();
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let decoded;
+
+        try {
+            decoded = verifyToken(token);
+        } catch (error) {
+            if (error.message === "JWT_SECRET is not configured") {
+                return next(error);
+            }
+
+            return next();
+        }
 
         await connectDB();
 
         if (decoded.role === "guest_contributor") {
             const ContributorSession = require("../model/contributorSession");
-            const session = await ContributorSession.findOne({ contributorId: decoded.id });
+
+            const session = await ContributorSession.findOne({
+                contributorId: decoded.id,
+            });
 
             if (!session) {
                 return next();
             }
-        } else {
-            const User = require("../model/user");
-            const user = await User.findOne({ email: decoded.email });
 
-            if (!user) {
-                return next();
-            }
+            return res.redirect("/dashboard");
+        }
 
-            if (user.passwordChangedAt && decoded.iat) {
-                const passwordChangedAt = Math.floor(
-                    new Date(user.passwordChangedAt).getTime() / 1000
-                );
-                if (passwordChangedAt > decoded.iat) {
-                    return next();
-                }
-            }
+        const User = require("../model/user");
 
-            const isProduction = process.env.NODE_ENV === "production";
-            if (isProduction && !user.isVerified && user.authProvider !== 'google' && isEmailTransportConfigured()) {
-                return next();
-            }
+        const user = await User.findOne({
+            email: decoded.email,
+        });
+
+        if (
+            !user ||
+            user.isActive === false ||
+            isPasswordChanged(user, decoded)
+        ) {
+            return next();
+        }
+
+        if (
+            isProduction() &&
+            !user.isVerified &&
+            user.authProvider !== "google"
+        ) {
+            return next();
         }
 
         return res.redirect("/dashboard");
+
     } catch (error) {
-        return next();
+        return next(error);
     }
 };
-
 
 module.exports = {
     protect,
