@@ -1,9 +1,13 @@
-const { v4: uuidv4 } = require("crypto");
-const asyncHandler = require("../utils/asyncHandler");
+
+const crypto = require("crypto");
 const mongoose = require("mongoose");
+
+const asyncHandler = require("../utils/asyncHandler");
 const services = require("../services.config");
+
 const AssistantChat = require("../model/assistantChat");
 const ContentOs = require("../model/contentOs");
+
 const {
   generateConversationalResponse,
   analyzeContentSeo,
@@ -12,15 +16,90 @@ const {
   generateCreatorInsights,
 } = require("../services/aiAssistantService");
 
+// =============================================
+// CONFIGURATION
+// =============================================
+
+const DEFAULTS = {
+  platform: "general",
+  tone: "energetic",
+  length: "medium",
+  niche: "Digital Creator",
+};
+
+const LIMITS = {
+  PROMPT: 10000,
+  TITLE: 100,
+  DESCRIPTION: 5000,
+  CHAT_LIST: 50,
+  HISTORY: 40,
+};
+
+// =============================================
+// SHARED HELPERS
+// =============================================
+
+const getUserId = (req) => {
+  return req.user?.id || req.user?._id || null;
+};
+
+const isValidUserId = (userId) => {
+  return Boolean(userId && mongoose.Types.ObjectId.isValid(userId));
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({
+    success: false,
+    message,
+  });
+};
+
+const getBody = (req) => {
+  return req.validatedBody || req.body || {};
+};
+
+const generateMessageId = () => {
+  return `msg_${crypto.randomUUID()}`;
+};
+
+const getCreatorNiche = (req) => {
+  return req.user?.bio?.trim() || DEFAULTS.niche;
+};
+
+const validateText = (value, maxLength) => {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    value.length <= maxLength
+  );
+};
+
+const validateChatId = (id) => {
+  return mongoose.Types.ObjectId.isValid(id);
+};
+
+const normalizeOption = (value, fallback) => {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : fallback;
+};
+
+// =============================================
+// RENDER ASSISTANT DASHBOARD
+// =============================================
+
 /**
  * GET /services/ai-assistant
- * Renders the AI Creator Assistant dashboard view.
+ *
+ * Renders the AI Creator Assistant dashboard.
  */
+
 const renderAssistantView = asyncHandler(async (req, res) => {
-  const userId = req.user?.id || req.user?._id;
+  const userId = getUserId(req);
+
   let chats = [];
 
-  if (userId) {
+  if (isValidUserId(userId)) {
     chats = await AssistantChat.find({ userId })
       .select("title platform tone length updatedAt")
       .sort({ updatedAt: -1 })
@@ -29,206 +108,447 @@ const renderAssistantView = asyncHandler(async (req, res) => {
   }
 
   const initialInsights = generateCreatorInsights({
-    niche: req.user?.bio || "Digital Creator",
+    niche: getCreatorNiche(req),
   });
 
-  res.render("ai-assistant", {
+  return res.render("ai-assistant", {
     title: "🤖 AI Creator Assistant - CreatorOS",
     activeNav: "ai-assistant",
     user: req.user || { name: "Creator" },
     services,
     chats,
     initialInsights,
-    csrfToken: req.csrfToken ? req.csrfToken() : "",
+    csrfToken: req.csrfToken?.() || "",
   });
 });
 
+// =============================================
+// SEND CHAT MESSAGE
+// =============================================
+
 /**
  * POST /api/ai-assistant/chat
- * Handles multi-turn chat messages with AI & updates AssistantChat session.
+ *
+ * Handles AI conversations and persists chat history.
  */
-const sendMessage = asyncHandler(async (req, res) => {
-  const userId = req.user?.id || req.user?._id;
-  const { prompt, platform, tone, length, chatId } = req.validatedBody || req.body;
 
-  let chatDoc = null;
-  if (chatId) {
-    chatDoc = await AssistantChat.findOne({ _id: chatId, userId });
+const sendMessage = asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
+
+  if (!isValidUserId(userId)) {
+    return sendError(res, 401, "Authentication required");
   }
 
-  if (!chatDoc) {
-    const titleSnippet = prompt.slice(0, 40) + (prompt.length > 40 ? "..." : "");
+  const {
+    prompt,
+    platform,
+    tone,
+    length,
+    chatId,
+  } = getBody(req);
+
+  // Validate prompt
+  if (!validateText(prompt, LIMITS.PROMPT)) {
+    return sendError(
+      res,
+      400,
+      `Prompt must contain 1-${LIMITS.PROMPT} characters`
+    );
+  }
+
+  // Validate chat ID
+  if (chatId && !validateChatId(chatId)) {
+    return sendError(res, 400, "Invalid chat ID");
+  }
+
+  let chatDoc;
+
+  // -------------------------------------------
+  // Find existing conversation
+  // -------------------------------------------
+
+  if (chatId) {
+    chatDoc = await AssistantChat.findOne({
+      _id: chatId,
+      userId,
+    });
+
+    // Never silently create a new chat for an
+    // invalid or unauthorized existing chat ID.
+    if (!chatDoc) {
+      return sendError(res, 404, "Chat thread not found");
+    }
+  } else {
+    const cleanPrompt = prompt.trim();
+
     chatDoc = new AssistantChat({
       userId,
-      title: titleSnippet,
-      platform: platform || "general",
-      tone: tone || "energetic",
-      length: length || "medium",
+      title:
+        cleanPrompt.slice(0, 40) +
+        (cleanPrompt.length > 40 ? "..." : ""),
+      platform: normalizeOption(platform, DEFAULTS.platform),
+      tone: normalizeOption(tone, DEFAULTS.tone),
+      length: normalizeOption(length, DEFAULTS.length),
       messages: [],
     });
   }
 
-  // User message
-  const userMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-  chatDoc.messages.push({
-    messageId: userMessageId,
+  // -------------------------------------------
+  // Prepare conversation history
+  // -------------------------------------------
+
+  const previousHistory = chatDoc.messages.map((message) => ({
+    messageId: message.messageId,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+  }));
+
+  const userMessage = {
+    messageId: generateMessageId(),
     role: "user",
-    content: prompt,
+    content: prompt.trim(),
     createdAt: new Date(),
-  });
+  };
 
-  // Generate AI Response
+  // Add user message
+  chatDoc.messages.push(userMessage);
+
+  // -------------------------------------------
+  // Generate AI response
+  // -------------------------------------------
+
   const aiResult = await generateConversationalResponse({
-    prompt,
-    platform: chatDoc.platform,
-    tone: chatDoc.tone,
-    length: length || chatDoc.length || "medium",
-    history: chatDoc.messages,
+    prompt: prompt.trim(),
+    platform: normalizeOption(
+      platform,
+      chatDoc.platform || DEFAULTS.platform
+    ),
+    tone: normalizeOption(
+      tone,
+      chatDoc.tone || DEFAULTS.tone
+    ),
+    length: normalizeOption(
+      length,
+      chatDoc.length || DEFAULTS.length
+    ),
+    history: previousHistory.slice(-LIMITS.HISTORY),
   });
 
-  // Assistant message
-  const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-  const assistantMsg = {
-    messageId: assistantMessageId,
+  if (!aiResult || typeof aiResult.content !== "string") {
+    throw new Error("AI service returned an invalid response");
+  }
+
+  // -------------------------------------------
+  // Prepare assistant response
+  // -------------------------------------------
+
+  const assistantMessage = {
+    messageId: generateMessageId(),
     role: "assistant",
     content: aiResult.content,
     structuredData: {
-      suggestions: aiResult.suggestions,
-      seoScore: aiResult.seoScore,
-      viralityScore: aiResult.viralityScore,
-      keywords: aiResult.keywords,
-      hashtags: aiResult.hashtags,
-      ctas: aiResult.ctas,
+      suggestions: aiResult.suggestions || [],
+      seoScore: aiResult.seoScore ?? null,
+      viralityScore: aiResult.viralityScore ?? null,
+      keywords: aiResult.keywords || [],
+      hashtags: aiResult.hashtags || [],
+      ctas: aiResult.ctas || [],
     },
     createdAt: new Date(),
   };
 
-  chatDoc.messages.push(assistantMsg);
+  chatDoc.messages.push(assistantMessage);
+
+  // Update conversation preferences
+  chatDoc.platform = normalizeOption(
+    platform,
+    chatDoc.platform || DEFAULTS.platform
+  );
+
+  chatDoc.tone = normalizeOption(
+    tone,
+    chatDoc.tone || DEFAULTS.tone
+  );
+
+  chatDoc.length = normalizeOption(
+    length,
+    chatDoc.length || DEFAULTS.length
+  );
+
   await chatDoc.save();
 
-  return res.json({
+  return res.status(200).json({
     success: true,
     data: {
       chatId: chatDoc._id,
       title: chatDoc.title,
-      message: assistantMsg,
+      message: assistantMessage,
     },
   });
 });
 
+// =============================================
+// GET ALL CHATS
+// =============================================
+
 /**
  * GET /api/ai-assistant/chats
- * Retrieves all chat threads for the current user.
  */
+
 const getChats = asyncHandler(async (req, res) => {
-  const userId = req.user?.id || req.user?._id;
+  const userId = getUserId(req);
+
+  if (!isValidUserId(userId)) {
+    return sendError(res, 401, "Authentication required");
+  }
+
   const chats = await AssistantChat.find({ userId })
     .select("title platform tone length updatedAt")
     .sort({ updatedAt: -1 })
+    .limit(LIMITS.CHAT_LIST)
     .lean();
 
-  return res.json({ success: true, data: chats });
+  return res.json({
+    success: true,
+    count: chats.length,
+    data: chats,
+  });
 });
+
+// =============================================
+// GET CHAT BY ID
+// =============================================
 
 /**
  * GET /api/ai-assistant/chats/:id
- * Retrieves a specific chat thread.
  */
-const getChatById = asyncHandler(async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id))
-    return res.status(400).json({ success: false, message: "Invalid chat ID" });
-  const userId = req.user?.id || req.user?._id;
-  const chat = await AssistantChat.findOne({ _id: req.params.id, userId }).lean();
 
-  if (!chat) {
-    return res.status(404).json({ success: false, message: "Chat thread not found" });
+const getChatById = asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+
+  if (!isValidUserId(userId)) {
+    return sendError(res, 401, "Authentication required");
   }
 
-  return res.json({ success: true, data: chat });
+  if (!validateChatId(id)) {
+    return sendError(res, 400, "Invalid chat ID");
+  }
+
+  const chat = await AssistantChat.findOne({
+    _id: id,
+    userId,
+  }).lean();
+
+  if (!chat) {
+    return sendError(res, 404, "Chat thread not found");
+  }
+
+  return res.json({
+    success: true,
+    data: chat,
+  });
 });
+
+// =============================================
+// DELETE CHAT
+// =============================================
 
 /**
  * DELETE /api/ai-assistant/chats/:id
- * Deletes a chat thread.
  */
-const deleteChat = asyncHandler(async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id))
-    return res.status(400).json({ success: false, message: "Invalid chat ID" });
-  const userId = req.user?.id || req.user?._id;
-  const result = await AssistantChat.deleteOne({ _id: req.params.id, userId });
 
-  if (result.deletedCount === 0) {
-    return res.status(404).json({ success: false, message: "Chat thread not found" });
+const deleteChat = asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
+  const { id } = req.params;
+
+  if (!isValidUserId(userId)) {
+    return sendError(res, 401, "Authentication required");
   }
 
-  return res.json({ success: true, message: "Chat thread deleted successfully" });
+  if (!validateChatId(id)) {
+    return sendError(res, 400, "Invalid chat ID");
+  }
+
+  const result = await AssistantChat.deleteOne({
+    _id: id,
+    userId,
+  });
+
+  if (result.deletedCount === 0) {
+    return sendError(res, 404, "Chat thread not found");
+  }
+
+  return res.json({
+    success: true,
+    message: "Chat thread deleted successfully",
+  });
 });
+
+// =============================================
+// SEO ANALYSIS TOOL
+// =============================================
 
 /**
  * POST /api/ai-assistant/tools/seo
  */
+
 const runSeoTool = asyncHandler(async (req, res) => {
-  const { text, platform } = req.validatedBody || req.body;
-  const analysis = analyzeContentSeo(text, platform);
-  return res.json({ success: true, data: analysis });
+  const { text, platform } = getBody(req);
+
+  if (!validateText(text, LIMITS.PROMPT)) {
+    return sendError(res, 400, "Valid content text is required");
+  }
+
+  const analysis = analyzeContentSeo(
+    text.trim(),
+    normalizeOption(platform, DEFAULTS.platform)
+  );
+
+  return res.json({
+    success: true,
+    data: analysis,
+  });
 });
+
+// =============================================
+// CONTENT PERFORMANCE PREDICTOR
+// =============================================
 
 /**
  * POST /api/ai-assistant/tools/predict
  */
+
 const runPredictorTool = asyncHandler(async (req, res) => {
-  const { text, platform } = req.validatedBody || req.body;
-  const prediction = predictContentPerformance(text, platform);
-  return res.json({ success: true, data: prediction });
+  const { text, platform } = getBody(req);
+
+  if (!validateText(text, LIMITS.PROMPT)) {
+    return sendError(res, 400, "Valid content text is required");
+  }
+
+  const prediction = predictContentPerformance(
+    text.trim(),
+    normalizeOption(platform, DEFAULTS.platform)
+  );
+
+  return res.json({
+    success: true,
+    data: prediction,
+  });
 });
+
+// =============================================
+// HASHTAG GENERATOR
+// =============================================
 
 /**
  * POST /api/ai-assistant/tools/hashtags
  */
+
 const runHashtagTool = asyncHandler(async (req, res) => {
-  const { text, platform } = req.validatedBody || req.body;
-  const matrix = generateHashtagMatrix(text, platform);
-  return res.json({ success: true, data: matrix });
+  const { text, platform } = getBody(req);
+
+  if (!validateText(text, LIMITS.PROMPT)) {
+    return sendError(res, 400, "Valid content text is required");
+  }
+
+  const matrix = generateHashtagMatrix(
+    text.trim(),
+    normalizeOption(platform, DEFAULTS.platform)
+  );
+
+  return res.json({
+    success: true,
+    data: matrix,
+  });
 });
+
+// =============================================
+// CREATOR INSIGHTS
+// =============================================
 
 /**
  * GET /api/ai-assistant/tools/insights
  */
+
 const runInsightsTool = asyncHandler(async (req, res) => {
-  const insights = generateCreatorInsights({ niche: req.user?.bio || "Digital Creator" });
-  return res.json({ success: true, data: insights });
+  const insights = generateCreatorInsights({
+    niche: getCreatorNiche(req),
+  });
+
+  return res.json({
+    success: true,
+    data: insights,
+  });
 });
+
+// =============================================
+// EXPORT TO CONTENT OS
+// =============================================
 
 /**
  * POST /api/ai-assistant/export-content-os
- * Exports an AI assistant recommendation directly into Content OS.
  */
-const exportToContentOs = asyncHandler(async (req, res) => {
-  const userId = req.user?.id || req.user?._id;
-  const { title, description, platform, type } = req.body;
 
-  if (!title) {
-    return res.status(400).json({ success: false, message: "Title is required to save to Content OS" });
+const exportToContentOs = asyncHandler(async (req, res) => {
+  const userId = getUserId(req);
+
+  if (!isValidUserId(userId)) {
+    return sendError(res, 401, "Authentication required");
   }
 
-  const newContentItem = new ContentOs({
+  const {
+    title,
+    description,
+    platform,
+    type,
+  } = getBody(req);
+
+  if (!validateText(title, LIMITS.TITLE)) {
+    return sendError(
+      res,
+      400,
+      `Title must contain 1-${LIMITS.TITLE} characters`
+    );
+  }
+
+  if (
+    description !== undefined &&
+    (typeof description !== "string" ||
+      description.length > LIMITS.DESCRIPTION)
+  ) {
+    return sendError(res, 400, "Invalid description");
+  }
+
+  const allowedTypes = ["idea", "post", "video", "article"];
+
+  const contentType = normalizeOption(type, "idea");
+
+  if (!allowedTypes.includes(contentType)) {
+    return sendError(res, 400, "Invalid content type");
+  }
+
+  const newContentItem = await ContentOs.create({
     userId,
-    title: title.slice(0, 100),
-    description: description || "",
-    type: type || "idea",
+    title: title.trim(),
+    description: description?.trim() || "",
+    type: contentType,
     status: "idea",
-    platform: platform || "general",
+    platform: normalizeOption(platform, DEFAULTS.platform),
     priority: "medium",
   });
 
-  await newContentItem.save();
-
-  return res.json({
+  return res.status(201).json({
     success: true,
     message: "Successfully exported to Content OS!",
     data: newContentItem,
   });
 });
+
+// =============================================
+// EXPORT CONTROLLERS
+// =============================================
 
 module.exports = {
   renderAssistantView,
