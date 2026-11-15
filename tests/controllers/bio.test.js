@@ -1,4 +1,3 @@
-process.env.USE_MOCK_DB = "true";
 const request = require('supertest');
 const bcrypt = require('bcryptjs');
 const app = require('../../index');
@@ -79,8 +78,8 @@ describe('Bio Controller & Dynamic Routing', () => {
                     theme: 'neon',
                     layout: 'grid',
                     links: [
-                        { label: 'My Youtube', url: 'https://youtube.com/mychannel', icon: '🎥', category: 'social' },
-                        { label: 'My Website', url: 'https://creator.com', icon: '🌐', category: 'work' }
+                        { type: 'custom', label: 'My Youtube', url: 'https://youtube.com/mychannel', icon: '🎥', category: 'social' },
+                        { type: 'custom', label: 'My Website', url: 'https://creator.com', icon: '🌐', category: 'work' }
                     ]
                 });
 
