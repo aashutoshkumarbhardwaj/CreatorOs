@@ -1,105 +1,157 @@
+
 import re
 import os
+import shutil
 
 pages = {
-    'dashboard.ejs': 'dashboard.css',
-    'analytics-dashboard.ejs': 'analytics.css',
-    'creator-crm.ejs': 'crm.css',
-    'dm-automation.ejs': 'dm-automation.css'
+    "dashboard.ejs": "dashboard.css",
+    "analytics-dashboard.ejs": "analytics.css",
+    "creator-crm.ejs": "crm.css",
+    "dm-automation.ejs": "dm-automation.css"
 }
 
-for page, css_file in pages.items():
-    filepath = os.path.join('view', page)
-    with open(filepath, 'r') as f:
-        content = f.read()
-    
-    # 1. Extract CSS
-    style_match = re.search(r'<style>(.*?)</style>', content, re.DOTALL)
-    if style_match:
-        css_content = style_match.group(1)
-        with open(os.path.join('public', 'css', css_file), 'w') as f:
-            f.write(css_content)
-    
-    # 2. Extract Body class and attributes
-    body_match = re.search(r'<body(.*?)>', content, re.DOTALL)
-    body_attrs = body_match.group(1).strip() if body_match else ""
-    
-    bodyClass = ""
-    bodyAttributes = ""
-    if 'class="' in body_attrs:
-        class_match = re.search(r'class="([^"]*)"', body_attrs)
-        if class_match:
-            bodyClass = class_match.group(1)
-            body_attrs = body_attrs.replace(class_match.group(0), '')
-    bodyAttributes = body_attrs.strip()
-    
-    # 3. Determine activeNav and title
-    active_nav = page.replace('.ejs', '').replace('-dashboard', '')
-    title_match = re.search(r'title:\s*\'([^\']+)\'', content)
-    title = title_match.group(1) if title_match else 'CreatorOS'
-    
-    # 4. Generate header string
-    # Prepare bodyAttrs string safely (escape quotes if necessary)
-    # Actually, if we just pass bodyAttributes literally...
-    # In my-links.ejs it was complex. Let's just pass whatever was there.
-    # But wait, bodyAttributes in EJS needs to be safely injected. Let's just pass the exact string.
-    body_attr_str = f"bodyAttributes: `{bodyAttributes}`," if bodyAttributes else ""
-    body_class_str = f"bodyClass: '{bodyClass}'," if bodyClass else ""
-    
-    header_str = f"""<%- include('partials/layout/header', {{
-    activeNav: '{active_nav}',
-    title: '{title}',
-    {body_class_str}
-    {body_attr_str}
-    extraHead: '<link rel="stylesheet" href="/css/{css_file}">'
-}}) %>"""
+VIEW_DIR = "view"
+CSS_DIR = os.path.join("public", "css")
 
-    # 5. Find start of main content (right after topbar include)
-    # Using regex to find the end of topbar include
-    topbar_match = re.search(r'<%- include\([\'"](?:\./)?partials/(?:layout/)?_?topbar.*?\) %>', content)
-    if not topbar_match:
-        topbar_match = re.search(r'<%- include\([^)]*?topbar[^)]*\) %>', content)
-    
+os.makedirs(CSS_DIR, exist_ok=True)
+
+
+def extract_body_attributes(content):
+    match = re.search(r"<body\b([^>]*)>", content, re.IGNORECASE)
+
+    if not match:
+        return "", ""
+
+    attrs = match.group(1).strip()
+
+    class_match = re.search(
+        r'\bclass\s*=\s*(["\'])(.*?)\1',
+        attrs
+    )
+
+    body_class = class_match.group(2) if class_match else ""
+
+    if class_match:
+        attrs = attrs.replace(class_match.group(0), "", 1)
+
+    return body_class, attrs.strip()
+
+
+def process_page(page, css_file):
+    filepath = os.path.join(VIEW_DIR, page)
+
+    if not os.path.isfile(filepath):
+        print(f"Skipping missing file: {filepath}")
+        return
+
+    with open(filepath, "r", encoding="utf-8") as file:
+        content = file.read()
+
+    # 1. Extract inline CSS
+    style_match = re.search(
+        r"<style\b[^>]*>(.*?)</style>",
+        content,
+        re.IGNORECASE | re.DOTALL
+    )
+
+    if style_match:
+        css_content = style_match.group(1).strip()
+
+        css_path = os.path.join(CSS_DIR, css_file)
+
+        with open(css_path, "w", encoding="utf-8") as file:
+            file.write(css_content + "\n")
+
+        content = content[:style_match.start()] + content[style_match.end():]
+
+    # 2. Extract body attributes
+    body_class, body_attributes = extract_body_attributes(content)
+
+    # 3. Extract page title
+    title_match = re.search(
+        r"title\s*:\s*['\"]([^'\"]+)['\"]",
+        content
+    )
+
+    title = title_match.group(1) if title_match else "CreatorOS"
+
+    # 4. Determine active navigation
+    active_nav = page.replace(".ejs", "").replace("-dashboard", "")
+
+    # 5. Generate shared header
+    header_data = [
+        f"activeNav: '{active_nav}'",
+        f"title: '{title}'"
+    ]
+
+    if body_class:
+        header_data.append(f"bodyClass: '{body_class}'")
+
+    if body_attributes:
+        header_data.append(f"bodyAttributes: '{body_attributes}'")
+
+    header_data.append(
+        f'''extraHead: '<link rel="stylesheet" href="/css/{css_file}">' '''
+    )
+
+    header_str = (
+        "<%- include('partials/layout/header', {"
+        + ", ".join(header_data)
+        + "}) %>\n"
+    )
+
+    # 6. Locate topbar
+    topbar_match = re.search(
+        r"<%-\s*include\(['\"](?:\./)?partials/(?:layout/)?_?topbar[^)]*\)\s*%>",
+        content
+    )
+
     if topbar_match:
         start_idx = topbar_match.end()
     else:
-        # Fallback if topbar not found, find <main>
-        main_match = re.search(r'<main[^>]*>', content)
-        start_idx = main_match.end() if main_match else 0
-        
-    # 6. Find end of the layout 
-    # Usually it's </main> </div> script tags </body>
-    # Let's find the last </script> or </main>
-    # The user wants footer.ejs to replace the script include.
-    # The original files have `<%- include('./partials/_scripts') %>` or something similar, and `</body></html>`
-    
-    # We will slice from start_idx to the end, then replace the bottom boilerplate with footer include.
-    main_content_and_bottom = content[start_idx:]
-    
-    # Remove the `</div>` that closes dashboard-layout
-    # Remove the `</main>` if it exists, footer.ejs handles it.
-    # But wait! If there are modals, they are placed AFTER </main>.
-    # If we remove </main> and </div>, and put footer.ejs at the end, the modals will be inside <main>. That is perfectly fine!
-    
-    # Let's just remove </main> and the </div> for dashboard-layout
-    # and replace `</body></html>` and `partials/scripts` with footer include.
-    
-    # Remove </main>
-    new_content_tail = re.sub(r'</main>\s*</div>', '', main_content_and_bottom)
-    new_content_tail = re.sub(r'</main>', '', new_content_tail)
-    
-    # Remove old scripts include
-    new_content_tail = re.sub(r'<%- include\([\'"](?:\./)?partials/(?:layout/)?_?scripts.*?\) %>', '', new_content_tail)
-    
-    # Remove body/html tags
-    new_content_tail = re.sub(r'</body>\s*</html>', '', new_content_tail)
-    
-    # Append footer
-    new_content_tail += "\\n<%- include('partials/layout/footer') %>\\n"
-    
-    final_content = header_str + new_content_tail
-    
-    with open(filepath, 'w') as f:
-        f.write(final_content)
+        main_match = re.search(r"<main\b[^>]*>", content, re.IGNORECASE)
+
+        if not main_match:
+            print(f"Skipping {page}: main/topbar not found")
+            return
+
+        start_idx = main_match.start()
+
+    tail = content[start_idx:]
+
+    # 7. Remove closing layout tags
+    tail = re.sub(r"</main\s*>", "", tail, flags=re.IGNORECASE)
+
+    # Remove scripts partial
+    tail = re.sub(
+        r"<%-\s*include\(['\"](?:\./)?partials/(?:layout/)?_?scripts[^)]*\)\s*%>",
+        "",
+        tail
+    )
+
+    # Remove closing body and html tags
+    tail = re.sub(
+        r"</body\s*>\s*</html\s*>",
+        "",
+        tail,
+        flags=re.IGNORECASE
+    )
+
+    # 8. Add shared footer
+    tail = tail.rstrip() + "\n<%- include('partials/layout/footer') %>\n"
+
+    final_content = header_str + tail
+
+    # 9. Create backup before modifying original
+    shutil.copy2(filepath, filepath + ".bak")
+
+    with open(filepath, "w", encoding="utf-8") as file:
+        file.write(final_content)
+
+    print(f"Successfully processed: {page}")
+
+
+for page, css_file in pages.items():
+    process_page(page, css_file)
 
 print("Processing complete.")
