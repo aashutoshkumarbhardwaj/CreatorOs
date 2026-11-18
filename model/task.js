@@ -35,6 +35,7 @@ const timeLogSchema = new mongoose.Schema({
   durationMinutes: {
     type: Number,
     required: true,
+    min: [0, "Duration cannot be negative"],
   },
   note: {
     type: String,
@@ -57,6 +58,7 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      immutable: true,
       index: true,
     },
     title: {
@@ -119,11 +121,12 @@ const taskSchema = new mongoose.Schema(
     estimatedHours: {
       type: Number,
       default: 0,
+      min: [0, "Estimated hours cannot be negative"],
     },
     spentHours: {
       type: Number,
       default: 0,
-      min: 0,
+      min: [0, "Spent hours cannot be negative"],
     },
     subtasks: [subtaskSchema],
     dependencies: [

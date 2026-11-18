@@ -54,4 +54,25 @@ describe('Task Ownership IDOR & MongoDB Operator Integration', () => {
         
         expect(updatedTask.title).toBe('Updated title');
     });
+
+    it('prevents a user from logging time on a task owned by another creator', async () => {
+        const task = await Task.create({
+            creatorId: USER_B,
+            title: 'User B task',
+            status: 'todo',
+            priority: 'low',
+            category: 'content',
+            spentHours: 1.0,
+        });
+
+        // USER_A attempts to log time on USER_B's task
+        const res = await request(app)
+            .post('/api/tasks/' + task._id + '/time-log')
+            .send({ durationMinutes: 60 });
+
+        expect(res.status).toBe(404);
+
+        const unchangedTask = await Task.findById(task._id);
+        expect(unchangedTask.spentHours).toBe(1.0);
+    });
 });
