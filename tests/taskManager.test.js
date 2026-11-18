@@ -53,4 +53,50 @@ describe('Task Model Test Suite', () => {
     expect(err).toBeDefined();
     expect(err.errors.spentHours).toBeDefined();
   });
+
+  it('should invalidate task creation with negative estimatedHours', async () => {
+    const task = new Task({
+      creatorId: new mongoose.Types.ObjectId(),
+      title: 'Script YouTube Video',
+      estimatedHours: -1,
+    });
+
+    let err;
+    try {
+      await task.validate();
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err).toBeDefined();
+    expect(err.errors.estimatedHours).toBeDefined();
+  });
+
+  it('should invalidate task creation with negative timeLog durationMinutes', async () => {
+    const task = new Task({
+      creatorId: new mongoose.Types.ObjectId(),
+      title: 'Script YouTube Video',
+      timeLogs: [
+        {
+          durationMinutes: -15,
+        },
+      ],
+    });
+
+    let err;
+    try {
+      await task.validate();
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err).toBeDefined();
+    expect(err.errors['timeLogs.0.durationMinutes']).toBeDefined();
+  });
+
+  it('does not allow creatorId to be modified', () => {
+    const schemaPath = Task.schema.path('creatorId');
+
+    expect(schemaPath.options.immutable).toBe(true);
+  });
 });
