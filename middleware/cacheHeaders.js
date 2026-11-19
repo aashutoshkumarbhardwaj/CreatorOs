@@ -1,5 +1,8 @@
 const cacheHeadersMiddleware = (req, res, next) => {
-    res.setHeader('X-Cache', 'MISS');
+    if (!res.hasHeader('X-Cache')) {
+        res.setHeader('X-Cache', 'MISS');
+    }
+
     next();
 };
 
