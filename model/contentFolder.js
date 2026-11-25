@@ -2,8 +2,9 @@ const mongoose = require("mongoose");
 
 /**
  * @schema contentFolderSchema
- * @description Schema and mock handler for Content OS folders/projects.
+ * @description Schema for Content OS folders/projects.
  */
+
 const contentFolderSchema = new mongoose.Schema(
     {
         userId: {
@@ -32,14 +33,25 @@ const contentFolderSchema = new mongoose.Schema(
 );
 
 const MongooseContentFolderModel =
-    mongoose.models.ContentFolder || mongoose.model("ContentFolder", contentFolderSchema);
+    mongoose.models.ContentFolder ||
+    mongoose.model("ContentFolder", contentFolderSchema);
 
+// Mock database
 const mockFolders = [];
 
 class MockContentFolderModel {
-    constructor(data) {
-        this._id = data._id || new mongoose.Types.ObjectId().toString();
-        this.userId = data.userId;
+    constructor(data = {}) {
+        this._id =
+            data._id || new mongoose.Types.ObjectId().toString();
+
+        // Prevent userId from being changed after creation
+        Object.defineProperty(this, "userId", {
+            value: data.userId,
+            writable: false,
+            enumerable: true,
+            configurable: false,
+        });
+
         this.name = data.name || "General Folder";
         this.color = data.color || "#4338CA";
         this.description = data.description || "";
@@ -55,43 +67,99 @@ class MockContentFolderModel {
 
     static find(query = {}) {
         let results = mockFolders.filter((item) => {
-            if (query.userId && item.userId?.toString() !== query.userId?.toString()) return false;
-            return true;
+            return Object.keys(query).every((key) => {
+                if (query[key] == null) return true;
+
+                return (
+                    item[key]?.toString() ===
+                    query[key]?.toString()
+                );
+            });
         });
 
         const wrapped = {
-            sort: () => wrapped,
-            lean: async () => results.map((item) => new MockContentFolderModel(item)),
-            then: (resolve) => resolve(results.map((item) => new MockContentFolderModel(item))),
+            sort(sortOptions = {}) {
+                const entries = Object.entries(sortOptions);
+
+                results.sort((a, b) => {
+                    for (const [key, order] of entries) {
+                        if (a[key] < b[key]) return -1 * order;
+                        if (a[key] > b[key]) return 1 * order;
+                    }
+
+                    return 0;
+                });
+
+                return wrapped;
+            },
+
+            lean: async () => results.map((item) => ({ ...item })),
+
+            then: (resolve, reject) =>
+                Promise.resolve(
+                    results.map((item) =>
+                        new MockContentFolderModel(item)
+                    )
+                ).then(resolve, reject),
+
+            catch: (reject) =>
+                Promise.resolve(
+                    results.map((item) =>
+                        new MockContentFolderModel(item)
+                    )
+                ).catch(reject),
         };
+
         return wrapped;
     }
 
     static async findById(id) {
-        const found = mockFolders.find((item) => item._id?.toString() === id?.toString());
-        return found ? new MockContentFolderModel(found) : null;
+        const found = mockFolders.find(
+            (item) => item._id.toString() === id?.toString()
+        );
+
+        return found
+            ? new MockContentFolderModel(found)
+            : null;
     }
 
     static async findByIdAndDelete(id) {
-        const idx = mockFolders.findIndex((item) => item._id?.toString() === id?.toString());
-        if (idx === -1) return null;
-        return mockFolders.splice(idx, 1)[0];
+        const index = mockFolders.findIndex(
+            (item) => item._id.toString() === id?.toString()
+        );
+
+        if (index === -1) return null;
+
+        const deleted = mockFolders.splice(index, 1)[0];
+
+        return new MockContentFolderModel(deleted);
     }
 
     static async deleteMany(query = {}) {
         let count = 0;
+
         for (let i = mockFolders.length - 1; i >= 0; i--) {
-            if (!query.userId || mockFolders[i].userId?.toString() === query.userId?.toString()) {
+            const matches = Object.keys(query).every((key) => {
+                return (
+                    mockFolders[i][key]?.toString() ===
+                    query[key]?.toString()
+                );
+            });
+
+            if (matches) {
                 mockFolders.splice(i, 1);
                 count++;
             }
         }
+
         return { deletedCount: count };
     }
 }
 
 function getActiveModel() {
-    return process.env.USE_MOCK_DB === "true" ? MockContentFolderModel : MongooseContentFolderModel;
+    return process.env.USE_MOCK_DB === "true"
+        ? MockContentFolderModel
+        : MongooseContentFolderModel;
 }
 
 function ContentFolderModel(data) {
@@ -99,10 +167,20 @@ function ContentFolderModel(data) {
     return new ActiveModel(data);
 }
 
-ContentFolderModel.find = (...args) => getActiveModel().find(...args);
-ContentFolderModel.findById = (...args) => getActiveModel().findById(...args);
-ContentFolderModel.create = (...args) => getActiveModel().create(...args);
-ContentFolderModel.findByIdAndDelete = (...args) => getActiveModel().findByIdAndDelete(...args);
-ContentFolderModel.deleteMany = (...args) => getActiveModel().deleteMany(...args);
+// Forward model methods
+ContentFolderModel.find = (...args) =>
+    getActiveModel().find(...args);
+
+ContentFolderModel.findById = (...args) =>
+    getActiveModel().findById(...args);
+
+ContentFolderModel.create = (...args) =>
+    getActiveModel().create(...args);
+
+ContentFolderModel.findByIdAndDelete = (...args) =>
+    getActiveModel().findByIdAndDelete(...args);
+
+ContentFolderModel.deleteMany = (...args) =>
+    getActiveModel().deleteMany(...args);
 
 module.exports = ContentFolderModel;
